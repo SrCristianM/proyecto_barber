@@ -1,0 +1,204 @@
+import { Calendar, Users, DollarSign, Package, TrendingUp, Clock, AlertCircle } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+const salesData = [
+  { month: "Ene", ventas: 4500, servicios: 3200 },
+  { month: "Feb", ventas: 5200, servicios: 3800 },
+  { month: "Mar", ventas: 4800, servicios: 3500 },
+  { month: "Abr", ventas: 6100, servicios: 4200 },
+  { month: "May", ventas: 5900, servicios: 4e3 },
+  { month: "Jun", ventas: 7200, servicios: 4800 }
+];
+const servicesData = [
+  { name: "Corte Cl\xE1sico", value: 35 },
+  { name: "Corte + Barba", value: 28 },
+  { name: "Afeitado", value: 18 },
+  { name: "Dise\xF1o", value: 19 }
+];
+const barberPerformance = [
+  { name: "Carlos", citas: 45, ingresos: 1800 },
+  { name: "Miguel", citas: 38, ingresos: 1520 },
+  { name: "Javier", citas: 42, ingresos: 1680 },
+  { name: "Luis", citas: 35, ingresos: 1400 }
+];
+const COLORS = ["#DAA520", "#10b981", "#f59e0b", "#8b5cf6"];
+const todayAppointments = [
+  { time: "09:00", client: "Juan P\xE9rez", barber: "Carlos", service: "Corte Cl\xE1sico", status: "Completada" },
+  { time: "10:00", client: "Mar\xEDa Garc\xEDa", barber: "Miguel", service: "Corte + Barba", status: "En Proceso" },
+  { time: "11:00", client: "Pedro L\xF3pez", barber: "Javier", service: "Afeitado", status: "Pendiente" },
+  { time: "12:00", client: "Ana Torres", barber: "Luis", service: "Dise\xF1o", status: "Pendiente" }
+];
+export default function AdminDashboard() {
+  return <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Resumen general de tu barbería</p>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="h-4 w-4" />
+          <span>Última actualización: Hace 5 minutos</span>
+        </div>
+      </div>
+
+      {
+    /* KPIs */
+  }
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
+    title="Citas Hoy"
+    value="12"
+    change="+8%"
+    positive={true}
+    icon={<Calendar className="h-6 w-6 text-primary" />}
+  />
+        <KPICard
+    title="Ingresos Hoy"
+    value="$480.000"
+    change="+12%"
+    positive={true}
+    icon={<DollarSign className="h-6 w-6 text-success" />}
+  />
+        <KPICard
+    title="Clientes Nuevos"
+    value="5"
+    change="+20%"
+    positive={true}
+    icon={<Users className="h-6 w-6 text-warning" />}
+  />
+        <KPICard
+    title="Stock Bajo"
+    value="3"
+    change="-2"
+    positive={false}
+    icon={<Package className="h-6 w-6 text-destructive" />}
+  />
+      </div>
+
+      {
+    /* Charts Row 1 */
+  }
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Ventas y Servicios</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="month" stroke="var(--color-muted-foreground)" />
+              <YAxis stroke="var(--color-muted-foreground)" />
+              <Tooltip contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)" }} />
+              <Legend />
+              <Line type="monotone" dataKey="ventas" stroke="#DAA520" strokeWidth={2} name="Ventas ($K)" />
+              <Line type="monotone" dataKey="servicios" stroke="#10b981" strokeWidth={2} name="Servicios ($K)" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Servicios Más Populares</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+    data={servicesData}
+    cx="50%"
+    cy="50%"
+    labelLine={false}
+    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+    outerRadius={100}
+    fill="#8884d8"
+    dataKey="value"
+  >
+                {servicesData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {
+    /* Charts Row 2 */
+  }
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Rendimiento de Barberos</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={barberPerformance}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="name" stroke="var(--color-muted-foreground)" />
+              <YAxis stroke="var(--color-muted-foreground)" />
+              <Tooltip contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)" }} />
+              <Legend />
+              <Bar dataKey="citas" fill="#DAA520" name="Citas" />
+              <Bar dataKey="ingresos" fill="#10b981" name="Ingresos ($K)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Citas de Hoy</h3>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {todayAppointments.map((appointment, index) => <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-medium text-foreground">{appointment.time}</div>
+                  <div className="h-8 w-px bg-border" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{appointment.client}</p>
+                    <p className="text-xs text-muted-foreground">{appointment.service} - {appointment.barber}</p>
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Completada" ? "bg-success/10 text-success" : appointment.status === "En Proceso" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  {appointment.status}
+                </span>
+              </div>)}
+          </div>
+        </div>
+      </div>
+
+      {
+    /* Alerts */
+  }
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Alertas y Notificaciones</h3>
+        <div className="space-y-3">
+          <AlertItem
+    type="warning"
+    message="El stock de gel para cabello está bajo (2 unidades restantes)"
+  />
+          <AlertItem
+    type="info"
+    message="Tienes 3 citas pendientes de confirmación para mañana"
+  />
+          <AlertItem
+    type="success"
+    message="Has alcanzado tu meta de ventas del mes"
+  />
+        </div>
+      </div>
+    </div>;
+}
+function KPICard({ title, value, change, positive, icon }) {
+  return <div className="bg-card border border-border rounded-lg p-6">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-muted-foreground">{title}</span>
+        {icon}
+      </div>
+      <div className="flex items-end justify-between">
+        <h3 className="text-3xl font-bold text-foreground">{value}</h3>
+        <span className={`text-sm font-medium flex items-center gap-1 ${positive ? "text-success" : "text-destructive"}`}>
+          <TrendingUp className={`h-4 w-4 ${!positive && "rotate-180"}`} />
+          {change}
+        </span>
+      </div>
+    </div>;
+}
+function AlertItem({ type, message }) {
+  const colors = {
+    warning: "bg-warning/10 border-warning/20 text-warning",
+    info: "bg-primary/10 border-primary/20 text-primary",
+    success: "bg-success/10 border-success/20 text-success"
+  };
+  return <div className={`flex items-start gap-3 p-4 rounded-lg border ${colors[type]}`}>
+      <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+      <p className="text-sm">{message}</p>
+    </div>;
+}
