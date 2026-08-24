@@ -126,7 +126,7 @@ export default function UsersPage() {
 
       {showDeleteModal && selectedUser && (
         <DeleteConfirmModal
-          userName={selectedUser.name}
+          userName={`${selectedUser.nombre} ${selectedUser.apellido}`}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

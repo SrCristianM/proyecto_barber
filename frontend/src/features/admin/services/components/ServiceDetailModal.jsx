@@ -1,50 +1,59 @@
-import { Package } from "lucide-react";
+import { Scissors } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import { CATEGORIAS_SERVICIO } from "../../../../shared/types/database";
 
 export default function ServiceDetailModal({ service, onEdit, onClose }) {
+  const categoryName =
+    CATEGORIAS_SERVICIO.find((c) => c.id_categoria_servicio === Number(service.id_categoria_servicio))?.nombre ||
+    "Sin Categoría";
+
   return (
     <Modal title="Detalle del Servicio" onClose={onClose}>
       <div className="space-y-4">
         <div className="flex items-center justify-center mb-6">
-          <div className="w-24 h-24 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Package className="h-12 w-12 text-primary" />
-          </div>
+          {service.imagen_url ? (
+            <img
+              src={service.imagen_url}
+              alt={service.nombre}
+              className="w-24 h-24 rounded-lg object-cover border-2 border-primary"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Scissors className="h-12 w-12 text-primary" />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre del Servicio</label>
-            <p className="text-foreground font-medium">{service.name}</p>
+            <p className="text-foreground font-medium">{service.nombre}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Categoría</label>
-            <p className="text-foreground">{service.category}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Duración</label>
-            <p className="text-foreground">{service.duration} minutos</p>
-          </div>
-          <div className="col-span-2">
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Descripción</label>
-            <p className="text-foreground">{service.description || "Sin descripción"}</p>
+            <p className="text-foreground font-medium">{categoryName}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Precio</label>
-            <p className="text-lg font-bold text-primary">${service.price.toLocaleString()}</p>
+            <p className="text-foreground font-medium">${Number(service.precio).toLocaleString()}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Duración</label>
+            <p className="text-foreground">{service.duracion_minutos} minutos</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                service.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                service.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
               }`}
             >
-              {service.status}
+              {service.estado === 1 ? "Activo" : "Inactivo"}
             </span>
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</label>
-            <p className="text-foreground">{service.createdAt}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Servicio</label>
+            <p className="text-foreground">#{service.id_servicio}</p>
           </div>
         </div>
 

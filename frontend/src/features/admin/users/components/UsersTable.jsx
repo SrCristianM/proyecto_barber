@@ -1,5 +1,6 @@
 import { User, Eye, Power, Edit, Trash2 } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
+import { ROLES } from "../../../../shared/types/database";
 
 export default function UsersTable({
   users,
@@ -12,6 +13,11 @@ export default function UsersTable({
   onEdit,
   onDelete
 }) {
+  const getRoleName = (id_rol) => {
+    const r = ROLES.find((role) => role.id_rol === Number(id_rol));
+    return r ? r.nombre_rol : "Sin Rol";
+  };
+
   return (
     <>
       <div className="overflow-x-auto">
@@ -19,43 +25,43 @@ export default function UsersTable({
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4">
-                <SortHeader label="Usuario" field="name" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Usuario" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Rol" field="role" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Rol" field="id_rol" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Último Acceso" field="lastLogin" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Fecha Registro" field="fecha_registro" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Estado" field="status" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+              <tr key={user.id_usuario} className="border-b border-border hover:bg-accent/50 transition-colors">
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="font-medium text-foreground">{user.nombre} {user.apellido}</p>
+                      <p className="text-sm text-muted-foreground">{user.correo}</p>
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-foreground">{user.role}</td>
-                <td className="py-4 px-4 text-muted-foreground">{user.lastLogin}</td>
+                <td className="py-4 px-4 text-foreground">{getRoleName(user.id_rol)}</td>
+                <td className="py-4 px-4 text-muted-foreground">{user.fecha_registro}</td>
                 <td className="py-4 px-4">
                   <span
                     className={`px-3 py-1 text-sm rounded-full ${
-                      user.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                      user.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {user.status}
+                    {user.estado === 1 ? "Activo" : "Inactivo"}
                   </span>
                 </td>
                 <td className="py-4 px-4">
@@ -64,9 +70,9 @@ export default function UsersTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(user.id)}
-                      className={`p-2 hover:bg-background rounded-lg ${user.status === "Activo" ? "text-success" : "text-muted-foreground"}`}
-                      title={user.status === "Activo" ? "Desactivar" : "Activar"}
+                      onClick={() => onToggleStatus(user.id_usuario)}
+                      className={`p-2 hover:bg-background rounded-lg ${user.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      title={user.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />
                     </button>

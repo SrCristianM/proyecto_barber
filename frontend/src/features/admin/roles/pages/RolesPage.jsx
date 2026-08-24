@@ -31,9 +31,11 @@ export default function RolesPage() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    toggleFormRolePermission
   } = useRoles();
 
   return (
@@ -44,7 +46,7 @@ export default function RolesPage() {
           <p className="text-muted-foreground">Gestiona los roles y permisos del sistema</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={openCreateModal}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
         >
           <Plus className="h-5 w-5" />
@@ -88,6 +90,7 @@ export default function RolesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          onToggleRolePermission={toggleFormRolePermission}
           onSubmit={handleCreate}
           onClose={() => {
             setShowCreateModal(false);
@@ -101,6 +104,7 @@ export default function RolesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          onToggleRolePermission={toggleFormRolePermission}
           onSubmit={handleEdit}
           onClose={() => {
             setShowEditModal(false);
@@ -126,7 +130,7 @@ export default function RolesPage() {
 
       {showDeleteModal && selectedRole && (
         <DeleteConfirmModal
-          roleName={selectedRole.name}
+          roleName={selectedRole.nombre_rol}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

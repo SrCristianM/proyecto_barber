@@ -1,20 +1,35 @@
 import { useState } from "react";
 
 const mockBarbers = [
-  { id: 1, name: "Carlos Rodríguez", email: "carlos@example.com", phone: "+57 300 123 4567", specialty: "Corte Clásico", status: "Activo", createdAt: "2026-01-15" },
-  { id: 2, name: "Miguel Ángel", email: "miguel@example.com", phone: "+57 301 234 5678", specialty: "Diseño y Color", status: "Activo", createdAt: "2026-02-20" },
-  { id: 3, name: "Javier Torres", email: "javier@example.com", phone: "+57 302 345 6789", specialty: "Barba Premium", status: "Activo", createdAt: "2026-03-10" },
-  { id: 4, name: "Luis Martínez", email: "luis@example.com", phone: "+57 303 456 7890", specialty: "Corte Moderno", status: "Inactivo", createdAt: "2026-04-05" }
+  { id_barbero: 1, id_usuario: 3, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 300 123 4567", especialidad: "Corte Clásico", imagen_url: "", estado: 1 },
+  { id_barbero: 2, id_usuario: 6, nombre: "Miguel", apellido: "Ángel", correo: "miguel@example.com", telefono: "+57 301 234 5678", especialidad: "Diseño y Color", imagen_url: "", estado: 1 },
+  { id_barbero: 3, id_usuario: 7, nombre: "Javier", apellido: "Torres", correo: "javier@example.com", telefono: "+57 302 345 6789", especialidad: "Barba Premium", imagen_url: "", estado: 1 },
+  { id_barbero: 4, id_usuario: 5, nombre: "Luis", apellido: "Martínez", correo: "luis@example.com", telefono: "+57 303 456 7890", especialidad: "Corte Moderno", imagen_url: "", estado: 0 }
 ];
 
-export const availableSpecialties = ["Corte Clásico", "Diseño y Color", "Barba Premium", "Corte Moderno", "Barbería Completa"];
+export const availableSpecialties = [
+  "Corte Clásico",
+  "Diseño y Color",
+  "Barba Premium",
+  "Corte Moderno",
+  "Barbería Completa",
+  "Afeitado Tradicional"
+];
 
-const emptyForm = { name: "", email: "", phone: "", specialty: "Corte Clásico" };
+const emptyForm = {
+  nombre: "",
+  apellido: "",
+  correo: "",
+  telefono: "",
+  especialidad: "Corte Clásico",
+  imagen_url: "",
+  id_usuario: null
+};
 
 export function useBarbers() {
   const [barbers, setBarbers] = useState(mockBarbers);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("name");
+  const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -33,11 +48,15 @@ export function useBarbers() {
   };
 
   const filteredBarbers = barbers
-    .filter(
-      (barber) =>
-        barber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        barber.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((barber) => {
+      const fullName = `${barber.nombre} ${barber.apellido}`.toLowerCase();
+      const search = searchTerm.toLowerCase();
+      return (
+        fullName.includes(search) ||
+        barber.correo.toLowerCase().includes(search) ||
+        (barber.especialidad || "").toLowerCase().includes(search)
+      );
+    })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
       const valB = (b[sortField] ?? "").toString().toLowerCase();
@@ -49,14 +68,19 @@ export function useBarbers() {
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
+    const nextBarberId = Math.max(...barbers.map((b) => b.id_barbero), 0) + 1;
+    const nextUserId = formData.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1;
+
     const newBarber = {
-      id: Math.max(...barbers.map((b) => b.id)) + 1,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      specialty: formData.specialty,
-      status: "Activo",
-      createdAt: new Date().toISOString().split("T")[0]
+      id_barbero: nextBarberId,
+      id_usuario: nextUserId,
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      correo: formData.correo,
+      telefono: formData.telefono,
+      especialidad: formData.especialidad,
+      imagen_url: formData.imagen_url || null,
+      estado: 1
     };
     setBarbers([...barbers, newBarber]);
     setShowCreateModal(false);
@@ -67,8 +91,16 @@ export function useBarbers() {
     if (!selectedBarber) return;
     setBarbers(
       barbers.map((barber) =>
-        barber.id === selectedBarber.id
-          ? { ...barber, name: formData.name, email: formData.email, phone: formData.phone, specialty: formData.specialty }
+        barber.id_barbero === selectedBarber.id_barbero
+          ? {
+              ...barber,
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              correo: formData.correo,
+              telefono: formData.telefono,
+              especialidad: formData.especialidad,
+              imagen_url: formData.imagen_url || null
+            }
           : barber
       )
     );
@@ -79,7 +111,7 @@ export function useBarbers() {
 
   const handleDelete = () => {
     if (!selectedBarber) return;
-    setBarbers(barbers.filter((barber) => barber.id !== selectedBarber.id));
+    setBarbers(barbers.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero));
     setShowDeleteModal(false);
     setSelectedBarber(null);
   };
@@ -87,14 +119,22 @@ export function useBarbers() {
   const toggleStatus = (barberId) => {
     setBarbers(
       barbers.map((barber) =>
-        barber.id === barberId ? { ...barber, status: barber.status === "Activo" ? "Inactivo" : "Activo" } : barber
+        barber.id_barbero === barberId ? { ...barber, estado: barber.estado === 1 ? 0 : 1 } : barber
       )
     );
   };
 
   const openEditModal = (barber) => {
     setSelectedBarber(barber);
-    setFormData({ name: barber.name, email: barber.email, phone: barber.phone || "", specialty: barber.specialty });
+    setFormData({
+      nombre: barber.nombre,
+      apellido: barber.apellido,
+      correo: barber.correo,
+      telefono: barber.telefono || "",
+      especialidad: barber.especialidad || "Corte Clásico",
+      imagen_url: barber.imagen_url || "",
+      id_usuario: barber.id_usuario
+    });
     setShowEditModal(true);
   };
 

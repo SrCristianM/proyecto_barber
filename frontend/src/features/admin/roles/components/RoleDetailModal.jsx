@@ -1,5 +1,6 @@
 import { Shield } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import RolePermissionBlock from "./RolePermissionBlock";
 
 export default function RoleDetailModal({ role, onEdit, onClose }) {
   return (
@@ -14,33 +15,36 @@ export default function RoleDetailModal({ role, onEdit, onClose }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre del Rol</label>
-            <p className="text-foreground font-medium">{role.name}</p>
+            <p className="text-foreground font-medium">{role.nombre_rol}</p>
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-muted-foreground mb-1">Descripción</label>
-            <p className="text-foreground">{role.description || "Sin descripción"}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Permisos</label>
-            <p className="text-foreground font-medium">{role.permissions}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Usuarios</label>
-            <p className="text-foreground font-medium">{role.users}</p>
+            <p className="text-foreground">{role.descripcion || "Sin descripción"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                role.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                role.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
               }`}
             >
-              {role.status}
+              {role.estado === 1 ? "Activo" : "Inactivo"}
             </span>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</label>
-            <p className="text-foreground">{role.createdAt}</p>
+            <p className="text-foreground">{role.fecha_creacion}</p>
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Rol</label>
+            <p className="text-foreground">#{role.id_rol}</p>
+          </div>
+          <div className="col-span-2">
+            <RolePermissionBlock
+              roleName={role.nombre_rol}
+              permisos={role.permisos}
+              alcancePorPermiso={role.alcancePorPermiso}
+            />
           </div>
         </div>
 

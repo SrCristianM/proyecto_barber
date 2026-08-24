@@ -130,7 +130,7 @@ export default function ClientsPage() {
 
       {showDeleteModal && selectedClient && (
         <ClientDeleteConfirmModal
-          clientName={selectedClient.name}
+          clientName={`${selectedClient.nombre} ${selectedClient.apellido}`}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

@@ -1,18 +1,28 @@
 import { useState } from "react";
+import { ROLES } from "../../../../shared/types/database";
+import { withDefaultPermissions, PERMISSION_ACTIONS, snapshotRolesPermisos } from "../constants/permissions";
 
-const mockRoles = [
-  { id: 1, name: "Administrador", description: "Acceso total al sistema", permissions: 45, users: 2, status: "Activo", createdAt: "2026-01-15" },
-  { id: 2, name: "Recepcionista", description: "Gestión de citas y clientes", permissions: 25, users: 3, status: "Activo", createdAt: "2026-02-20" },
-  { id: 3, name: "Barbero", description: "Acceso a servicios y citas", permissions: 15, users: 8, status: "Activo", createdAt: "2026-03-10" },
-  { id: 4, name: "Cliente", description: "Acceso limitado a reservas", permissions: 5, users: 150, status: "Activo", createdAt: "2026-04-05" }
-];
+const togglePermissionList = (permisos = [], permissionKey) => {
+  const next = permisos.includes(permissionKey)
+    ? permisos.filter((key) => key !== permissionKey)
+    : [...permisos, permissionKey];
 
-const emptyForm = { name: "", description: "" };
+  return PERMISSION_ACTIONS.map((action) => action.key).filter((key) => next.includes(key));
+};
+
+const emptyForm = {
+  nombre_rol: "",
+  descripcion: "",
+  estado: 1,
+  permisos: ["ver"],
+  alcancePorPermiso: {},
+  rolesPermisos: []
+};
 
 export function useRoles() {
-  const [roles, setRoles] = useState(mockRoles);
+  const [roles, setRoles] = useState(ROLES.map(withDefaultPermissions));
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("name");
+  const [sortField, setSortField] = useState("nombre_rol");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -32,7 +42,8 @@ export function useRoles() {
 
   const filteredRoles = roles
     .filter((role) =>
-      role.name.toLowerCase().includes(searchTerm.toLowerCase())
+      role.nombre_rol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (role.descripcion || "").toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
@@ -44,17 +55,28 @@ export function useRoles() {
 
   const resetForm = () => setFormData(emptyForm);
 
+  const applyRolesPermisos = (currentRoles) =>
+    currentRoles.map((role) => {
+      const updated = (formData.rolesPermisos || []).find((item) => item.id_rol === role.id_rol);
+      if (!updated) return role;
+      return {
+        ...role,
+        permisos: updated.permisos,
+        alcancePorPermiso: updated.alcancePorPermiso || role.alcancePorPermiso
+      };
+    });
+
   const handleCreate = () => {
     const newRole = {
-      id: Math.max(...roles.map((r) => r.id), 0) + 1,
-      name: formData.name,
-      description: formData.description,
-      permissions: 0,
-      users: 0,
-      status: "Activo",
-      createdAt: new Date().toISOString().split("T")[0]
+      id_rol: Math.max(...roles.map((r) => r.id_rol), 0) + 1,
+      nombre_rol: formData.nombre_rol,
+      descripcion: formData.descripcion,
+      estado: 1,
+      fecha_creacion: new Date().toISOString().replace("T", " ").substring(0, 19),
+      permisos: formData.permisos || ["ver"],
+      alcancePorPermiso: formData.alcancePorPermiso || {}
     };
-    setRoles([...roles, newRole]);
+    setRoles([...applyRolesPermisos(roles), newRole]);
     setShowCreateModal(false);
     resetForm();
   };
@@ -62,9 +84,13 @@ export function useRoles() {
   const handleEdit = () => {
     if (!selectedRole) return;
     setRoles(
-      roles.map((role) =>
-        role.id === selectedRole.id
-          ? { ...role, name: formData.name, description: formData.description }
+      applyRolesPermisos(roles).map((role) =>
+        role.id_rol === selectedRole.id_rol
+          ? {
+              ...role,
+              nombre_rol: formData.nombre_rol,
+              descripcion: formData.descripcion
+            }
           : role
       )
     );
@@ -75,7 +101,7 @@ export function useRoles() {
 
   const handleDelete = () => {
     if (!selectedRole) return;
-    setRoles(roles.filter((role) => role.id !== selectedRole.id));
+    setRoles(roles.filter((role) => role.id_rol !== selectedRole.id_rol));
     setShowDeleteModal(false);
     setSelectedRole(null);
   };
@@ -83,14 +109,29 @@ export function useRoles() {
   const toggleStatus = (roleId) => {
     setRoles(
       roles.map((role) =>
-        role.id === roleId ? { ...role, status: role.status === "Activo" ? "Inactivo" : "Activo" } : role
+        role.id_rol === roleId ? { ...role, estado: role.estado === 1 ? 0 : 1 } : role
       )
     );
   };
 
+  const openCreateModal = () => {
+    setFormData({
+      ...emptyForm,
+      rolesPermisos: snapshotRolesPermisos(roles)
+    });
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (role) => {
     setSelectedRole(role);
-    setFormData({ name: role.name, description: role.description });
+    setFormData({
+      nombre_rol: role.nombre_rol,
+      descripcion: role.descripcion || "",
+      estado: role.estado,
+      permisos: role.permisos || ["ver"],
+      alcancePorPermiso: role.alcancePorPermiso || {},
+      rolesPermisos: snapshotRolesPermisos(roles)
+    });
     setShowEditModal(true);
   };
 
@@ -102,6 +143,21 @@ export function useRoles() {
   const openDeleteModal = (role) => {
     setSelectedRole(role);
     setShowDeleteModal(true);
+  };
+
+  const toggleFormRolePermission = (roleId, permissionKey) => {
+    setFormData({
+      ...formData,
+      permisos:
+        selectedRole && selectedRole.id_rol === roleId
+          ? togglePermissionList(formData.permisos, permissionKey)
+          : formData.permisos,
+      rolesPermisos: (formData.rolesPermisos || []).map((role) =>
+        role.id_rol === roleId
+          ? { ...role, permisos: togglePermissionList(role.permisos, permissionKey) }
+          : role
+      )
+    });
   };
 
   return {
@@ -129,8 +185,10 @@ export function useRoles() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    toggleFormRolePermission
   };
 }

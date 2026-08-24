@@ -17,57 +17,65 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           <label className="block text-sm font-medium text-foreground mb-2">Nombre del Servicio</label>
           <input
             type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            placeholder="Ej: Corte Clásico"
             required
           />
         </div>
+
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Categoría</label>
           <select
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+            value={formData.id_categoria_servicio}
+            onChange={(e) => setFormData({ ...formData, id_categoria_servicio: Number(e.target.value) })}
             className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
           >
-            {availableCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
+            {availableCategories.map((cat) => (
+              <option key={cat.id_categoria_servicio} value={cat.id_categoria_servicio}>
+                {cat.nombre}
               </option>
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Descripción</label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-            rows="2"
-          />
-        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Duración (minutos)</label>
             <input
               type="number"
-              value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+              min="1"
+              value={formData.duracion_minutos}
+              onChange={(e) => setFormData({ ...formData, duracion_minutos: parseInt(e.target.value) || 0 })}
               className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Precio</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Precio ($)</label>
             <input
               type="number"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+              min="0"
+              value={formData.precio}
+              onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) || 0 })}
               className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
               required
             />
           </div>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">URL de Imagen (Opcional)</label>
+          <input
+            type="url"
+            value={formData.imagen_url || ""}
+            onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
+            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            placeholder="https://ejemplo.com/servicio.jpg"
+          />
+        </div>
+
         <div className="flex gap-3 pt-4">
           <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
             {isCreate ? "Crear Servicio" : "Guardar Cambios"}

@@ -1,21 +1,30 @@
 import { useState } from "react";
+import { NIVELES_FIDELIDAD } from "../../../../shared/types/database";
 
 const mockClients = [
-  { id: 1, name: "Pedro López", email: "pedro@example.com", phone: "+57 300 123 4567", visits: 12, lastVisit: "2 días", loyalty: "Oro", status: "Activo", createdAt: "2026-01-15" },
-  { id: 2, name: "Ana Martínez", email: "ana@example.com", phone: "+57 301 234 5678", visits: 8, lastVisit: "1 semana", loyalty: "Plata", status: "Activo", createdAt: "2026-02-20" },
-  { id: 3, name: "Roberto Sánchez", email: "roberto@example.com", phone: "+57 302 345 6789", visits: 5, lastVisit: "3 días", loyalty: "Bronce", status: "Activo", createdAt: "2026-03-10" },
-  { id: 4, name: "Laura Gómez", email: "laura@example.com", phone: "+57 303 456 7890", visits: 15, lastVisit: "1 día", loyalty: "Oro", status: "Activo", createdAt: "2026-04-05" },
-  { id: 5, name: "Diego Torres", email: "diego@example.com", phone: "+57 304 567 8901", visits: 3, lastVisit: "2 semanas", loyalty: "Bronce", status: "Inactivo", createdAt: "2026-05-12" }
+  { id_cliente: 1, id_usuario: 4, nombre: "Pedro", apellido: "López", correo: "pedro@example.com", telefono: "+57 300 123 4567", direccion: "Calle 10 # 5-20", nivel_fidelidad: "Oro", estado: 1 },
+  { id_cliente: 2, id_usuario: 8, nombre: "Ana", apellido: "Martínez", correo: "ana.m@example.com", telefono: "+57 301 234 5678", direccion: "Carrera 15 # 45-12", nivel_fidelidad: "Plata", estado: 1 },
+  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "+57 302 345 6789", direccion: "Av. Siempre Viva 123", nivel_fidelidad: "Bronce", estado: 1 },
+  { id_cliente: 4, id_usuario: 10, nombre: "Laura", apellido: "Gómez", correo: "laura@example.com", telefono: "+57 303 456 7890", direccion: "Calle 80 # 20-30", nivel_fidelidad: "Oro", estado: 1 },
+  { id_cliente: 5, id_usuario: 11, nombre: "Diego", apellido: "Torres", correo: "diego.t@example.com", telefono: "+57 304 567 8901", direccion: "Diagonal 40 # 12-50", nivel_fidelidad: "Nuevo", estado: 0 }
 ];
 
-export const availableLoyalties = ["Bronce", "Plata", "Oro"];
+export const availableLoyalties = NIVELES_FIDELIDAD;
 
-const emptyForm = { name: "", email: "", phone: "" };
+const emptyForm = {
+  nombre: "",
+  apellido: "",
+  correo: "",
+  telefono: "",
+  direccion: "",
+  nivel_fidelidad: "Nuevo",
+  id_usuario: null
+};
 
 export function useClients() {
   const [clients, setClients] = useState(mockClients);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("name");
+  const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -34,11 +43,16 @@ export function useClients() {
   };
 
   const filteredClients = clients
-    .filter(
-      (client) =>
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((client) => {
+      const fullName = `${client.nombre} ${client.apellido}`.toLowerCase();
+      const search = searchTerm.toLowerCase();
+      return (
+        fullName.includes(search) ||
+        client.correo.toLowerCase().includes(search) ||
+        (client.telefono || "").includes(search) ||
+        (client.direccion || "").toLowerCase().includes(search)
+      );
+    })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
       const valB = (b[sortField] ?? "").toString().toLowerCase();
@@ -50,16 +64,19 @@ export function useClients() {
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
+    const nextClientId = Math.max(...clients.map((c) => c.id_cliente), 0) + 1;
+    const nextUserId = formData.id_usuario || Math.max(...clients.map((c) => c.id_usuario), 20) + 1;
+
     const newClient = {
-      id: Math.max(...clients.map((c) => c.id), 0) + 1,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      visits: 0,
-      lastVisit: "Nunca",
-      loyalty: "Bronce",
-      status: "Activo",
-      createdAt: new Date().toISOString().split("T")[0]
+      id_cliente: nextClientId,
+      id_usuario: nextUserId,
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      correo: formData.correo,
+      telefono: formData.telefono,
+      direccion: formData.direccion || null,
+      nivel_fidelidad: formData.nivel_fidelidad || "Nuevo",
+      estado: 1
     };
     setClients([...clients, newClient]);
     setShowCreateModal(false);
@@ -70,8 +87,16 @@ export function useClients() {
     if (!selectedClient) return;
     setClients(
       clients.map((client) =>
-        client.id === selectedClient.id
-          ? { ...client, name: formData.name, email: formData.email, phone: formData.phone }
+        client.id_cliente === selectedClient.id_cliente
+          ? {
+              ...client,
+              nombre: formData.nombre,
+              apellido: formData.apellido,
+              correo: formData.correo,
+              telefono: formData.telefono,
+              direccion: formData.direccion || null,
+              nivel_fidelidad: formData.nivel_fidelidad
+            }
           : client
       )
     );
@@ -82,7 +107,7 @@ export function useClients() {
 
   const handleDelete = () => {
     if (!selectedClient) return;
-    setClients(clients.filter((client) => client.id !== selectedClient.id));
+    setClients(clients.filter((client) => client.id_cliente !== selectedClient.id_cliente));
     setShowDeleteModal(false);
     setSelectedClient(null);
   };
@@ -90,14 +115,22 @@ export function useClients() {
   const toggleStatus = (clientId) => {
     setClients(
       clients.map((client) =>
-        client.id === clientId ? { ...client, status: client.status === "Activo" ? "Inactivo" : "Activo" } : client
+        client.id_cliente === clientId ? { ...client, estado: client.estado === 1 ? 0 : 1 } : client
       )
     );
   };
 
   const openEditModal = (client) => {
     setSelectedClient(client);
-    setFormData({ name: client.name, email: client.email, phone: client.phone || "" });
+    setFormData({
+      nombre: client.nombre,
+      apellido: client.apellido,
+      correo: client.correo,
+      telefono: client.telefono || "",
+      direccion: client.direccion || "",
+      nivel_fidelidad: client.nivel_fidelidad || "Nuevo",
+      id_usuario: client.id_usuario
+    });
     setShowEditModal(true);
   };
 
@@ -113,8 +146,8 @@ export function useClients() {
 
   const stats = {
     total: clients.length,
-    newThisMonth: 12,
-    avgRating: 4.8
+    activos: clients.filter((c) => c.estado === 1).length,
+    fidelizados: clients.filter((c) => c.nivel_fidelidad === "Oro" || c.nivel_fidelidad === "Plata").length
   };
 
   return {

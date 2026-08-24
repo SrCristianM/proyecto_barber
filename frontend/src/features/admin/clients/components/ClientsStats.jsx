@@ -1,4 +1,4 @@
-import { Users, Calendar, Star } from "lucide-react";
+import { Users, UserCheck, Award } from "lucide-react";
 
 export default function ClientsStats({ stats }) {
   return (
@@ -8,21 +8,21 @@ export default function ClientsStats({ stats }) {
           <span className="text-sm text-muted-foreground">Total Clientes</span>
           <Users className="h-5 w-5 text-primary" />
         </div>
-        <h3 className="text-3xl font-bold text-foreground">{stats.total}</h3>
+        <h3 className="text-3xl font-bold text-foreground">{stats.total || 0}</h3>
       </div>
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Clientes Nuevos (mes)</span>
-          <Calendar className="h-5 w-5 text-success" />
+          <span className="text-sm text-muted-foreground">Clientes Activos</span>
+          <UserCheck className="h-5 w-5 text-success" />
         </div>
-        <h3 className="text-3xl font-bold text-foreground">{stats.newThisMonth}</h3>
+        <h3 className="text-3xl font-bold text-foreground">{stats.activos || 0}</h3>
       </div>
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Satisfacción Promedio</span>
-          <Star className="h-5 w-5 text-warning fill-warning" />
+          <span className="text-sm text-muted-foreground">Clientes Fidelizados (Oro/Plata)</span>
+          <Award className="h-5 w-5 text-warning" />
         </div>
-        <h3 className="text-3xl font-bold text-foreground">{stats.avgRating}</h3>
+        <h3 className="text-3xl font-bold text-foreground">{stats.fidelizados || 0}</h3>
       </div>
     </div>
   );

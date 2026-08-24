@@ -126,7 +126,7 @@ export default function ServicesPage() {
 
       {showDeleteModal && selectedService && (
         <DeleteConfirmModal
-          serviceName={selectedService.name}
+          serviceName={selectedService.nombre}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

@@ -7,6 +7,7 @@ import DeleteProductModal from "../components/DeleteProductModal";
 
 export default function ProductsPage() {
   const {
+    products,
     searchTerm,
     onSearchChange,
     sortField,
@@ -35,6 +36,7 @@ export default function ProductsPage() {
     handleCreate,
     handleEdit,
     handleDelete,
+    toggleStatus,
     handleExport,
     openEditModal,
     openDetailModal,
@@ -90,15 +92,12 @@ export default function ProductsPage() {
 
         <ProductsTable
           products={paginatedProducts}
-          filteredCount={filteredProducts.length}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          setCurrentPage={setCurrentPage}
+          totalCount={filteredProducts.length}
           sortField={sortField}
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
+          onToggleStatus={toggleStatus}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
@@ -147,7 +146,7 @@ export default function ProductsPage() {
 
       {showDeleteModal && selectedProduct && (
         <DeleteProductModal
-          productName={selectedProduct.name}
+          productName={selectedProduct.nombre}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

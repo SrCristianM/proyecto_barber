@@ -1,13 +1,10 @@
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { DollarSign, Eye, Edit, Trash2 } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
+import { clients } from "../hooks/useSales";
 
 export default function SalesTable({
   sales,
-  filteredCount,
-  currentPage,
-  totalPages,
-  itemsPerPage,
-  setCurrentPage,
+  totalCount,
   sortField,
   sortDir,
   onSort,
@@ -15,6 +12,11 @@ export default function SalesTable({
   onEdit,
   onDelete
 }) {
+  const getClientName = (id_cliente) => {
+    const c = clients.find((client) => client.id_cliente === Number(id_cliente));
+    return c ? c.nombre : "Cliente Desconocido";
+  };
+
   return (
     <>
       <div className="overflow-x-auto">
@@ -22,58 +24,50 @@ export default function SalesTable({
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4">
-                <SortHeader label="Fecha/Hora" field="date" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="ID" field="id_venta" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Cliente" field="client" current={sortField} dir={sortDir} onSort={onSort} />
-              </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Artículos</th>
-              <th className="text-left py-3 px-4">
-                <SortHeader label="Barbero" field="barber" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Fecha" field="fecha" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Método de Pago" field="payment" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Cliente" field="id_cliente" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3 px-4">
+              <th className="text-left py-3 px-4">Artículos / Servicios</th>
+              <th className="text-left py-3 px-4">
                 <SortHeader label="Total" field="total" current={sortField} dir={sortDir} onSort={onSort} />
+              </th>
+              <th className="text-left py-3 px-4">
+                <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {sales.map((sale) => (
-              <tr key={sale.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+              <tr key={sale.id_venta} className="border-b border-border hover:bg-accent/50 transition-colors">
+                <td className="py-4 px-4 font-mono text-sm text-foreground">#{sale.id_venta}</td>
+                <td className="py-4 px-4 text-foreground text-sm">{sale.fecha}</td>
                 <td className="py-4 px-4">
-                  <div className="text-sm">
-                    <p className="font-medium text-foreground">{sale.date}</p>
-                    <p className="text-muted-foreground">{sale.time}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="font-medium text-foreground">{getClientName(sale.id_cliente)}</span>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-foreground font-medium">{sale.client}</td>
-                <td className="py-4 px-4">
-                  <div className="text-sm">
-                    {sale.items.map((item, idx) => (
-                      <p key={idx} className="text-foreground">
-                        {item}
-                      </p>
-                    ))}
-                  </div>
+                <td className="py-4 px-4 text-muted-foreground text-sm">
+                  {(sale.detalles || []).map((d) => d.nombre).join(", ") || "—"}
                 </td>
-                <td className="py-4 px-4 text-foreground">{sale.barber}</td>
+                <td className="py-4 px-4 font-semibold text-foreground">${Number(sale.total).toLocaleString()}</td>
                 <td className="py-4 px-4">
                   <span
                     className={`px-3 py-1 text-sm rounded-full ${
-                      sale.payment === "Efectivo"
-                        ? "bg-success/10 text-success"
-                        : sale.payment === "Tarjeta"
-                        ? "bg-[#DAA520]/10 text-[#DAA520]"
-                        : "bg-warning/10 text-warning"
+                      sale.estado === "Activa" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                     }`}
                   >
-                    {sale.payment}
+                    {sale.estado}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-right font-bold text-foreground text-lg">${sale.total.toLocaleString()}</td>
                 <td className="py-4 px-4">
                   <div className="flex items-center justify-end gap-2">
                     <button onClick={() => onDetail(sale)} className="p-2 hover:bg-background rounded-lg text-foreground" title="Ver detalle">
@@ -95,34 +89,12 @@ export default function SalesTable({
 
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
-          Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredCount)} de {filteredCount} ventas
+          Mostrando {sales.length} de {totalCount} ventas
         </p>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border border-border rounded hover:bg-accent text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Anterior
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded ${
-                currentPage === page ? "bg-primary text-primary-foreground" : "border border-border hover:bg-accent text-foreground"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border border-border rounded hover:bg-accent text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Siguiente
-          </button>
+          <button className="px-3 py-1 border border-border rounded hover:bg-accent text-foreground">Anterior</button>
+          <button className="px-3 py-1 bg-primary text-primary-foreground rounded">1</button>
+          <button className="px-3 py-1 border border-border rounded hover:bg-accent text-foreground">Siguiente</button>
         </div>
       </div>
     </>

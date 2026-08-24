@@ -7,8 +7,8 @@ import PasswordInput from "../components/PasswordInput";
 import AuthButton from "../components/AuthButton";
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contrasena, setContrasena] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
@@ -24,19 +24,23 @@ export default function Login({ onLogin }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput
-          id="email"
+          id="correo"
+          name="correo"
           label="Correo Electrónico"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
           placeholder="correo@ejemplo.com"
+          required
         />
 
         <PasswordInput
-          id="password"
+          id="contrasena"
+          name="contrasena"
           label="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={contrasena}
+          onChange={(e) => setContrasena(e.target.value)}
+          required
         />
 
         <div className="flex items-center justify-between">

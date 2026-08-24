@@ -1,12 +1,15 @@
 import Modal from "../../shared/components/Modal";
 import { useState } from "react";
+import { availableLoyalties } from "../hooks/useClients";
 
 export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    notes: ""
+    nombre: "",
+    apellido: "",
+    correo: "",
+    telefono: "",
+    direccion: "",
+    nivel_fidelidad: "Nuevo"
   });
 
   const handleChange = (e) => {
@@ -20,7 +23,7 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ name: "", email: "", phone: "", notes: "" });
+    setFormData({ nombre: "", apellido: "", correo: "", telefono: "", direccion: "", nivel_fidelidad: "Nuevo" });
   };
 
   if (!isOpen) return null;
@@ -28,27 +31,41 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
   return (
     <Modal title="Crear Nuevo Cliente" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Ej: Juan Pérez"
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
+            <input
+              type="text"
+              name="nombre"
+              value={formData.nombre}
+              onChange={handleChange}
+              placeholder="Ej: Pedro"
+              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Apellido</label>
+            <input
+              type="text"
+              name="apellido"
+              value={formData.apellido}
+              onChange={handleChange}
+              placeholder="Ej: López"
+              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
+              required
+            />
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Correo Electrónico</label>
           <input
             type="email"
-            name="email"
-            value={formData.email}
+            name="correo"
+            value={formData.correo}
             onChange={handleChange}
-            placeholder="Ej: juan@example.com"
+            placeholder="Ej: pedro@example.com"
             className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
             required
           />
@@ -58,25 +75,40 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
           <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
           <input
             type="tel"
-            name="phone"
-            value={formData.phone}
+            name="telefono"
+            value={formData.telefono}
             onChange={handleChange}
             placeholder="Ej: +57 300 123 4567"
             className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
-            required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Notas (Opcional)</label>
-          <textarea
-            name="notes"
-            value={formData.notes}
+          <label className="block text-sm font-medium text-foreground mb-2">Dirección</label>
+          <input
+            type="text"
+            name="direccion"
+            value={formData.direccion}
             onChange={handleChange}
-            placeholder="Ej: Preferencias especiales, alergias, etc."
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground resize-none"
-            rows="4"
+            placeholder="Ej: Calle 10 # 5-20"
+            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2">Nivel de Fidelidad</label>
+          <select
+            name="nivel_fidelidad"
+            value={formData.nivel_fidelidad}
+            onChange={handleChange}
+            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+          >
+            {availableLoyalties.map((loyalty) => (
+              <option key={loyalty} value={loyalty}>
+                {loyalty}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex gap-3 pt-4">

@@ -1,4 +1,4 @@
-import { Edit, Trash2, Star, Eye, Power } from "lucide-react";
+import { User, Eye, Power, Edit, Trash2 } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
 
 export default function ClientsTable({
@@ -19,61 +19,59 @@ export default function ClientsTable({
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4">
-                <SortHeader label="Cliente" field="name" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Cliente" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Contacto" field="email" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Correo" field="correo" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Visitas" field="visits" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Dirección" field="direccion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Fidelidad" field="loyalty" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Fidelidad" field="nivel_fidelidad" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-left py-3 px-4">
-                <SortHeader label="Estado" field="status" current={sortField} dir={sortDir} onSort={onSort} />
+                <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
               <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {clients.map((client) => (
-              <tr key={client.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+              <tr key={client.id_cliente} className="border-b border-border hover:bg-accent/50 transition-colors">
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-semibold text-primary">
-                        {client.name.split(" ").map((n) => n[0]).join("")}
-                      </span>
+                      <User className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{client.name}</p>
-                      <p className="text-sm text-muted-foreground">{client.phone}</p>
+                      <p className="font-medium text-foreground">{client.nombre} {client.apellido}</p>
+                      <p className="text-sm text-muted-foreground">{client.telefono || "Sin teléfono"}</p>
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-foreground">{client.email}</td>
-                <td className="py-4 px-4 font-medium text-foreground">{client.visits}</td>
+                <td className="py-4 px-4 text-muted-foreground">{client.correo}</td>
+                <td className="py-4 px-4 text-foreground">{client.direccion || "—"}</td>
                 <td className="py-4 px-4">
                   <span
                     className={`px-3 py-1 text-sm rounded-full ${
-                      client.loyalty === "Oro"
+                      client.nivel_fidelidad === "Oro"
                         ? "bg-[#DAA520]/10 text-[#DAA520]"
-                        : client.loyalty === "Plata"
+                        : client.nivel_fidelidad === "Plata"
                         ? "bg-muted text-muted-foreground"
                         : "bg-[#CD7F32]/10 text-[#CD7F32]"
                     }`}
                   >
-                    {client.loyalty}
+                    {client.nivel_fidelidad || "Nuevo"}
                   </span>
                 </td>
                 <td className="py-4 px-4">
                   <span
                     className={`px-3 py-1 text-sm rounded-full ${
-                      client.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                      client.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {client.status}
+                    {client.estado === 1 ? "Activo" : "Inactivo"}
                   </span>
                 </td>
                 <td className="py-4 px-4">
@@ -82,9 +80,9 @@ export default function ClientsTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(client.id)}
-                      className={`p-2 hover:bg-background rounded-lg ${client.status === "Activo" ? "text-success" : "text-muted-foreground"}`}
-                      title={client.status === "Activo" ? "Desactivar" : "Activar"}
+                      onClick={() => onToggleStatus(client.id_cliente)}
+                      className={`p-2 hover:bg-background rounded-lg ${client.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      title={client.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />
                     </button>

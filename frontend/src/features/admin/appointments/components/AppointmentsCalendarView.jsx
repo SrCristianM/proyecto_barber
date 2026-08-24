@@ -1,4 +1,25 @@
-export default function AppointmentsCalendarView({ timeSlots, barbers, getAppointmentForSlot }) {
+export default function AppointmentsCalendarView({
+  timeSlots,
+  barbers,
+  getAppointmentForSlot,
+  getClientName,
+  getServiceInfo
+}) {
+  const getStatusBadgeClass = (estado) => {
+    switch (estado) {
+      case "Programada":
+        return "bg-primary/10 border-primary text-primary";
+      case "Completada":
+        return "bg-success/10 border-success text-success";
+      case "Cancelada":
+        return "bg-destructive/10 border-destructive text-destructive";
+      case "Reprogramada":
+        return "bg-warning/10 border-warning text-warning";
+      default:
+        return "bg-muted border-border text-muted-foreground";
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="overflow-x-auto">
@@ -6,9 +27,9 @@ export default function AppointmentsCalendarView({ timeSlots, barbers, getAppoin
           <div className="grid grid-cols-5 gap-2 mb-4">
             <div className="text-sm font-medium text-muted-foreground">Hora</div>
             {barbers.map((barber) => (
-              <div key={barber} className="text-center">
-                <p className="font-semibold text-foreground">{barber.split(" ")[0]}</p>
-                <p className="text-xs text-muted-foreground">{barber.split(" ")[1]}</p>
+              <div key={barber.id_barbero} className="text-center">
+                <p className="font-semibold text-foreground">{barber.nombre.split(" ")[0]}</p>
+                <p className="text-xs text-muted-foreground">{barber.nombre.split(" ")[1] || ""}</p>
               </div>
             ))}
           </div>
@@ -16,27 +37,29 @@ export default function AppointmentsCalendarView({ timeSlots, barbers, getAppoin
           <div className="space-y-2">
             {timeSlots.map((time) => (
               <div key={time} className="grid grid-cols-5 gap-2">
-                <div className="flex items-center text-sm text-muted-foreground py-2">{time}</div>
+                <div className="flex items-center text-sm text-muted-foreground py-2 font-mono">{time}</div>
                 {barbers.map((barber) => {
-                  const appointment = getAppointmentForSlot(barber, time);
+                  const appointment = getAppointmentForSlot(barber.id_barbero, time);
+                  const clientName = appointment && getClientName ? getClientName(appointment.id_cliente) : "";
+                  const serviceInfo = appointment && getServiceInfo ? getServiceInfo(appointment.id_servicio) : null;
+
                   return (
                     <div
-                      key={barber}
+                      key={barber.id_barbero}
                       className={`min-h-[80px] rounded-lg border-2 transition-all ${
                         appointment
-                          ? appointment.status === "Confirmada"
-                            ? "bg-primary/10 border-primary cursor-pointer hover:bg-primary/20"
-                            : appointment.status === "En Proceso"
-                            ? "bg-success/10 border-success cursor-pointer hover:bg-success/20"
-                            : "bg-muted border-border cursor-pointer hover:bg-muted/80"
+                          ? `${getStatusBadgeClass(appointment.estado)} cursor-pointer hover:opacity-90`
                           : "bg-background border-border hover:border-primary cursor-pointer"
                       }`}
                     >
                       {appointment && (
                         <div className="p-2">
-                          <p className="text-sm font-medium text-foreground">{appointment.client}</p>
-                          <p className="text-xs text-muted-foreground">{appointment.service}</p>
-                          <p className="text-xs text-muted-foreground">{appointment.duration} min</p>
+                          <p className="text-sm font-medium text-foreground">{clientName}</p>
+                          <p className="text-xs text-muted-foreground">{serviceInfo?.nombre || "Servicio"}</p>
+                          <p className="text-xs text-muted-foreground">{serviceInfo?.duracion_minutos || 30} min</p>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider block mt-1">
+                            {appointment.estado}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -49,22 +72,26 @@ export default function AppointmentsCalendarView({ timeSlots, barbers, getAppoin
       </div>
 
       <div className="mt-6 p-4 bg-background rounded-lg border border-border">
-        <h3 className="font-semibold text-foreground mb-3">Leyenda</h3>
+        <h3 className="font-semibold text-foreground mb-3">Leyenda de Estados (BD)</h3>
         <div className="flex items-center gap-6 flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-primary/10 border-2 border-primary rounded" />
-            <span className="text-sm text-foreground">Confirmada</span>
+            <div className="w-4 h-4 bg-primary/20 border-2 border-primary rounded" />
+            <span className="text-sm text-foreground">Programada</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-success/10 border-2 border-success rounded" />
-            <span className="text-sm text-foreground">En Proceso</span>
+            <div className="w-4 h-4 bg-success/20 border-2 border-success rounded" />
+            <span className="text-sm text-foreground">Completada</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-muted border-2 border-border rounded" />
-            <span className="text-sm text-foreground">Pendiente</span>
+            <div className="w-4 h-4 bg-warning/20 border-2 border-warning rounded" />
+            <span className="text-sm text-foreground">Reprogramada</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-background border-2 border-border rounded" />
+            <div className="w-4 h-4 bg-destructive/20 border-2 border-destructive rounded" />
+            <span className="text-sm text-foreground">Cancelada</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-background border-2 border-border rounded" />
             <span className="text-sm text-foreground">Disponible</span>
           </div>
         </div>

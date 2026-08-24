@@ -1,50 +1,49 @@
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Clock } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import { barbers } from "../hooks/useSchedules";
 
 export default function ScheduleDetailModal({ schedule, onEdit, onClose }) {
+  const barberName = barbers.find((b) => b.id_barbero === Number(schedule.id_barbero))?.nombre || "Sin Barbero";
+
   return (
     <Modal title="Detalle del Horario" onClose={onClose}>
       <div className="space-y-4">
         <div className="flex items-center justify-center mb-6">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-            <CalendarIcon className="h-12 w-12 text-primary" />
+            <Clock className="h-12 w-12 text-primary" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
+          <div className="col-span-2">
             <label className="block text-sm font-medium text-muted-foreground mb-1">Barbero</label>
-            <p className="text-foreground font-medium">{schedule.barber}</p>
+            <p className="text-foreground font-medium">{barberName}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Día</label>
-            <p className="text-foreground font-medium">{schedule.day}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Hora de Inicio</label>
-            <p className="text-foreground">{schedule.startTime}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Hora de Fin</label>
-            <p className="text-foreground">{schedule.endTime}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Día de la Semana</label>
+            <p className="text-foreground font-medium">{schedule.dia_semana}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                schedule.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                schedule.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
               }`}
             >
-              {schedule.status}
+              {schedule.estado === 1 ? "Activo" : "Inactivo"}
             </span>
           </div>
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Horario</label>
-            <p className="text-foreground">#{schedule.id}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Hora de Inicio</label>
+            <p className="text-foreground font-medium">{schedule.hora_inicio}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Hora de Fin</label>
+            <p className="text-foreground font-medium">{schedule.hora_fin}</p>
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Notas</label>
-            <p className="text-foreground">{schedule.notes || "Sin notas adicionales"}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Horario</label>
+            <p className="text-foreground">#{schedule.id_horario}</p>
           </div>
         </div>
 

@@ -15,10 +15,6 @@ export default function SalesPage() {
     handleSort,
     paginatedSales,
     filteredSales,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
     totalToday,
     totalMonth,
     averageTicket,
@@ -42,7 +38,8 @@ export default function SalesPage() {
     openEditModal,
     openDetailModal,
     openDeleteModal,
-    toggleItem
+    toggleCatalogItem,
+    getClientName
   } = useSales();
 
   return (
@@ -86,11 +83,7 @@ export default function SalesPage() {
 
         <SalesTable
           sales={paginatedSales}
-          filteredCount={filteredSales.length}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          setCurrentPage={setCurrentPage}
+          totalCount={filteredSales.length}
           sortField={sortField}
           sortDir={sortDir}
           onSort={handleSort}
@@ -105,7 +98,7 @@ export default function SalesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onToggleItem={toggleItem}
+          onToggleItem={toggleCatalogItem}
           onSubmit={handleCreate}
           onClose={() => {
             setShowCreateModal(false);
@@ -119,7 +112,7 @@ export default function SalesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onToggleItem={toggleItem}
+          onToggleItem={toggleCatalogItem}
           onSubmit={handleEdit}
           onClose={() => {
             setShowEditModal(false);
@@ -145,7 +138,7 @@ export default function SalesPage() {
 
       {showDeleteModal && selectedSale && (
         <DeleteSaleModal
-          clientName={selectedSale.client}
+          clientName={getClientName(selectedSale.id_cliente)}
           total={selectedSale.total}
           onConfirm={handleDelete}
           onClose={() => {

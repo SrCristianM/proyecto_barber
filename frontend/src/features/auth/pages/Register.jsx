@@ -8,12 +8,12 @@ import AuthButton from "../components/AuthButton";
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    email: "",
-    password: "",
-    confirmPassword: ""
+    nombre: "",
+    apellido: "",
+    telefono: "",
+    correo: "",
+    contrasena: "",
+    confirmarContrasena: ""
   });
   const navigate = useNavigate();
 
@@ -23,10 +23,11 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.contrasena !== formData.confirmarContrasena) {
       alert("Las contraseñas no coinciden");
       return;
     }
+    // Usuario se registra con id_rol = 4 (Cliente) y estado = 1 (Activo)
     navigate("/login");
   };
 
@@ -36,17 +37,64 @@ export default function Register() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormInput id="firstName" name="firstName" label="Nombre" value={formData.firstName} onChange={handleChange} placeholder="Juan" />
-          <FormInput id="lastName" name="lastName" label="Apellido" value={formData.lastName} onChange={handleChange} placeholder="Pérez" />
+          <FormInput
+            id="nombre"
+            name="nombre"
+            label="Nombre"
+            value={formData.nombre}
+            onChange={handleChange}
+            placeholder="Juan"
+            required
+          />
+          <FormInput
+            id="apellido"
+            name="apellido"
+            label="Apellido"
+            value={formData.apellido}
+            onChange={handleChange}
+            placeholder="Pérez"
+            required
+          />
         </div>
 
-        <FormInput id="phone" name="phone" label="Teléfono" type="tel" value={formData.phone} onChange={handleChange} placeholder="+57 300 123 4567" />
+        <FormInput
+          id="telefono"
+          name="telefono"
+          label="Teléfono"
+          type="tel"
+          value={formData.telefono}
+          onChange={handleChange}
+          placeholder="+57 300 123 4567"
+        />
 
-        <FormInput id="email" name="email" label="Correo Electrónico" type="email" value={formData.email} onChange={handleChange} placeholder="correo@ejemplo.com" />
+        <FormInput
+          id="correo"
+          name="correo"
+          label="Correo Electrónico"
+          type="email"
+          value={formData.correo}
+          onChange={handleChange}
+          placeholder="correo@ejemplo.com"
+          required
+        />
 
-        <PasswordInput id="password" name="password" label="Contraseña" value={formData.password} onChange={handleChange} />
+        <PasswordInput
+          id="contrasena"
+          name="contrasena"
+          label="Contraseña"
+          value={formData.contrasena}
+          onChange={handleChange}
+          required
+        />
 
-        <PasswordInput id="confirmPassword" name="confirmPassword" label="Confirmar Contraseña" value={formData.confirmPassword} onChange={handleChange} />
+        <PasswordInput
+          id="confirmarContrasena"
+          name="confirmarContrasena"
+          label="Confirmar Contraseña"
+          value={formData.confirmarContrasena}
+          onChange={handleChange}
+          required
+        />
 
         <AuthButton>Registrarse</AuthButton>
       </form>

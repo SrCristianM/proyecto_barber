@@ -7,7 +7,7 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
         <div className="flex items-center justify-center mb-6">
           <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
             <span className="text-2xl font-semibold text-primary">
-              {client.name.split(" ").map((n) => n[0]).join("")}
+              {`${client.nombre?.[0] || ""}${client.apellido?.[0] || ""}`}
             </span>
           </div>
         </div>
@@ -15,51 +15,51 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre</label>
-            <p className="text-foreground font-medium">{client.name}</p>
+            <p className="text-foreground font-medium">{client.nombre} {client.apellido}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Fidelidad</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                client.loyalty === "Oro"
+                client.nivel_fidelidad === "Oro"
                   ? "bg-[#DAA520]/10 text-[#DAA520]"
-                  : client.loyalty === "Plata"
+                  : client.nivel_fidelidad === "Plata"
                   ? "bg-muted text-muted-foreground"
                   : "bg-[#CD7F32]/10 text-[#CD7F32]"
               }`}
             >
-              {client.loyalty}
+              {client.nivel_fidelidad || "Nuevo"}
             </span>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Correo</label>
-            <p className="text-foreground">{client.email}</p>
+            <p className="text-foreground">{client.correo}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Teléfono</label>
-            <p className="text-foreground">{client.phone || "No especificado"}</p>
+            <p className="text-foreground">{client.telefono || "No especificado"}</p>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Visitas</label>
-            <p className="text-foreground font-medium">{client.visits}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Última Visita</label>
-            <p className="text-foreground">{client.lastVisit}</p>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">Dirección</label>
+            <p className="text-foreground">{client.direccion || "No especificada"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                client.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                client.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
               }`}
             >
-              {client.status}
+              {client.estado === 1 ? "Activo" : "Inactivo"}
             </span>
           </div>
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</label>
-            <p className="text-foreground">{client.createdAt}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Cliente</label>
+            <p className="text-foreground">#{client.id_cliente}</p>
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Usuario Asociado</label>
+            <p className="text-foreground">#{client.id_usuario}</p>
           </div>
         </div>
 

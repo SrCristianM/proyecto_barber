@@ -6,7 +6,7 @@ import FormInput from "../components/FormInput";
 import AuthButton from "../components/AuthButton";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [correo, setCorreo] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e) => {
@@ -24,7 +24,7 @@ export default function ForgotPassword() {
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Correo Enviado</h2>
             <p className="text-muted-foreground">
-              Hemos enviado un enlace de recuperación a <span className="font-medium text-foreground">{email}</span>
+              Hemos enviado un enlace de recuperación a <span className="font-medium text-foreground">{correo}</span>
             </p>
           </div>
 
@@ -59,7 +59,16 @@ export default function ForgotPassword() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormInput id="email" label="Correo Electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" />
+        <FormInput
+          id="correo"
+          name="correo"
+          label="Correo Electrónico"
+          type="email"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
+          placeholder="correo@ejemplo.com"
+          required
+        />
 
         <AuthButton>Enviar Enlace de Recuperación</AuthButton>
       </form>

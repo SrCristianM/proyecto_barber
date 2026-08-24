@@ -126,7 +126,7 @@ export default function BarbersPage() {
 
       {showDeleteModal && selectedBarber && (
         <DeleteConfirmModal
-          barberName={selectedBarber.name}
+          barberName={`${selectedBarber.nombre} ${selectedBarber.apellido}`}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);

@@ -6,45 +6,53 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
     <Modal title="Detalle del Barbero" onClose={onClose}>
       <div className="space-y-4">
         <div className="flex items-center justify-center mb-6">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-            <User className="h-12 w-12 text-primary" />
-          </div>
+          {barber.imagen_url ? (
+            <img
+              src={barber.imagen_url}
+              alt={`${barber.nombre} ${barber.apellido}`}
+              className="w-24 h-24 rounded-full object-cover border-2 border-primary"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+              <User className="h-12 w-12 text-primary" />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre</label>
-            <p className="text-foreground font-medium">{barber.name}</p>
+            <p className="text-foreground font-medium">{barber.nombre} {barber.apellido}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Especialidad</label>
-            <p className="text-foreground font-medium">{barber.specialty}</p>
+            <p className="text-foreground font-medium">{barber.especialidad || "Sin especialidad"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Correo</label>
-            <p className="text-foreground">{barber.email}</p>
+            <p className="text-foreground">{barber.correo}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Teléfono</label>
-            <p className="text-foreground">{barber.phone || "No especificado"}</p>
+            <p className="text-foreground">{barber.telefono || "No especificado"}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
             <span
               className={`inline-block px-3 py-1 text-sm rounded-full ${
-                barber.status === "Activo" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                barber.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
               }`}
             >
-              {barber.status}
+              {barber.estado === 1 ? "Activo" : "Inactivo"}
             </span>
           </div>
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de Creación</label>
-            <p className="text-foreground">{barber.createdAt}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Barbero</label>
+            <p className="text-foreground">#{barber.id_barbero}</p>
           </div>
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Barbero</label>
-            <p className="text-foreground">#{barber.id}</p>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Usuario Asociado</label>
+            <p className="text-foreground">#{barber.id_usuario}</p>
           </div>
         </div>
 

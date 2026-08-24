@@ -4,7 +4,17 @@ import AppointmentsCalendarView from "../components/AppointmentsCalendarView";
 import AppointmentsListView from "../components/AppointmentsListView";
 
 export default function AppointmentsPage() {
-  const { appointments, view, setView, timeSlots, barbers, getAppointmentForSlot } = useAppointments();
+  const {
+    appointments,
+    view,
+    setView,
+    timeSlots,
+    barbers,
+    getAppointmentForSlot,
+    getClientName,
+    getBarberName,
+    getServiceInfo
+  } = useAppointments();
 
   return (
     <div className="space-y-6">
@@ -58,9 +68,16 @@ export default function AppointmentsPage() {
           timeSlots={timeSlots}
           barbers={barbers}
           getAppointmentForSlot={getAppointmentForSlot}
+          getClientName={getClientName}
+          getServiceInfo={getServiceInfo}
         />
       ) : (
-        <AppointmentsListView appointments={appointments} />
+        <AppointmentsListView
+          appointments={appointments}
+          getClientName={getClientName}
+          getBarberName={getBarberName}
+          getServiceInfo={getServiceInfo}
+        />
       )}
     </div>
   );

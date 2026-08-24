@@ -14,10 +14,6 @@ export default function SchedulesPage() {
     handleSort,
     paginatedSchedules,
     filteredSchedules,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
     formData,
     setFormData,
     showCreateModal,
@@ -35,9 +31,11 @@ export default function SchedulesPage() {
     handleEdit,
     handleDelete,
     handleExport,
+    toggleStatus,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    getBarberName
   } = useSchedules();
 
   return (
@@ -79,15 +77,12 @@ export default function SchedulesPage() {
 
         <SchedulesTable
           schedules={paginatedSchedules}
-          filteredCount={filteredSchedules.length}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          setCurrentPage={setCurrentPage}
+          totalCount={filteredSchedules.length}
           sortField={sortField}
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
+          onToggleStatus={toggleStatus}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
@@ -136,8 +131,8 @@ export default function SchedulesPage() {
 
       {showDeleteModal && selectedSchedule && (
         <DeleteScheduleModal
-          barberName={selectedSchedule.barber}
-          day={selectedSchedule.day}
+          barberName={getBarberName(selectedSchedule.id_barbero)}
+          day={selectedSchedule.dia_semana}
           onConfirm={handleDelete}
           onClose={() => {
             setShowDeleteModal(false);
