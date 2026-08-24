@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Plus, Search, Download, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import { useProducts } from "../hooks/useProducts";
 import ProductsTable from "../components/ProductsTable";
 import ProductFormModal from "../components/ProductFormModal";
 import ProductDetailModal from "../components/ProductDetailModal";
-import DeleteProductModal from "../components/DeleteProductModal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
 
 export default function ProductsPage() {
   const {
@@ -15,10 +17,6 @@ export default function ProductsPage() {
     handleSort,
     paginatedProducts,
     filteredProducts,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
     lowStockCount,
     formData,
     setFormData,
@@ -43,49 +41,70 @@ export default function ProductsPage() {
     openDeleteModal
   } = useProducts();
 
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
+
+  const onHandleCreate = () => { handleCreate(); toast.success("Producto creado correctamente"); };
+  const onHandleEdit = () => { handleEdit(); toast.success("Producto actualizado correctamente"); };
+  const onHandleDelete = () => { handleDelete(); toast.success("Producto eliminado correctamente"); };
+  const onToggleStatus = () => {
+    const newState = deactivateTarget?.estado === 1 ? "desactivado" : "activado";
+    toggleStatus(deactivateTarget?.id_producto);
+    toast.success(`Producto ${newState} correctamente`);
+    setShowDeactivateModal(false);
+    setDeactivateTarget(null);
+  };
+
+  const openDeactivateModal = (product) => {
+    setDeactivateTarget(product);
+    setShowDeactivateModal(true);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Productos</h1>
-          <p className="text-muted-foreground">Gestiona tu inventario de productos</p>
+          <h1 className="text-2xl font-bold text-foreground">Productos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu inventario de productos</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           Nuevo Producto
         </button>
       </div>
 
       {lowStockCount > 0 && (
-        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+        <div className="bg-warning/10 border border-warning/20 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-warning shrink-0" />
           <div>
-            <p className="font-medium text-warning">Alerta de Stock</p>
-            <p className="text-sm text-warning/90">Tienes {lowStockCount} productos con stock bajo o agotado</p>
+            <p className="text-sm font-semibold text-warning">Alerta de Stock</p>
+            <p className="text-xs text-warning/80 mt-0.5">
+              {lowStockCount} producto{lowStockCount > 1 ? "s" : ""} con stock bajo o agotado
+            </p>
           </div>
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar productos..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             />
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground"
+            className="ml-auto flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm"
           >
-            <Download className="h-5 w-5" />
+            <Download className="h-4 w-4" />
             Exportar
           </button>
         </div>
@@ -97,7 +116,7 @@ export default function ProductsPage() {
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
-          onToggleStatus={toggleStatus}
+          onToggleStatus={openDeactivateModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
@@ -108,11 +127,8 @@ export default function ProductsPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleCreate}
-          onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
+          onSubmit={onHandleCreate}
+          onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
       )}
 
@@ -121,37 +137,38 @@ export default function ProductsPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleEdit}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedProduct(null);
-            resetForm();
-          }}
+          onSubmit={onHandleEdit}
+          onClose={() => { setShowEditModal(false); setSelectedProduct(null); resetForm(); }}
         />
       )}
 
       {showDetailModal && selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
-          onEdit={() => {
-            setShowDetailModal(false);
-            openEditModal(selectedProduct);
-          }}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedProduct(null);
-          }}
+          onEdit={() => { setShowDetailModal(false); openEditModal(selectedProduct); }}
+          onClose={() => { setShowDetailModal(false); setSelectedProduct(null); }}
         />
       )}
 
       {showDeleteModal && selectedProduct && (
-        <DeleteProductModal
-          productName={selectedProduct.nombre}
-          onConfirm={handleDelete}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedProduct(null);
-          }}
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar este producto?"
+          description={`Se eliminará "${selectedProduct.nombre}" de forma permanente. Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedProduct(null); }}
+        />
+      )}
+
+      {showDeactivateModal && deactivateTarget && (
+        <ConfirmModal
+          variant="deactivate"
+          title={deactivateTarget.estado === 1 ? "¿Desactivar producto?" : "¿Activar producto?"}
+          description={`Esta acción cambiará el estado de "${deactivateTarget.nombre}".`}
+          confirmLabel={deactivateTarget.estado === 1 ? "Desactivar" : "Activar"}
+          onConfirm={onToggleStatus}
+          onClose={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
         />
       )}
     </div>

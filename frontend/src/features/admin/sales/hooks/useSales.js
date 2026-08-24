@@ -305,6 +305,16 @@ export function useSales() {
     setSelectedSale(null);
   };
 
+  const toggleStatus = (saleId) => {
+    setSales(
+      sales.map((sale) =>
+        sale.id_venta === saleId
+          ? { ...sale, estado: sale.estado === "Activa" ? "Anulada" : "Activa" }
+          : sale
+      )
+    );
+  };
+
   const handleExport = () => {
     const headers = ["ID Venta", "Fecha", "Cliente", "Usuario", "Total", "Estado", "Artículos"];
     const csvContent = [
@@ -391,6 +401,7 @@ export function useSales() {
     openDetailModal,
     openDeleteModal,
     toggleCatalogItem,
+    toggleStatus,
     getClientName,
     getUserName
   };

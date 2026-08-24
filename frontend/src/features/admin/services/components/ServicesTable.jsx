@@ -81,8 +81,8 @@ export default function ServicesTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(service.id_servicio)}
-                      className={`p-2 hover:bg-background rounded-lg ${service.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      onClick={() => onToggleStatus(service)}
+                      className={`p-2 hover:bg-background rounded-lg transition-colors ${service.estado === 1 ? "text-success" : "text-muted-foreground"}`}
                       title={service.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />

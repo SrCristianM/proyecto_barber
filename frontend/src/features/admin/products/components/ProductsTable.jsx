@@ -93,8 +93,8 @@ export default function ProductsTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(product.id_producto)}
-                      className={`p-2 hover:bg-background rounded-lg ${product.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      onClick={() => onToggleStatus(product)}
+                      className={`p-2 hover:bg-background rounded-lg transition-colors ${product.estado === 1 ? "text-success" : "text-muted-foreground"}`}
                       title={product.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />

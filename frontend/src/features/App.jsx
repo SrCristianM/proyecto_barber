@@ -1,5 +1,6 @@
 import { BrowserRouter } from "react-router";
 import { useState } from "react";
+import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes.jsx";
 
 export default function App() {
@@ -16,6 +17,17 @@ export default function App() {
           onLogin={() => setIsAuthenticated(true)}
         />
       </BrowserRouter>
+      <Toaster
+        position="top-right"
+        richColors
+        toastOptions={{
+          style: {
+            background: "var(--popover)",
+            color: "var(--popover-foreground)",
+            border: "1px solid var(--border)"
+          }
+        }}
+      />
     </div>
   );
 }

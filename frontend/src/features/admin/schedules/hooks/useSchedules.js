@@ -9,14 +9,12 @@ const mockBarbersList = [
 ];
 
 const mockSchedules = [
-  { id_horario: 1, id_barbero: 1, dia_semana: "Lunes", hora_inicio: "09:00:00", hora_fin: "18:00:00", estado: 1 },
-  { id_horario: 2, id_barbero: 1, dia_semana: "Martes", hora_inicio: "09:00:00", hora_fin: "18:00:00", estado: 1 },
-  { id_horario: 3, id_barbero: 1, dia_semana: "Miercoles", hora_inicio: "09:00:00", hora_fin: "17:00:00", estado: 1 },
-  { id_horario: 4, id_barbero: 2, dia_semana: "Lunes", hora_inicio: "10:00:00", hora_fin: "19:00:00", estado: 1 },
-  { id_horario: 5, id_barbero: 2, dia_semana: "Martes", hora_inicio: "10:00:00", hora_fin: "19:00:00", estado: 1 },
-  { id_horario: 6, id_barbero: 3, dia_semana: "Lunes", hora_inicio: "08:00:00", hora_fin: "16:00:00", estado: 1 },
-  { id_horario: 7, id_barbero: 3, dia_semana: "Sabado", hora_inicio: "09:00:00", hora_fin: "14:00:00", estado: 1 },
-  { id_horario: 8, id_barbero: 4, dia_semana: "Viernes", hora_inicio: "14:00:00", hora_fin: "20:00:00", estado: 0 }
+  { id_horario: 1, id_barbero: 1, dias_semana: ["Lunes", "Martes"], hora_inicio: "09:00:00", hora_fin: "18:00:00", estado: 1 },
+  { id_horario: 2, id_barbero: 1, dias_semana: ["Miercoles", "Jueves"], hora_inicio: "09:00:00", hora_fin: "17:00:00", estado: 1 },
+  { id_horario: 3, id_barbero: 2, dias_semana: ["Lunes", "Martes", "Viernes"], hora_inicio: "10:00:00", hora_fin: "19:00:00", estado: 1 },
+  { id_horario: 4, id_barbero: 3, dias_semana: ["Lunes"], hora_inicio: "08:00:00", hora_fin: "16:00:00", estado: 1 },
+  { id_horario: 5, id_barbero: 3, dias_semana: ["Sabado"], hora_inicio: "09:00:00", hora_fin: "14:00:00", estado: 1 },
+  { id_horario: 6, id_barbero: 4, dias_semana: ["Viernes", "Sabado"], hora_inicio: "14:00:00", hora_fin: "20:00:00", estado: 0 }
 ];
 
 export const barbers = mockBarbersList;
@@ -24,9 +22,11 @@ export const daysOfWeek = DIAS_SEMANA;
 
 const emptyForm = {
   id_barbero: 1,
-  dia_semana: "Lunes",
+  dias_semana: ["Lunes"],
   hora_inicio: "09:00",
-  hora_fin: "18:00"
+  hora_fin: "18:00",
+  fecha_inicio: null,
+  fecha_fin: null
 };
 
 export function useSchedules() {
@@ -38,6 +38,7 @@ export function useSchedules() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
@@ -60,9 +61,10 @@ export function useSchedules() {
   const filteredSchedules = schedules
     .filter((schedule) => {
       const barberName = getBarberName(schedule.id_barbero);
+      const dias = (schedule.dias_semana || []).join(", ");
       return (
         barberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        schedule.dia_semana.toLowerCase().includes(searchTerm.toLowerCase())
+        dias.toLowerCase().includes(searchTerm.toLowerCase())
       );
     })
     .sort((a, b) => {
@@ -79,12 +81,16 @@ export function useSchedules() {
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
+    const dias = formData.dias_semana || [];
+    if (dias.length === 0) return;
     const newSchedule = {
       id_horario: Math.max(...schedules.map((s) => s.id_horario), 0) + 1,
       id_barbero: Number(formData.id_barbero),
-      dia_semana: formData.dia_semana,
+      dias_semana: dias,
       hora_inicio: formData.hora_inicio.length === 5 ? `${formData.hora_inicio}:00` : formData.hora_inicio,
       hora_fin: formData.hora_fin.length === 5 ? `${formData.hora_fin}:00` : formData.hora_fin,
+      fecha_inicio: formData.fecha_inicio || null,
+      fecha_fin: formData.fecha_fin || null,
       estado: 1
     };
     setSchedules([...schedules, newSchedule]);
@@ -100,9 +106,11 @@ export function useSchedules() {
           ? {
               ...schedule,
               id_barbero: Number(formData.id_barbero),
-              dia_semana: formData.dia_semana,
+              dias_semana: formData.dias_semana || [],
               hora_inicio: formData.hora_inicio.length === 5 ? `${formData.hora_inicio}:00` : formData.hora_inicio,
-              hora_fin: formData.hora_fin.length === 5 ? `${formData.hora_fin}:00` : formData.hora_fin
+              hora_fin: formData.hora_fin.length === 5 ? `${formData.hora_fin}:00` : formData.hora_fin,
+              fecha_inicio: formData.fecha_inicio || null,
+              fecha_fin: formData.fecha_fin || null
             }
           : schedule
       )
@@ -128,11 +136,11 @@ export function useSchedules() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Barbero", "Día", "Hora Inicio", "Hora Fin", "Estado"];
+    const headers = ["ID", "Barbero", "Días", "Hora Inicio", "Hora Fin", "Estado"];
     const csvContent = [
       headers.join(","),
       ...filteredSchedules.map(
-        (s) => `${s.id_horario},"${getBarberName(s.id_barbero)}","${s.dia_semana}","${s.hora_inicio}","${s.hora_fin}","${s.estado === 1 ? "Activo" : "Inactivo"}"`
+        (s) => `${s.id_horario},"${getBarberName(s.id_barbero)}","${(s.dias_semana || []).join(", ")}","${s.hora_inicio}","${s.hora_fin}","${s.estado === 1 ? "Activo" : "Inactivo"}"`
       )
     ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -146,9 +154,11 @@ export function useSchedules() {
     setSelectedSchedule(schedule);
     setFormData({
       id_barbero: schedule.id_barbero,
-      dia_semana: schedule.dia_semana,
+      dias_semana: schedule.dias_semana || [],
       hora_inicio: schedule.hora_inicio.substring(0, 5),
-      hora_fin: schedule.hora_fin.substring(0, 5)
+      hora_fin: schedule.hora_fin.substring(0, 5),
+      fecha_inicio: schedule.fecha_inicio || null,
+      fecha_fin: schedule.fecha_fin || null
     });
     setShowEditModal(true);
   };
@@ -161,6 +171,11 @@ export function useSchedules() {
   const openDeleteModal = (schedule) => {
     setSelectedSchedule(schedule);
     setShowDeleteModal(true);
+  };
+
+  const openDeactivateModal = (schedule) => {
+    setSelectedSchedule(schedule);
+    setShowDeactivateModal(true);
   };
 
   const onSearchChange = (value) => {
@@ -190,6 +205,8 @@ export function useSchedules() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedSchedule,
     setSelectedSchedule,
     resetForm,
@@ -201,6 +218,7 @@ export function useSchedules() {
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     getBarberName
   };
 }

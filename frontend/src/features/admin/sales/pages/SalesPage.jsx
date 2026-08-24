@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Plus, Search, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useSales } from "../hooks/useSales";
 import SalesStats from "../components/SalesStats";
 import SalesTable from "../components/SalesTable";
 import SaleFormModal from "../components/SaleFormModal";
 import SaleDetailModal from "../components/SaleDetailModal";
-import DeleteSaleModal from "../components/DeleteSaleModal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
 
 export default function SalesPage() {
   const {
@@ -39,44 +41,63 @@ export default function SalesPage() {
     openDetailModal,
     openDeleteModal,
     toggleCatalogItem,
+    toggleStatus,
     getClientName
   } = useSales();
 
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
+
+  const onHandleCreate = () => { handleCreate(); toast.success("Venta registrada correctamente"); };
+  const onHandleEdit = () => { handleEdit(); toast.success("Venta actualizada correctamente"); };
+  const onHandleDelete = () => { handleDelete(); toast.success("Venta eliminada correctamente"); };
+  const onAnularVenta = () => {
+    toggleStatus(deactivateTarget?.id_venta);
+    toast.success(`Venta #${deactivateTarget?.id_venta} anulada correctamente`);
+    setShowDeactivateModal(false);
+    setDeactivateTarget(null);
+  };
+
+  const openDeactivateModal = (sale) => {
+    setDeactivateTarget(sale);
+    setShowDeactivateModal(true);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Ventas</h1>
-          <p className="text-muted-foreground">Gestiona las ventas y facturación</p>
+          <h1 className="text-2xl font-bold text-foreground">Ventas</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           Nueva Venta
         </button>
       </div>
 
       <SalesStats totalToday={totalToday} totalMonth={totalMonth} averageTicket={averageTicket} />
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar ventas..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             />
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground"
+            className="ml-auto flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm"
           >
-            <Download className="h-5 w-5" />
+            <Download className="h-4 w-4" />
             Exportar
           </button>
         </div>
@@ -90,6 +111,7 @@ export default function SalesPage() {
           onDetail={openDetailModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
+          onDeactivate={openDeactivateModal}
         />
       </div>
 
@@ -99,11 +121,8 @@ export default function SalesPage() {
           formData={formData}
           setFormData={setFormData}
           onToggleItem={toggleCatalogItem}
-          onSubmit={handleCreate}
-          onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
+          onSubmit={onHandleCreate}
+          onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
       )}
 
@@ -113,38 +132,38 @@ export default function SalesPage() {
           formData={formData}
           setFormData={setFormData}
           onToggleItem={toggleCatalogItem}
-          onSubmit={handleEdit}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedSale(null);
-            resetForm();
-          }}
+          onSubmit={onHandleEdit}
+          onClose={() => { setShowEditModal(false); setSelectedSale(null); resetForm(); }}
         />
       )}
 
       {showDetailModal && selectedSale && (
         <SaleDetailModal
           sale={selectedSale}
-          onEdit={() => {
-            setShowDetailModal(false);
-            openEditModal(selectedSale);
-          }}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedSale(null);
-          }}
+          onEdit={() => { setShowDetailModal(false); openEditModal(selectedSale); }}
+          onClose={() => { setShowDetailModal(false); setSelectedSale(null); }}
         />
       )}
 
       {showDeleteModal && selectedSale && (
-        <DeleteSaleModal
-          clientName={getClientName(selectedSale.id_cliente)}
-          total={selectedSale.total}
-          onConfirm={handleDelete}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedSale(null);
-          }}
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar esta venta?"
+          description={`Se eliminará la venta #${selectedSale.id_venta} de ${getClientName(selectedSale.id_cliente)} por $${Number(selectedSale.total).toLocaleString()} de forma permanente.`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedSale(null); }}
+        />
+      )}
+
+      {showDeactivateModal && deactivateTarget && (
+        <ConfirmModal
+          variant="deactivate"
+          title="¿Anular esta venta?"
+          description={`La venta #${deactivateTarget.id_venta} de ${getClientName(deactivateTarget.id_cliente)} por $${Number(deactivateTarget.total).toLocaleString()} será marcada como Anulada.`}
+          confirmLabel="Anular Venta"
+          onConfirm={onAnularVenta}
+          onClose={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
         />
       )}
     </div>

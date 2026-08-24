@@ -1,9 +1,10 @@
 import { Plus, Search, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useSchedules } from "../hooks/useSchedules";
 import SchedulesTable from "../components/SchedulesTable";
 import ScheduleFormModal from "../components/ScheduleFormModal";
 import ScheduleDetailModal from "../components/ScheduleDetailModal";
-import DeleteScheduleModal from "../components/DeleteScheduleModal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
 
 export default function SchedulesPage() {
   const {
@@ -24,6 +25,8 @@ export default function SchedulesPage() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedSchedule,
     setSelectedSchedule,
     resetForm,
@@ -35,42 +38,66 @@ export default function SchedulesPage() {
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     getBarberName
   } = useSchedules();
 
+  const onHandleCreate = () => {
+    handleCreate();
+    toast.success("Horario creado correctamente");
+  };
+
+  const onHandleEdit = () => {
+    handleEdit();
+    toast.success("Horario actualizado correctamente");
+  };
+
+  const onHandleDelete = () => {
+    handleDelete();
+    toast.success("Horario eliminado correctamente");
+  };
+
+  const onToggleStatus = () => {
+    const newState = selectedSchedule?.estado === 1 ? "desactivado" : "activado";
+    toggleStatus(selectedSchedule?.id_horario);
+    toast.success(`Horario ${newState} correctamente`);
+    setShowDeactivateModal(false);
+    setSelectedSchedule(null);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Horarios</h1>
-          <p className="text-muted-foreground">Gestiona los horarios de disponibilidad</p>
+          <h1 className="text-2xl font-bold text-foreground">Horarios</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona los horarios de disponibilidad</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           Nuevo Horario
         </button>
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar horarios..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             />
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground"
+            className="ml-auto flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm"
           >
-            <Download className="h-5 w-5" />
+            <Download className="h-4 w-4" />
             Exportar
           </button>
         </div>
@@ -82,9 +109,10 @@ export default function SchedulesPage() {
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
-          onToggleStatus={toggleStatus}
+          onToggleStatus={openDeactivateModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
+          getBarberName={getBarberName}
         />
       </div>
 
@@ -93,11 +121,8 @@ export default function SchedulesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleCreate}
-          onClose={() => {
-            setShowCreateModal(false);
-            resetForm();
-          }}
+          onSubmit={onHandleCreate}
+          onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
       )}
 
@@ -106,38 +131,38 @@ export default function SchedulesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleEdit}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedSchedule(null);
-            resetForm();
-          }}
+          onSubmit={onHandleEdit}
+          onClose={() => { setShowEditModal(false); setSelectedSchedule(null); resetForm(); }}
         />
       )}
 
       {showDetailModal && selectedSchedule && (
         <ScheduleDetailModal
           schedule={selectedSchedule}
-          onEdit={() => {
-            setShowDetailModal(false);
-            openEditModal(selectedSchedule);
-          }}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedSchedule(null);
-          }}
+          onEdit={() => { setShowDetailModal(false); openEditModal(selectedSchedule); }}
+          onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
         />
       )}
 
       {showDeleteModal && selectedSchedule && (
-        <DeleteScheduleModal
-          barberName={getBarberName(selectedSchedule.id_barbero)}
-          day={selectedSchedule.dia_semana}
-          onConfirm={handleDelete}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setSelectedSchedule(null);
-          }}
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar este horario?"
+          description={`Se eliminará el horario de ${getBarberName(selectedSchedule.id_barbero)} — ${(selectedSchedule.dias_semana || []).join(", ")}.`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedSchedule(null); }}
+        />
+      )}
+
+      {showDeactivateModal && selectedSchedule && (
+        <ConfirmModal
+          variant="deactivate"
+          title={selectedSchedule.estado === 1 ? "¿Desactivar este horario?" : "¿Activar este horario?"}
+          description="Esta acción cambiará el estado del horario seleccionado."
+          confirmLabel={selectedSchedule.estado === 1 ? "Desactivar" : "Activar"}
+          onConfirm={onToggleStatus}
+          onClose={() => { setShowDeactivateModal(false); setSelectedSchedule(null); }}
         />
       )}
     </div>

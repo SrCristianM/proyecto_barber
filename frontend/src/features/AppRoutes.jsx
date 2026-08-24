@@ -9,6 +9,7 @@ import ProductsPage from "./admin/products/pages/ProductsPage";
 import ClientsPage from "./admin/clients/pages/ClientsPage";
 import AppointmentsPage from "./admin/appointments/pages/AppointmentsPage";
 import SalesPage from "./admin/sales/pages/SalesPage";
+import SettingsPage from "./admin/settings/pages/SettingsPage";
 
 import LandingPage from "./landing/pages/LandingPage";
 import Login from "./auth/pages/Login";
@@ -42,6 +43,7 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin 
         <Route path="clients" element={<ClientsPage />} />
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="sales" element={<SalesPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );
