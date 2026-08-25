@@ -43,7 +43,7 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin 
         <Route path="clients" element={<ClientsPage />} />
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="sales" element={<SalesPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings" element={<SettingsPage isDark={isDark} setIsDark={setIsDark} />} />
       </Route>
     </Routes>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Store,
   Bell,
@@ -11,7 +11,8 @@ import {
   Mail,
   MapPin,
   Save,
-  ChevronRight
+  ChevronRight,
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,41 +54,85 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-export default function SettingsPage() {
+const STORAGE_KEY = "barber_settings";
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+const DEFAULT_BUSINESS = {
+  nombre: "BarberShop Pro",
+  telefono: "+57 300 123 4567",
+  correo: "contacto@barbershoppro.com",
+  direccion: "Calle 50 #12-34, Bogotá",
+  horario_apertura: "08:00",
+  horario_cierre: "20:00",
+  zona_horaria: "America/Bogota"
+};
+
+const DEFAULT_NOTIFICATIONS = {
+  cita_nueva: true,
+  cita_cancelada: true,
+  recordatorio_email: false,
+  recordatorio_sms: false,
+  stock_bajo: true,
+  reporte_diario: false
+};
+
+const DEFAULT_SYSTEM = {
+  idioma: "es",
+  modo_oscuro: false,
+  compacto: false,
+  animaciones: true,
+  sesion_timeout: "60"
+};
+
+export default function SettingsPage({ isDark, setIsDark }) {
   const [activeSection, setActiveSection] = useState("business");
+  const [hasUnsaved, setHasUnsaved] = useState(false);
 
-  // Estado del negocio
-  const [business, setBusiness] = useState({
-    nombre: "BarberShop Pro",
-    telefono: "+57 300 123 4567",
-    correo: "contacto@barbershoppro.com",
-    direccion: "Calle 50 #12-34, Bogotá",
-    horario_apertura: "08:00",
-    horario_cierre: "20:00",
-    zona_horaria: "America/Bogota"
-  });
+  const saved = loadSettings();
 
-  // Estado de notificaciones
-  const [notifications, setNotifications] = useState({
-    cita_nueva: true,
-    cita_cancelada: true,
-    recordatorio_email: false,
-    recordatorio_sms: false,
-    stock_bajo: true,
-    reporte_diario: false
-  });
+  const [business, setBusiness] = useState(saved?.business ?? DEFAULT_BUSINESS);
+  const [notifications, setNotifications] = useState(saved?.notifications ?? DEFAULT_NOTIFICATIONS);
+  const [system, setSystem] = useState(saved?.system ?? DEFAULT_SYSTEM);
 
-  // Estado del sistema
-  const [system, setSystem] = useState({
-    idioma: "es",
-    modo_oscuro: false,
-    compacto: false,
-    animaciones: true,
-    sesion_timeout: "60"
-  });
+  // Detectar cambios sin guardar
+  const markDirty = () => setHasUnsaved(true);
+
+  const updateBusiness = (v) => { setBusiness(v); markDirty(); };
+  const updateNotifications = (v) => { setNotifications(v); markDirty(); };
+  const updateSystem = (v) => {
+    setSystem(v);
+    markDirty();
+    // Sincronizar dark mode con el sistema real
+    if (v.modo_oscuro !== system.modo_oscuro) {
+      setIsDark?.(v.modo_oscuro);
+    }
+  };
+
+  // Al montar, sincronizar modo oscuro guardado
+  useEffect(() => {
+    if (saved?.system?.modo_oscuro !== undefined) {
+      setIsDark?.(saved.system.modo_oscuro);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = () => {
-    toast.success("Configuración guardada correctamente");
+    const payload = { business, notifications, system };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      setHasUnsaved(false);
+      toast.success("Configuración guardada correctamente");
+    } catch {
+      toast.error("Error al guardar la configuración");
+    }
   };
 
   return (
@@ -98,13 +143,21 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Personaliza el sistema según tus necesidades</p>
         </div>
-        <button
-          onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
-        >
-          <Save className="h-4 w-4" />
-          Guardar Cambios
-        </button>
+        <div className="flex items-center gap-3">
+          {hasUnsaved && (
+            <span className="text-xs text-warning font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-warning rounded-full animate-pulse" />
+              Cambios sin guardar
+            </span>
+          )}
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          >
+            <Save className="h-4 w-4" />
+            Guardar Cambios
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-5">
@@ -152,7 +205,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={business.nombre}
-                    onChange={(e) => setBusiness({ ...business, nombre: e.target.value })}
+                    onChange={(e) => updateBusiness({ ...business, nombre: e.target.value })}
                     className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                   />
                 </div>
@@ -166,7 +219,7 @@ export default function SettingsPage() {
                     <input
                       type="tel"
                       value={business.telefono}
-                      onChange={(e) => setBusiness({ ...business, telefono: e.target.value })}
+                      onChange={(e) => updateBusiness({ ...business, telefono: e.target.value })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     />
                   </div>
@@ -178,7 +231,7 @@ export default function SettingsPage() {
                     <input
                       type="email"
                       value={business.correo}
-                      onChange={(e) => setBusiness({ ...business, correo: e.target.value })}
+                      onChange={(e) => updateBusiness({ ...business, correo: e.target.value })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     />
                   </div>
@@ -192,7 +245,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     value={business.direccion}
-                    onChange={(e) => setBusiness({ ...business, direccion: e.target.value })}
+                    onChange={(e) => updateBusiness({ ...business, direccion: e.target.value })}
                     className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                   />
                 </div>
@@ -206,7 +259,7 @@ export default function SettingsPage() {
                     <input
                       type="time"
                       value={business.horario_apertura}
-                      onChange={(e) => setBusiness({ ...business, horario_apertura: e.target.value })}
+                      onChange={(e) => updateBusiness({ ...business, horario_apertura: e.target.value })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     />
                   </div>
@@ -218,7 +271,7 @@ export default function SettingsPage() {
                     <input
                       type="time"
                       value={business.horario_cierre}
-                      onChange={(e) => setBusiness({ ...business, horario_cierre: e.target.value })}
+                      onChange={(e) => updateBusiness({ ...business, horario_cierre: e.target.value })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     />
                   </div>
@@ -229,7 +282,7 @@ export default function SettingsPage() {
                     </label>
                     <select
                       value={business.zona_horaria}
-                      onChange={(e) => setBusiness({ ...business, zona_horaria: e.target.value })}
+                      onChange={(e) => updateBusiness({ ...business, zona_horaria: e.target.value })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     >
                       <option value="America/Bogota">Bogotá (UTC-5)</option>
@@ -252,24 +305,44 @@ export default function SettingsPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Citas</p>
                 <SettingRow label="Nueva cita agendada" description="Notificar cuando un cliente agende una nueva cita">
-                  <Toggle checked={notifications.cita_nueva} onChange={(v) => setNotifications({ ...notifications, cita_nueva: v })} />
+                  <Toggle checked={notifications.cita_nueva} onChange={(v) => updateNotifications({ ...notifications, cita_nueva: v })} />
                 </SettingRow>
                 <SettingRow label="Cita cancelada" description="Notificar cuando una cita sea cancelada o reprogramada">
-                  <Toggle checked={notifications.cita_cancelada} onChange={(v) => setNotifications({ ...notifications, cita_cancelada: v })} />
+                  <Toggle checked={notifications.cita_cancelada} onChange={(v) => updateNotifications({ ...notifications, cita_cancelada: v })} />
                 </SettingRow>
-                <SettingRow label="Recordatorio por email" description="Enviar recordatorios automáticos 24h antes de la cita">
-                  <Toggle checked={notifications.recordatorio_email} onChange={(v) => setNotifications({ ...notifications, recordatorio_email: v })} />
+                <SettingRow
+                  label="Recordatorio por email"
+                  description={
+                    <span className="flex items-center gap-1">
+                      Enviar recordatorios automáticos 24h antes
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted rounded text-[10px] text-muted-foreground">
+                        <Info className="h-3 w-3" /> Requiere backend
+                      </span>
+                    </span>
+                  }
+                >
+                  <Toggle checked={notifications.recordatorio_email} onChange={(v) => updateNotifications({ ...notifications, recordatorio_email: v })} />
                 </SettingRow>
-                <SettingRow label="Recordatorio por SMS" description="Enviar SMS de recordatorio al cliente">
-                  <Toggle checked={notifications.recordatorio_sms} onChange={(v) => setNotifications({ ...notifications, recordatorio_sms: v })} />
+                <SettingRow
+                  label="Recordatorio por SMS"
+                  description={
+                    <span className="flex items-center gap-1">
+                      Enviar SMS de recordatorio al cliente
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted rounded text-[10px] text-muted-foreground">
+                        <Info className="h-3 w-3" /> Requiere backend
+                      </span>
+                    </span>
+                  }
+                >
+                  <Toggle checked={notifications.recordatorio_sms} onChange={(v) => updateNotifications({ ...notifications, recordatorio_sms: v })} />
                 </SettingRow>
 
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mt-5 mb-2">Inventario y Reportes</p>
                 <SettingRow label="Alerta de stock bajo" description="Notificar cuando un producto tenga menos de 5 unidades">
-                  <Toggle checked={notifications.stock_bajo} onChange={(v) => setNotifications({ ...notifications, stock_bajo: v })} />
+                  <Toggle checked={notifications.stock_bajo} onChange={(v) => updateNotifications({ ...notifications, stock_bajo: v })} />
                 </SettingRow>
                 <SettingRow label="Reporte diario" description="Recibir un resumen de ventas al final del día">
-                  <Toggle checked={notifications.reporte_diario} onChange={(v) => setNotifications({ ...notifications, reporte_diario: v })} />
+                  <Toggle checked={notifications.reporte_diario} onChange={(v) => updateNotifications({ ...notifications, reporte_diario: v })} />
                 </SettingRow>
               </div>
             </div>
@@ -284,23 +357,26 @@ export default function SettingsPage() {
               <SettingRow label="Modo Oscuro" description="Activar el tema oscuro en toda la interfaz">
                 <div className="flex items-center gap-2">
                   <Sun className="h-4 w-4 text-muted-foreground" />
-                  <Toggle checked={system.modo_oscuro} onChange={(v) => setSystem({ ...system, modo_oscuro: v })} />
+                  <Toggle
+                    checked={system.modo_oscuro}
+                    onChange={(v) => updateSystem({ ...system, modo_oscuro: v })}
+                  />
                   <Moon className="h-4 w-4 text-muted-foreground" />
                 </div>
               </SettingRow>
 
               <SettingRow label="Vista Compacta" description="Reducir el espaciado para ver más información en pantalla">
-                <Toggle checked={system.compacto} onChange={(v) => setSystem({ ...system, compacto: v })} />
+                <Toggle checked={system.compacto} onChange={(v) => updateSystem({ ...system, compacto: v })} />
               </SettingRow>
 
               <SettingRow label="Animaciones" description="Habilitar transiciones y animaciones de la interfaz">
-                <Toggle checked={system.animaciones} onChange={(v) => setSystem({ ...system, animaciones: v })} />
+                <Toggle checked={system.animaciones} onChange={(v) => updateSystem({ ...system, animaciones: v })} />
               </SettingRow>
 
               <SettingRow label="Idioma del sistema">
                 <select
                   value={system.idioma}
-                  onChange={(e) => setSystem({ ...system, idioma: e.target.value })}
+                  onChange={(e) => updateSystem({ ...system, idioma: e.target.value })}
                   className="px-3 py-1.5 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                 >
                   <option value="es">Español</option>
@@ -312,7 +388,7 @@ export default function SettingsPage() {
               <SettingRow label="Tiempo de sesión" description="Cerrar sesión automáticamente tras inactividad">
                 <select
                   value={system.sesion_timeout}
-                  onChange={(e) => setSystem({ ...system, sesion_timeout: e.target.value })}
+                  onChange={(e) => updateSystem({ ...system, sesion_timeout: e.target.value })}
                   className="px-3 py-1.5 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                 >
                   <option value="15">15 minutos</option>

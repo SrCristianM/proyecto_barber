@@ -1,4 +1,4 @@
-import { Plus, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useAppointments } from "../hooks/useAppointments";
 import AppointmentsCalendarView from "../components/AppointmentsCalendarView";
@@ -7,9 +7,15 @@ import AppointmentFormModal from "../components/AppointmentFormModal";
 
 export default function AppointmentsPage() {
   const {
-    appointments,
+    appointmentsForDate,
     view,
     setView,
+    selectedDate,
+    isToday,
+    goToPrevDay,
+    goToNextDay,
+    goToToday,
+    formatDateDisplay,
     timeSlots,
     barbers,
     clients,
@@ -28,6 +34,7 @@ export default function AppointmentsPage() {
     handleCreate,
     handleEdit,
     openCreateModal,
+    openCreateFromSlot,
     openEditModal
   } = useAppointments();
 
@@ -58,9 +65,10 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
-      {/* Controles de vista y navegación */}
+      {/* Controles: vista + navegación de fecha */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg p-1">
+        {/* Toggle vista */}
+        <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
           <button
             onClick={() => setView("calendar")}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
@@ -79,32 +87,57 @@ export default function AppointmentsPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="p-2 hover:bg-accent rounded-lg border border-border transition-colors">
+        {/* Navegación de fecha */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToPrevDay}
+            className="p-2 hover:bg-accent rounded-lg border border-border transition-colors"
+            title="Día anterior"
+          >
             <ChevronLeft className="h-4 w-4 text-foreground" />
           </button>
-          <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
-            <CalendarIcon className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Lunes, 2 Jun 2026</span>
+
+          <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg min-w-[220px] justify-center">
+            <CalendarIcon className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-sm font-medium text-foreground capitalize">
+              {formatDateDisplay(selectedDate)}
+            </span>
           </div>
-          <button className="p-2 hover:bg-accent rounded-lg border border-border transition-colors">
+
+          <button
+            onClick={goToNextDay}
+            className="p-2 hover:bg-accent rounded-lg border border-border transition-colors"
+            title="Día siguiente"
+          >
             <ChevronRight className="h-4 w-4 text-foreground" />
           </button>
+
+          {!isToday && (
+            <button
+              onClick={goToToday}
+              className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors border border-primary/20"
+            >
+              Hoy
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Vistas */}
+      {/* Vista calendario */}
       {view === "calendar" ? (
         <AppointmentsCalendarView
           timeSlots={timeSlots}
           barbers={barbers}
+          selectedDate={selectedDate}
           getAppointmentForSlot={getAppointmentForSlot}
           getClientName={getClientName}
           getServiceInfo={getServiceInfo}
+          onSlotClick={(barber, time) => openCreateFromSlot(barber, time)}
+          onAppointmentClick={(apt) => openEditModal(apt)}
         />
       ) : (
         <AppointmentsListView
-          appointments={appointments}
+          appointments={appointmentsForDate}
           getClientName={getClientName}
           getBarberName={getBarberName}
           getServiceInfo={getServiceInfo}
@@ -112,7 +145,7 @@ export default function AppointmentsPage() {
         />
       )}
 
-      {/* Modal Agendar / Editar Cita */}
+      {/* Modal Crear / Editar Cita */}
       {showFormModal && (
         <AppointmentFormModal
           mode={selectedAppointment ? "edit" : "create"}

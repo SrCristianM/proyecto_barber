@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
 const MONTHS_ES = [
@@ -12,7 +12,6 @@ function getDaysInMonth(year, month) {
 }
 
 function getFirstDayOfMonth(year, month) {
-  // 0=Sun -> convert to Mon-based (0=Mon)
   return (new Date(year, month, 1).getDay() + 6) % 7;
 }
 
@@ -22,27 +21,26 @@ function formatDate(date) {
 }
 
 function isSameDay(a, b) {
-  return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return a && b &&
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
 }
 
 function isInRange(date, start, end) {
   if (!start || !end) return false;
   const t = date.getTime();
-  const s = start.getTime();
-  const e = end.getTime();
-  return t > Math.min(s, e) && t < Math.max(s, e);
+  const s = Math.min(start.getTime(), end.getTime());
+  const e = Math.max(start.getTime(), end.getTime());
+  return t > s && t < e;
 }
 
 /**
- * Calendario moderno con selección de rango de fechas.
- * Diseño premium consistente con el sistema de diseño del proyecto.
- *
- * @param {Date|null} startDate - Fecha inicio seleccionada
- * @param {Date|null} endDate - Fecha fin seleccionada
- * @param {Function} onRangeChange - Callback con ({ start, end })
- * @param {boolean} singleMode - Si true, solo selecciona 1 fecha
- * @param {Date|null} value - Para modo single
- * @param {Function} onChange - Para modo single
+ * Calendario con selección de rango de fechas.
+ * Soporta:
+ *  - Click-click para seleccionar inicio/fin
+ *  - Drag (mousedown → mousemove → mouseup) para seleccionar rango arrastrando
+ *  - Modo single para seleccionar una sola fecha
  */
 export default function DateRangePicker({
   startDate,
@@ -57,7 +55,12 @@ export default function DateRangePicker({
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [hoverDate, setHoverDate] = useState(null);
-  const [selecting, setSelecting] = useState("start"); // "start" | "end"
+  const [selecting, setSelecting] = useState("start");
+
+  // Drag state
+  const isDragging = useRef(false);
+  const dragStart = useRef(null);
+  const [dragEnd, setDragEnd] = useState(null);
 
   const effectiveStart = singleMode ? value : startDate;
   const effectiveEnd = singleMode ? null : endDate;
@@ -71,7 +74,9 @@ export default function DateRangePicker({
     else setViewMonth(m => m + 1);
   };
 
+  // ---- Click handling ----
   const handleDayClick = (date) => {
+    if (isDragging.current) return; // drag finaliza via mouseup, no click
     if (singleMode) {
       onChange?.(date);
       return;
@@ -89,6 +94,46 @@ export default function DateRangePicker({
     }
   };
 
+  // ---- Drag handling ----
+  const handleMouseDown = useCallback((date) => {
+    if (singleMode) return;
+    isDragging.current = false; // aún no confirmamos drag
+    dragStart.current = date;
+    setDragEnd(null);
+  }, [singleMode]);
+
+  const handleMouseEnter = useCallback((date) => {
+    setHoverDate(date);
+    if (dragStart.current) {
+      isDragging.current = true; // si hay dragStart y entró a otro día, es drag
+      setDragEnd(date);
+    }
+  }, []);
+
+  const handleMouseUp = useCallback((date) => {
+    if (!singleMode && isDragging.current && dragStart.current) {
+      const start = dragStart.current < date ? dragStart.current : date;
+      const end = dragStart.current < date ? date : dragStart.current;
+      onRangeChange?.({ start, end });
+      setSelecting("start");
+    }
+    isDragging.current = false;
+    dragStart.current = null;
+    setDragEnd(null);
+  }, [singleMode, onRangeChange]);
+
+  // Reset drag if mouse leaves calendar
+  const handleMouseLeave = useCallback(() => {
+    if (isDragging.current && dragStart.current) {
+      // Mantener selección parcial pero limpiar drag
+      isDragging.current = false;
+      dragStart.current = null;
+      setDragEnd(null);
+    }
+    setHoverDate(null);
+  }, []);
+
+  // ---- Render ----
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
 
@@ -97,6 +142,14 @@ export default function DateRangePicker({
   for (let d = 1; d <= daysInMonth; d++) {
     days.push(new Date(viewYear, viewMonth, d));
   }
+
+  // Durante drag, el rango visual usa dragStart + dragEnd
+  const visualStart = dragEnd && dragStart.current
+    ? (dragStart.current < dragEnd ? dragStart.current : dragEnd)
+    : effectiveStart;
+  const visualEnd = dragEnd && dragStart.current
+    ? (dragStart.current < dragEnd ? dragEnd : dragStart.current)
+    : (hoverDate || effectiveEnd);
 
   return (
     <div className="space-y-2">
@@ -128,70 +181,64 @@ export default function DateRangePicker({
       )}
 
       {/* Calendario */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-        {/* Header navegación */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-          <button
-            type="button"
-            onClick={prevMonth}
-            className="p-1.5 hover:bg-accent rounded-lg transition-colors text-foreground"
-          >
+      <div
+        className="bg-card border border-border rounded-xl overflow-hidden shadow-sm select-none"
+        onMouseLeave={handleMouseLeave}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <button type="button" onClick={prevMonth} className="p-1.5 hover:bg-accent rounded-lg transition-colors text-foreground">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-sm font-semibold text-foreground">
             {MONTHS_ES[viewMonth]} {viewYear}
           </span>
-          <button
-            type="button"
-            onClick={nextMonth}
-            className="p-1.5 hover:bg-accent rounded-lg transition-colors text-foreground"
-          >
+          <button type="button" onClick={nextMonth} className="p-1.5 hover:bg-accent rounded-lg transition-colors text-foreground">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
 
         {/* Grid */}
         <div className="p-3">
-          {/* Días de la semana */}
           <div className="grid grid-cols-7 mb-1">
             {DAYS_ES.map((d) => (
-              <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">
-                {d}
-              </div>
+              <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
             ))}
           </div>
 
-          {/* Días del mes */}
           <div className="grid grid-cols-7 gap-0.5">
             {days.map((date, i) => {
               if (!date) return <div key={`empty-${i}`} />;
 
-              const isStart = isSameDay(date, effectiveStart);
-              const isEnd = isSameDay(date, effectiveEnd);
-              const isToday = isSameDay(date, today);
-              const inRange = isInRange(date, effectiveStart, hoverDate || effectiveEnd);
+              const isStart = isSameDay(date, visualStart);
+              const isEnd = isSameDay(date, effectiveEnd) || (dragEnd && isSameDay(date, dragEnd));
+              const inRange = isInRange(date, visualStart, visualEnd);
               const isSelected = isStart || isEnd;
+              const isToday = isSameDay(date, today);
+              const isDragPreview = Boolean(dragEnd);
 
-              let cellClass = "w-full aspect-square flex items-center justify-center text-xs rounded-lg cursor-pointer transition-all select-none ";
-
+              let cls = "w-full aspect-square flex items-center justify-center text-xs rounded-lg cursor-pointer transition-all ";
               if (isSelected) {
-                cellClass += "bg-primary text-primary-foreground font-semibold shadow-sm";
+                cls += "bg-primary text-primary-foreground font-semibold shadow-sm";
               } else if (inRange) {
-                cellClass += "bg-primary/15 text-primary font-medium rounded-none";
+                cls += `${isDragPreview ? "bg-primary/20" : "bg-primary/15"} text-primary font-medium rounded-none`;
               } else if (isToday) {
-                cellClass += "ring-1 ring-primary text-primary font-semibold hover:bg-primary/10";
+                cls += "ring-1 ring-primary text-primary font-semibold hover:bg-primary/10";
               } else {
-                cellClass += "text-foreground hover:bg-accent";
+                cls += "text-foreground hover:bg-accent";
               }
 
               return (
                 <button
                   type="button"
                   key={date.toISOString()}
-                  className={cellClass}
+                  className={cls}
                   onClick={() => handleDayClick(date)}
-                  onMouseEnter={() => setHoverDate(date)}
+                  onMouseDown={() => handleMouseDown(date)}
+                  onMouseEnter={() => handleMouseEnter(date)}
+                  onMouseUp={() => handleMouseUp(date)}
                   onMouseLeave={() => setHoverDate(null)}
+                  draggable={false}
                 >
                   {date.getDate()}
                 </button>
@@ -200,10 +247,14 @@ export default function DateRangePicker({
           </div>
         </div>
 
-        {/* Footer hint */}
+        {/* Hint */}
         {!singleMode && (
           <div className="px-4 py-2 border-t border-border bg-muted/30 text-xs text-muted-foreground text-center">
-            {selecting === "start" ? "Selecciona fecha de inicio" : "Selecciona fecha de fin"}
+            {dragEnd
+              ? "Suelta para confirmar el rango"
+              : selecting === "start"
+              ? "Click o arrastra para seleccionar rango"
+              : "Selecciona fecha de fin"}
           </div>
         )}
       </div>

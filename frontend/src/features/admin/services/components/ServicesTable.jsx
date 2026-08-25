@@ -48,16 +48,24 @@ export default function ServicesTable({
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {service.imagen_url ? (
-                      <img
-                        src={service.imagen_url}
-                        alt={service.nombre}
-                        className="w-10 h-10 rounded-lg object-cover border border-primary/30"
-                      />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-primary/30 bg-primary/10 flex items-center justify-center shrink-0">
+                        <img
+                          src={service.imagen_url}
+                          alt={service.nombre}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.parentElement.innerHTML =
+                              `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 3 6 6m-6 0 6-6"/><path d="M10.5 9.5a5 5 0 1 1 5 5"/><path d="m16 16-2-2"/><path d="m14 18-2-2 4-4"/></svg>`;
+                          }}
+                        />
+                      </div>
                     ) : (
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
                         <Scissors className="h-5 w-5 text-primary" />
                       </div>
                     )}
+
                     <div>
                       <p className="font-medium text-foreground">{service.nombre}</p>
                     </div>
