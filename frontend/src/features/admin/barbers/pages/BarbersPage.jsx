@@ -1,9 +1,11 @@
 import { Plus, Search, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useBarbers } from "../hooks/useBarbers";
+import BarbersStats from "../components/BarbersStats";
 import BarbersTable from "../components/BarbersTable";
 import BarberFormModal from "../components/BarberFormModal";
 import BarberDetailModal from "../components/BarberDetailModal";
-import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
 
 export default function BarbersPage() {
   const {
@@ -24,6 +26,8 @@ export default function BarbersPage() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedBarber,
     setSelectedBarber,
     resetForm,
@@ -31,10 +35,36 @@ export default function BarbersPage() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    openDeactivateModal
   } = useBarbers();
+
+  const onHandleCreate = () => {
+    handleCreate();
+    toast.success("Barbero registrado correctamente");
+  };
+
+  const onHandleEdit = () => {
+    handleEdit();
+    toast.success("Barbero actualizado correctamente");
+  };
+
+  const onHandleDelete = () => {
+    handleDelete();
+    toast.success("Barbero eliminado correctamente");
+  };
+
+  const onToggleStatus = () => {
+    if (!selectedBarber) return;
+    const newState = selectedBarber.estado === 1 ? "desactivado" : "activado";
+    toggleStatus(selectedBarber.id_barbero);
+    toast.success(`Barbero ${newState} correctamente`);
+    setShowDeactivateModal(false);
+    setSelectedBarber(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -44,13 +74,15 @@ export default function BarbersPage() {
           <p className="text-muted-foreground">Gestiona tu equipo de barberos</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          onClick={openCreateModal}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
           <Plus className="h-5 w-5" />
           Nuevo Barbero
         </button>
       </div>
+
+      <BarbersStats barbers={barbers} />
 
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
@@ -77,7 +109,7 @@ export default function BarbersPage() {
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
-          onToggleStatus={toggleStatus}
+          onToggleStatus={openDeactivateModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
@@ -88,7 +120,7 @@ export default function BarbersPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleCreate}
+          onSubmit={onHandleCreate}
           onClose={() => {
             setShowCreateModal(false);
             resetForm();
@@ -101,7 +133,7 @@ export default function BarbersPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleEdit}
+          onSubmit={onHandleEdit}
           onClose={() => {
             setShowEditModal(false);
             setSelectedBarber(null);
@@ -124,12 +156,31 @@ export default function BarbersPage() {
         />
       )}
 
+      {/* Modal Confirmar Eliminar */}
       {showDeleteModal && selectedBarber && (
-        <DeleteConfirmModal
-          barberName={`${selectedBarber.nombre} ${selectedBarber.apellido}`}
-          onConfirm={handleDelete}
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar este barbero?"
+          description={`Se eliminará el barbero "${selectedBarber.nombre} ${selectedBarber.apellido}" de forma permanente.`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
           onClose={() => {
             setShowDeleteModal(false);
+            setSelectedBarber(null);
+          }}
+        />
+      )}
+
+      {/* Modal Confirmar Desactivar / Activar */}
+      {showDeactivateModal && selectedBarber && (
+        <ConfirmModal
+          variant="deactivate"
+          title={selectedBarber.estado === 1 ? "¿Desactivar este barbero?" : "¿Activar este barbero?"}
+          description={`Esta acción cambiará el estado del barbero "${selectedBarber.nombre} ${selectedBarber.apellido}".`}
+          confirmLabel={selectedBarber.estado === 1 ? "Desactivar" : "Activar"}
+          onConfirm={onToggleStatus}
+          onClose={() => {
+            setShowDeactivateModal(false);
             setSelectedBarber(null);
           }}
         />

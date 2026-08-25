@@ -22,6 +22,7 @@ export function useUsers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
@@ -58,12 +59,12 @@ export function useUsers() {
   const handleCreate = () => {
     const newUser = {
       id_usuario: Math.max(...users.map((u) => u.id_usuario), 0) + 1,
-      nombre: formData.nombre,
-      apellido: formData.apellido,
-      correo: formData.correo,
-      telefono: formData.telefono,
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
       id_rol: Number(formData.id_rol),
-      contrasena: formData.contrasena,
+      contrasena: formData.contrasena || "password123",
       estado: 1,
       fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
@@ -79,10 +80,10 @@ export function useUsers() {
         user.id_usuario === selectedUser.id_usuario
           ? {
               ...user,
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              correo: formData.correo,
-              telefono: formData.telefono,
+              nombre: formData.nombre.trim(),
+              apellido: formData.apellido.trim(),
+              correo: formData.correo.trim(),
+              telefono: formData.telefono ? formData.telefono.trim() : null,
               id_rol: Number(formData.id_rol)
             }
           : user
@@ -108,6 +109,11 @@ export function useUsers() {
     );
   };
 
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -131,6 +137,11 @@ export function useUsers() {
     setShowDeleteModal(true);
   };
 
+  const openDeactivateModal = (user) => {
+    setSelectedUser(user);
+    setShowDeactivateModal(true);
+  };
+
   return {
     users,
     searchTerm,
@@ -149,6 +160,8 @@ export function useUsers() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedUser,
     setSelectedUser,
     resetForm,
@@ -156,9 +169,11 @@ export function useUsers() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     getRoleName
   };
 }

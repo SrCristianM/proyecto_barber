@@ -35,6 +35,7 @@ export function useBarbers() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedBarber, setSelectedBarber] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
@@ -74,10 +75,10 @@ export function useBarbers() {
     const newBarber = {
       id_barbero: nextBarberId,
       id_usuario: nextUserId,
-      nombre: formData.nombre,
-      apellido: formData.apellido,
-      correo: formData.correo,
-      telefono: formData.telefono,
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
       especialidad: formData.especialidad,
       imagen_url: formData.imagen_url || null,
       estado: 1
@@ -94,10 +95,10 @@ export function useBarbers() {
         barber.id_barbero === selectedBarber.id_barbero
           ? {
               ...barber,
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              correo: formData.correo,
-              telefono: formData.telefono,
+              nombre: formData.nombre.trim(),
+              apellido: formData.apellido.trim(),
+              correo: formData.correo.trim(),
+              telefono: formData.telefono ? formData.telefono.trim() : null,
               especialidad: formData.especialidad,
               imagen_url: formData.imagen_url || null
             }
@@ -124,6 +125,11 @@ export function useBarbers() {
     );
   };
 
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (barber) => {
     setSelectedBarber(barber);
     setFormData({
@@ -148,6 +154,11 @@ export function useBarbers() {
     setShowDeleteModal(true);
   };
 
+  const openDeactivateModal = (barber) => {
+    setSelectedBarber(barber);
+    setShowDeactivateModal(true);
+  };
+
   return {
     barbers,
     searchTerm,
@@ -166,6 +177,8 @@ export function useBarbers() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedBarber,
     setSelectedBarber,
     resetForm,
@@ -173,8 +186,10 @@ export function useBarbers() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    openDeactivateModal
   };
 }

@@ -30,6 +30,7 @@ export function useClients() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
@@ -70,11 +71,11 @@ export function useClients() {
     const newClient = {
       id_cliente: nextClientId,
       id_usuario: nextUserId,
-      nombre: formData.nombre,
-      apellido: formData.apellido,
-      correo: formData.correo,
-      telefono: formData.telefono,
-      direccion: formData.direccion || null,
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
+      direccion: formData.direccion ? formData.direccion.trim() : null,
       nivel_fidelidad: formData.nivel_fidelidad || "Nuevo",
       estado: 1
     };
@@ -90,11 +91,11 @@ export function useClients() {
         client.id_cliente === selectedClient.id_cliente
           ? {
               ...client,
-              nombre: formData.nombre,
-              apellido: formData.apellido,
-              correo: formData.correo,
-              telefono: formData.telefono,
-              direccion: formData.direccion || null,
+              nombre: formData.nombre.trim(),
+              apellido: formData.apellido.trim(),
+              correo: formData.correo.trim(),
+              telefono: formData.telefono ? formData.telefono.trim() : null,
+              direccion: formData.direccion ? formData.direccion.trim() : null,
               nivel_fidelidad: formData.nivel_fidelidad
             }
           : client
@@ -118,6 +119,11 @@ export function useClients() {
         client.id_cliente === clientId ? { ...client, estado: client.estado === 1 ? 0 : 1 } : client
       )
     );
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
   };
 
   const openEditModal = (client) => {
@@ -144,6 +150,11 @@ export function useClients() {
     setShowDeleteModal(true);
   };
 
+  const openDeactivateModal = (client) => {
+    setSelectedClient(client);
+    setShowDeactivateModal(true);
+  };
+
   const stats = {
     total: clients.length,
     activos: clients.filter((c) => c.estado === 1).length,
@@ -168,6 +179,8 @@ export function useClients() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedClient,
     setSelectedClient,
     resetForm,
@@ -175,9 +188,11 @@ export function useClients() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     stats
   };
 }

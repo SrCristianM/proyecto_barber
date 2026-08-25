@@ -7,6 +7,7 @@ import ProductFormModal from "../components/ProductFormModal";
 import ProductDetailModal from "../components/ProductDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import ProductCategoriesView from "../components/ProductCategoriesView";
+import ProductsStats from "../components/ProductsStats";
 
 const TABS = [
   { key: "products", label: "Productos" },
@@ -105,6 +106,8 @@ export default function ProductsPage() {
       {/* Vista condicional por tab */}
       {activeTab === "products" && (
         <>
+          <ProductsStats products={products} />
+
           {lowStockCount > 0 && (
             <div className="bg-warning/10 border border-warning/20 rounded-xl p-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-warning shrink-0" />

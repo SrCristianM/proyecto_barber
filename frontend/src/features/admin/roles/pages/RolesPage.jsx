@@ -2,6 +2,7 @@ import { Plus, Search, Download, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { useRoles } from "../hooks/useRoles";
 import RolesTable from "../components/RolesTable";
+import RolesStats from "../components/RolesStats";
 import RoleFormModal from "../components/RoleFormModal";
 import RoleDetailModal from "../components/RoleDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -82,6 +83,9 @@ export default function RolesPage() {
           Nuevo Rol
         </button>
       </div>
+
+      {/* Stats Cards */}
+      <RolesStats roles={roles} />
 
       {/* Filtros y búsqueda */}
       <div className="bg-card border border-border rounded-xl p-5">

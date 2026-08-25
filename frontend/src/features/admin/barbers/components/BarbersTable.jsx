@@ -72,8 +72,8 @@ export default function BarbersTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(barber.id_barbero)}
-                      className={`p-2 hover:bg-background rounded-lg ${barber.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      onClick={() => onToggleStatus(barber)}
+                      className={`p-2 hover:bg-background rounded-lg ${barber.estado === 1 ? "text-success hover:text-warning" : "text-muted-foreground hover:text-success"}`}
                       title={barber.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />

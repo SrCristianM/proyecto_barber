@@ -70,8 +70,8 @@ export default function UsersTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(user.id_usuario)}
-                      className={`p-2 hover:bg-background rounded-lg ${user.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      onClick={() => onToggleStatus(user)}
+                      className={`p-2 hover:bg-background rounded-lg ${user.estado === 1 ? "text-success hover:text-warning" : "text-muted-foreground hover:text-success"}`}
                       title={user.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />

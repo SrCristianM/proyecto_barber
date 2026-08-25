@@ -80,8 +80,8 @@ export default function ClientsTable({
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onToggleStatus(client.id_cliente)}
-                      className={`p-2 hover:bg-background rounded-lg ${client.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                      onClick={() => onToggleStatus(client)}
+                      className={`p-2 hover:bg-background rounded-lg ${client.estado === 1 ? "text-success hover:text-warning" : "text-muted-foreground hover:text-success"}`}
                       title={client.estado === 1 ? "Desactivar" : "Activar"}
                     >
                       <Power className="h-4 w-4" />

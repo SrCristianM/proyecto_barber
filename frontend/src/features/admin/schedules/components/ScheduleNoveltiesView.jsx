@@ -1,0 +1,393 @@
+import { Plus, Search, Check, X, Edit, Trash2, Calendar, User, Clock, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import Modal from "../../shared/components/Modal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
+import { useScheduleNovelties } from "../hooks/useScheduleNovelties";
+
+const STATUS_BADGES = {
+  Pendiente: "bg-warning/10 text-warning border-warning/20",
+  Aprobado: "bg-success/10 text-success border-success/20",
+  Rechazado: "bg-destructive/10 text-destructive border-destructive/20"
+};
+
+const TYPE_BADGES = {
+  Ausencia: "bg-destructive/10 text-destructive",
+  "Cambio de turno": "bg-primary/10 text-primary",
+  Permiso: "bg-blue-500/10 text-blue-500",
+  Otro: "bg-purple-500/10 text-purple-500"
+};
+
+export default function ScheduleNoveltiesView() {
+  const {
+    filteredNovelties,
+    barbers,
+    noveltyTypes,
+    noveltyStatuses,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    typeFilter,
+    setTypeFilter,
+    formData,
+    setFormData,
+    showCreateModal,
+    setShowCreateModal,
+    showEditModal,
+    setShowEditModal,
+    showDeleteModal,
+    setShowDeleteModal,
+    selectedNovelty,
+    setSelectedNovelty,
+    resetForm,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    changeStatus,
+    openCreateModal,
+    openEditModal,
+    openDeleteModal,
+    getBarberName,
+    stats
+  } = useScheduleNovelties();
+
+  const onHandleCreate = () => {
+    handleCreate();
+    toast.success("Novedad de horario registrada correctamente");
+  };
+
+  const onHandleEdit = () => {
+    handleEdit();
+    toast.success("Novedad de horario actualizada correctamente");
+  };
+
+  const onHandleDelete = () => {
+    handleDelete();
+    toast.success("Novedad eliminada correctamente");
+  };
+
+  const onChangeStatus = (id, newStatus) => {
+    changeStatus(id, newStatus);
+    toast.success(`Novedad marcada como "${newStatus}"`);
+  };
+
+  const NoveltyForm = ({ onSubmit, onCancel, isEdit = false }) => (
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Barbero <span className="text-destructive">*</span>
+        </label>
+        <select
+          value={formData.id_barbero}
+          onChange={(e) => setFormData({ ...formData, id_barbero: Number(e.target.value) })}
+          className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+          required
+        >
+          {barbers.map((b) => (
+            <option key={b.id_barbero} value={b.id_barbero}>
+              {b.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Tipo de Novedad <span className="text-destructive">*</span>
+          </label>
+          <select
+            value={formData.tipo}
+            onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            required
+          >
+            {noveltyTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Fecha de la Novedad <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="date"
+            value={formData.fecha}
+            onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            required
+          />
+        </div>
+      </div>
+
+      {isEdit && (
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Estado de la Solicitud
+          </label>
+          <select
+            value={formData.estado}
+            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+          >
+            {noveltyStatuses.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-1.5">
+          Descripción / Motivo <span className="text-destructive">*</span>
+        </label>
+        <textarea
+          rows={3}
+          value={formData.descripcion}
+          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+          placeholder="Describe el motivo del permiso, ausencia o cambio..."
+          className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm resize-none"
+          required
+        />
+      </div>
+
+      <div className="flex gap-3 pt-2">
+        <button
+          type="submit"
+          className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+        >
+          {isEdit ? "Guardar Cambios" : "Registrar Novedad"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 py-2.5 border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Total Novedades", value: stats.total, color: "text-foreground", icon: Clock },
+          { label: "Pendientes", value: stats.pendientes, color: "text-warning", icon: AlertCircle },
+          { label: "Aprobadas", value: stats.aprobadas, color: "text-success", icon: Check },
+          { label: "Rechazadas", value: stats.rechazadas, color: "text-destructive", icon: X }
+        ].map(({ label, value, color, icon: Icon }) => (
+          <div key={label} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">{label}</p>
+              <h3 className={`text-2xl font-bold mt-1 ${color}`}>{value}</h3>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+              <Icon className={`h-5 w-5 ${color}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+          <div className="flex flex-wrap items-center gap-3 flex-1 w-full sm:w-auto">
+            {/* Buscador */}
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar barbero, motivo o tipo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              />
+            </div>
+
+            {/* Filtro por estado */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              <option value="all">Todos los estados</option>
+              {noveltyStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            {/* Filtro por tipo */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              <option value="all">Todos los tipos</option>
+              {noveltyTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            Registrar Novedad
+          </button>
+        </div>
+
+        {/* Lista de novedades */}
+        {filteredNovelties.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            No se encontraron novedades registradas con los filtros seleccionados
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border text-muted-foreground text-xs uppercase bg-muted/20">
+                <tr>
+                  <th className="py-3 px-4">Barbero</th>
+                  <th className="py-3 px-4">Tipo</th>
+                  <th className="py-3 px-4">Fecha Novedad</th>
+                  <th className="py-3 px-4">Motivo / Descripción</th>
+                  <th className="py-3 px-4">Estado</th>
+                  <th className="py-3 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredNovelties.map((nov) => {
+                  const barberName = getBarberName(nov.id_barbero);
+                  return (
+                    <tr key={nov.id_novedad} className="hover:bg-accent/40 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                            {barberName.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">{barberName}</p>
+                            <p className="text-[11px] text-muted-foreground">Reg: {nov.fecha_registro.substring(0, 10)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGES[nov.tipo] || "bg-muted text-foreground"}`}>
+                          {nov.tipo}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-xs text-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          {nov.fecha}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <p className="text-xs text-foreground line-clamp-2">{nov.descripcion}</p>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_BADGES[nov.estado] || "bg-muted text-muted-foreground"}`}>
+                          {nov.estado}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {nov.estado === "Pendiente" && (
+                            <>
+                              <button
+                                onClick={() => onChangeStatus(nov.id_novedad, "Aprobado")}
+                                className="p-1.5 hover:bg-success/10 text-success rounded-lg transition-colors"
+                                title="Aprobar novedad"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => onChangeStatus(nov.id_novedad, "Rechazado")}
+                                className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors"
+                                title="Rechazar novedad"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => openEditModal(nov)}
+                            className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(nov)}
+                            className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Crear */}
+      {showCreateModal && (
+        <Modal
+          title="Registrar Novedad de Horario"
+          onClose={() => { setShowCreateModal(false); resetForm(); }}
+          maxWidthClass="max-w-md"
+        >
+          <NoveltyForm
+            onSubmit={onHandleCreate}
+            onCancel={() => { setShowCreateModal(false); resetForm(); }}
+            isEdit={false}
+          />
+        </Modal>
+      )}
+
+      {showEditModal && selectedNovelty && (
+        <Modal
+          title="Editar Novedad de Horario"
+          onClose={() => { setShowEditModal(false); setSelectedNovelty(null); resetForm(); }}
+          maxWidthClass="max-w-md"
+        >
+          <NoveltyForm
+            onSubmit={onHandleEdit}
+            onCancel={() => { setShowEditModal(false); setSelectedNovelty(null); resetForm(); }}
+            isEdit={true}
+          />
+        </Modal>
+      )}
+
+      {showDeleteModal && selectedNovelty && (
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar esta novedad?"
+          description={`Se eliminará la novedad de "${getBarberName(selectedNovelty.id_barbero)}" (${selectedNovelty.tipo} para el ${selectedNovelty.fecha}).`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedNovelty(null); }}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,10 +1,11 @@
 import { Plus, Search, Download } from "lucide-react";
+import { toast } from "sonner";
 import { useClients } from "../hooks/useClients";
 import ClientsStats from "../components/ClientsStats";
 import ClientsTable from "../components/ClientsTable";
 import ClientFormModal from "../components/ClientFormModal";
 import ClientDetailModal from "../components/ClientDetailModal";
-import ClientDeleteConfirmModal from "../components/ClientDeleteConfirmModal";
+import ConfirmModal from "../../shared/components/ConfirmModal";
 
 export default function ClientsPage() {
   const {
@@ -25,6 +26,8 @@ export default function ClientsPage() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedClient,
     setSelectedClient,
     resetForm,
@@ -32,11 +35,37 @@ export default function ClientsPage() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    openCreateModal,
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     stats
   } = useClients();
+
+  const onHandleCreate = () => {
+    handleCreate();
+    toast.success("Cliente registrado correctamente");
+  };
+
+  const onHandleEdit = () => {
+    handleEdit();
+    toast.success("Cliente actualizado correctamente");
+  };
+
+  const onHandleDelete = () => {
+    handleDelete();
+    toast.success("Cliente eliminado correctamente");
+  };
+
+  const onToggleStatus = () => {
+    if (!selectedClient) return;
+    const newState = selectedClient.estado === 1 ? "desactivado" : "activado";
+    toggleStatus(selectedClient.id_cliente);
+    toast.success(`Cliente ${newState} correctamente`);
+    setShowDeactivateModal(false);
+    setSelectedClient(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -46,8 +75,8 @@ export default function ClientsPage() {
           <p className="text-muted-foreground">Gestiona tu base de clientes</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          onClick={openCreateModal}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
         >
           <Plus className="h-5 w-5" />
           Nuevo Cliente
@@ -81,7 +110,7 @@ export default function ClientsPage() {
           sortDir={sortDir}
           onSort={handleSort}
           onDetail={openDetailModal}
-          onToggleStatus={toggleStatus}
+          onToggleStatus={openDeactivateModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
@@ -92,7 +121,7 @@ export default function ClientsPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleCreate}
+          onSubmit={onHandleCreate}
           onClose={() => {
             setShowCreateModal(false);
             resetForm();
@@ -105,7 +134,7 @@ export default function ClientsPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onSubmit={handleEdit}
+          onSubmit={onHandleEdit}
           onClose={() => {
             setShowEditModal(false);
             setSelectedClient(null);
@@ -128,12 +157,31 @@ export default function ClientsPage() {
         />
       )}
 
+      {/* Modal Confirmar Eliminar */}
       {showDeleteModal && selectedClient && (
-        <ClientDeleteConfirmModal
-          clientName={`${selectedClient.nombre} ${selectedClient.apellido}`}
-          onConfirm={handleDelete}
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar este cliente?"
+          description={`Se eliminará el cliente "${selectedClient.nombre} ${selectedClient.apellido}" de forma permanente.`}
+          confirmLabel="Eliminar"
+          onConfirm={onHandleDelete}
           onClose={() => {
             setShowDeleteModal(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
+
+      {/* Modal Confirmar Desactivar / Activar */}
+      {showDeactivateModal && selectedClient && (
+        <ConfirmModal
+          variant="deactivate"
+          title={selectedClient.estado === 1 ? "¿Desactivar este cliente?" : "¿Activar este cliente?"}
+          description={`Esta acción cambiará el estado del cliente "${selectedClient.nombre} ${selectedClient.apellido}".`}
+          confirmLabel={selectedClient.estado === 1 ? "Desactivar" : "Activar"}
+          onConfirm={onToggleStatus}
+          onClose={() => {
+            setShowDeactivateModal(false);
             setSelectedClient(null);
           }}
         />

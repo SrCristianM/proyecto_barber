@@ -8,6 +8,7 @@ import ServiceDetailModal from "../components/ServiceDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import ServiceCategoriesView from "../components/ServiceCategoriesView";
 import ServicePackagesView from "../components/ServicePackagesView";
+import ServicesStats from "../components/ServicesStats";
 
 const TABS = [
   { key: "services", label: "Servicios" },
@@ -105,7 +106,10 @@ export default function ServicesPage() {
 
       {/* Vista Servicios */}
       {activeTab === "services" && (
-        <div className="bg-card border border-border rounded-xl p-5">
+        <>
+          <ServicesStats services={services} />
+
+          <div className="bg-card border border-border rounded-xl p-5">
           <div className="flex items-center gap-3 mb-5">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -135,6 +139,7 @@ export default function ServicesPage() {
             onDelete={openDeleteModal}
           />
         </div>
+      </>
       )}
 
       {/* Vista Categorías */}
