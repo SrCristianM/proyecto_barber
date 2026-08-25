@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Calendar, Users, DollarSign, Package, TrendingUp, Clock, AlertCircle } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { motion } from "motion/react";
 
 const salesData = [
   { month: "Ene", ventas: 4500, servicios: 3200 },
@@ -33,9 +35,60 @@ const todayAppointments = [
   { time: "12:00", client: "Ana Torres", barber: "Luis", service: "Diseño", status: "Reprogramada" }
 ];
 
+function AnimatedCounter({ value }) {
+  const isCurrency = typeof value === "string" && value.startsWith("$");
+  const rawNumber = parseInt(String(value).replace(/[^0-9]/g, ""), 10) || 0;
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const duration = 900;
+    const steps = 30;
+    const stepTime = Math.abs(Math.floor(duration / steps));
+    const increment = rawNumber / steps;
+
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= rawNumber) {
+        setCount(rawNumber);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [rawNumber]);
+
+  if (isCurrency) {
+    return <span>${count.toLocaleString("es-CO")}</span>;
+  }
+  return <span>{count}</span>;
+}
+
 export default function AdminDashboard() {
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+  };
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="space-y-6"
+    >
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -81,7 +134,10 @@ export default function AdminDashboard() {
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-lg p-6">
+        <motion.div
+          variants={itemVariants}
+          className="bg-card border border-border rounded-lg p-6 shadow-xs"
+        >
           <h3 className="text-lg font-semibold text-foreground mb-4">Ventas y Servicios</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={salesData}>
@@ -94,9 +150,12 @@ export default function AdminDashboard() {
               <Line type="monotone" dataKey="servicios" stroke="#10b981" strokeWidth={2} name="Servicios ($K)" />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <motion.div
+          variants={itemVariants}
+          className="bg-card border border-border rounded-lg p-6 shadow-xs"
+        >
           <h3 className="text-lg font-semibold text-foreground mb-4">Servicios Más Populares</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -117,12 +176,15 @@ export default function AdminDashboard() {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border border-border rounded-lg p-6">
+        <motion.div
+          variants={itemVariants}
+          className="bg-card border border-border rounded-lg p-6 shadow-xs"
+        >
           <h3 className="text-lg font-semibold text-foreground mb-4">Rendimiento de Barberos</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barberPerformance}>
@@ -135,13 +197,21 @@ export default function AdminDashboard() {
               <Bar dataKey="ingresos" fill="#10b981" name="Ingresos ($K)" />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
-        <div className="bg-card border border-border rounded-lg p-6">
+        <motion.div
+          variants={itemVariants}
+          className="bg-card border border-border rounded-lg p-6 shadow-xs"
+        >
           <h3 className="text-lg font-semibold text-foreground mb-4">Citas de Hoy</h3>
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
             {todayAppointments.map((appointment, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+              <motion.div
+                key={index}
+                whileHover={{ x: 3 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center justify-between p-3 bg-background rounded-lg border border-border hover:border-primary/40 transition-colors"
+              >
                 <div className="flex items-center gap-3">
                   <div className="text-sm font-medium text-foreground">{appointment.time}</div>
                   <div className="h-8 w-px bg-border" />
@@ -161,14 +231,17 @@ export default function AdminDashboard() {
                 >
                   {appointment.status}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Alerts */}
-      <div className="bg-card border border-border rounded-lg p-6">
+      <motion.div
+        variants={itemVariants}
+        className="bg-card border border-border rounded-lg p-6 shadow-xs"
+      >
         <h3 className="text-lg font-semibold text-foreground mb-4">Alertas y Notificaciones</h3>
         <div className="space-y-3">
           <AlertItem
@@ -184,26 +257,35 @@ export default function AdminDashboard() {
             message="Has alcanzado tu meta de ventas del mes"
           />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 function KPICard({ title, value, change, positive, icon }) {
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+      }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className="bg-card border border-border rounded-lg p-6 shadow-xs hover:shadow-md transition-shadow cursor-default"
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-muted-foreground">{title}</span>
-        {icon}
+        <div className="p-2 bg-secondary/50 rounded-lg">{icon}</div>
       </div>
-      <div className="flex items-end justify-between">
-        <h3 className="text-3xl font-bold text-foreground">{value}</h3>
+      <div className="flex items-end justify-between mt-3">
+        <h3 className="text-3xl font-bold text-foreground tracking-tight">
+          <AnimatedCounter value={value} />
+        </h3>
         <span className={`text-sm font-medium flex items-center gap-1 ${positive ? "text-success" : "text-destructive"}`}>
           <TrendingUp className={`h-4 w-4 ${!positive && "rotate-180"}`} />
           {change}
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -214,9 +296,13 @@ function AlertItem({ type, message }) {
     success: "bg-success/10 border-success/20 text-success"
   };
   return (
-    <div className={`flex items-start gap-3 p-4 rounded-lg border ${colors[type]}`}>
+    <motion.div
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.15 }}
+      className={`flex items-start gap-3 p-4 rounded-lg border ${colors[type]}`}
+    >
       <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
       <p className="text-sm">{message}</p>
-    </div>
+    </motion.div>
   );
 }

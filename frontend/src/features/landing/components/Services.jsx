@@ -1,3 +1,5 @@
+import { motion } from "motion/react";
+
 const SERVICES = [
   {
     icon: (
@@ -55,23 +57,37 @@ export default function Services() {
           Estilo, precisión y calidad
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: "1px", backgroundColor: "#222222" }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {SERVICES.map((s, i) => (
-            <div key={i} style={{ backgroundColor: "#151515" }} className="p-8 group hover:bg-[#1c1c1c] transition-colors duration-300 cursor-pointer">
-              <div style={{ color: "#C9A24A" }} className="mb-5">{s.icon}</div>
+            <motion.div
+              key={i}
+              whileHover={{ y: -6 }}
+              transition={{ duration: 0.2 }}
+              style={{ backgroundColor: "#151515" }}
+              className="p-8 group hover:bg-[#1a1a1a] border border-[#222222] hover:border-[#C9A24A]/40 rounded-lg transition-colors duration-300 cursor-pointer shadow-lg hover:shadow-[#C9A24A]/5"
+            >
+              <div style={{ color: "#C9A24A" }} className="mb-5 transition-transform duration-300 group-hover:scale-110">
+                {s.icon}
+              </div>
               <h3 style={{ color: "#FFFFFF", fontSize: "0.75rem", letterSpacing: "0.14em", fontWeight: 700 }} className="mb-3">
                 {s.title}
               </h3>
               <p style={{ color: "#B5B5B5", fontSize: "0.8rem", lineHeight: 1.75 }}>{s.desc}</p>
-              <div style={{ backgroundColor: "#C9A24A", height: "2px" }} className="mt-7 w-8 group-hover:w-14 transition-all duration-300" />
-            </div>
+              <div style={{ backgroundColor: "#C9A24A", height: "2px" }} className="mt-7 w-8 group-hover:w-16 transition-all duration-300" />
+            </motion.div>
           ))}
         </div>
 
         <div className="flex justify-center mt-10">
-          <a href="#" style={{ border: "1px solid #C9A24A", color: "#C9A24A", letterSpacing: "0.14em", fontSize: "0.72rem" }} className="px-8 py-3 font-bold hover:bg-[#C9A24A] hover:text-black transition-all duration-200">
+          <motion.a
+            href="#"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            style={{ border: "1px solid #C9A24A", color: "#C9A24A", letterSpacing: "0.14em", fontSize: "0.72rem" }}
+            className="px-8 py-3 font-bold hover:bg-[#C9A24A] hover:text-black transition-all duration-200"
+          >
             VER TODOS LOS SERVICIOS
-          </a>
+          </motion.a>
         </div>
       </div>
     </section>

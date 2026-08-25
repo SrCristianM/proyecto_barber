@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Check, CheckCheck, X, Calendar, Users, Clock, DollarSign, Package } from "lucide-react";
+import { motion } from "motion/react";
 import { timeAgo, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
 
 const TYPE_ICONS = {
@@ -25,8 +26,12 @@ export default function NotificationPanel({ notifications, unreadCount, onMarkAs
   }, [onClose]);
 
   return (
-    <div
+    <motion.div
       ref={panelRef}
+      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
       style={{ maxHeight: "480px" }}
     >
@@ -119,10 +124,10 @@ export default function NotificationPanel({ notifications, unreadCount, onMarkAs
 
       {/* Footer */}
       <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-center">
-        <button className="text-xs text-primary hover:underline font-medium transition-colors">
+        <button className="text-xs text-primary hover:underline font-medium transition-colors cursor-pointer">
           Ver todas las notificaciones
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

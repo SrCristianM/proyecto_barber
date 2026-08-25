@@ -1,17 +1,35 @@
 import { X } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function Modal({ title, children, onClose, maxWidthClass = "max-w-2xl" }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-card border border-border rounded-lg w-full ${maxWidthClass} max-h-[90vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: "spring", damping: 26, stiffness: 320 }}
+        className={`bg-card border border-border rounded-xl w-full ${maxWidthClass} max-h-[90vh] overflow-y-auto shadow-2xl`}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card/95 backdrop-blur-xs z-10">
           <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-accent rounded-lg transition-colors">
-            <X className="h-5 w-5 text-foreground" />
-          </button>
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            className="p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </motion.button>
         </div>
         <div className="p-6">{children}</div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

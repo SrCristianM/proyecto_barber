@@ -1,4 +1,5 @@
 import { AlertTriangle, Trash2, Power } from "lucide-react";
+import { motion } from "motion/react";
 
 /**
  * Modal de confirmación reutilizable para acciones críticas.
@@ -44,13 +45,30 @@ export default function ConfirmModal({
   const Icon = config.icon;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-border rounded-xl w-full max-w-md shadow-xl animate-in fade-in-0 zoom-in-95 duration-200">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.18 }}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 15 }}
+        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+        className="bg-card border border-border rounded-xl w-full max-w-md shadow-2xl overflow-hidden"
+      >
         {/* Header */}
         <div className="p-6 flex flex-col items-center text-center gap-4">
-          <div className={`w-14 h-14 rounded-full ${config.iconBg} flex items-center justify-center`}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.05, type: "spring", damping: 15, stiffness: 300 }}
+            className={`w-14 h-14 rounded-full ${config.iconBg} flex items-center justify-center shadow-inner`}
+          >
             <Icon className={`h-7 w-7 ${config.iconColor}`} />
-          </div>
+          </motion.div>
           <div>
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{description}</p>
@@ -59,23 +77,27 @@ export default function ConfirmModal({
 
         {/* Footer */}
         <div className="flex gap-3 px-6 pb-6">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onClose}
-            className="flex-1 py-2.5 px-4 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm font-medium"
+            className="flex-1 py-2.5 px-4 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm font-medium cursor-pointer"
           >
             Cancelar
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className={`flex-1 py-2.5 px-4 rounded-lg transition-all text-sm font-medium ${config.btnClass}`}
+            className={`flex-1 py-2.5 px-4 rounded-lg transition-all text-sm font-medium cursor-pointer shadow-sm ${config.btnClass}`}
           >
             {confirmLabel}
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -116,13 +116,12 @@ export default function SettingsPage({ isDark, setIsDark }) {
     }
   };
 
-  // Al montar, sincronizar modo oscuro guardado
+  // Mantener sincronizado el estado con isDark
   useEffect(() => {
-    if (saved?.system?.modo_oscuro !== undefined) {
-      setIsDark?.(saved.system.modo_oscuro);
+    if (typeof isDark === "boolean") {
+      setSystem((prev) => (prev.modo_oscuro !== isDark ? { ...prev, modo_oscuro: isDark } : prev));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isDark]);
 
   const handleSave = () => {
     const payload = { business, notifications, system };

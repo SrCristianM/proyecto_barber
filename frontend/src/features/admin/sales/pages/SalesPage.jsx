@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Plus, Search, Download } from "lucide-react";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
+import { motion } from "motion/react";
 import { useSales } from "../hooks/useSales";
 import SalesStats from "../components/SalesStats";
 import SalesTable from "../components/SalesTable";
@@ -48,7 +50,24 @@ export default function SalesPage() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
-  const onHandleCreate = () => { handleCreate(); toast.success("Venta registrada correctamente"); };
+  const triggerGoldenConfetti = () => {
+    try {
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.7 },
+        colors: ["#C9A24A", "#E5C875", "#FFFFFF", "#1E1E1E"]
+      });
+    } catch {
+      // Ignorar si falla canvas
+    }
+  };
+
+  const onHandleCreate = () => {
+    handleCreate();
+    triggerGoldenConfetti();
+    toast.success("Venta registrada correctamente");
+  };
   const onHandleEdit = () => { handleEdit(); toast.success("Venta actualizada correctamente"); };
   const onHandleDelete = () => { handleDelete(); toast.success("Venta eliminada correctamente"); };
   const onAnularVenta = () => {
@@ -70,13 +89,15 @@ export default function SalesPage() {
           <h1 className="text-2xl font-bold text-foreground">Ventas</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación</p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium cursor-pointer shadow-sm"
         >
           <Plus className="h-4 w-4" />
           Nueva Venta
-        </button>
+        </motion.button>
       </div>
 
       <SalesStats totalToday={totalToday} totalMonth={totalMonth} averageTicket={averageTicket} />
