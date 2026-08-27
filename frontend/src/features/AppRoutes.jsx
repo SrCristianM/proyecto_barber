@@ -7,6 +7,8 @@ import SchedulesPage from "./admin/schedules/pages/SchedulesPage";
 import ServicesPage from "./admin/services/pages/ServicesPage";
 import ProductsPage from "./admin/products/pages/ProductsPage";
 import ClientsPage from "./admin/clients/pages/ClientsPage";
+import SuppliersPage from "./admin/suppliers/pages/SuppliersPage";
+import PurchasesPage from "./admin/purchases/pages/PurchasesPage";
 import AppointmentsPage from "./admin/appointments/pages/AppointmentsPage";
 import SalesPage from "./admin/sales/pages/SalesPage";
 import SettingsPage from "./admin/settings/pages/SettingsPage";
@@ -41,6 +43,10 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin 
         <Route path="services" element={<ServicesPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="clients" element={<ClientsPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+        <Route path="proveedores" element={<SuppliersPage />} />
+        <Route path="purchases" element={<PurchasesPage />} />
+        <Route path="compras" element={<PurchasesPage />} />
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="sales" element={<SalesPage />} />
         <Route path="settings" element={<SettingsPage isDark={isDark} setIsDark={setIsDark} />} />

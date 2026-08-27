@@ -1,26 +1,10 @@
 import { Link, useLocation } from "react-router";
 import { motion } from "motion/react";
-import {
-  LayoutDashboard, Users, Scissors, Calendar, Package,
-  ShoppingCart, DollarSign, Clock, User, Settings,
-  Shield, UserCog, ClipboardList, Menu
-} from "lucide-react";
+import { Scissors, Settings, Menu } from "lucide-react";
+import { menuItems } from "./menuItems";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
-
-  const menuItems = [
-    { path: "/dashboard", icon: <LayoutDashboard className="h-5 w-5 shrink-0" />, label: "Dashboard" },
-    { path: "/dashboard/appointments", icon: <Calendar className="h-5 w-5 shrink-0" />, label: "Citas" },
-    { path: "/dashboard/clients", icon: <Users className="h-5 w-5 shrink-0" />, label: "Clientes" },
-    { path: "/dashboard/barbers", icon: <Scissors className="h-5 w-5 shrink-0" />, label: "Barberos" },
-    { path: "/dashboard/schedules", icon: <Clock className="h-5 w-5 shrink-0" />, label: "Horarios" },
-    { path: "/dashboard/services", icon: <ClipboardList className="h-5 w-5 shrink-0" />, label: "Servicios" },
-    { path: "/dashboard/products", icon: <Package className="h-5 w-5 shrink-0" />, label: "Productos" },
-    { path: "/dashboard/sales", icon: <DollarSign className="h-5 w-5 shrink-0" />, label: "Ventas" },
-    { path: "/dashboard/users", icon: <UserCog className="h-5 w-5 shrink-0" />, label: "Usuarios" },
-    { path: "/dashboard/roles", icon: <Shield className="h-5 w-5 shrink-0" />, label: "Roles" },
-  ];
 
   const isSettingsActive = location.pathname === "/dashboard/settings";
 

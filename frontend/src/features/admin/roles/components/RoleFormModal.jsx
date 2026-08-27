@@ -91,6 +91,28 @@ const SYSTEM_MODULES = [
       { key: "clientes_editar", label: "Editar" },
       { key: "clientes_activar", label: "Activar / Desactivar" }
     ]
+  },
+  {
+    id: "proveedores",
+    label: "Proveedores",
+    acciones: [
+      { key: "proveedores_ver", label: "Ver" },
+      { key: "proveedores_crear", label: "Crear" },
+      { key: "proveedores_editar", label: "Editar" },
+      { key: "proveedores_eliminar", label: "Eliminar" },
+      { key: "proveedores_activar", label: "Activar / Desactivar" }
+    ]
+  },
+  {
+    id: "compras",
+    label: "Compras",
+    acciones: [
+      { key: "compras_ver", label: "Ver" },
+      { key: "compras_crear", label: "Crear" },
+      { key: "compras_editar", label: "Editar" },
+      { key: "compras_anular", label: "Anular" },
+      { key: "compras_eliminar", label: "Eliminar" }
+    ]
   }
 ];
 
