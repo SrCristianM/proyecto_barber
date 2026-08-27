@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Building2, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function SuppliersStats({ stats }) {
@@ -24,19 +24,21 @@ export default function SuppliersStats({ stats }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
       {items.map((item, index) => (
         <motion.div
           key={index}
-          whileHover={{ y: -2 }}
+          whileHover={{ y: -3 }}
           transition={{ duration: 0.2 }}
-          className="bg-card border border-border rounded-xl p-4 flex items-center justify-between shadow-xs"
+          className="gold-card p-5 flex items-center justify-between"
         >
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{item.title}</p>
-            <p className={`text-2xl font-bold mt-1 ${item.color}`}>{item.value}</p>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              {item.title}
+            </span>
+            <p className={`text-3xl font-extrabold ${item.color}`}>{item.value}</p>
           </div>
-          <div className="p-3 bg-secondary/50 rounded-xl">
+          <div className="p-3.5 bg-secondary/50 rounded-2xl border border-border/40">
             {item.icon}
           </div>
         </motion.div>

@@ -85,15 +85,15 @@ export default function ProductCategoriesView() {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total", value: categories.length, cls: "text-foreground" },
-          { label: "Activas", value: activeCount, cls: "text-success" },
-          { label: "Inactivas", value: inactiveCount, cls: "text-muted-foreground" }
+          { label: "Total Categorías", value: categories.length, cls: "text-foreground" },
+          { label: "Categorías Activas", value: activeCount, cls: "text-success" },
+          { label: "Categorías Inactivas", value: inactiveCount, cls: "text-muted-foreground" }
         ].map(({ label, value, cls }) => (
-          <div key={label} className="text-center p-3 bg-muted/30 rounded-xl border border-border">
-            <p className={`text-2xl font-bold ${cls}`}>{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+          <div key={label} className="text-center p-4 gold-card">
+            <p className={`text-2xl font-extrabold ${cls}`}>{value}</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">{label}</p>
           </div>
         ))}
       </div>

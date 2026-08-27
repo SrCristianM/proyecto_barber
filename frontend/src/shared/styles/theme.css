@@ -204,3 +204,92 @@
     box-shadow: 0 0 0 3px rgba(201, 162, 74, 0.22);
   }
 }
+
+@keyframes rgb-line-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes border-beam-sweep {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(220%);
+    opacity: 0;
+  }
+}
+
+/* Card con borde dorado y línea animada estilo RGB */
+.gold-card {
+  position: relative;
+  background-color: var(--card);
+  border: 1px solid rgba(201, 162, 74, 0.35);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.gold-card:hover {
+  border-color: rgba(201, 162, 74, 0.85);
+  box-shadow: 0 10px 25px -4px rgba(201, 162, 74, 0.22), 0 0 16px rgba(201, 162, 74, 0.14);
+  transform: translateY(-2px);
+}
+
+/* Línea superior con gradiente continuo RGB-Dorado */
+.gold-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(
+    90deg,
+    #C9A24A 0%,
+    #f59e0b 15%,
+    #10b981 35%,
+    #06b6d4 50%,
+    #8b5cf6 68%,
+    #ec4899 85%,
+    #C9A24A 100%
+  );
+  background-size: 300% 100%;
+  animation: rgb-line-flow 5s linear infinite;
+  z-index: 2;
+}
+
+/* Haz de luz pulsante / barrido de línea sobre el borde */
+.gold-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 2.5px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.95),
+    #C9A24A,
+    transparent
+  );
+  animation: border-beam-sweep 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 3;
+  filter: drop-shadow(0 0 5px rgba(201, 162, 74, 0.8));
+}

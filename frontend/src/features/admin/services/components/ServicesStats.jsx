@@ -1,4 +1,5 @@
 import { Scissors, Sparkles, Clock } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function ServicesStats({ services = [] }) {
   const total = services.length;
@@ -7,29 +8,47 @@ export default function ServicesStats({ services = [] }) {
     ? Math.round(services.reduce((acc, s) => acc + Number(s.duracion_minutos || 0), 0) / total)
     : 0;
 
+  const items = [
+    {
+      title: "Total Servicios",
+      value: total,
+      icon: <Scissors className="h-5 w-5 text-primary" />,
+      color: "text-foreground"
+    },
+    {
+      title: "Servicios Activos",
+      value: activos,
+      icon: <Sparkles className="h-5 w-5 text-success" />,
+      color: "text-success"
+    },
+    {
+      title: "Duración Promedio",
+      value: `${avgDuration} min`,
+      icon: <Clock className="h-5 w-5 text-warning" />,
+      color: "text-warning"
+    }
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Total Servicios</span>
-          <Scissors className="h-5 w-5 text-primary" />
-        </div>
-        <h3 className="text-3xl font-bold text-foreground">{total}</h3>
-      </div>
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Servicios Activos</span>
-          <Sparkles className="h-5 w-5 text-success" />
-        </div>
-        <h3 className="text-3xl font-bold text-foreground">{activos}</h3>
-      </div>
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Duración Promedio</span>
-          <Clock className="h-5 w-5 text-warning" />
-        </div>
-        <h3 className="text-3xl font-bold text-foreground">{avgDuration} <span className="text-lg font-normal text-muted-foreground">min</span></h3>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {items.map((item, index) => (
+        <motion.div
+          key={index}
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.2 }}
+          className="gold-card p-5 flex items-center justify-between"
+        >
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              {item.title}
+            </span>
+            <h3 className={`text-3xl font-extrabold ${item.color}`}>{item.value}</h3>
+          </div>
+          <div className="p-3.5 bg-secondary/50 rounded-2xl border border-border/40">
+            {item.icon}
+          </div>
+        </motion.div>
+      ))}
     </div>
   );
 }

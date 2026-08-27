@@ -186,12 +186,12 @@ export default function ScheduleNoveltiesView() {
           { label: "Aprobadas", value: stats.aprobadas, color: "text-success", icon: Check },
           { label: "Rechazadas", value: stats.rechazadas, color: "text-destructive", icon: X }
         ].map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+          <div key={label} className="gold-card p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium">{label}</p>
-              <h3 className={`text-2xl font-bold mt-1 ${color}`}>{value}</h3>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+              <h3 className={`text-2xl font-extrabold mt-1 ${color}`}>{value}</h3>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-secondary/50 flex items-center justify-center border border-border/40">
               <Icon className={`h-5 w-5 ${color}`} />
             </div>
           </div>
