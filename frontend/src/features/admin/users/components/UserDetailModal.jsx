@@ -1,67 +1,71 @@
-import { User } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { ROLES } from "../../../../shared/types/database";
 
 export default function UserDetailModal({ user, onEdit, onClose }) {
+  if (!user) return null;
   const roleName = ROLES.find((r) => r.id_rol === Number(user.id_rol))?.nombre_rol || "Sin Rol";
 
   return (
-    <Modal title="Detalle del Usuario" onClose={onClose}>
+    <Modal title="Detalle del Usuario" onClose={onClose} maxWidthClass="max-w-lg">
       <div className="space-y-4">
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-            <User className="h-12 w-12 text-primary" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        {/* Cabecera con ID y Estado */}
+        <div className="flex items-center justify-between p-3.5 bg-secondary/30 rounded-xl border border-border/60">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Nombre</label>
-            <p className="text-foreground font-medium">{user.nombre}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Apellido</label>
-            <p className="text-foreground font-medium">{user.apellido}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Correo</label>
-            <p className="text-foreground">{user.correo}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Teléfono</label>
-            <p className="text-foreground">{user.telefono || "No especificado"}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Rol</label>
-            <p className="text-foreground font-medium">{roleName}</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Estado</label>
-            <span
-              className={`inline-block px-3 py-1 text-sm rounded-full ${
-                user.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {user.estado === 1 ? "Activo" : "Inactivo"}
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+              ID de Usuario
             </span>
+            <span className="text-base font-bold text-foreground">#{user.id_usuario}</span>
           </div>
+          <span
+            className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+              user.estado === 1
+                ? "bg-success/10 text-success border-success/20"
+                : "bg-muted text-muted-foreground border-border"
+            }`}
+          >
+            {user.estado === 1 ? "● Activo" : "● Inactivo"}
+          </span>
+        </div>
+
+        {/* Cuadrícula de datos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 bg-card border border-border rounded-xl text-xs">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">Fecha de Registro</label>
-            <p className="text-foreground">{user.fecha_registro}</p>
+            <span className="text-muted-foreground font-medium block mb-1">Nombre Completo</span>
+            <p className="text-sm font-semibold text-foreground">{user.nombre} {user.apellido}</p>
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-1">ID de Usuario</label>
-            <p className="text-foreground">#{user.id_usuario}</p>
+            <span className="text-muted-foreground font-medium block mb-1">Rol Asignado</span>
+            <p className="text-sm font-semibold text-primary">{roleName}</p>
+          </div>
+
+          <div>
+            <span className="text-muted-foreground font-medium block mb-1">Correo Electrónico</span>
+            <p className="text-sm font-medium text-foreground break-all">{user.correo}</p>
+          </div>
+
+          <div>
+            <span className="text-muted-foreground font-medium block mb-1">Teléfono</span>
+            <p className="text-sm font-medium text-foreground">{user.telefono || "No especificado"}</p>
+          </div>
+
+          <div className="sm:col-span-2 pt-2 border-t border-border/50">
+            <span className="text-muted-foreground font-medium block mb-1">Fecha de Registro</span>
+            <p className="text-xs text-foreground font-medium">{user.fecha_registro}</p>
           </div>
         </div>
 
-        <div className="flex gap-3 pt-4">
-          <button onClick={onEdit} className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
+        {/* Botones de acción */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={onEdit}
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          >
             Editar Usuario
           </button>
           <button
             onClick={onClose}
-            className="flex-1 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground"
+            className="flex-1 py-2.5 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm font-medium"
           >
             Cerrar
           </button>

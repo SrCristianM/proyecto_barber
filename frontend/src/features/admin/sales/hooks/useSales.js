@@ -128,6 +128,11 @@ const emptyForm = () => ({
 export function useSales() {
   const [sales, setSales] = useState(mockSales);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'Activa' | 'Anulada'
+  const [clientFilter, setClientFilter] = useState("all"); // 'all' | id_cliente
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [viewMode, setViewMode] = useState("table"); // 'table' | 'cards'
   const [sortField, setSortField] = useState("fecha");
   const [sortDir, setSortDir] = useState("desc");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -135,8 +140,6 @@ export function useSales() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
   const [formData, setFormData] = useState(emptyForm());
 
   const getClientName = (id_cliente) => {
@@ -160,13 +163,29 @@ export function useSales() {
     .filter((sale) => {
       const clientName = getClientName(sale.id_cliente);
       const userName = getUserName(sale.id_usuario);
-      const search = searchTerm.toLowerCase();
-      return (
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        search === "" ||
         clientName.toLowerCase().includes(search) ||
         userName.toLowerCase().includes(search) ||
         sale.estado.toLowerCase().includes(search) ||
-        sale.id_venta.toString().includes(search)
-      );
+        sale.id_venta.toString().includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" || sale.estado === statusFilter;
+
+      const matchesClient =
+        clientFilter === "all" || String(sale.id_cliente) === String(clientFilter);
+
+      let matchesDate = true;
+      if (startDate) {
+        matchesDate = matchesDate && sale.fecha.split(" ")[0] >= startDate;
+      }
+      if (endDate) {
+        matchesDate = matchesDate && sale.fecha.split(" ")[0] <= endDate;
+      }
+
+      return matchesSearch && matchesStatus && matchesClient && matchesDate;
     })
     .sort((a, b) => {
       if (sortField === "total") {
@@ -179,8 +198,20 @@ export function useSales() {
       return 0;
     });
 
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
-  const paginatedSales = filteredSales.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const hasActiveFilters =
+    searchTerm !== "" ||
+    statusFilter !== "all" ||
+    clientFilter !== "all" ||
+    startDate !== "" ||
+    endDate !== "";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setClientFilter("all");
+    setStartDate("");
+    setEndDate("");
+  };
 
   const activeSales = sales.filter((s) => s.estado === "Activa");
   const todayStr = new Date().toISOString().split("T")[0];
@@ -360,23 +391,26 @@ export function useSales() {
     setShowDeleteModal(true);
   };
 
-  const onSearchChange = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  };
-
   return {
+    sales,
     searchTerm,
-    onSearchChange,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    viewMode,
+    setViewMode,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
-    paginatedSales,
     filteredSales,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
     totalToday,
     totalMonth,
     averageTicket,

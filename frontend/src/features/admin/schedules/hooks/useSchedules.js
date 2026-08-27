@@ -32,6 +32,9 @@ const emptyForm = {
 export function useSchedules() {
   const [schedules, setSchedules] = useState(mockSchedules);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
+  const [barberFilter, setBarberFilter] = useState("all"); // 'all' | id_barbero
+  const [dayFilter, setDayFilter] = useState("all"); // 'all' | 'Lunes' ...
   const [sortField, setSortField] = useState("id_barbero");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -62,10 +65,25 @@ export function useSchedules() {
     .filter((schedule) => {
       const barberName = getBarberName(schedule.id_barbero);
       const dias = (schedule.dias_semana || []).join(", ");
-      return (
-        barberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dias.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const search = searchTerm.toLowerCase().trim();
+
+      const matchesSearch =
+        search === "" ||
+        barberName.toLowerCase().includes(search) ||
+        dias.toLowerCase().includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && schedule.estado === 1) ||
+        (statusFilter === "0" && schedule.estado === 0);
+
+      const matchesBarber =
+        barberFilter === "all" || String(schedule.id_barbero) === String(barberFilter);
+
+      const matchesDay =
+        dayFilter === "all" || (schedule.dias_semana || []).includes(dayFilter);
+
+      return matchesSearch && matchesStatus && matchesBarber && matchesDay;
     })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
@@ -74,6 +92,16 @@ export function useSchedules() {
       if (valA > valB) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
+
+  const hasActiveFilters =
+    searchTerm !== "" || statusFilter !== "all" || barberFilter !== "all" || dayFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setBarberFilter("all");
+    setDayFilter("all");
+  };
 
   const totalPages = Math.ceil(filteredSchedules.length / itemsPerPage);
   const paginatedSchedules = filteredSchedules.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -139,8 +167,15 @@ export function useSchedules() {
     const headers = ["ID", "Barbero", "Días", "Hora Inicio", "Hora Fin", "Estado"];
     const csvContent = [
       headers.join(","),
-      ...filteredSchedules.map(
-        (s) => `${s.id_horario},"${getBarberName(s.id_barbero)}","${(s.dias_semana || []).join(", ")}","${s.hora_inicio}","${s.hora_fin}","${s.estado === 1 ? "Activo" : "Inactivo"}"`
+      ...filteredSchedules.map((s) =>
+        [
+          s.id_horario,
+          `"${getBarberName(s.id_barbero)}"`,
+          `"${(s.dias_semana || []).join(", ")}"`,
+          `"${s.hora_inicio}"`,
+          `"${s.hora_fin}"`,
+          `"${s.estado === 1 ? 'Activo' : 'Inactivo'}"`
+        ].join(",")
       )
     ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -178,14 +213,17 @@ export function useSchedules() {
     setShowDeactivateModal(true);
   };
 
-  const onSearchChange = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  };
-
   return {
     searchTerm,
-    onSearchChange,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    barberFilter,
+    setBarberFilter,
+    dayFilter,
+    setDayFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,

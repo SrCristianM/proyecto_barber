@@ -66,6 +66,10 @@ export function useAppointments() {
   const [appointments, setAppointments] = useState(mockAppointments);
   const [view, setView] = useState("calendar");
   const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [barberFilter, setBarberFilter] = useState("all");
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
@@ -95,8 +99,32 @@ export function useAppointments() {
     );
   };
 
-  /** Citas del día seleccionado (para la lista) */
-  const appointmentsForDate = appointments.filter((a) => a.fecha === selectedDate);
+  /** Citas del día seleccionado filtradas */
+  const appointmentsForDate = appointments
+    .filter((a) => a.fecha === selectedDate)
+    .filter((apt) => {
+      const clientName = getClientName(apt.id_cliente).toLowerCase();
+      const barberName = getBarberName(apt.id_barbero).toLowerCase();
+      const search = searchTerm.toLowerCase().trim();
+
+      const matchesSearch =
+        search === "" ||
+        clientName.includes(search) ||
+        barberName.includes(search);
+
+      const matchesStatus = statusFilter === "all" || apt.estado === statusFilter;
+      const matchesBarber = barberFilter === "all" || String(apt.id_barbero) === String(barberFilter);
+
+      return matchesSearch && matchesStatus && matchesBarber;
+    });
+
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || barberFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setBarberFilter("all");
+  };
 
   // ---- Navegación de fechas ----
   const goToPrevDay = () => setSelectedDate((d) => addDays(d, -1));
@@ -188,6 +216,14 @@ export function useAppointments() {
     setView,
     selectedDate,
     setSelectedDate,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    barberFilter,
+    setBarberFilter,
+    hasActiveFilters,
+    resetFilters,
     isToday,
     goToPrevDay,
     goToNextDay,

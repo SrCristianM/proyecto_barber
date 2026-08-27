@@ -16,8 +16,11 @@ const emptyForm = { nombre: "", apellido: "", correo: "", telefono: "", id_rol: 
 export function useUsers() {
   const [users, setUsers] = useState(mockUsers);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
+  const [roleFilter, setRoleFilter] = useState("all"); // 'all' | id_rol
   const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -43,8 +46,22 @@ export function useUsers() {
   const filteredUsers = users
     .filter((user) => {
       const fullName = `${user.nombre} ${user.apellido}`.toLowerCase();
-      const search = searchTerm.toLowerCase();
-      return fullName.includes(search) || user.correo.toLowerCase().includes(search);
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        search === "" ||
+        fullName.includes(search) ||
+        user.correo.toLowerCase().includes(search) ||
+        (user.telefono || "").includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && user.estado === 1) ||
+        (statusFilter === "0" && user.estado === 0);
+
+      const matchesRole =
+        roleFilter === "all" || String(user.id_rol) === String(roleFilter);
+
+      return matchesSearch && matchesStatus && matchesRole;
     })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
@@ -53,6 +70,14 @@ export function useUsers() {
       if (valA > valB) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
+
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || roleFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setRoleFilter("all");
+  };
 
   const resetForm = () => setFormData(emptyForm);
 
@@ -109,6 +134,31 @@ export function useUsers() {
     );
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Rol", "Estado", "Fecha Registro"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredUsers.map((u) =>
+        [
+          u.id_usuario,
+          `"${u.nombre}"`,
+          `"${u.apellido}"`,
+          `"${u.correo}"`,
+          `"${u.telefono || ''}"`,
+          `"${getRoleName(u.id_rol)}"`,
+          `"${u.estado === 1 ? 'Activo' : 'Inactivo'}"`,
+          `"${u.fecha_registro}"`
+        ].join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `usuarios_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
   const openCreateModal = () => {
     resetForm();
     setShowCreateModal(true);
@@ -146,6 +196,12 @@ export function useUsers() {
     users,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    roleFilter,
+    setRoleFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -169,6 +225,7 @@ export function useUsers() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    handleExport,
     openCreateModal,
     openEditModal,
     openDetailModal,

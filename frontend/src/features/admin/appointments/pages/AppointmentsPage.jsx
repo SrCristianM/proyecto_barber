@@ -1,10 +1,13 @@
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppointments } from "../hooks/useAppointments";
 import AppointmentsCalendarView from "../components/AppointmentsCalendarView";
 import AppointmentsListView from "../components/AppointmentsListView";
 import AppointmentFormModal from "../components/AppointmentFormModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import FilterSelect from "../../shared/components/FilterSelect";
 
 export default function AppointmentsPage() {
   const {
@@ -12,6 +15,14 @@ export default function AppointmentsPage() {
     view,
     setView,
     selectedDate,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    barberFilter,
+    setBarberFilter,
+    hasActiveFilters,
+    resetFilters,
     isToday,
     goToPrevDay,
     goToNextDay,
@@ -49,19 +60,24 @@ export default function AppointmentsPage() {
     toast.success("Cita actualizada correctamente");
   };
 
+  const barberOptions = barbers.map((b) => ({
+    value: b.id_barbero,
+    label: b.nombre
+  }));
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Citas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las citas de la barbería</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Citas</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las citas de la barbería y su disponibilidad</p>
         </div>
         <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium cursor-pointer shadow-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Agendar Cita
@@ -146,6 +162,49 @@ export default function AppointmentsPage() {
           )}
         </div>
       </div>
+
+      {/* Toolbar Estandarizada si está en vista Lista */}
+      {view === "list" && (
+        <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-border rounded-xl shadow-xs">
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar citas..."
+            maxWidthClass="w-full sm:w-60"
+          />
+
+          <StatusFilterPills
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { key: "all", label: "Todas" },
+              { key: "Programada", label: "Programadas" },
+              { key: "Completada", label: "Completadas" },
+              { key: "Cancelada", label: "Canceladas" }
+            ]}
+          />
+
+          <FilterSelect
+            value={barberFilter}
+            onChange={setBarberFilter}
+            options={barberOptions}
+            placeholder="Todos los barberos"
+            icon={<User className="h-3.5 w-3.5" />}
+            className="min-w-[170px]"
+          />
+
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2 rounded-md hover:bg-secondary cursor-pointer"
+              title="Limpiar todos los filtros"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Limpiar</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Vistas animadas */}
       <AnimatePresence mode="wait">

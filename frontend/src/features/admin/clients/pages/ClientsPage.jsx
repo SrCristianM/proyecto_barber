@@ -1,17 +1,27 @@
-import { Plus, Search, Download } from "lucide-react";
+import { Plus, Download, RotateCcw, Award } from "lucide-react";
 import { toast } from "sonner";
-import { useClients } from "../hooks/useClients";
+import { motion } from "motion/react";
+import { useClients, availableLoyalties } from "../hooks/useClients";
 import ClientsStats from "../components/ClientsStats";
 import ClientsTable from "../components/ClientsTable";
 import ClientFormModal from "../components/ClientFormModal";
 import ClientDetailModal from "../components/ClientDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import FilterSelect from "../../shared/components/FilterSelect";
 
 export default function ClientsPage() {
   const {
     clients,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    loyaltyFilter,
+    setLoyaltyFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -35,6 +45,7 @@ export default function ClientsPage() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    handleExport,
     openCreateModal,
     openEditModal,
     openDetailModal,
@@ -67,40 +78,88 @@ export default function ClientsPage() {
     setSelectedClient(null);
   };
 
+  const loyaltyOptions = availableLoyalties.map((lvl) => ({
+    value: lvl,
+    label: lvl
+  }));
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Encabezado */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Clientes</h1>
-          <p className="text-muted-foreground">Gestiona tu base de clientes</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Clientes</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu base de clientes y su nivel de fidelización</p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
-          <Plus className="h-5 w-5" />
+          <Plus className="h-4 w-4" />
           Nuevo Cliente
-        </button>
+        </motion.button>
       </div>
 
       <ClientsStats stats={stats} />
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar clientes..."
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        {/* Barra de Filtros Estandarizada */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* SearchBar */}
+            <SearchBar
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              onChange={setSearchTerm}
+              placeholder="Buscar clientes..."
+              maxWidthClass="w-full sm:w-64"
             />
+
+            {/* StatusFilterPills */}
+            <StatusFilterPills
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { key: "all", label: "Todos" },
+                { key: "1", label: "Activos" },
+                { key: "0", label: "Inactivos" }
+              ]}
+            />
+
+            {/* FilterSelect: Nivel de Fidelidad */}
+            <FilterSelect
+              value={loyaltyFilter}
+              onChange={setLoyaltyFilter}
+              options={loyaltyOptions}
+              placeholder="Todos los niveles"
+              icon={<Award className="h-3.5 w-3.5" />}
+              className="min-w-[170px]"
+            />
+
+            {/* Limpiar Filtros */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2 rounded-md hover:bg-secondary cursor-pointer"
+                title="Limpiar todos los filtros"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground">
-            <Download className="h-5 w-5" />
-            Exportar
-          </button>
+
+          {/* Botón Exportar */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exportar
+            </button>
+          </div>
         </div>
 
         <ClientsTable
@@ -116,6 +175,7 @@ export default function ClientsPage() {
         />
       </div>
 
+      {/* Modal Crear */}
       {showCreateModal && (
         <ClientFormModal
           mode="create"
@@ -129,6 +189,7 @@ export default function ClientsPage() {
         />
       )}
 
+      {/* Modal Editar */}
       {showEditModal && selectedClient && (
         <ClientFormModal
           mode="edit"
@@ -143,6 +204,7 @@ export default function ClientsPage() {
         />
       )}
 
+      {/* Modal Detalle */}
       {showDetailModal && selectedClient && (
         <ClientDetailModal
           client={selectedClient}

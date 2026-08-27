@@ -1,7 +1,9 @@
-import { Plus, Search, Edit, Power, Tag } from "lucide-react";
+import { Plus, Edit, Power, Tag } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import { useProductCategories } from "../hooks/useProductCategories";
 
 export default function ProductCategoriesView() {
@@ -88,40 +90,26 @@ export default function ProductCategoriesView() {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar categorías..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm w-52"
-            />
-          </div>
-          <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border">
-            {[
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar categorías..."
+            maxWidthClass="w-full sm:w-56"
+          />
+          <StatusFilterPills
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
               { key: "all", label: "Todas" },
               { key: "active", label: "Activas" },
               { key: "inactive", label: "Inactivas" }
-            ].map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setStatusFilter(opt.key)}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                  statusFilter === opt.key
-                    ? "bg-card text-foreground shadow-sm border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+            ]}
+          />
         </div>
         <button
           onClick={() => { resetForm(); setShowCreateModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Nueva Categoría

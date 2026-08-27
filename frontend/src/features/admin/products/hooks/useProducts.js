@@ -25,6 +25,9 @@ const emptyForm = {
 export function useProducts() {
   const [products, setProducts] = useState(mockProducts);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
+  const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
+  const [viewMode, setViewMode] = useState("cards"); // 'cards' | 'table'
   const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -32,8 +35,6 @@ export function useProducts() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
   const [formData, setFormData] = useState(emptyForm);
 
   const getCategoryName = (id_cat) => {
@@ -52,11 +53,22 @@ export function useProducts() {
 
   const filteredProducts = products
     .filter((product) => {
-      const catName = getCategoryName(product.id_categoria_producto);
-      return (
-        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        catName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const search = searchTerm.toLowerCase().trim();
+      const catName = getCategoryName(product.id_categoria_producto).toLowerCase();
+      const matchesSearch =
+        search === "" ||
+        product.nombre.toLowerCase().includes(search) ||
+        catName.includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && product.estado === 1) ||
+        (statusFilter === "0" && product.estado === 0);
+
+      const matchesCategory =
+        categoryFilter === "all" || String(product.id_categoria_producto) === String(categoryFilter);
+
+      return matchesSearch && matchesStatus && matchesCategory;
     })
     .sort((a, b) => {
       if (sortField === "stock" || sortField === "precio") {
@@ -69,16 +81,21 @@ export function useProducts() {
       return 0;
     });
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const lowStockCount = products.filter((p) => p.stock <= 5).length;
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || categoryFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+  };
 
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
     const newProduct = {
       id_producto: Math.max(...products.map((p) => p.id_producto), 0) + 1,
-      nombre: formData.nombre,
+      nombre: formData.nombre.trim(),
       id_categoria_producto: Number(formData.id_categoria_producto),
       stock: Number(formData.stock),
       precio: Number(formData.precio),
@@ -97,7 +114,7 @@ export function useProducts() {
         product.id_producto === selectedProduct.id_producto
           ? {
               ...product,
-              nombre: formData.nombre,
+              nombre: formData.nombre.trim(),
               id_categoria_producto: Number(formData.id_categoria_producto),
               stock: Number(formData.stock),
               precio: Number(formData.precio),
@@ -130,8 +147,15 @@ export function useProducts() {
     const headers = ["ID", "Nombre", "Categoría", "Stock", "Precio", "Estado"];
     const csvContent = [
       headers.join(","),
-      ...filteredProducts.map(
-        (p) => `${p.id_producto},"${p.nombre}","${getCategoryName(p.id_categoria_producto)}",${p.stock},${p.precio},"${p.estado === 1 ? "Activo" : "Inactivo"}"`
+      ...filteredProducts.map((p) =>
+        [
+          p.id_producto,
+          `"${p.nombre}"`,
+          `"${getCategoryName(p.id_categoria_producto)}"`,
+          p.stock,
+          p.precio,
+          `"${p.estado === 1 ? 'Activo' : 'Inactivo'}"`
+        ].join(",")
       )
     ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -139,6 +163,11 @@ export function useProducts() {
     link.href = URL.createObjectURL(blob);
     link.download = `productos_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
   };
 
   const openEditModal = (product) => {
@@ -163,23 +192,22 @@ export function useProducts() {
     setShowDeleteModal(true);
   };
 
-  const onSearchChange = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-  };
-
   return {
+    products,
     searchTerm,
-    onSearchChange,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    categoryFilter,
+    setCategoryFilter,
+    hasActiveFilters,
+    resetFilters,
+    viewMode,
+    setViewMode,
     sortField,
     sortDir,
     handleSort,
-    paginatedProducts,
     filteredProducts,
-    totalPages,
-    currentPage,
-    setCurrentPage,
-    itemsPerPage,
     lowStockCount,
     formData,
     setFormData,

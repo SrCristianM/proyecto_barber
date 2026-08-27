@@ -1,23 +1,36 @@
 import { useState } from "react";
-import { Plus, Search, Download } from "lucide-react";
+import { Plus, Download, RotateCcw, User } from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
-import { useSales } from "../hooks/useSales";
+import { useSales, clients } from "../hooks/useSales";
 import SalesStats from "../components/SalesStats";
 import SalesTable from "../components/SalesTable";
 import SaleFormModal from "../components/SaleFormModal";
 import SaleDetailModal from "../components/SaleDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import FilterSelect from "../../shared/components/FilterSelect";
+import DateRangeFilter from "../../shared/components/DateRangeFilter";
 
 export default function SalesPage() {
   const {
     searchTerm,
-    onSearchChange,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    clientFilter,
+    setClientFilter,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
-    paginatedSales,
     filteredSales,
     totalToday,
     totalMonth,
@@ -82,18 +95,24 @@ export default function SalesPage() {
     setShowDeactivateModal(true);
   };
 
+  const clientOptions = clients.map((c) => ({
+    value: c.id_cliente,
+    label: c.nombre
+  }));
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Encabezado */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Ventas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Ventas</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación de la barbería</p>
         </div>
         <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium cursor-pointer shadow-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Nueva Venta
@@ -102,29 +121,75 @@ export default function SalesPage() {
 
       <SalesStats totalToday={totalToday} totalMonth={totalMonth} averageTicket={averageTicket} />
 
-      <div className="bg-card border border-border rounded-xl p-5">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar ventas..."
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        {/* Barra de Filtros Estandarizada */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* SearchBar */}
+            <SearchBar
               value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={setSearchTerm}
+              placeholder="Buscar ventas..."
+              maxWidthClass="w-full sm:w-60"
             />
+
+            {/* StatusFilterPills */}
+            <StatusFilterPills
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { key: "all", label: "Todas" },
+                { key: "Activa", label: "Activas" },
+                { key: "Anulada", label: "Anuladas" }
+              ]}
+            />
+
+            {/* FilterSelect FK: Cliente */}
+            <FilterSelect
+              value={clientFilter}
+              onChange={setClientFilter}
+              options={clientOptions}
+              placeholder="Todos los clientes"
+              icon={<User className="h-3.5 w-3.5" />}
+              className="min-w-[170px]"
+            />
+
+            {/* DateRangeFilter */}
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => { setStartDate(""); setEndDate(""); }}
+            />
+
+            {/* Limpiar Filtros */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2 rounded-md hover:bg-secondary cursor-pointer"
+                title="Limpiar todos los filtros"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
-          <button
-            onClick={handleExport}
-            className="ml-auto flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm"
-          >
-            <Download className="h-4 w-4" />
-            Exportar
-          </button>
+
+          {/* Botón Exportar */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exportar
+            </button>
+          </div>
         </div>
 
         <SalesTable
-          sales={paginatedSales}
+          sales={filteredSales}
           totalCount={filteredSales.length}
           sortField={sortField}
           sortDir={sortDir}

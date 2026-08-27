@@ -1,4 +1,4 @@
-import { Plus, Search, Download, LayoutGrid, List, Filter } from "lucide-react";
+import { Plus, Download, LayoutGrid, List, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useSuppliers } from "../hooks/useSuppliers";
@@ -8,6 +8,8 @@ import SuppliersTable from "../components/SuppliersTable";
 import SupplierFormModal from "../components/SupplierFormModal";
 import SupplierDetailModal from "../components/SupplierDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
 
 export default function SuppliersPage() {
   const {
@@ -16,6 +18,8 @@ export default function SuppliersPage() {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    hasActiveFilters,
+    resetFilters,
     viewMode,
     setViewMode,
     sortField,
@@ -98,37 +102,43 @@ export default function SuppliersPage() {
 
       {/* Contenedor Principal */}
       <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
-        {/* Barra de Búsqueda, Filtros y Toggle de Vista */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mb-6">
-          {/* Búsqueda */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre, NIT, teléfono, correo..."
+        {/* Barra de Filtros Estandarizada */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* SearchBar */}
+            <SearchBar
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={setSearchTerm}
+              placeholder="Buscar proveedores..."
+              maxWidthClass="w-full sm:w-64"
             />
+
+            {/* StatusFilterPills */}
+            <StatusFilterPills
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { key: "all", label: "Todos" },
+                { key: "1", label: "Activos" },
+                { key: "0", label: "Inactivos" }
+              ]}
+            />
+
+            {/* Limpiar Filtros */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2 rounded-md hover:bg-secondary cursor-pointer"
+                title="Limpiar todos los filtros"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
 
-          {/* Filtros y Opciones */}
-          <div className="flex items-center flex-wrap gap-2.5">
-            {/* Filtro por Estado */}
-            <div className="flex items-center gap-1.5 bg-input-background border border-input rounded-lg px-2.5 py-1.5">
-              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent text-xs font-medium text-foreground focus:outline-none cursor-pointer"
-              >
-                <option value="all">Todos los estados</option>
-                <option value="1">Solo Activos</option>
-                <option value="0">Solo Inactivos</option>
-              </select>
-            </div>
-
-            {/* Toggle Cards / Tabla */}
+          {/* Opciones a la derecha: Toggle Vista y Exportar */}
+          <div className="flex items-center gap-2">
             <div className="flex items-center bg-secondary/50 border border-border rounded-lg p-0.5">
               <button
                 onClick={() => setViewMode("cards")}
@@ -154,10 +164,9 @@ export default function SuppliersPage() {
               </button>
             </div>
 
-            {/* Exportar */}
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar

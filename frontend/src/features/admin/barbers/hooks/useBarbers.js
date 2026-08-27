@@ -29,6 +29,7 @@ const emptyForm = {
 export function useBarbers() {
   const [barbers, setBarbers] = useState(mockBarbers);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -51,12 +52,20 @@ export function useBarbers() {
   const filteredBarbers = barbers
     .filter((barber) => {
       const fullName = `${barber.nombre} ${barber.apellido}`.toLowerCase();
-      const search = searchTerm.toLowerCase();
-      return (
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        search === "" ||
         fullName.includes(search) ||
         barber.correo.toLowerCase().includes(search) ||
-        (barber.especialidad || "").toLowerCase().includes(search)
-      );
+        (barber.telefono || "").includes(search) ||
+        (barber.especialidad || "").toLowerCase().includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && barber.estado === 1) ||
+        (statusFilter === "0" && barber.estado === 0);
+
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
@@ -65,6 +74,13 @@ export function useBarbers() {
       if (valA > valB) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
+
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+  };
 
   const resetForm = () => setFormData(emptyForm);
 
@@ -125,6 +141,30 @@ export function useBarbers() {
     );
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Especialidad", "Estado"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredBarbers.map((b) =>
+        [
+          b.id_barbero,
+          `"${b.nombre}"`,
+          `"${b.apellido}"`,
+          `"${b.correo}"`,
+          `"${b.telefono || ''}"`,
+          `"${b.especialidad || ''}"`,
+          `"${b.estado === 1 ? 'Activo' : 'Inactivo'}"`
+        ].join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `barberos_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
   const openCreateModal = () => {
     resetForm();
     setShowCreateModal(true);
@@ -163,6 +203,10 @@ export function useBarbers() {
     barbers,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -186,6 +230,7 @@ export function useBarbers() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    handleExport,
     openCreateModal,
     openEditModal,
     openDetailModal,

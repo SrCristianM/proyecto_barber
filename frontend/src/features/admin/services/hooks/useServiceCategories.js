@@ -13,17 +13,23 @@ export function useServiceCategories() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredCategories = categories.filter((c) =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCategories = categories.filter((c) => {
+    const matchesSearch = c.nombre.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && c.estado === 1) ||
+      (statusFilter === "inactive" && c.estado === 0);
+    return matchesSearch && matchesStatus;
+  });
 
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
     const next = {
       id_categoria_servicio: Math.max(...categories.map((c) => c.id_categoria_servicio), 0) + 1,
-      nombre: formData.nombre,
+      nombre: formData.nombre.trim(),
       estado: 1
     };
     setCategories([...categories, next]);
@@ -35,7 +41,7 @@ export function useServiceCategories() {
     if (!selectedCategory) return;
     setCategories(categories.map((c) =>
       c.id_categoria_servicio === selectedCategory.id_categoria_servicio
-        ? { ...c, nombre: formData.nombre }
+        ? { ...c, nombre: formData.nombre.trim() }
         : c
     ));
     setShowEditModal(false);
@@ -65,6 +71,8 @@ export function useServiceCategories() {
     filteredCategories,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
     formData,
     setFormData,
     showCreateModal,

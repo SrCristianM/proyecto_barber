@@ -109,6 +109,13 @@ export function useSuppliers() {
       return 0;
     });
 
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+  };
+
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
@@ -237,6 +244,8 @@ export function useSuppliers() {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    hasActiveFilters,
+    resetFilters,
     viewMode,
     setViewMode,
     sortField,

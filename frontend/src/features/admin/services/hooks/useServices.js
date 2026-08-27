@@ -22,12 +22,15 @@ const emptyForm = {
 export function useServices() {
   const [services, setServices] = useState(mockServices);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
+  const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
   const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
@@ -47,11 +50,22 @@ export function useServices() {
 
   const filteredServices = services
     .filter((service) => {
-      const catName = getCategoryName(service.id_categoria_servicio);
-      return (
-        service.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        catName.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const search = searchTerm.toLowerCase().trim();
+      const catName = getCategoryName(service.id_categoria_servicio).toLowerCase();
+      const matchesSearch =
+        search === "" ||
+        service.nombre.toLowerCase().includes(search) ||
+        catName.includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && service.estado === 1) ||
+        (statusFilter === "0" && service.estado === 0);
+
+      const matchesCategory =
+        categoryFilter === "all" || String(service.id_categoria_servicio) === String(categoryFilter);
+
+      return matchesSearch && matchesStatus && matchesCategory;
     })
     .sort((a, b) => {
       if (sortField === "precio" || sortField === "duracion_minutos") {
@@ -64,12 +78,20 @@ export function useServices() {
       return 0;
     });
 
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || categoryFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setCategoryFilter("all");
+  };
+
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = () => {
     const newService = {
       id_servicio: Math.max(...services.map((s) => s.id_servicio), 0) + 1,
-      nombre: formData.nombre,
+      nombre: formData.nombre.trim(),
       id_categoria_servicio: Number(formData.id_categoria_servicio),
       precio: Number(formData.precio),
       duracion_minutos: Number(formData.duracion_minutos),
@@ -88,7 +110,7 @@ export function useServices() {
         service.id_servicio === selectedService.id_servicio
           ? {
               ...service,
-              nombre: formData.nombre,
+              nombre: formData.nombre.trim(),
               id_categoria_servicio: Number(formData.id_categoria_servicio),
               precio: Number(formData.precio),
               duracion_minutos: Number(formData.duracion_minutos),
@@ -117,6 +139,34 @@ export function useServices() {
     );
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Nombre", "Categoría", "Precio", "Duración (min)", "Estado"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredServices.map((s) =>
+        [
+          s.id_servicio,
+          `"${s.nombre}"`,
+          `"${getCategoryName(s.id_categoria_servicio)}"`,
+          s.precio,
+          s.duracion_minutos,
+          `"${s.estado === 1 ? 'Activo' : 'Inactivo'}"`
+        ].join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `servicios_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (service) => {
     setSelectedService(service);
     setFormData({
@@ -139,10 +189,21 @@ export function useServices() {
     setShowDeleteModal(true);
   };
 
+  const openDeactivateModal = (service) => {
+    setSelectedService(service);
+    setShowDeactivateModal(true);
+  };
+
   return {
     services,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    categoryFilter,
+    setCategoryFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -157,6 +218,8 @@ export function useServices() {
     setShowDetailModal,
     showDeleteModal,
     setShowDeleteModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
     selectedService,
     setSelectedService,
     resetForm,
@@ -164,9 +227,12 @@ export function useServices() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    handleExport,
+    openCreateModal,
     openEditModal,
     openDetailModal,
     openDeleteModal,
+    openDeactivateModal,
     getCategoryName
   };
 }

@@ -190,6 +190,21 @@ export function usePurchases() {
       return 0;
     });
 
+  const hasActiveFilters =
+    searchTerm !== "" ||
+    statusFilter !== "all" ||
+    supplierFilter !== "all" ||
+    startDate !== "" ||
+    endDate !== "";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setSupplierFilter("all");
+    setStartDate("");
+    setEndDate("");
+  };
+
   const resetForm = () => setFormData(emptyForm());
 
   // Manejo dinámico de líneas de productos en el formulario
@@ -425,6 +440,8 @@ export function usePurchases() {
     setStartDate,
     endDate,
     setEndDate,
+    hasActiveFilters,
+    resetFilters,
     viewMode,
     setViewMode,
     sortField,

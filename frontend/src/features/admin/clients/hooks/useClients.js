@@ -24,6 +24,8 @@ const emptyForm = {
 export function useClients() {
   const [clients, setClients] = useState(mockClients);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
+  const [loyaltyFilter, setLoyaltyFilter] = useState("all"); // 'all' | 'Nuevo' | 'Bronce' | 'Plata' | 'Oro'
   const [sortField, setSortField] = useState("nombre");
   const [sortDir, setSortDir] = useState("asc");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -46,13 +48,23 @@ export function useClients() {
   const filteredClients = clients
     .filter((client) => {
       const fullName = `${client.nombre} ${client.apellido}`.toLowerCase();
-      const search = searchTerm.toLowerCase();
-      return (
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        search === "" ||
         fullName.includes(search) ||
         client.correo.toLowerCase().includes(search) ||
         (client.telefono || "").includes(search) ||
-        (client.direccion || "").toLowerCase().includes(search)
-      );
+        (client.direccion || "").toLowerCase().includes(search);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "1" && client.estado === 1) ||
+        (statusFilter === "0" && client.estado === 0);
+
+      const matchesLoyalty =
+        loyaltyFilter === "all" || client.nivel_fidelidad === loyaltyFilter;
+
+      return matchesSearch && matchesStatus && matchesLoyalty;
     })
     .sort((a, b) => {
       const valA = (a[sortField] ?? "").toString().toLowerCase();
@@ -61,6 +73,14 @@ export function useClients() {
       if (valA > valB) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
+
+  const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || loyaltyFilter !== "all";
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setLoyaltyFilter("all");
+  };
 
   const resetForm = () => setFormData(emptyForm);
 
@@ -121,6 +141,31 @@ export function useClients() {
     );
   };
 
+  const handleExport = () => {
+    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Dirección", "Fidelidad", "Estado"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredClients.map((c) =>
+        [
+          c.id_cliente,
+          `"${c.nombre}"`,
+          `"${c.apellido}"`,
+          `"${c.correo}"`,
+          `"${c.telefono || ''}"`,
+          `"${c.direccion || ''}"`,
+          `"${c.nivel_fidelidad || 'Nuevo'}"`,
+          `"${c.estado === 1 ? 'Activo' : 'Inactivo'}"`
+        ].join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `clientes_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
   const openCreateModal = () => {
     resetForm();
     setShowCreateModal(true);
@@ -165,6 +210,12 @@ export function useClients() {
     clients,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    loyaltyFilter,
+    setLoyaltyFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -188,6 +239,7 @@ export function useClients() {
     handleEdit,
     handleDelete,
     toggleStatus,
+    handleExport,
     openCreateModal,
     openEditModal,
     openDetailModal,

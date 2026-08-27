@@ -1,11 +1,14 @@
-import { Plus, Search, Download, Filter } from "lucide-react";
+import { Plus, Download, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "motion/react";
 import { useRoles } from "../hooks/useRoles";
 import RolesTable from "../components/RolesTable";
 import RolesStats from "../components/RolesStats";
 import RoleFormModal from "../components/RoleFormModal";
 import RoleDetailModal from "../components/RoleDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
 
 export default function RolesPage() {
   const {
@@ -14,6 +17,8 @@ export default function RolesPage() {
     setSearchTerm,
     statusFilter,
     setStatusFilter,
+    hasActiveFilters,
+    resetFilters,
     sortField,
     sortDir,
     handleSort,
@@ -36,6 +41,7 @@ export default function RolesPage() {
     handleCreate,
     handleEdit,
     handleDelete,
+    handleExport,
     toggleStatus,
     openCreateModal,
     openEditModal,
@@ -60,65 +66,79 @@ export default function RolesPage() {
   };
 
   const onToggleStatus = () => {
-    const newState = selectedRole?.estado === 1 ? "desactivado" : "activado";
-    toggleStatus(selectedRole?.id_rol);
+    if (!selectedRole) return;
+    const newState = selectedRole.estado === 1 ? "desactivado" : "activado";
+    toggleStatus(selectedRole.id_rol);
     toast.success(`Rol ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedRole(null);
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Roles y Permisos</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona los roles y permisos del sistema</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Roles y Permisos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona los roles, accesos y permisos del sistema</p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
           onClick={openCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Nuevo Rol
-        </button>
+        </motion.button>
       </div>
 
       {/* Stats Cards */}
       <RolesStats roles={roles} />
 
-      {/* Filtros y búsqueda */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
-          {/* Búsqueda */}
-          <div className="relative flex-1 w-full sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar roles..."
+      {/* Filtros y tabla */}
+      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        {/* Toolbar Estandarizada */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* SearchBar */}
+            <SearchBar
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={setSearchTerm}
+              placeholder="Buscar roles..."
+              maxWidthClass="w-full sm:w-64"
             />
-          </div>
 
-          {/* Filtro por estado */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <select
+            {/* StatusFilterPills */}
+            <StatusFilterPills
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              <option value="todos">Todos</option>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
+              onChange={setStatusFilter}
+              options={[
+                { key: "all", label: "Todos" },
+                { key: "1", label: "Activos" },
+                { key: "0", label: "Inactivos" }
+              ]}
+            />
+
+            {/* Limpiar Filtros */}
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2 rounded-md hover:bg-secondary cursor-pointer"
+                title="Limpiar todos los filtros"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
 
-          <div className="ml-auto">
-            <button className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm">
-              <Download className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+            >
+              <Download className="h-3.5 w-3.5" />
               Exportar
             </button>
           </div>
