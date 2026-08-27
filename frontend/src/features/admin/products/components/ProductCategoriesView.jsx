@@ -43,26 +43,36 @@ export default function ProductCategoriesView() {
   };
 
   const CategoryForm = ({ onSubmit, onCancel }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5">
       <div>
         <label className="block text-sm font-medium text-foreground mb-1.5">
-          Nombre <span className="text-destructive">*</span>
+          Nombre de la Categoría <span className="text-destructive">*</span>
         </label>
         <input
           type="text"
           value={formData.nombre}
           onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-          className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-          placeholder="Ej: Estilizado"
+          className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+          placeholder="Ej: Cuidado del Cabello, Estilizado, Barbería..."
           required
           autoFocus
         />
+        <span className="text-[11px] text-muted-foreground mt-1 block">
+          Define el nombre de la categoría para clasificar productos en inventario y ventas.
+        </span>
       </div>
-      <div className="flex gap-3">
-        <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 text-sm font-medium">
-          Guardar
+      <div className="flex gap-3 pt-3 border-t border-border">
+        <button
+          type="submit"
+          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 text-sm font-semibold shadow-xs cursor-pointer"
+        >
+          Guardar Categoría
         </button>
-        <button type="button" onClick={onCancel} className="flex-1 py-2.5 border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 py-3 border border-border rounded-xl hover:bg-accent text-foreground text-sm font-medium transition-colors cursor-pointer"
+        >
           Cancelar
         </button>
       </div>
@@ -167,13 +177,13 @@ export default function ProductCategoriesView() {
 
       {/* Modales */}
       {showCreateModal && (
-        <Modal title="Nueva Categoría de Producto" onClose={() => { setShowCreateModal(false); resetForm(); }} maxWidthClass="max-w-sm">
+        <Modal title="Nueva Categoría de Producto" onClose={() => { setShowCreateModal(false); resetForm(); }} maxWidthClass="max-w-2xl">
           <CategoryForm onSubmit={onHandleCreate} onCancel={() => { setShowCreateModal(false); resetForm(); }} />
         </Modal>
       )}
 
       {showEditModal && selectedCategory && (
-        <Modal title="Editar Categoría" onClose={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} maxWidthClass="max-w-sm">
+        <Modal title="Editar Categoría" onClose={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} maxWidthClass="max-w-2xl">
           <CategoryForm onSubmit={onHandleEdit} onCancel={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} />
         </Modal>
       )}

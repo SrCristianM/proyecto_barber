@@ -126,23 +126,39 @@ export default function ServiceCategoriesView() {
 
       {/* Modal Crear */}
       {showCreateModal && (
-        <Modal title="Nueva Categoría de Servicio" onClose={() => { setShowCreateModal(false); resetForm(); }} maxWidthClass="max-w-sm">
-          <form onSubmit={(e) => { e.preventDefault(); onHandleCreate(); }} className="space-y-4">
+        <Modal title="Nueva Categoría de Servicio" onClose={() => { setShowCreateModal(false); resetForm(); }} maxWidthClass="max-w-2xl">
+          <form onSubmit={(e) => { e.preventDefault(); onHandleCreate(); }} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Nombre <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Nombre de la Categoría <span className="text-destructive">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                placeholder="Ej: Cortes Premium"
+                className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                placeholder="Ej: Cortes Premium, Barbería Clásica, Tintes..."
                 required
                 autoFocus
               />
+              <span className="text-[11px] text-muted-foreground mt-1 block">
+                Permite agrupar los servicios en el catálogo y durante el agendamiento de citas.
+              </span>
             </div>
-            <div className="flex gap-3">
-              <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 text-sm font-medium">Crear</button>
-              <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }} className="flex-1 py-2.5 border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium">Cancelar</button>
+            <div className="flex gap-3 pt-3 border-t border-border">
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 text-sm font-semibold shadow-xs cursor-pointer"
+              >
+                Crear Categoría
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowCreateModal(false); resetForm(); }}
+                className="flex-1 py-3 border border-border rounded-xl hover:bg-accent text-foreground text-sm font-medium transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
             </div>
           </form>
         </Modal>
@@ -150,22 +166,35 @@ export default function ServiceCategoriesView() {
 
       {/* Modal Editar */}
       {showEditModal && selectedCategory && (
-        <Modal title="Editar Categoría" onClose={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} maxWidthClass="max-w-sm">
-          <form onSubmit={(e) => { e.preventDefault(); onHandleEdit(); }} className="space-y-4">
+        <Modal title="Editar Categoría de Servicio" onClose={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} maxWidthClass="max-w-2xl">
+          <form onSubmit={(e) => { e.preventDefault(); onHandleEdit(); }} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Nombre <span className="text-destructive">*</span></label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Nombre de la Categoría <span className="text-destructive">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                 required
                 autoFocus
               />
             </div>
-            <div className="flex gap-3">
-              <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 text-sm font-medium">Guardar</button>
-              <button type="button" onClick={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }} className="flex-1 py-2.5 border border-border rounded-lg hover:bg-accent text-foreground text-sm font-medium">Cancelar</button>
+            <div className="flex gap-3 pt-3 border-t border-border">
+              <button
+                type="submit"
+                className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 text-sm font-semibold shadow-xs cursor-pointer"
+              >
+                Guardar Cambios
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowEditModal(false); setSelectedCategory(null); resetForm(); }}
+                className="flex-1 py-3 border border-border rounded-xl hover:bg-accent text-foreground text-sm font-medium transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
             </div>
           </form>
         </Modal>

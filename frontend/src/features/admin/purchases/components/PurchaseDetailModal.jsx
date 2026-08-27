@@ -1,4 +1,4 @@
-import { ShoppingBag, Building2, User, Calendar, CheckCircle2, Ban } from "lucide-react";
+import { ShoppingBag, Building2, CheckCircle2, Ban } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { availableSuppliers, availableUsers, availableProducts } from "../hooks/usePurchases";
 
@@ -15,97 +15,97 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
   };
 
   return (
-    <Modal title={`Detalle de la Compra #${purchase.id_compra}`} onClose={onClose} maxWidthClass="max-w-2xl">
+    <Modal title={`Detalle de la Compra #${purchase.id_compra}`} onClose={onClose} maxWidthClass="max-w-3xl">
       <div className="space-y-5">
         {/* Header Icon + Info General */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-secondary/30 rounded-xl border border-border/60 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 sm:p-5 bg-secondary/30 rounded-2xl border border-border/60">
           <div>
-            <span className="text-muted-foreground block mb-1">ID Compra</span>
-            <span className="font-bold text-foreground text-sm">#{purchase.id_compra}</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">ID Compra</span>
+            <span className="text-xl font-bold text-foreground">#{purchase.id_compra}</span>
           </div>
 
           <div>
-            <span className="text-muted-foreground block mb-1">Estado</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Estado</span>
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 font-semibold rounded-full border ${
+              className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${
                 purchase.estado === "Registrada"
                   ? "bg-success/10 text-success border-success/20"
                   : "bg-destructive/10 text-destructive border-destructive/20"
               }`}
             >
               {purchase.estado === "Registrada" ? (
-                <CheckCircle2 className="h-3 w-3" />
+                <CheckCircle2 className="h-3.5 w-3.5" />
               ) : (
-                <Ban className="h-3 w-3" />
+                <Ban className="h-3.5 w-3.5" />
               )}
               {purchase.estado}
             </span>
           </div>
 
           <div>
-            <span className="text-muted-foreground block mb-1">Fecha Registro</span>
-            <span className="font-medium text-foreground">{purchase.fecha}</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Fecha Registro</span>
+            <span className="text-sm font-medium text-foreground">{purchase.fecha}</span>
           </div>
 
           <div>
-            <span className="text-muted-foreground block mb-1">Registrado Por</span>
-            <span className="font-medium text-foreground">{user?.nombre || "Admin"}</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Registrado Por</span>
+            <span className="text-sm font-semibold text-foreground">{user?.nombre || "Administrador"}</span>
           </div>
         </div>
 
         {/* Proveedor Info */}
-        <div className="p-3.5 bg-card border border-border rounded-xl">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="p-4 sm:p-5 bg-card border border-border rounded-2xl">
+          <div className="flex items-center gap-2 mb-2">
             <Building2 className="h-4 w-4 text-primary" />
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Información del Proveedor</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Información del Proveedor</h4>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
-            <span className="font-semibold text-foreground text-sm">{supplier?.nombre || "Proveedor"}</span>
-            <span className="text-muted-foreground">{supplier?.nit ? `NIT: ${supplier.nit}` : "Sin NIT"}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span className="font-bold text-foreground text-base">{supplier?.nombre || "Proveedor"}</span>
+            <span className="text-xs text-muted-foreground font-medium">{supplier?.nit ? `NIT: ${supplier.nit}` : "Sin NIT registrado"}</span>
           </div>
         </div>
 
         {/* Desglose de Productos (detalle_compra) */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2.5">
             <ShoppingBag className="h-4 w-4 text-primary" />
-            <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Productos Adquiridos</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Productos Adquiridos en Factura</h4>
           </div>
 
-          <div className="border border-border rounded-xl overflow-hidden">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/50 border-b border-border text-muted-foreground">
+          <div className="border border-border rounded-2xl overflow-hidden bg-card">
+            <table className="w-full text-xs sm:text-sm">
+              <thead className="bg-muted/40 border-b border-border text-muted-foreground">
                 <tr>
-                  <th className="text-left py-2.5 px-3">Producto</th>
-                  <th className="text-center py-2.5 px-3">Cantidad</th>
-                  <th className="text-right py-2.5 px-3">Precio Unitario</th>
-                  <th className="text-right py-2.5 px-3">Subtotal</th>
+                  <th className="text-left py-3 px-4 font-semibold">Producto</th>
+                  <th className="text-center py-3 px-4 font-semibold">Cantidad</th>
+                  <th className="text-right py-3 px-4 font-semibold">Precio Unitario</th>
+                  <th className="text-right py-3 px-4 font-semibold">Subtotal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-border/50">
                 {(purchase.detalles || []).map((item, idx) => (
-                  <tr key={idx} className="hover:bg-accent/30 transition-colors">
-                    <td className="py-2.5 px-3 font-medium text-foreground">
+                  <tr key={idx} className="hover:bg-muted/20 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-foreground">
                       {getProdName(item.id_producto, item.nombre_producto)}
                     </td>
-                    <td className="py-2.5 px-3 text-center text-foreground font-medium">
+                    <td className="py-3 px-4 text-center text-foreground font-medium">
                       {item.cantidad} uds.
                     </td>
-                    <td className="py-2.5 px-3 text-right text-muted-foreground">
+                    <td className="py-3 px-4 text-right text-muted-foreground">
                       ${Number(item.precio_unitario).toLocaleString("es-CO")}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-foreground">
+                    <td className="py-3 px-4 text-right font-bold text-foreground">
                       ${Number(item.subtotal).toLocaleString("es-CO")}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-card border-t border-border">
+              <tfoot className="bg-secondary/30 border-t border-border">
                 <tr>
-                  <td colSpan={3} className="py-3 px-3 text-right font-bold text-foreground text-sm">
+                  <td colSpan={3} className="py-3.5 px-4 text-right font-bold text-foreground text-sm">
                     Total de la Compra:
                   </td>
-                  <td className="py-3 px-3 text-right font-bold text-primary text-base">
+                  <td className="py-3.5 px-4 text-right font-extrabold text-primary text-base sm:text-lg">
                     ${Number(purchase.total).toLocaleString("es-CO")}
                   </td>
                 </tr>
@@ -119,14 +119,14 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
           {!isAnulada && (
             <button
               onClick={onEdit}
-              className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+              className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
             >
               Editar Compra
             </button>
           )}
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+            className="flex-1 py-3 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
           >
             Cerrar
           </button>

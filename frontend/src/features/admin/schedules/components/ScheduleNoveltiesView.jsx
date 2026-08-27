@@ -72,26 +72,27 @@ export default function ScheduleNoveltiesView() {
   };
 
   const NoveltyForm = ({ onSubmit, onCancel, isEdit = false }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">
-          Barbero <span className="text-destructive">*</span>
-        </label>
-        <select
-          value={formData.id_barbero}
-          onChange={(e) => setFormData({ ...formData, id_barbero: Number(e.target.value) })}
-          className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-          required
-        >
-          {barbers.map((b) => (
-            <option key={b.id_barbero} value={b.id_barbero}>
-              {b.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Barbero <span className="text-destructive">*</span>
+          </label>
+          <select
+            value={formData.id_barbero}
+            onChange={(e) => setFormData({ ...formData, id_barbero: Number(e.target.value) })}
+            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            required
+            autoFocus
+          >
+            {barbers.map((b) => (
+              <option key={b.id_barbero} value={b.id_barbero}>
+                {b.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Tipo de Novedad <span className="text-destructive">*</span>
@@ -99,7 +100,7 @@ export default function ScheduleNoveltiesView() {
           <select
             value={formData.tipo}
             onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             required
           >
             {noveltyTypes.map((t) => (
@@ -118,56 +119,56 @@ export default function ScheduleNoveltiesView() {
             type="date"
             value={formData.fecha}
             onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            required
+          />
+        </div>
+
+        {isEdit && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Estado de la Solicitud
+            </label>
+            <select
+              value={formData.estado}
+              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              {noveltyStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Descripción / Motivo <span className="text-destructive">*</span>
+          </label>
+          <textarea
+            rows={3}
+            value={formData.descripcion}
+            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            placeholder="Describe el motivo del permiso, ausencia o cambio de turno..."
+            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm resize-none"
             required
           />
         </div>
       </div>
 
-      {isEdit && (
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Estado de la Solicitud
-          </label>
-          <select
-            value={formData.estado}
-            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-          >
-            {noveltyStatuses.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">
-          Descripción / Motivo <span className="text-destructive">*</span>
-        </label>
-        <textarea
-          rows={3}
-          value={formData.descripcion}
-          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          placeholder="Describe el motivo del permiso, ausencia o cambio..."
-          className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm resize-none"
-          required
-        />
-      </div>
-
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-3 border-t border-border">
         <button
           type="submit"
-          className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
         >
           {isEdit ? "Guardar Cambios" : "Registrar Novedad"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-2.5 border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+          className="flex-1 py-3 border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
         >
           Cancelar
         </button>
@@ -354,7 +355,7 @@ export default function ScheduleNoveltiesView() {
         <Modal
           title="Registrar Novedad de Horario"
           onClose={() => { setShowCreateModal(false); resetForm(); }}
-          maxWidthClass="max-w-md"
+          maxWidthClass="max-w-2xl"
         >
           <NoveltyForm
             onSubmit={onHandleCreate}
@@ -368,7 +369,7 @@ export default function ScheduleNoveltiesView() {
         <Modal
           title="Editar Novedad de Horario"
           onClose={() => { setShowEditModal(false); setSelectedNovelty(null); resetForm(); }}
-          maxWidthClass="max-w-md"
+          maxWidthClass="max-w-2xl"
         >
           <NoveltyForm
             onSubmit={onHandleEdit}
