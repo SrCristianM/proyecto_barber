@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { CheckSquare, Square } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
+import { validateRoleForm } from "../validations/roleValidation";
 
 /**
  * Módulos del sistema con sus acciones disponibles.
@@ -123,10 +125,10 @@ export default function RoleFormModal({
   onSubmit,
   onClose
 }) {
+  const [errors, setErrors] = useState({});
   const isCreate = mode === "create";
   const permisos = formData.permisos || [];
 
-  // Calcular si todos los módulos están seleccionados
   const allKeys = SYSTEM_MODULES.flatMap((m) => m.acciones.map((a) => a.key));
   const allSelected = allKeys.every((k) => permisos.includes(k));
 
@@ -135,6 +137,7 @@ export default function RoleFormModal({
       ? permisos.filter((p) => p !== key)
       : [...permisos, key];
     setFormData({ ...formData, permisos: next });
+    if (errors.permisos) setErrors((prev) => ({ ...prev, permisos: null }));
   };
 
   const toggleModule = (module) => {
@@ -147,6 +150,7 @@ export default function RoleFormModal({
       next = [...new Set([...permisos, ...moduleKeys])];
     }
     setFormData({ ...formData, permisos: next });
+    if (errors.permisos) setErrors((prev) => ({ ...prev, permisos: null }));
   };
 
   const toggleAll = () => {
@@ -154,7 +158,19 @@ export default function RoleFormModal({
       setFormData({ ...formData, permisos: [] });
     } else {
       setFormData({ ...formData, permisos: [...allKeys] });
+      if (errors.permisos) setErrors((prev) => ({ ...prev, permisos: null }));
     }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateRoleForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
   };
 
   return (
@@ -163,13 +179,7 @@ export default function RoleFormModal({
       onClose={onClose}
       maxWidthClass="max-w-2xl"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Nombre */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -181,12 +191,19 @@ export default function RoleFormModal({
             id="nombre_rol"
             maxLength={50}
             value={formData.nombre_rol}
-            onChange={(e) => setFormData({ ...formData, nombre_rol: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => {
+              setFormData({ ...formData, nombre_rol: e.target.value });
+              if (errors.nombre_rol) setErrors((prev) => ({ ...prev, nombre_rol: null }));
+            }}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.nombre_rol
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="Ej: Administrador"
-            required
             autoFocus
           />
+          <FormFieldError error={errors.nombre_rol} />
         </div>
 
         {/* Descripción */}
@@ -197,22 +214,32 @@ export default function RoleFormModal({
             id="descripcion"
             maxLength={255}
             value={formData.descripcion}
-            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => {
+              setFormData({ ...formData, descripcion: e.target.value });
+              if (errors.descripcion) setErrors((prev) => ({ ...prev, descripcion: null }));
+            }}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.descripcion
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             rows="2"
             placeholder="Descripción y responsabilidades del rol"
           />
+          <FormFieldError error={errors.descripcion} />
         </div>
 
         {/* Permisos por módulo */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <label className="text-sm font-medium text-foreground">Permisos por módulo</label>
+            <label className="text-sm font-medium text-foreground">
+              Permisos por módulo <span className="text-destructive">*</span>
+            </label>
             {/* Seleccionar todo global */}
             <button
               type="button"
               onClick={toggleAll}
-              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
             >
               {allSelected ? (
                 <CheckSquare className="h-4 w-4" />
@@ -222,6 +249,7 @@ export default function RoleFormModal({
               {allSelected ? "Deseleccionar todo" : "Seleccionar todo"}
             </button>
           </div>
+          <FormFieldError error={errors.permisos} />
 
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
             {SYSTEM_MODULES.map((module) => {

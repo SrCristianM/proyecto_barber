@@ -1,18 +1,34 @@
+import { useState } from "react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { availableRoles } from "../hooks/useUsers";
+import { validateUserForm } from "../validations/userValidation";
 
 export default function UserFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateUserForm(formData, isCreate);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
+  };
 
   return (
     <Modal title={isCreate ? "Crear Nuevo Usuario" : "Editar Usuario"} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -24,13 +40,18 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
               id="nombre"
               maxLength={80}
               value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("nombre", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.nombre
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               placeholder="Ej: Juan"
-              required
               autoFocus
             />
+            <FormFieldError error={errors.nombre} />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
               Apellido <span className="text-destructive">*</span>
@@ -41,11 +62,15 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
               id="apellido"
               maxLength={80}
               value={formData.apellido}
-              onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("apellido", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.apellido
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               placeholder="Ej: Pérez"
-              required
             />
+            <FormFieldError error={errors.apellido} />
           </div>
         </div>
 
@@ -59,11 +84,15 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
             id="correo"
             maxLength={120}
             value={formData.correo}
-            onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => handleChange("correo", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.correo
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="correo@ejemplo.com"
-            required
           />
+          <FormFieldError error={errors.correo} />
         </div>
 
         <div>
@@ -73,11 +102,16 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
             name="telefono"
             id="telefono"
             maxLength={20}
-            value={formData.telefono}
-            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            value={formData.telefono || ""}
+            onChange={(e) => handleChange("telefono", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.telefono
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="+57 300 123 4567"
           />
+          <FormFieldError error={errors.telefono} />
         </div>
 
         <div>
@@ -88,9 +122,12 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
             name="id_rol"
             id="id_rol"
             value={formData.id_rol}
-            onChange={(e) => setFormData({ ...formData, id_rol: Number(e.target.value) })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => handleChange("id_rol", Number(e.target.value))}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.id_rol
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           >
             {availableRoles.map((role) => (
               <option key={role.id_rol} value={role.id_rol}>
@@ -98,6 +135,7 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
               </option>
             ))}
           </select>
+          <FormFieldError error={errors.id_rol} />
         </div>
 
         {isCreate && (
@@ -111,11 +149,15 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
               id="contrasena"
               maxLength={255}
               value={formData.contrasena}
-              onChange={(e) => setFormData({ ...formData, contrasena: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              placeholder="••••••••"
-              required
+              onChange={(e) => handleChange("contrasena", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.contrasena
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Mínimo 8 car., Mayúscula, Número"
             />
+            <FormFieldError error={errors.contrasena} />
           </div>
         )}
 

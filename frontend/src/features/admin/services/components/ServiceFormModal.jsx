@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { availableCategories } from "../hooks/useServices";
 import { Scissors, ImageOff, Loader2, Sparkles, X } from "lucide-react";
+import { validateServiceForm } from "../validations/serviceValidation";
 
 const SAMPLE_IMAGES = [
   { label: "Corte Clásico", url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80" },
@@ -44,7 +46,7 @@ function ImagePreview({ url, onClear, onSelectSample }) {
               key={sample.label}
               type="button"
               onClick={() => onSelectSample(sample.url)}
-              className="px-2.5 py-1 text-[11px] font-medium bg-card hover:bg-accent border border-border rounded-md text-foreground transition-colors"
+              className="px-2.5 py-1 text-[11px] font-medium bg-card hover:bg-accent border border-border rounded-md text-foreground transition-colors cursor-pointer"
             >
               {sample.label}
             </button>
@@ -81,14 +83,14 @@ function ImagePreview({ url, onClear, onSelectSample }) {
               <button
                 type="button"
                 onClick={() => onSelectSample(SAMPLE_IMAGES[0].url)}
-                className="px-2.5 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded-md font-medium transition-colors"
+                className="px-2.5 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded-md font-medium transition-colors cursor-pointer"
               >
                 Usar imagen de prueba
               </button>
               <button
                 type="button"
                 onClick={onClear}
-                className="px-2.5 py-1 text-xs border border-border hover:bg-accent rounded-md text-foreground transition-colors"
+                className="px-2.5 py-1 text-xs border border-border hover:bg-accent rounded-md text-foreground transition-colors cursor-pointer"
               >
                 Limpiar URL
               </button>
@@ -127,24 +129,37 @@ function ImagePreview({ url, onClear, onSelectSample }) {
 
 export default function ServiceFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
 
   const handleClearUrl = () => {
-    setFormData({ ...formData, imagen_url: "" });
+    handleChange("imagen_url", "");
   };
 
   const handleSelectSample = (sampleUrl) => {
-    setFormData({ ...formData, imagen_url: sampleUrl });
+    handleChange("imagen_url", sampleUrl);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateServiceForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
   };
 
   return (
     <Modal title={isCreate ? "Crear Nuevo Servicio" : "Editar Servicio"} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Nombre del Servicio <span className="text-destructive">*</span>
@@ -155,12 +170,16 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
             id="nombre"
             maxLength={120}
             value={formData.nombre}
-            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => handleChange("nombre", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.nombre
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="Ej: Corte Clásico"
-            required
             autoFocus
           />
+          <FormFieldError error={errors.nombre} />
         </div>
 
         <div>
@@ -171,9 +190,12 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
             name="id_categoria_servicio"
             id="id_categoria_servicio"
             value={formData.id_categoria_servicio}
-            onChange={(e) => setFormData({ ...formData, id_categoria_servicio: Number(e.target.value) })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => handleChange("id_categoria_servicio", Number(e.target.value))}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.id_categoria_servicio
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           >
             {availableCategories.map((cat) => (
               <option key={cat.id_categoria_servicio} value={cat.id_categoria_servicio}>
@@ -181,6 +203,7 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
               </option>
             ))}
           </select>
+          <FormFieldError error={errors.id_categoria_servicio} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -194,10 +217,14 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
               name="duracion_minutos"
               id="duracion_minutos"
               value={formData.duracion_minutos}
-              onChange={(e) => setFormData({ ...formData, duracion_minutos: parseInt(e.target.value, 10) || 1 })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm font-medium"
-              required
+              onChange={(e) => handleChange("duracion_minutos", parseInt(e.target.value, 10) || 0)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.duracion_minutos
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.duracion_minutos} />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -210,10 +237,14 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
               name="precio"
               id="precio"
               value={formData.precio}
-              onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm font-medium"
-              required
+              onChange={(e) => handleChange("precio", parseFloat(e.target.value) || 0)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.precio
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.precio} />
           </div>
         </div>
 
@@ -232,11 +263,16 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
               id="imagen_url"
               maxLength={255}
               value={formData.imagen_url || ""}
-              onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
-              className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("imagen_url", e.target.value)}
+              className={`w-full pl-10 pr-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.imagen_url
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               placeholder="https://images.unsplash.com/photo-..."
             />
           </div>
+          <FormFieldError error={errors.imagen_url} />
           <ImagePreview
             url={formData.imagen_url}
             onClear={handleClearUrl}

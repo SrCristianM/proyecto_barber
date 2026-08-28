@@ -1,23 +1,39 @@
+import { useState } from "react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import ImageUploader from "../../shared/components/ImageUploader";
 import { categories } from "../hooks/useProducts";
+import { validateProductForm } from "../validations/productValidation";
 
 export default function ProductFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
 
   const handleImageChange = (dataUrl) => {
-    setFormData({ ...formData, imagen_url: dataUrl || "" });
+    setFormData((prev) => ({ ...prev, imagen_url: dataUrl || "" }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateProductForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
   };
 
   return (
     <Modal title={isCreate ? "Crear Nuevo Producto" : "Editar Producto"} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {/* Nombre del Producto */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -29,12 +45,16 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
             id="nombre"
             maxLength={120}
             value={formData.nombre}
-            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => handleChange("nombre", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.nombre
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="Ej: Gel para Cabello"
-            required
             autoFocus
           />
+          <FormFieldError error={errors.nombre} />
         </div>
 
         {/* Categoría de Producto */}
@@ -46,9 +66,12 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
             name="id_categoria_producto"
             id="id_categoria_producto"
             value={formData.id_categoria_producto}
-            onChange={(e) => setFormData({ ...formData, id_categoria_producto: Number(e.target.value) })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => handleChange("id_categoria_producto", Number(e.target.value))}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.id_categoria_producto
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           >
             {categories.map((cat) => (
               <option key={cat.id_categoria_producto} value={cat.id_categoria_producto}>
@@ -56,6 +79,7 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
               </option>
             ))}
           </select>
+          <FormFieldError error={errors.id_categoria_producto} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -70,10 +94,14 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
               name="stock"
               id="stock"
               value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value, 10) || 0 })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
+              onChange={(e) => handleChange("stock", parseInt(e.target.value, 10) || 0)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.stock
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.stock} />
           </div>
 
           {/* Precio de Venta */}
@@ -88,10 +116,14 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
               name="precio"
               id="precio"
               value={formData.precio}
-              onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
+              onChange={(e) => handleChange("precio", parseFloat(e.target.value) || 0)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.precio
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.precio} />
           </div>
         </div>
 
@@ -101,6 +133,7 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
           value={formData.imagen_url}
           onChange={handleImageChange}
         />
+        <FormFieldError error={errors.imagen_url} />
 
         <div className="flex gap-3 pt-3 border-t border-border">
           <button

@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { ShoppingBag, Plus, Trash2, UserCheck, Calendar } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { clients, users, saleStatuses, catalogItems } from "../hooks/useSales";
+import { validateSaleForm } from "../validations/saleValidation";
 
 export default function SaleFormModal({
   mode,
@@ -14,6 +17,30 @@ export default function SaleFormModal({
 }) {
   const isCreate = mode === "create";
   const currentUser = users.find((u) => u.id_usuario === Number(formData.id_usuario)) || users[0];
+  const [selectedCatalogId, setSelectedCatalogId] = useState(catalogItems[0]?.id || "");
+  const [addQty, setAddQty] = useState(1);
+  const [errors, setErrors] = useState({});
+
+  const handleAddNewItem = () => {
+    const item = catalogItems.find((c) => c.id === selectedCatalogId);
+    if (!item) return;
+    onAddItem(item, addQty);
+    setAddQty(1);
+    if (errors.detalles) {
+      setErrors((prev) => ({ ...prev, detalles: null }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateSaleForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
+  };
 
   return (
     <Modal
@@ -21,14 +48,7 @@ export default function SaleFormModal({
       onClose={onClose}
       maxWidthClass="max-w-3xl"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (formData.detalles.length === 0) return;
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Cabecera de la Venta */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Cliente */}
@@ -40,9 +60,16 @@ export default function SaleFormModal({
               name="id_cliente"
               id="id_cliente"
               value={formData.id_cliente}
-              onChange={(e) => setFormData({ ...formData, id_cliente: Number(e.target.value) })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
+              onChange={(e) => {
+                setFormData({ ...formData, id_cliente: Number(e.target.value) });
+                if (errors.id_cliente) setErrors((prev) => ({ ...prev, id_cliente: null }));
+              }}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.id_cliente
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              autoFocus
             >
               {clients.map((client) => (
                 <option key={client.id_cliente} value={client.id_cliente}>
@@ -50,6 +77,7 @@ export default function SaleFormModal({
                 </option>
               ))}
             </select>
+            <FormFieldError error={errors.id_cliente} />
           </div>
 
           {/* Usuario / Cajero (Contexto de Sesión) */}
@@ -102,9 +130,9 @@ export default function SaleFormModal({
                 onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               >
-                {saleStatuses.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
+                {saleStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
                   </option>
                 ))}
               </select>
@@ -112,109 +140,139 @@ export default function SaleFormModal({
           ) : (
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Fecha / Hora <span className="text-xs text-muted-foreground font-normal">(Automática de Sistema)</span>
+                Estado Inicial
               </label>
-              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/40 border border-border/80 rounded-xl text-muted-foreground text-sm">
-                <Calendar className="h-4 w-4 text-primary" />
-                <span>Fecha y hora de registro al confirmar</span>
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/20 border border-border/60 rounded-xl text-foreground text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-success"></span>
+                <span>Completada (Facturación inmediata)</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sección de Detalle de Venta (venta_detalle) */}
+        {/* Sección: Detalle de Venta (venta_detalle) */}
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <ShoppingBag className="h-4 w-4 text-primary" />
-                Líneas de Facturación (Productos y Servicios)
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Selecciona artículos del catálogo y ajusta cantidades para facturar
-              </p>
-            </div>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4 text-primary" />
+              Detalle de Facturación (Servicios y Productos) <span className="text-destructive">*</span>
+            </h3>
           </div>
 
-          {/* Catálogo rápido para agregar */}
-          <div className="p-3 bg-secondary/30 border border-border/70 rounded-xl mb-3.5">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
-              Agregar al detalle:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {catalogItems.map((item) => (
-                <button
-                  key={item.id_item}
-                  type="button"
-                  onClick={() => onAddItem(item)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-card hover:bg-primary/10 hover:border-primary/40 border border-border rounded-lg text-xs font-medium text-foreground transition-colors cursor-pointer"
+          {/* Selector para añadir ítem */}
+          <div className="p-3.5 bg-secondary/30 rounded-xl border border-border/70 mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Agregar al Carrito de Cobro
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+              <div className="sm:col-span-8">
+                <label className="block text-[11px] text-muted-foreground mb-1">
+                  Ítem del Catálogo (Servicio / Producto)
+                </label>
+                <select
+                  value={selectedCatalogId}
+                  onChange={(e) => setSelectedCatalogId(e.target.value)}
+                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
                 >
-                  <Plus className="h-3 w-3 text-primary" />
-                  <span>{item.nombre}</span>
-                  <span className="text-[11px] font-semibold text-primary">
-                    ${Number(item.precio_unitario).toLocaleString("es-CO")}
-                  </span>
+                  <optgroup label="Servicios de Barbería">
+                    {catalogItems
+                      .filter((c) => c.tipo === "Servicio")
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} — ${c.precio.toLocaleString("es-CO")}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Productos en Venta">
+                    {catalogItems
+                      .filter((c) => c.tipo === "Producto")
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} — ${c.precio.toLocaleString("es-CO")} (Stock: {c.stock})
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={addQty}
+                  onChange={(e) => setAddQty(parseInt(e.target.value, 10) || 1)}
+                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center font-medium"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleAddNewItem}
+                  className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-xs font-medium flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Agregar
                 </button>
-              ))}
+              </div>
             </div>
           </div>
 
-          {/* Tabla de Detalle (venta_detalle) */}
+          {/* Tabla de Detalle */}
           {formData.detalles.length === 0 ? (
-            <div className="p-4 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive text-xs text-center font-medium">
-              Agrega al menos un servicio o producto para registrar la venta.
+            <div className="flex items-center justify-center gap-2 p-4 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive text-xs">
+              <span>Debes agregar al menos un servicio o producto a la venta.</span>
             </div>
           ) : (
             <div className="border border-border rounded-xl overflow-hidden bg-card">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50 border-b border-border text-muted-foreground">
                   <tr>
-                    <th className="text-left py-2.5 px-3">Tipo</th>
-                    <th className="text-left py-2.5 px-3">Ítem / Concepto</th>
-                    <th className="text-center py-2.5 px-3 w-24">Cantidad</th>
-                    <th className="text-right py-2.5 px-3 w-28">Precio Unit.</th>
-                    <th className="text-right py-2.5 px-3 w-28">Subtotal</th>
-                    <th className="text-center py-2.5 px-2 w-12">Acción</th>
+                    <th className="text-left py-2 px-3">Tipo</th>
+                    <th className="text-left py-2 px-3">Concepto</th>
+                    <th className="text-center py-2 px-3 w-20">Cantidad</th>
+                    <th className="text-right py-2 px-3 w-28">Precio Unit.</th>
+                    <th className="text-right py-2 px-3 w-28">Subtotal</th>
+                    <th className="text-center py-2 px-2 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/60">
-                  {formData.detalles.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-accent/30 transition-colors">
+                  {formData.detalles.map((det, index) => (
+                    <tr key={det.id_venta_detalle || index} className="hover:bg-accent/30 transition-colors">
                       <td className="py-2.5 px-3">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-semibold ${
-                            item.tipo_item === "Servicio"
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold ${
+                            det.tipo_item === "Servicio"
                               ? "bg-primary/10 text-primary"
                               : "bg-blue-500/10 text-blue-500"
                           }`}
                         >
-                          {item.tipo_item}
+                          {det.tipo_item}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 font-medium text-foreground">{item.nombre}</td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-2.5 px-3 font-medium text-foreground">{det.nombre_item}</td>
+                      <td className="py-2.5 px-3 text-center">
                         <input
                           type="number"
                           min="1"
-                          value={item.cantidad || 1}
-                          onChange={(e) =>
-                            onUpdateItemQuantity(idx, Math.max(1, parseInt(e.target.value, 10) || 1))
-                          }
-                          className="w-full px-2 py-1 bg-input-background border border-input rounded-md text-foreground text-xs text-center font-medium"
+                          value={det.cantidad}
+                          onChange={(e) => onUpdateItemQuantity(index, e.target.value)}
+                          className="w-14 px-1.5 py-1 bg-input-background border border-input rounded text-center text-xs font-semibold text-foreground"
                         />
                       </td>
                       <td className="py-2.5 px-3 text-right text-muted-foreground">
-                        ${Number(item.precio_unitario).toLocaleString("es-CO")}
+                        ${Number(det.precio_unitario).toLocaleString("es-CO")}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-bold text-foreground">
-                        ${Number(item.subtotal).toLocaleString("es-CO")}
+                      <td className="py-2.5 px-3 text-right font-semibold text-foreground">
+                        ${Number(det.subtotal).toLocaleString("es-CO")}
                       </td>
                       <td className="py-2.5 px-2 text-center">
                         <button
                           type="button"
-                          onClick={() => onRemoveItem(idx)}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
-                          title="Quitar ítem"
+                          onClick={() => onRemoveItem(index)}
+                          className="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors cursor-pointer"
+                          title="Eliminar línea"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -225,7 +283,7 @@ export default function SaleFormModal({
                 <tfoot className="bg-secondary/40 border-t border-border">
                   <tr>
                     <td colSpan={4} className="py-3 px-3 text-right font-bold text-foreground text-sm">
-                      Total a Cobrar:
+                      Total Factura:
                     </td>
                     <td className="py-3 px-3 text-right font-extrabold text-primary text-base">
                       ${Number(formData.total).toLocaleString("es-CO")}
@@ -236,6 +294,7 @@ export default function SaleFormModal({
               </table>
             </div>
           )}
+          <FormFieldError error={errors.detalles} />
         </div>
 
         {/* Botones de acción */}
@@ -245,7 +304,7 @@ export default function SaleFormModal({
             disabled={formData.detalles.length === 0}
             className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isCreate ? "Confirmar y Facturar Venta" : "Guardar Cambios"}
+            {isCreate ? "Finalizar Venta" : "Guardar Cambios"}
           </button>
           <button
             type="button"

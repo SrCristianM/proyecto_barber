@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, AlertCircle, Building2, UserCheck, Calendar } from "lucide-react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import {
   availableSuppliers,
   availableProducts,
   availableUsers,
   purchaseStatuses
 } from "../hooks/usePurchases";
+import { validatePurchaseForm } from "../validations/purchaseValidation";
 
 export default function PurchaseFormModal({
   mode,
@@ -23,6 +25,7 @@ export default function PurchaseFormModal({
   const [selectedProductId, setSelectedProductId] = useState(availableProducts[0]?.id_producto || 1);
   const [addQuantity, setAddQuantity] = useState(1);
   const [addPrice, setAddPrice] = useState(availableProducts[0]?.precio_sugerido || 10000);
+  const [errors, setErrors] = useState({});
 
   const handleProductSelectChange = (e) => {
     const prodId = Number(e.target.value);
@@ -34,8 +37,23 @@ export default function PurchaseFormModal({
   };
 
   const handleAddNewItem = () => {
+    if (addQuantity < 1) return;
     addProductRow(selectedProductId, addQuantity, addPrice);
     setAddQuantity(1);
+    if (errors.detalles) {
+      setErrors((prev) => ({ ...prev, detalles: null }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validatePurchaseForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
   };
 
   return (
@@ -44,14 +62,7 @@ export default function PurchaseFormModal({
       onClose={onClose}
       maxWidthClass="max-w-3xl"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (formData.detalles.length === 0) return;
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Cabecera Principal de Compra */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Proveedor */}
@@ -63,9 +74,17 @@ export default function PurchaseFormModal({
               name="id_proveedor"
               id="id_proveedor"
               value={formData.id_proveedor}
-              onChange={(e) => setFormData({ ...formData, id_proveedor: Number(e.target.value) })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => {
+                setFormData({ ...formData, id_proveedor: Number(e.target.value) });
+                if (errors.id_proveedor) setErrors((prev) => ({ ...prev, id_proveedor: null }));
+              }}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.id_proveedor
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               required
+              autoFocus
             >
               {availableSuppliers.map((sup) => (
                 <option key={sup.id_proveedor} value={sup.id_proveedor}>
@@ -73,6 +92,7 @@ export default function PurchaseFormModal({
                 </option>
               ))}
             </select>
+            <FormFieldError error={errors.id_proveedor} />
           </div>
 
           {/* Usuario Responsable (Contexto de Sesión) */}
@@ -98,30 +118,27 @@ export default function PurchaseFormModal({
                 type="datetime-local"
                 name="fecha"
                 id="fecha"
-                value={formData.fecha}
-                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                value={formData.fecha ? formData.fecha.replace(" ", "T").substring(0, 16) : ""}
+                onChange={(e) => setFormData({ ...formData, fecha: e.target.value.replace("T", " ") + ":00" })}
                 className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                required
               />
             </div>
           ) : (
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Fecha / Hora <span className="text-xs text-muted-foreground font-normal">(Automática de Sistema)</span>
+                Fecha de Registro
               </label>
-              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/40 border border-border/80 rounded-xl text-muted-foreground text-sm">
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/20 border border-border/60 rounded-xl text-muted-foreground text-sm">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span>Fecha y hora de registro al confirmar la compra</span>
+                <span>Fecha y hora automática del sistema (Hoy)</span>
               </div>
             </div>
           )}
 
-          {/* Estado de la Compra */}
+          {/* Estado de la compra */}
           {!isCreate ? (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Estado de la Compra
-              </label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Estado</label>
               <select
                 name="estado"
                 id="estado"
@@ -138,62 +155,58 @@ export default function PurchaseFormModal({
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Estado Inicial
-              </label>
-              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-success/10 border border-success/30 rounded-xl text-success text-sm font-semibold">
-                <span className="w-2 h-2 rounded-full bg-success"></span>
-                <span>Registrada (Activa)</span>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Estado Inicial</label>
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/20 border border-border/60 rounded-xl text-foreground text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-warning"></span>
+                <span>Registrada (Por defecto)</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Sección de Detalle de Productos (detalle_compra) */}
+        {/* Sección: Detalle de Compra (detalle_compra) */}
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <ShoppingBag className="h-4 w-4 text-primary" />
-                Detalle de Productos a Abastecer (detalle_compra)
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Selecciona productos del inventario y define cantidad y costo unitario
-              </p>
-            </div>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4 text-primary" />
+              Líneas de la Compra (Productos a ingresar) <span className="text-destructive">*</span>
+            </h3>
           </div>
 
-          {/* Barra para Agregar Producto */}
-          <div className="bg-secondary/40 border border-border/80 rounded-xl p-3.5 mb-3">
+          {/* Añadir producto rápido */}
+          <div className="p-3.5 bg-secondary/30 rounded-xl border border-border/70 mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Agregar Producto a la Factura
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div className="sm:col-span-6">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Producto</label>
+                <label className="block text-[11px] text-muted-foreground mb-1">Producto</label>
                 <select
                   value={selectedProductId}
                   onChange={handleProductSelectChange}
                   className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
                 >
-                  {availableProducts.map((prod) => (
-                    <option key={prod.id_producto} value={prod.id_producto}>
-                      {prod.nombre} (Ref: ${prod.precio_sugerido?.toLocaleString()})
+                  {availableProducts.map((p) => (
+                    <option key={p.id_producto} value={p.id_producto}>
+                      {p.nombre} (Stock actual: {p.stock})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Cantidad</label>
+                <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
                 <input
                   type="number"
                   min="1"
                   value={addQuantity}
-                  onChange={(e) => setAddQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  onChange={(e) => setAddQuantity(parseInt(e.target.value, 10) || 1)}
                   className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center font-medium"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Costo Unit. ($)</label>
+                <label className="block text-[11px] text-muted-foreground mb-1">Costo Unit. ($)</label>
                 <input
                   type="number"
                   min="0"
@@ -303,6 +316,7 @@ export default function PurchaseFormModal({
               </table>
             </div>
           )}
+          <FormFieldError error={errors.detalles} />
         </div>
 
         {/* Botones de acción */}

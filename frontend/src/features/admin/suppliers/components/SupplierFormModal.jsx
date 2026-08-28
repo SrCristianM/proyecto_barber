@@ -1,4 +1,7 @@
+import { useState } from "react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
+import { validateSupplierForm } from "../validations/supplierValidation";
 
 export default function SupplierFormModal({
   mode,
@@ -8,6 +11,25 @@ export default function SupplierFormModal({
   onClose
 }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateSupplierForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
+  };
 
   return (
     <Modal
@@ -15,13 +37,7 @@ export default function SupplierFormModal({
       onClose={onClose}
       maxWidthClass="max-w-2xl"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Nombre / Razón Social */}
           <div className="sm:col-span-2">
@@ -32,14 +48,18 @@ export default function SupplierFormModal({
               type="text"
               name="nombre"
               id="nombre"
-              required
               maxLength={120}
               placeholder="Ej: Distribuidora Barber Pro"
               value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("nombre", e.target.value)}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.nombre
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               autoFocus
             />
+            <FormFieldError error={errors.nombre} />
           </div>
 
           {/* NIT / Identificación */}
@@ -54,9 +74,14 @@ export default function SupplierFormModal({
               maxLength={30}
               placeholder="Ej: 901234567-1"
               value={formData.nit || ""}
-              onChange={(e) => setFormData({ ...formData, nit: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("nit", e.target.value)}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.nit
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.nit} />
           </div>
 
           {/* Estado */}
@@ -67,7 +92,7 @@ export default function SupplierFormModal({
                 name="estado"
                 id="estado"
                 value={formData.estado !== undefined ? formData.estado : 1}
-                onChange={(e) => setFormData({ ...formData, estado: Number(e.target.value) })}
+                onChange={(e) => handleChange("estado", Number(e.target.value))}
                 className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               >
                 <option value={1}>Activo (Disponible para compras)</option>
@@ -94,9 +119,14 @@ export default function SupplierFormModal({
               maxLength={20}
               placeholder="+57 300 000 0000"
               value={formData.telefono || ""}
-              onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("telefono", e.target.value)}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.telefono
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.telefono} />
           </div>
 
           {/* Correo */}
@@ -109,9 +139,14 @@ export default function SupplierFormModal({
               maxLength={120}
               placeholder="proveedor@empresa.com"
               value={formData.correo || ""}
-              onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("correo", e.target.value)}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.correo
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.correo} />
           </div>
 
           {/* Dirección */}
@@ -124,9 +159,14 @@ export default function SupplierFormModal({
               maxLength={255}
               placeholder="Ej: Carrera 43A # 18-50, Medellín"
               value={formData.direccion || ""}
-              onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("direccion", e.target.value)}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.direccion
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             />
+            <FormFieldError error={errors.direccion} />
           </div>
         </div>
 

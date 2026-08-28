@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Plus, Edit, Power, Package, Check, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { useServicePackages } from "../hooks/useServicePackages";
+import { validateServicePackageForm } from "../validations/serviceValidation";
 
 export default function ServicePackagesView() {
   const {
@@ -31,12 +34,26 @@ export default function ServicePackagesView() {
     availableServicesList
   } = useServicePackages();
 
+  const [formErrors, setFormErrors] = useState({});
+
   const onHandleCreate = () => {
+    const result = validateServicePackageForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
     handleCreate();
     toast.success("Paquete creado correctamente");
   };
 
   const onHandleEdit = () => {
+    const result = validateServicePackageForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
     handleEdit();
     toast.success("Paquete actualizado correctamente");
   };
@@ -58,7 +75,7 @@ export default function ServicePackagesView() {
   const finalPrice = Math.max(0, basePrice * (1 - discountRate / 100));
 
   const PackageForm = ({ onSubmit, onCancel, isEdit = false }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5" noValidate>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Nombre del Paquete */}
         <div className="sm:col-span-2">
@@ -71,12 +88,19 @@ export default function ServicePackagesView() {
             id="nombre"
             maxLength={120}
             value={formData.nombre}
-            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => {
+              setFormData({ ...formData, nombre: e.target.value });
+              if (formErrors.nombre) setFormErrors((prev) => ({ ...prev, nombre: null }));
+            }}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              formErrors.nombre
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="Ej: Paquete Completo Ejecutivo"
-            required
             autoFocus
           />
+          <FormFieldError error={formErrors.nombre} />
         </div>
 
         {/* Descuento Porcentaje */}
@@ -92,10 +116,18 @@ export default function ServicePackagesView() {
             name="descuento_porcentaje"
             id="descuento_porcentaje"
             value={formData.descuento_porcentaje}
-            onChange={(e) => setFormData({ ...formData, descuento_porcentaje: Number(e.target.value) })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => {
+              setFormData({ ...formData, descuento_porcentaje: e.target.value });
+              if (formErrors.descuento_porcentaje) setFormErrors((prev) => ({ ...prev, descuento_porcentaje: null }));
+            }}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              formErrors.descuento_porcentaje
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="0"
           />
+          <FormFieldError error={formErrors.descuento_porcentaje} />
           <span className="text-[11px] text-muted-foreground mt-1 block">
             Aplica sobre la sumatoria de servicios incluidos.
           </span>
@@ -127,7 +159,9 @@ export default function ServicePackagesView() {
             (Selecciona al menos 2 servicios)
           </span>
         </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-3 bg-secondary/20 border border-border/70 rounded-xl">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-3 bg-secondary/20 border rounded-xl transition-all ${
+          formErrors.servicios_ids ? "border-destructive ring-1 ring-destructive/30" : "border-border/70"
+        }`}>
           {availableServicesList.map((svc) => {
             const isChecked = (formData.servicios_ids || []).includes(svc.id_servicio);
             return (
@@ -143,7 +177,10 @@ export default function ServicePackagesView() {
                   <input
                     type="checkbox"
                     checked={isChecked}
-                    onChange={() => toggleServiceInForm(svc.id_servicio)}
+                    onChange={() => {
+                      toggleServiceInForm(svc.id_servicio);
+                      if (formErrors.servicios_ids) setFormErrors((prev) => ({ ...prev, servicios_ids: null }));
+                    }}
                     className="w-4 h-4 rounded text-primary border-input focus:ring-primary"
                   />
                   <div>
@@ -158,18 +195,13 @@ export default function ServicePackagesView() {
             );
           })}
         </div>
-        {(formData.servicios_ids || []).length < 2 && (
-          <p className="text-xs text-destructive mt-1.5">
-            Un paquete debe componerse de al menos 2 servicios.
-          </p>
-        )}
+        <FormFieldError error={formErrors.servicios_ids} />
       </div>
 
       <div className="flex gap-3 pt-3 border-t border-border">
         <button
           type="submit"
-          disabled={(formData.servicios_ids || []).length < 2 || !formData.nombre.trim()}
-          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer"
         >
           {isEdit ? "Guardar Cambios del Paquete" : "Crear Paquete"}
         </button>
@@ -198,6 +230,7 @@ export default function ServicePackagesView() {
         <button
           onClick={() => {
             resetForm();
+            setFormErrors({});
             setShowCreateModal(true);
           }}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
@@ -244,7 +277,10 @@ export default function ServicePackagesView() {
               </div>
               <div className="flex gap-2 pt-1 border-t border-border">
                 <button
-                  onClick={() => openEditModal(pkg)}
+                  onClick={() => {
+                    setFormErrors({});
+                    openEditModal(pkg);
+                  }}
                   className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium cursor-pointer"
                 >
                   <Edit className="h-3.5 w-3.5" />

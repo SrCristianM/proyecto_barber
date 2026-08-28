@@ -2,7 +2,9 @@ import { Plus, Search, Check, X, Edit, Trash2, Calendar, User, Clock, AlertCircl
 import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { useScheduleNovelties } from "../hooks/useScheduleNovelties";
+import { validateNoveltyForm } from "../validations/scheduleValidation";
 
 const STATUS_BADGES = {
   Pendiente: "bg-warning/10 text-warning border-warning/20",
@@ -51,12 +53,26 @@ export default function ScheduleNoveltiesView() {
     stats
   } = useScheduleNovelties();
 
+  const [formErrors, setFormErrors] = useState({});
+
   const onHandleCreate = () => {
+    const result = validateNoveltyForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
     handleCreate();
     toast.success("Novedad de horario registrada correctamente");
   };
 
   const onHandleEdit = () => {
+    const result = validateNoveltyForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
     handleEdit();
     toast.success("Novedad de horario actualizada correctamente");
   };
@@ -72,17 +88,25 @@ export default function ScheduleNoveltiesView() {
   };
 
   const NoveltyForm = ({ onSubmit, onCancel, isEdit = false }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5" noValidate>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Barbero <span className="text-destructive">*</span>
           </label>
           <select
+            name="id_barbero"
+            id="id_barbero"
             value={formData.id_barbero}
-            onChange={(e) => setFormData({ ...formData, id_barbero: Number(e.target.value) })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => {
+              setFormData({ ...formData, id_barbero: Number(e.target.value) });
+              if (formErrors.id_barbero) setFormErrors((prev) => ({ ...prev, id_barbero: null }));
+            }}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              formErrors.id_barbero
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             autoFocus
           >
             {barbers.map((b) => (
@@ -91,6 +115,7 @@ export default function ScheduleNoveltiesView() {
               </option>
             ))}
           </select>
+          <FormFieldError error={formErrors.id_barbero} />
         </div>
 
         <div>
@@ -98,10 +123,18 @@ export default function ScheduleNoveltiesView() {
             Tipo de Novedad <span className="text-destructive">*</span>
           </label>
           <select
+            name="tipo"
+            id="tipo"
             value={formData.tipo}
-            onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => {
+              setFormData({ ...formData, tipo: e.target.value });
+              if (formErrors.tipo) setFormErrors((prev) => ({ ...prev, tipo: null }));
+            }}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              formErrors.tipo
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           >
             {noveltyTypes.map((t) => (
               <option key={t} value={t}>
@@ -109,6 +142,7 @@ export default function ScheduleNoveltiesView() {
               </option>
             ))}
           </select>
+          <FormFieldError error={formErrors.tipo} />
         </div>
 
         <div>
@@ -117,11 +151,20 @@ export default function ScheduleNoveltiesView() {
           </label>
           <input
             type="date"
+            name="fecha"
+            id="fecha"
             value={formData.fecha}
-            onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => {
+              setFormData({ ...formData, fecha: e.target.value });
+              if (formErrors.fecha) setFormErrors((prev) => ({ ...prev, fecha: null }));
+            }}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              formErrors.fecha
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           />
+          <FormFieldError error={formErrors.fecha} />
         </div>
 
         {isEdit && (
@@ -130,6 +173,8 @@ export default function ScheduleNoveltiesView() {
               Estado de la Solicitud
             </label>
             <select
+              name="estado"
+              id="estado"
               value={formData.estado}
               onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
               className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
@@ -149,12 +194,22 @@ export default function ScheduleNoveltiesView() {
           </label>
           <textarea
             rows={3}
+            name="descripcion"
+            id="descripcion"
+            maxLength={255}
             value={formData.descripcion}
-            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, descripcion: e.target.value });
+              if (formErrors.descripcion) setFormErrors((prev) => ({ ...prev, descripcion: null }));
+            }}
             placeholder="Describe el motivo del permiso, ausencia o cambio de turno..."
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm resize-none"
-            required
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm resize-none transition-all ${
+              formErrors.descripcion
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           />
+          <FormFieldError error={formErrors.descripcion} />
         </div>
       </div>
 

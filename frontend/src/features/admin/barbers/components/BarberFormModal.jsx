@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import Modal from "../../shared/components/Modal";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { availableSpecialties } from "../hooks/useBarbers";
 import { User, ImageOff, Loader2, Sparkles, X } from "lucide-react";
+import { validateBarberForm } from "../validations/barberValidation";
 
 const SAMPLE_BARBER_IMAGES = [
   { label: "Barbero 1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" },
@@ -121,16 +123,29 @@ function BarberImagePreview({ url, onClear, onSelectSample }) {
 
 export default function BarberFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateBarberForm(formData);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
+  };
 
   return (
     <Modal title={isCreate ? "Crear Nuevo Barbero" : "Editar Barbero"} onClose={onClose}>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -142,12 +157,16 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
               id="nombre"
               maxLength={80}
               value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("nombre", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.nombre
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               placeholder="Ej: Carlos"
-              required
               autoFocus
             />
+            <FormFieldError error={errors.nombre} />
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -159,11 +178,15 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
               id="apellido"
               maxLength={80}
               value={formData.apellido}
-              onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => handleChange("apellido", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.apellido
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               placeholder="Ej: Rodríguez"
-              required
             />
+            <FormFieldError error={errors.apellido} />
           </div>
         </div>
 
@@ -177,11 +200,15 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
             id="correo"
             maxLength={120}
             value={formData.correo}
-            onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            onChange={(e) => handleChange("correo", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.correo
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="correo@ejemplo.com"
-            required
           />
+          <FormFieldError error={errors.correo} />
         </div>
 
         <div>
@@ -191,11 +218,16 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
             name="telefono"
             id="telefono"
             maxLength={20}
-            value={formData.telefono}
-            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            value={formData.telefono || ""}
+            onChange={(e) => handleChange("telefono", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.telefono
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
             placeholder="+57 300 123 4567"
           />
+          <FormFieldError error={errors.telefono} />
         </div>
 
         <div>
@@ -204,7 +236,7 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
             name="especialidad"
             id="especialidad"
             value={formData.especialidad}
-            onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
+            onChange={(e) => handleChange("especialidad", e.target.value)}
             className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
           >
             {availableSpecialties.map((specialty) => (
@@ -213,6 +245,7 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
               </option>
             ))}
           </select>
+          <FormFieldError error={errors.especialidad} />
         </div>
 
         <div>
@@ -227,15 +260,16 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
               id="imagen_url"
               maxLength={255}
               value={formData.imagen_url || ""}
-              onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
+              onChange={(e) => handleChange("imagen_url", e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="https://images.unsplash.com/photo-..."
             />
           </div>
+          <FormFieldError error={errors.imagen_url} />
           <BarberImagePreview
             url={formData.imagen_url}
-            onClear={() => setFormData({ ...formData, imagen_url: "" })}
-            onSelectSample={(sampleUrl) => setFormData({ ...formData, imagen_url: sampleUrl })}
+            onClear={() => handleChange("imagen_url", "")}
+            onSelectSample={(sampleUrl) => handleChange("imagen_url", sampleUrl)}
           />
         </div>
 

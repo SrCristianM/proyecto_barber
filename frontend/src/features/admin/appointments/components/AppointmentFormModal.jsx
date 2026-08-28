@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Calendar as CalendarIcon, Clock, Scissors, UserCheck } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import DateRangePicker from "../../shared/components/DateRangePicker";
+import FormFieldError from "../../shared/components/FormFieldError";
 import { ESTADOS_CITA } from "../../../../shared/types/database";
+import { validateAppointmentForm } from "../validations/appointmentValidation";
 
 const QUICK_TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -20,8 +22,16 @@ export default function AppointmentFormModal({
   services
 }) {
   const isCreate = mode === "create";
+  const [errors, setErrors] = useState({});
 
   const selectedService = services.find((s) => s.id_servicio === Number(formData.id_servicio));
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
 
   // Manejo de la fecha seleccionada en el componente de Calendario
   const selectedDateObj = formData.fecha ? new Date(formData.fecha + "T00:00:00") : new Date();
@@ -32,7 +42,18 @@ export default function AppointmentFormModal({
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     const formattedDate = `${year}-${month}-${day}`;
-    setFormData({ ...formData, fecha: formattedDate });
+    handleChange("fecha", formattedDate);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const result = validateAppointmentForm(formData, isCreate);
+    if (!result.isValid) {
+      setErrors(result.errors);
+      return;
+    }
+    setErrors({});
+    onSubmit();
   };
 
   return (
@@ -41,13 +62,7 @@ export default function AppointmentFormModal({
       onClose={onClose}
       maxWidthClass="max-w-3xl"
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit();
-        }}
-        className="space-y-5"
-      >
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Fila 1: Cliente y Barbero */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Cliente */}
@@ -59,9 +74,12 @@ export default function AppointmentFormModal({
               name="id_cliente"
               id="id_cliente"
               value={formData.id_cliente}
-              onChange={(e) => setFormData({ ...formData, id_cliente: Number(e.target.value) })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
+              onChange={(e) => handleChange("id_cliente", Number(e.target.value))}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.id_cliente
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
               autoFocus
             >
               <option value="">Seleccionar cliente</option>
@@ -71,6 +89,7 @@ export default function AppointmentFormModal({
                 </option>
               ))}
             </select>
+            <FormFieldError error={errors.id_cliente} />
           </div>
 
           {/* Barbero */}
@@ -82,9 +101,12 @@ export default function AppointmentFormModal({
               name="id_barbero"
               id="id_barbero"
               value={formData.id_barbero}
-              onChange={(e) => setFormData({ ...formData, id_barbero: Number(e.target.value) })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
+              onChange={(e) => handleChange("id_barbero", Number(e.target.value))}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.id_barbero
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
             >
               <option value="">Seleccionar barbero</option>
               {barbers.map((b) => (
@@ -93,6 +115,7 @@ export default function AppointmentFormModal({
                 </option>
               ))}
             </select>
+            <FormFieldError error={errors.id_barbero} />
           </div>
         </div>
 
@@ -105,9 +128,12 @@ export default function AppointmentFormModal({
             name="id_servicio"
             id="id_servicio"
             value={formData.id_servicio}
-            onChange={(e) => setFormData({ ...formData, id_servicio: Number(e.target.value) })}
-            className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            required
+            onChange={(e) => handleChange("id_servicio", Number(e.target.value))}
+            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.id_servicio
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
           >
             <option value="">Seleccionar servicio del catálogo</option>
             {services.map((s) => (
@@ -116,16 +142,19 @@ export default function AppointmentFormModal({
               </option>
             ))}
           </select>
+          <FormFieldError error={errors.id_servicio} />
         </div>
 
         {/* Fila 3: Selección Visual de Fecha con Calendario y Horas */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 bg-secondary/20 border border-border/70 rounded-2xl">
+        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 bg-secondary/20 border rounded-2xl transition-all ${
+          errors.fecha || errors.hora ? "border-destructive/60 ring-1 ring-destructive/20" : "border-border/70"
+        }`}>
           {/* Calendario visual interactivo */}
           <div className="lg:col-span-7 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-2">
               <CalendarIcon className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                Selecciona la Fecha en el Calendario
+                Selecciona la Fecha en el Calendario <span className="text-destructive">*</span>
               </span>
             </div>
             <DateRangePicker
@@ -139,8 +168,7 @@ export default function AppointmentFormModal({
                 {formData.fecha || "Sin fecha seleccionada"}
               </span>
             </div>
-            {/* Input oculto / accesible para binding exacto del formulario */}
-            <input type="hidden" name="fecha" id="fecha" value={formData.fecha} required />
+            <FormFieldError error={errors.fecha} />
           </div>
 
           {/* Selector de Horarios */}
@@ -149,7 +177,7 @@ export default function AppointmentFormModal({
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4 text-primary" />
                 <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  Horario Disponible
+                  Horario Disponible <span className="text-destructive">*</span>
                 </span>
               </div>
               <label className="block text-xs text-muted-foreground mb-2">
@@ -164,7 +192,7 @@ export default function AppointmentFormModal({
                     <button
                       key={slot}
                       type="button"
-                      onClick={() => setFormData({ ...formData, hora: slot })}
+                      onClick={() => handleChange("hora", slot)}
                       className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                         isSelected
                           ? "bg-primary text-primary-foreground border-primary shadow-xs"
@@ -187,10 +215,14 @@ export default function AppointmentFormModal({
                   name="hora"
                   id="hora"
                   value={formData.hora}
-                  onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-xs text-center font-bold"
-                  required
+                  onChange={(e) => handleChange("hora", e.target.value)}
+                  className={`w-full px-3 py-2 bg-input-background border rounded-xl focus:outline-none text-foreground text-xs text-center font-bold transition-all ${
+                    errors.hora
+                      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                      : "border-input focus:ring-2 focus:ring-primary"
+                  }`}
                 />
+                <FormFieldError error={errors.hora} />
               </div>
             </div>
 
@@ -231,7 +263,7 @@ export default function AppointmentFormModal({
                     id={`estado_${estado}`}
                     value={estado}
                     checked={formData.estado === estado}
-                    onChange={() => setFormData({ ...formData, estado })}
+                    onChange={() => handleChange("estado", estado)}
                     className="sr-only"
                   />
                   {estado}
@@ -251,8 +283,7 @@ export default function AppointmentFormModal({
         <div className="flex gap-3 pt-3 border-t border-border">
           <button
             type="submit"
-            disabled={!formData.id_cliente || !formData.id_barbero || !formData.id_servicio || !formData.fecha || !formData.hora}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
           >
             {isCreate ? "Agendar Cita en Calendario" : "Guardar Cambios"}
           </button>
