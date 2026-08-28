@@ -15,23 +15,34 @@ export default function ClientFormModal({ mode, formData, setFormData, onSubmit,
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Nombre</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Nombre <span className="text-destructive">*</span>
+            </label>
             <input
               type="text"
+              name="nombre"
+              id="nombre"
+              maxLength={80}
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="Ej: Pedro"
               required
+              autoFocus
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Apellido</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Apellido <span className="text-destructive">*</span>
+            </label>
             <input
               type="text"
+              name="apellido"
+              id="apellido"
+              maxLength={80}
               value={formData.apellido}
               onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="Ej: López"
               required
             />
@@ -39,62 +50,88 @@ export default function ClientFormModal({ mode, formData, setFormData, onSubmit,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Correo Electrónico</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Correo Electrónico <span className="text-destructive">*</span>
+          </label>
           <input
             type="email"
+            name="correo"
+            id="correo"
+            maxLength={120}
             value={formData.correo}
             onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="correo@ejemplo.com"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
           <input
             type="tel"
+            name="telefono"
+            id="telefono"
+            maxLength={20}
             value={formData.telefono}
             onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="+57 300 123 4567"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Dirección</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Dirección de Residencia</label>
           <input
             type="text"
+            name="direccion"
+            id="direccion"
+            maxLength={255}
             value={formData.direccion || ""}
             onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="Ej: Calle 10 # 5-20"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Nivel de Fidelidad</label>
-          <select
-            value={formData.nivel_fidelidad}
-            onChange={(e) => setFormData({ ...formData, nivel_fidelidad: e.target.value })}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-          >
-            {availableLoyalties.map((loyalty) => (
-              <option key={loyalty} value={loyalty}>
-                {loyalty}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Nivel de Fidelidad */}
+        {!isCreate ? (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Nivel de Fidelidad</label>
+            <select
+              name="nivel_fidelidad"
+              id="nivel_fidelidad"
+              value={formData.nivel_fidelidad}
+              onChange={(e) => setFormData({ ...formData, nivel_fidelidad: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            >
+              {availableLoyalties.map((loyalty) => (
+                <option key={loyalty} value={loyalty}>
+                  {loyalty}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-3.5 bg-secondary/30 rounded-xl border border-border/60">
+            <span className="text-xs font-medium text-muted-foreground">Nivel de fidelidad inicial:</span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+              ● Nuevo (Automático)
+            </span>
+          </div>
+        )}
 
-        <div className="flex gap-3 pt-4">
-          <button type="submit" className="flex-1 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
+        <div className="flex gap-3 pt-3 border-t border-border">
+          <button
+            type="submit"
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
+          >
             {isCreate ? "Crear Cliente" : "Guardar Cambios"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground"
+            className="flex-1 py-2.5 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
           >
             Cancelar
           </button>

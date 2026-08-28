@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Modal from "../../shared/components/Modal";
 import { availableCategories } from "../hooks/useServices";
-import { Scissors, ImageOff, Loader2, Info, Sparkles, X } from "lucide-react";
+import { Scissors, ImageOff, Loader2, Sparkles, X } from "lucide-react";
 
 const SAMPLE_IMAGES = [
   { label: "Corte Clásico", url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80" },
@@ -10,7 +10,7 @@ const SAMPLE_IMAGES = [
 ];
 
 function ImagePreview({ url, onClear, onSelectSample }) {
-  const [status, setStatus] = useState("idle"); // "idle" | "loading" | "ok" | "error"
+  const [status, setStatus] = useState("idle");
 
   useEffect(() => {
     const trimmed = (url || "").trim();
@@ -74,7 +74,7 @@ function ImagePreview({ url, onClear, onSelectSample }) {
                 No se pudo cargar la imagen desde este enlace
               </p>
               <p className="text-[11px] text-muted-foreground mt-1 max-w-sm">
-                Asegúrate de copiar la <strong>dirección directa de la imagen</strong> (que termine en .jpg, .png, .webp) y no la URL de una página web o búsqueda de Google.
+                Asegúrate de copiar la dirección directa de la imagen (.jpg, .png, .webp).
               </p>
             </div>
             <div className="mt-2 flex flex-wrap gap-2 justify-center">
@@ -107,7 +107,7 @@ function ImagePreview({ url, onClear, onSelectSample }) {
             <button
               type="button"
               onClick={onClear}
-              className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black text-white rounded-full transition-colors shadow"
+              className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black text-white rounded-full transition-colors shadow cursor-pointer"
               title="Quitar imagen"
             >
               <X className="h-3.5 w-3.5" />
@@ -151,20 +151,29 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           </label>
           <input
             type="text"
+            name="nombre"
+            id="nombre"
+            maxLength={120}
             value={formData.nombre}
             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="Ej: Corte Clásico"
             required
+            autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Categoría</label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Categoría <span className="text-destructive">*</span>
+          </label>
           <select
+            name="id_categoria_servicio"
+            id="id_categoria_servicio"
             value={formData.id_categoria_servicio}
             onChange={(e) => setFormData({ ...formData, id_categoria_servicio: Number(e.target.value) })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            required
           >
             {availableCategories.map((cat) => (
               <option key={cat.id_categoria_servicio} value={cat.id_categoria_servicio}>
@@ -174,17 +183,19 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Duración (min) <span className="text-destructive">*</span>
+              Duración (minutos) <span className="text-destructive">*</span>
             </label>
             <input
               type="number"
               min="1"
+              name="duracion_minutos"
+              id="duracion_minutos"
               value={formData.duracion_minutos}
-              onChange={(e) => setFormData({ ...formData, duracion_minutos: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              onChange={(e) => setFormData({ ...formData, duracion_minutos: parseInt(e.target.value, 10) || 1 })}
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm font-medium"
               required
             />
           </div>
@@ -195,33 +206,37 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
             <input
               type="number"
               min="0"
+              step="100"
+              name="precio"
+              id="precio"
               value={formData.precio}
               onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) || 0 })}
-              className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm font-medium"
               required
             />
           </div>
         </div>
 
-        {/* URL de imagen con preview en tiempo real */}
+        {/* URL de imagen */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-sm font-medium text-foreground">
-              URL de Imagen{" "}
-              <span className="text-muted-foreground font-normal">(Opcional)</span>
+              URL de Imagen <span className="text-muted-foreground font-normal text-xs">(Opcional, máx. 255 car.)</span>
             </label>
           </div>
           <div className="relative">
-            <Scissors className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Scissors className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="url"
+              name="imagen_url"
+              id="imagen_url"
+              maxLength={255}
               value={formData.imagen_url || ""}
               onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
-              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="https://images.unsplash.com/photo-..."
             />
           </div>
-          {/* Preview interactiva con fallback inteligente y tips */}
           <ImagePreview
             url={formData.imagen_url}
             onClear={handleClearUrl}
@@ -229,17 +244,17 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-3 border-t border-border">
           <button
             type="submit"
-            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm"
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
           >
             {isCreate ? "Crear Servicio" : "Guardar Cambios"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+            className="flex-1 py-2.5 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
           >
             Cancelar
           </button>

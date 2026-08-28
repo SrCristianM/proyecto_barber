@@ -23,13 +23,15 @@ export default function SupplierFormModal({
         className="space-y-5"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Nombre */}
+          {/* Nombre / Razón Social */}
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-foreground mb-1.5">
               Nombre / Razón Social <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
+              name="nombre"
+              id="nombre"
               required
               maxLength={120}
               placeholder="Ej: Distribuidora Barber Pro"
@@ -47,6 +49,8 @@ export default function SupplierFormModal({
             </label>
             <input
               type="text"
+              name="nit"
+              id="nit"
               maxLength={30}
               placeholder="Ej: 901234567-1"
               value={formData.nit || ""}
@@ -56,23 +60,37 @@ export default function SupplierFormModal({
           </div>
 
           {/* Estado */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Estado</label>
-            <select
-              value={formData.estado !== undefined ? formData.estado : 1}
-              onChange={(e) => setFormData({ ...formData, estado: Number(e.target.value) })}
-              className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              <option value={1}>Activo (Disponible para compras)</option>
-              <option value={0}>Inactivo</option>
-            </select>
-          </div>
+          {!isCreate ? (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Estado</label>
+              <select
+                name="estado"
+                id="estado"
+                value={formData.estado !== undefined ? formData.estado : 1}
+                onChange={(e) => setFormData({ ...formData, estado: Number(e.target.value) })}
+                className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              >
+                <option value={1}>Activo (Disponible para compras)</option>
+                <option value={0}>Inactivo</option>
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Estado Inicial</label>
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-success/10 border border-success/30 rounded-xl text-success text-sm font-semibold">
+                <span className="w-2 h-2 rounded-full bg-success"></span>
+                <span>Activo (Automático)</span>
+              </div>
+            </div>
+          )}
 
           {/* Teléfono */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
             <input
-              type="text"
+              type="tel"
+              name="telefono"
+              id="telefono"
               maxLength={20}
               placeholder="+57 300 000 0000"
               value={formData.telefono || ""}
@@ -86,6 +104,8 @@ export default function SupplierFormModal({
             <label className="block text-sm font-medium text-foreground mb-1.5">Correo Electrónico</label>
             <input
               type="email"
+              name="correo"
+              id="correo"
               maxLength={120}
               placeholder="proveedor@empresa.com"
               value={formData.correo || ""}
@@ -99,6 +119,8 @@ export default function SupplierFormModal({
             <label className="block text-sm font-medium text-foreground mb-1.5">Dirección de Sede / Despacho</label>
             <input
               type="text"
+              name="direccion"
+              id="direccion"
               maxLength={255}
               placeholder="Ej: Carrera 43A # 18-50, Medellín"
               value={formData.direccion || ""}

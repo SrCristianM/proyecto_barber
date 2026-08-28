@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ShoppingBag, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ShoppingBag, AlertCircle, Building2, UserCheck, Calendar } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import {
   availableSuppliers,
@@ -19,6 +19,7 @@ export default function PurchaseFormModal({
   onClose
 }) {
   const isCreate = mode === "create";
+  const currentUser = availableUsers.find((u) => u.id_usuario === Number(formData.id_usuario)) || availableUsers[0];
   const [selectedProductId, setSelectedProductId] = useState(availableProducts[0]?.id_producto || 1);
   const [addQuantity, setAddQuantity] = useState(1);
   const [addPrice, setAddPrice] = useState(availableProducts[0]?.precio_sugerido || 10000);
@@ -39,7 +40,7 @@ export default function PurchaseFormModal({
 
   return (
     <Modal
-      title={isCreate ? "Registrar Nueva Compra" : "Editar Compra"}
+      title={isCreate ? "Registrar Nueva Compra a Proveedor" : "Editar Compra"}
       onClose={onClose}
       maxWidthClass="max-w-3xl"
     >
@@ -52,16 +53,18 @@ export default function PurchaseFormModal({
         className="space-y-5"
       >
         {/* Cabecera Principal de Compra */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Proveedor */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
               Proveedor <span className="text-destructive">*</span>
             </label>
             <select
+              name="id_proveedor"
+              id="id_proveedor"
               value={formData.id_proveedor}
               onChange={(e) => setFormData({ ...formData, id_proveedor: Number(e.target.value) })}
-              className="w-full px-3.5 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               required
             >
               {availableSuppliers.map((sup) => (
@@ -72,58 +75,78 @@ export default function PurchaseFormModal({
             </select>
           </div>
 
-          {/* Usuario Responsable */}
+          {/* Usuario Responsable (Contexto de Sesión) */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Usuario Responsable <span className="text-destructive">*</span>
+              Comprador / Responsable <span className="text-xs text-muted-foreground font-normal">(Sesión Activa)</span>
             </label>
-            <select
-              value={formData.id_usuario}
-              onChange={(e) => setFormData({ ...formData, id_usuario: Number(e.target.value) })}
-              className="w-full px-3.5 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
-            >
-              {availableUsers.map((user) => (
-                <option key={user.id_usuario} value={user.id_usuario}>
-                  {user.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/40 border border-border/80 rounded-xl text-foreground text-sm font-medium">
+              <UserCheck className="h-4 w-4 text-primary" />
+              <span>{currentUser?.nombre || "Administrador en Turno"}</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Fecha y Hora */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Fecha y Hora <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.fecha}
-              onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-              className="w-full px-3.5 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              required
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Fecha / Hora */}
+          {!isCreate ? (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Fecha de Registro
+              </label>
+              <input
+                type="datetime-local"
+                name="fecha"
+                id="fecha"
+                value={formData.fecha}
+                onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                required
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Fecha / Hora <span className="text-xs text-muted-foreground font-normal">(Automática de Sistema)</span>
+              </label>
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/40 border border-border/80 rounded-xl text-muted-foreground text-sm">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span>Fecha y hora de registro al confirmar la compra</span>
+              </div>
+            </div>
+          )}
 
-          {/* Estado */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Estado de la Compra
-            </label>
-            <select
-              value={formData.estado}
-              onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-              className="w-full px-3.5 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              {purchaseStatuses.map((st) => (
-                <option key={st} value={st}>
-                  {st}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Estado de la Compra */}
+          {!isCreate ? (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Estado de la Compra
+              </label>
+              <select
+                name="estado"
+                id="estado"
+                value={formData.estado}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              >
+                {purchaseStatuses.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                Estado Inicial
+              </label>
+              <div className="flex items-center gap-2 px-3.5 py-2.5 bg-success/10 border border-success/30 rounded-xl text-success text-sm font-semibold">
+                <span className="w-2 h-2 rounded-full bg-success"></span>
+                <span>Registrada (Activa)</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sección de Detalle de Productos (detalle_compra) */}
@@ -132,7 +155,7 @@ export default function PurchaseFormModal({
             <div>
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                 <ShoppingBag className="h-4 w-4 text-primary" />
-                Detalle de Productos a Abastecer
+                Detalle de Productos a Abastecer (detalle_compra)
               </h3>
               <p className="text-xs text-muted-foreground">
                 Selecciona productos del inventario y define cantidad y costo unitario
@@ -148,7 +171,7 @@ export default function PurchaseFormModal({
                 <select
                   value={selectedProductId}
                   onChange={handleProductSelectChange}
-                  className="w-full px-3 py-1.5 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
                 >
                   {availableProducts.map((prod) => (
                     <option key={prod.id_producto} value={prod.id_producto}>
@@ -165,19 +188,19 @@ export default function PurchaseFormModal({
                   min="1"
                   value={addQuantity}
                   onChange={(e) => setAddQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="w-full px-3 py-1.5 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center"
+                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center font-medium"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">Precio Unit. ($)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Costo Unit. ($)</label>
                 <input
                   type="number"
                   min="0"
                   step="100"
                   value={addPrice}
                   onChange={(e) => setAddPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-1.5 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-right"
+                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-right font-medium"
                 />
               </div>
 
@@ -201,7 +224,7 @@ export default function PurchaseFormModal({
               <span>Debes agregar al menos un producto a la compra.</span>
             </div>
           ) : (
-            <div className="border border-border rounded-xl overflow-hidden">
+            <div className="border border-border rounded-xl overflow-hidden bg-card">
               <table className="w-full text-xs">
                 <thead className="bg-muted/50 border-b border-border text-muted-foreground">
                   <tr>
@@ -217,9 +240,10 @@ export default function PurchaseFormModal({
                     <tr key={idx} className="hover:bg-accent/30 transition-colors">
                       <td className="py-2.5 px-3">
                         <select
+                          name={`id_producto_${idx}`}
                           value={detalle.id_producto}
                           onChange={(e) => updateProductRow(idx, "id_producto", e.target.value)}
-                          className="w-full px-2 py-1 bg-input-background border border-input rounded-md text-foreground text-xs"
+                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs"
                         >
                           {availableProducts.map((p) => (
                             <option key={p.id_producto} value={p.id_producto}>
@@ -232,9 +256,10 @@ export default function PurchaseFormModal({
                         <input
                           type="number"
                           min="1"
+                          name={`cantidad_${idx}`}
                           value={detalle.cantidad}
                           onChange={(e) => updateProductRow(idx, "cantidad", e.target.value)}
-                          className="w-full px-2 py-1 bg-input-background border border-input rounded-md text-foreground text-xs text-center font-medium"
+                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs text-center font-medium"
                         />
                       </td>
                       <td className="py-2.5 px-3">
@@ -242,9 +267,10 @@ export default function PurchaseFormModal({
                           type="number"
                           min="0"
                           step="100"
+                          name={`precio_unitario_${idx}`}
                           value={detalle.precio_unitario}
                           onChange={(e) => updateProductRow(idx, "precio_unitario", e.target.value)}
-                          className="w-full px-2 py-1 bg-input-background border border-input rounded-md text-foreground text-xs text-right font-medium"
+                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs text-right font-medium"
                         />
                       </td>
                       <td className="py-2.5 px-3 text-right font-semibold text-foreground">
@@ -254,7 +280,7 @@ export default function PurchaseFormModal({
                         <button
                           type="button"
                           onClick={() => removeProductRow(idx)}
-                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
                           title="Eliminar producto"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -263,12 +289,12 @@ export default function PurchaseFormModal({
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-card border-t border-border">
+                <tfoot className="bg-secondary/40 border-t border-border">
                   <tr>
                     <td colSpan={3} className="py-3 px-3 text-right font-bold text-foreground text-sm">
                       Total Compra:
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-primary text-base">
+                    <td className="py-3 px-3 text-right font-extrabold text-primary text-base">
                       ${Number(formData.total).toLocaleString("es-CO")}
                     </td>
                     <td></td>
@@ -280,18 +306,18 @@ export default function PurchaseFormModal({
         </div>
 
         {/* Botones de acción */}
-        <div className="flex gap-3 pt-3">
+        <div className="flex gap-3 pt-3 border-t border-border">
           <button
             type="submit"
             disabled={formData.detalles.length === 0}
-            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreate ? "Registrar Compra" : "Guardar Cambios"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+            className="flex-1 py-2.5 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
           >
             Cancelar
           </button>

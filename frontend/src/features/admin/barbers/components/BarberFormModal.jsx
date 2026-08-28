@@ -107,7 +107,7 @@ function BarberImagePreview({ url, onClear, onSelectSample }) {
             <button
               type="button"
               onClick={onClear}
-              className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground"
+              className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
               title="Quitar imagen"
             >
               <X className="h-4 w-4" />
@@ -133,23 +133,34 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Nombre <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Nombre <span className="text-destructive">*</span>
+            </label>
             <input
               type="text"
+              name="nombre"
+              id="nombre"
+              maxLength={80}
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="Ej: Carlos"
               required
+              autoFocus
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Apellido <span className="text-destructive">*</span></label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Apellido <span className="text-destructive">*</span>
+            </label>
             <input
               type="text"
+              name="apellido"
+              id="apellido"
+              maxLength={80}
               value={formData.apellido}
               onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-              className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="Ej: Rodríguez"
               required
             />
@@ -157,12 +168,17 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Correo Electrónico <span className="text-destructive">*</span></label>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Correo Electrónico <span className="text-destructive">*</span>
+          </label>
           <input
             type="email"
+            name="correo"
+            id="correo"
+            maxLength={120}
             value={formData.correo}
             onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="correo@ejemplo.com"
             required
           />
@@ -172,9 +188,12 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
           <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
           <input
             type="tel"
+            name="telefono"
+            id="telefono"
+            maxLength={20}
             value={formData.telefono}
             onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
             placeholder="+57 300 123 4567"
           />
         </div>
@@ -182,9 +201,11 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">Especialidad</label>
           <select
+            name="especialidad"
+            id="especialidad"
             value={formData.especialidad}
             onChange={(e) => setFormData({ ...formData, especialidad: e.target.value })}
-            className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
           >
             {availableSpecialties.map((specialty) => (
               <option key={specialty} value={specialty}>
@@ -196,15 +217,18 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
-            URL de Imagen <span className="text-muted-foreground font-normal">(Opcional)</span>
+            URL de Imagen <span className="text-muted-foreground font-normal text-xs">(Opcional, máx. 255 car.)</span>
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="url"
+              name="imagen_url"
+              id="imagen_url"
+              maxLength={255}
               value={formData.imagen_url || ""}
               onChange={(e) => setFormData({ ...formData, imagen_url: e.target.value })}
-              className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
               placeholder="https://images.unsplash.com/photo-..."
             />
           </div>
@@ -215,14 +239,17 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <button type="submit" className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity font-medium text-sm">
+        <div className="flex gap-3 pt-3 border-t border-border">
+          <button
+            type="submit"
+            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
+          >
             {isCreate ? "Crear Barbero" : "Guardar Cambios"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground font-medium text-sm"
+            className="flex-1 py-2.5 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"
           >
             Cancelar
           </button>

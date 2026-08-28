@@ -56,6 +56,9 @@ export default function SalesPage() {
     openDetailModal,
     openDeleteModal,
     toggleCatalogItem,
+    addItemToSale,
+    updateItemQuantity,
+    removeItemFromSale,
     toggleStatus,
     getClientName
   } = useSales();
@@ -206,7 +209,9 @@ export default function SalesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
-          onToggleItem={toggleCatalogItem}
+          onAddItem={addItemToSale}
+          onUpdateItemQuantity={updateItemQuantity}
+          onRemoveItem={removeItemFromSale}
           onSubmit={onHandleCreate}
           onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
@@ -217,7 +222,9 @@ export default function SalesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
-          onToggleItem={toggleCatalogItem}
+          onAddItem={addItemToSale}
+          onUpdateItemQuantity={updateItemQuantity}
+          onRemoveItem={removeItemFromSale}
           onSubmit={onHandleEdit}
           onClose={() => { setShowEditModal(false); setSelectedSale(null); resetForm(); }}
         />

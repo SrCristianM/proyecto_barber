@@ -223,22 +223,23 @@ export function useSales() {
 
   const resetForm = () => setFormData(emptyForm());
 
-  const toggleCatalogItem = (item) => {
-    const isSelected = formData.selectedItemIds.includes(item.id_item);
-    let updatedSelectedIds;
-    let updatedDetalles;
+  const addItemToSale = (item) => {
+    const existingIndex = formData.detalles.findIndex(
+      (d) =>
+        (item.tipo_item === "Servicio" && d.id_servicio === item.id_servicio) ||
+        (item.tipo_item === "Producto" && d.id_producto === item.id_producto)
+    );
 
-    if (isSelected) {
-      updatedSelectedIds = formData.selectedItemIds.filter((id) => id !== item.id_item);
-      updatedDetalles = formData.detalles.filter(
-        (d) =>
-          !(
-            (item.tipo_item === "Servicio" && d.id_servicio === item.id_servicio) ||
-            (item.tipo_item === "Producto" && d.id_producto === item.id_producto)
-          )
-      );
+    let updatedDetalles;
+    if (existingIndex >= 0) {
+      updatedDetalles = [...formData.detalles];
+      const newQty = (updatedDetalles[existingIndex].cantidad || 1) + 1;
+      updatedDetalles[existingIndex] = {
+        ...updatedDetalles[existingIndex],
+        cantidad: newQty,
+        subtotal: newQty * Number(updatedDetalles[existingIndex].precio_unitario)
+      };
     } else {
-      updatedSelectedIds = [...formData.selectedItemIds, item.id_item];
       const newDetalle = {
         tipo_item: item.tipo_item,
         id_servicio: item.id_servicio,
@@ -251,14 +252,43 @@ export function useSales() {
       updatedDetalles = [...formData.detalles, newDetalle];
     }
 
-    const calculatedTotal = updatedDetalles.reduce((sum, d) => sum + d.subtotal, 0);
-
+    const calculatedTotal = updatedDetalles.reduce((sum, d) => sum + Number(d.subtotal), 0);
     setFormData({
       ...formData,
-      selectedItemIds: updatedSelectedIds,
       detalles: updatedDetalles,
       total: calculatedTotal
     });
+  };
+
+  const updateItemQuantity = (index, quantity) => {
+    const qty = Math.max(1, parseInt(quantity, 10) || 1);
+    const updatedDetalles = [...formData.detalles];
+    if (!updatedDetalles[index]) return;
+    updatedDetalles[index] = {
+      ...updatedDetalles[index],
+      cantidad: qty,
+      subtotal: qty * Number(updatedDetalles[index].precio_unitario)
+    };
+    const calculatedTotal = updatedDetalles.reduce((sum, d) => sum + Number(d.subtotal), 0);
+    setFormData({
+      ...formData,
+      detalles: updatedDetalles,
+      total: calculatedTotal
+    });
+  };
+
+  const removeItemFromSale = (index) => {
+    const updatedDetalles = formData.detalles.filter((_, idx) => idx !== index);
+    const calculatedTotal = updatedDetalles.reduce((sum, d) => sum + Number(d.subtotal), 0);
+    setFormData({
+      ...formData,
+      detalles: updatedDetalles,
+      total: calculatedTotal
+    });
+  };
+
+  const toggleCatalogItem = (item) => {
+    addItemToSale(item);
   };
 
   const handleCreate = () => {
@@ -435,6 +465,9 @@ export function useSales() {
     openDetailModal,
     openDeleteModal,
     toggleCatalogItem,
+    addItemToSale,
+    updateItemQuantity,
+    removeItemFromSale,
     toggleStatus,
     getClientName,
     getUserName
