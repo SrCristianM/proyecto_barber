@@ -260,14 +260,14 @@ export default function ScheduleNoveltiesView() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border text-muted-foreground text-xs uppercase bg-muted/20">
+              <thead className="border-b border-border text-muted-foreground text-xs uppercase tracking-wider bg-muted/30">
                 <tr>
-                  <th className="py-3 px-4">Barbero</th>
-                  <th className="py-3 px-4">Tipo</th>
-                  <th className="py-3 px-4">Fecha Novedad</th>
-                  <th className="py-3 px-4">Motivo / Descripción</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
+                  <th className="py-3.5 px-4 font-bold">Barbero</th>
+                  <th className="py-3.5 px-4 font-bold">Tipo</th>
+                  <th className="py-3.5 px-4 font-bold">Fecha Novedad</th>
+                  <th className="py-3.5 px-4 font-bold">Motivo / Descripción</th>
+                  <th className="py-3.5 px-4 font-bold">Estado</th>
+                  <th className="py-3.5 px-4 text-right font-bold">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -275,33 +275,33 @@ export default function ScheduleNoveltiesView() {
                   const barberName = getBarberName(nov.id_barbero);
                   return (
                     <tr key={nov.id_novedad} className="hover:bg-accent/40 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 border border-primary/20">
                             {barberName.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold text-foreground">{barberName}</p>
-                            <p className="text-[11px] text-muted-foreground">Reg: {nov.fecha_registro.substring(0, 10)}</p>
+                            <p className="font-bold text-foreground text-sm">{barberName}</p>
+                            <p className="text-xs text-muted-foreground">Reg: {nov.fecha_registro.substring(0, 10)}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${TYPE_BADGES[nov.tipo] || "bg-muted text-foreground"}`}>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${TYPE_BADGES[nov.tipo] || "bg-muted text-foreground"}`}>
                           {nov.tipo}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <td className="py-4 px-4 font-mono text-sm font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
                           {nov.fecha}
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 max-w-xs">
-                        <p className="text-xs text-foreground line-clamp-2">{nov.descripcion}</p>
+                      <td className="py-4 px-4 max-w-sm">
+                        <p className="text-sm text-foreground leading-relaxed line-clamp-2">{nov.descripcion}</p>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${STATUS_BADGES[nov.estado] || "bg-muted text-muted-foreground"}`}>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${STATUS_BADGES[nov.estado] || "bg-muted text-muted-foreground"}`}>
                           {nov.estado}
                         </span>
                       </td>

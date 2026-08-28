@@ -15,20 +15,22 @@ export default function Modal({ title, children, onClose, maxWidthClass = "max-w
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ type: "spring", damping: 26, stiffness: 320 }}
-        className={`bg-card border border-border rounded-2xl w-full ${maxWidthClass} max-h-[90vh] overflow-y-auto shadow-2xl`}
+        className={`gold-modal-glow w-full ${maxWidthClass}`}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-card/95 backdrop-blur-xs z-10">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">{title}</h2>
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose}
-            className="p-2 hover:bg-accent rounded-xl transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-5 w-5" />
-          </motion.button>
+        <div className="gold-modal-inner max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-card/95 backdrop-blur-xs z-10">
+            <h2 className="text-xl font-bold text-foreground tracking-tight">{title}</h2>
+            <motion.button
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="p-2 hover:bg-accent rounded-xl transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </motion.button>
+          </div>
+          <div className="p-6 sm:p-7">{children}</div>
         </div>
-        <div className="p-6 sm:p-7">{children}</div>
       </motion.div>
     </motion.div>
   );

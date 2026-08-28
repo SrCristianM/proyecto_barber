@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
+  --font-size: 17px;
   --background: #fafafa;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -292,4 +292,51 @@
   animation: border-beam-sweep 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   z-index: 3;
   filter: drop-shadow(0 0 5px rgba(201, 162, 74, 0.8));
-}
+}
+
+@keyframes gold-beam-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Contenedor que rodea los formularios y modales con haz de luz dorado animado continuo */
+.gold-modal-glow {
+  position: relative;
+  border-radius: 1.25rem;
+  padding: 2px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(201, 162, 74, 0.4), rgba(201, 162, 74, 0.15), rgba(201, 162, 74, 0.4));
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45), 0 0 35px -5px rgba(201, 162, 74, 0.35);
+}
+
+.gold-modal-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent,
+    transparent 55%,
+    rgba(201, 162, 74, 0.35) 70%,
+    #C9A24A 82%,
+    #ffd700 92%,
+    #ffffff 96%,
+    #C9A24A 100%
+  );
+  animation: gold-beam-rotate 4s linear infinite;
+  z-index: 0;
+}
+
+.gold-modal-inner {
+  position: relative;
+  background-color: var(--card);
+  border-radius: calc(1.25rem - 2px);
+  z-index: 1;
+}
+

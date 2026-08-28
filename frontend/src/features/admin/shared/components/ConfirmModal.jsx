@@ -57,45 +57,47 @@ export default function ConfirmModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 15 }}
         transition={{ type: "spring", damping: 25, stiffness: 350 }}
-        className="bg-card border border-border rounded-xl w-full max-w-md shadow-2xl overflow-hidden"
+        className="gold-modal-glow w-full max-w-md"
       >
-        {/* Header */}
-        <div className="p-6 flex flex-col items-center text-center gap-4">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.05, type: "spring", damping: 15, stiffness: 300 }}
-            className={`w-14 h-14 rounded-full ${config.iconBg} flex items-center justify-center shadow-inner`}
-          >
-            <Icon className={`h-7 w-7 ${config.iconColor}`} />
-          </motion.div>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{description}</p>
+        <div className="gold-modal-inner overflow-hidden">
+          {/* Header */}
+          <div className="p-6 flex flex-col items-center text-center gap-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.05, type: "spring", damping: 15, stiffness: 300 }}
+              className={`w-14 h-14 rounded-full ${config.iconBg} flex items-center justify-center shadow-inner`}
+            >
+              <Icon className={`h-7 w-7 ${config.iconColor}`} />
+            </motion.div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{description}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex gap-3 px-6 pb-6">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={onClose}
-            className="flex-1 py-2.5 px-4 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm font-medium cursor-pointer"
-          >
-            Cancelar
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => {
-              onConfirm();
-              onClose();
-            }}
-            className={`flex-1 py-2.5 px-4 rounded-lg transition-all text-sm font-medium cursor-pointer shadow-sm ${config.btnClass}`}
-          >
-            {confirmLabel}
-          </motion.button>
+          {/* Footer */}
+          <div className="flex gap-3 px-6 pb-6">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={onClose}
+              className="flex-1 py-2.5 px-4 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-sm font-medium cursor-pointer"
+            >
+              Cancelar
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                onConfirm();
+                onClose();
+              }}
+              className={`flex-1 py-2.5 px-4 rounded-lg transition-all text-sm font-medium cursor-pointer shadow-sm ${config.btnClass}`}
+            >
+              {confirmLabel}
+            </motion.button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
