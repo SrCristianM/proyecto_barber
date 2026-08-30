@@ -2,6 +2,7 @@ import { Plus, Download, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useRoles } from "../hooks/useRoles";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import RolesTable from "../components/RolesTable";
 import RolesStats from "../components/RolesStats";
 import RoleFormModal from "../components/RoleFormModal";
@@ -11,6 +12,7 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 
 export default function RolesPage() {
+  useSearchHighlight();
   const {
     roles,
     searchTerm,

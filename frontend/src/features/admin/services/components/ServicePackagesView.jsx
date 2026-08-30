@@ -5,6 +5,7 @@ import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import FormFieldError from "../../shared/components/FormFieldError";
+import TiltCard from "../../shared/components/TiltCard";
 import { useServicePackages } from "../hooks/useServicePackages";
 import { validateServicePackageForm } from "../validations/serviceValidation";
 
@@ -240,65 +241,71 @@ export default function ServicePackagesView() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredPackages.map((pkg) => {
           const serviceNames = getServiceNames(pkg.servicios_ids);
+          const isActive = pkg.estado === 1;
+
           return (
-            <div
-              key={pkg.id_paquete}
-              className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Package className="h-5 w-5 text-primary" />
+            <TiltCard key={pkg.id_paquete} maxTilt={6} scale={1.015}>
+              <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-3.5 hover:border-primary/40 hover:shadow-xl transition-all h-full">
+                <div>
+                  <div className="flex items-start justify-between">
+                    <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 text-primary">
+                      <Package className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${
+                          isActive ? "badge-glow-success" : "badge-glow-destructive"
+                        }`}
+                      >
+                        {isActive ? "Activo" : "Inactivo"}
+                      </span>
+                      {pkg.descuento_porcentaje > 0 && (
+                        <span className="text-[11px] font-extrabold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-full shadow-2xs">
+                          -{pkg.descuento_porcentaje}% OFF
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <p className="font-bold text-foreground text-base leading-snug">{pkg.nombre}</p>
+                    {serviceNames.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        {serviceNames.join(" · ")}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
-                      pkg.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+
+                <div className="flex gap-2 pt-2 border-t border-border/60">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormErrors({});
+                      openEditModal(pkg);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
+                  >
+                    <Edit className="h-3.5 w-3.5" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openDeactivateModal(pkg)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-xl transition-colors font-semibold cursor-pointer ${
+                      isActive
+                        ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
+                        : "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
                     }`}
                   >
-                    {pkg.estado === 1 ? "Activo" : "Inactivo"}
-                  </span>
-                  {pkg.descuento_porcentaje > 0 && (
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                      -{pkg.descuento_porcentaje}% OFF
-                    </span>
-                  )}
+                    <Power className="h-3.5 w-3.5" />
+                    {isActive ? "Desactivar" : "Activar"}
+                  </button>
                 </div>
               </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{pkg.nombre}</p>
-                {serviceNames.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {serviceNames.join(" · ")}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2 pt-1 border-t border-border">
-                <button
-                  onClick={() => {
-                    setFormErrors({});
-                    openEditModal(pkg);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium cursor-pointer"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                  Editar
-                </button>
-                <button
-                  onClick={() => openDeactivateModal(pkg)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg transition-colors font-medium cursor-pointer ${
-                    pkg.estado === 1
-                      ? "text-destructive hover:bg-destructive/10"
-                      : "text-success hover:bg-success/10"
-                  }`}
-                >
-                  <Power className="h-3.5 w-3.5" />
-                  {pkg.estado === 1 ? "Desactivar" : "Activar"}
-                </button>
-              </div>
-            </div>
+            </TiltCard>
           );
         })}
       </div>

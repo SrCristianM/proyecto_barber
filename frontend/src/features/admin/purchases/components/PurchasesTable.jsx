@@ -54,6 +54,8 @@ export default function PurchasesTable({
               return (
                 <tr
                   key={purchase.id_compra}
+                  id={`row-pur-${purchase.id_compra}`}
+                  data-highlight-id={`pur-${purchase.id_compra}`}
                   className={`border-b border-border hover:bg-accent/40 transition-colors ${
                     isAnulada ? "opacity-75 bg-muted/20" : ""
                   }`}
@@ -96,10 +98,8 @@ export default function PurchasesTable({
 
                   <td className="py-3.5 px-4 text-center">
                     <span
-                      className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                        purchase.estado === "Registrada"
-                          ? "bg-success/10 text-success border-success/20"
-                          : "bg-destructive/10 text-destructive border-destructive/20"
+                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                        purchase.estado === "Registrada" ? "badge-glow-success" : "badge-glow-destructive"
                       }`}
                     >
                       {purchase.estado}

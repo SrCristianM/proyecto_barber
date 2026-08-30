@@ -1,11 +1,47 @@
-/* Estilos globales para el scrollbar - Minimalista y discreto */
+/* ==========================================================================
+   ESTILOS GLOBALES DE SCROLLBAR - DORADO LUXURY & ACCESIBLE
+   ========================================================================== */
 
-[data-slot="scroll-area-scrollbar"] {
-  background: transparent !important;
-  padding: 0 !important;
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C9A24A #0D0D0D;
 }
 
-/* Ocultar completamente los botones de flecha */
+/* Chrome, Edge, Safari (Webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D0D0D;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #E6C76A 0%, #C9A24A 50%, #9E7D2E 100%);
+  border-radius: 9999px;
+  border: 2px solid #0D0D0D;
+  transition: all 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFF0B3 0%, #E0B85C 50%, #C9A24A 100%);
+  box-shadow: 0 0 10px rgba(201, 162, 74, 0.6);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #C9A24A;
+}
+
+/* Radix UI Scroll Area (Modales, Tablas, Paneles) */
+[data-slot="scroll-area-scrollbar"] {
+  background: transparent !important;
+  padding: 2px !important;
+}
+
+/* Ocultar botones de flecha en Radix */
 [data-slot="scroll-area-scrollbar"] button,
 [data-slot="scroll-area-scrollbar"] [data-radix-scroll-area-scroll-area-button] {
   display: none !important;
@@ -13,33 +49,14 @@
 }
 
 [data-slot="scroll-area-thumb"] {
-  background-color: rgba(107, 114, 128, 0.2) !important;
-  border-radius: 1px !important;
-  width: 4px !important;
+  background: linear-gradient(180deg, #E6C76A 0%, #C9A24A 50%, #9E7D2E 100%) !important;
+  border-radius: 9999px !important;
+  width: 6px !important;
   min-height: 24px !important;
+  border: 1px solid rgba(0, 0, 0, 0.3) !important;
 }
 
 [data-slot="scroll-area-thumb"]:hover {
-  background-color: rgba(107, 114, 128, 0.35) !important;
+  background: linear-gradient(180deg, #FFF0B3 0%, #E0B85C 50%, #C9A24A 100%) !important;
+  box-shadow: 0 0 8px rgba(201, 162, 74, 0.5) !important;
 }
-
-/* Ocultar scrollbar nativo en navegadores webkit */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.2);
-  border-radius: 1px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(106, 110, 118, 0.35);
-}
-
-

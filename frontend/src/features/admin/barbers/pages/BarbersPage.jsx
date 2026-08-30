@@ -1,9 +1,12 @@
-import { Plus, Download, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { Plus, Download, RotateCcw, LayoutGrid, Table } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useBarbers } from "../hooks/useBarbers";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import BarbersStats from "../components/BarbersStats";
 import BarbersTable from "../components/BarbersTable";
+import BarberCard from "../components/BarberCard";
 import BarberFormModal from "../components/BarberFormModal";
 import BarberDetailModal from "../components/BarberDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -11,6 +14,8 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 
 export default function BarbersPage() {
+  useSearchHighlight();
+  const [viewMode, setViewMode] = useState("table");
   const {
     barbers,
     searchTerm,
@@ -131,11 +136,38 @@ export default function BarbersPage() {
             )}
           </div>
 
-          {/* Botón Exportar */}
+          {/* Botón Exportar y Selector de Vista */}
           <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
+                    ? "bg-card text-foreground shadow-xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }`}
+                title="Vista de Tabla"
+              >
+                <Table className="h-4 w-4" />
+                <span className="hidden sm:inline">Tabla</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
+                    ? "bg-card text-foreground shadow-xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }`}
+                title="Vista de Tarjetas 3D"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Tarjetas 3D</span>
+              </button>
+            </div>
+
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar
@@ -143,17 +175,30 @@ export default function BarbersPage() {
           </div>
         </div>
 
-        <BarbersTable
-          barbers={filteredBarbers}
-          totalCount={barbers.length}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onDetail={openDetailModal}
-          onToggleStatus={openDeactivateModal}
-          onEdit={openEditModal}
-          onDelete={openDeleteModal}
-        />
+        {viewMode === "table" ? (
+          <BarbersTable
+            barbers={filteredBarbers}
+            totalCount={barbers.length}
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onDetail={openDetailModal}
+            onToggleStatus={openDeactivateModal}
+            onEdit={openEditModal}
+            onDelete={openDeleteModal}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredBarbers.map((barber) => (
+              <BarberCard
+                key={barber.id_barbero}
+                barber={barber}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {showCreateModal && (

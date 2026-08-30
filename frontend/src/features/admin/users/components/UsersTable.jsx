@@ -41,25 +41,29 @@ export default function UsersTable({
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id_usuario} className="border-b border-border hover:bg-accent/50 transition-colors">
-                <td className="py-4 px-4">
+              <tr
+                key={user.id_usuario}
+                id={`row-usr-${user.id_usuario}`}
+                data-highlight-id={`usr-${user.id_usuario}`}
+                className="table-row-accent border-b border-border transition-colors"
+              >
+                <td className="py-3.5 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-primary" />
+                    <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                      <User className="h-4.5 w-4.5" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{user.nombre} {user.apellido}</p>
-                      <p className="text-sm text-muted-foreground">{user.correo}</p>
+                      <p className="font-bold text-foreground text-sm">{user.nombre} {user.apellido}</p>
+                      <p className="text-xs text-muted-foreground">{user.correo}</p>
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-foreground">{getRoleName(user.id_rol)}</td>
-                <td className="py-4 px-4 text-muted-foreground">{user.fecha_registro}</td>
-                <td className="py-4 px-4">
+                <td className="py-3.5 px-4 text-foreground text-sm font-medium">{getRoleName(user.id_rol)}</td>
+                <td className="py-3.5 px-4 text-muted-foreground text-xs">{user.fecha_registro}</td>
+                <td className="py-3.5 px-4">
                   <span
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      user.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                    }`}
+                    className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${user.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
+                      }`}
                   >
                     {user.estado === 1 ? "Activo" : "Inactivo"}
                   </span>

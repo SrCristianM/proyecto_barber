@@ -11,7 +11,14 @@ const TYPE_ICONS = {
   stock:       Package
 };
 
-export default function NotificationPanel({ notifications, unreadCount, onMarkAsRead, onMarkAllAsRead, onClose }) {
+export default function NotificationPanel({
+  notifications,
+  unreadCount,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onViewAll,
+  onClose
+}) {
   const panelRef = useRef(null);
 
   // Cerrar al hacer click fuera
@@ -124,7 +131,11 @@ export default function NotificationPanel({ notifications, unreadCount, onMarkAs
 
       {/* Footer */}
       <div className="px-4 py-2.5 border-t border-border bg-muted/20 text-center">
-        <button className="text-xs text-primary hover:underline font-medium transition-colors cursor-pointer">
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="text-xs text-primary hover:underline font-semibold transition-colors cursor-pointer"
+        >
           Ver todas las notificaciones
         </button>
       </div>

@@ -310,22 +310,22 @@ export function usePurchases() {
       purchases.map((purchase) =>
         purchase.id_compra === selectedPurchase.id_compra
           ? {
-              ...purchase,
-              id_proveedor: Number(formData.id_proveedor),
-              id_usuario: Number(formData.id_usuario),
-              fecha: formattedFecha,
-              total: Number(formData.total),
-              estado: formData.estado,
-              detalles: formData.detalles.map((d, index) => ({
-                id_detalle_compra: d.id_detalle_compra || selectedPurchase.id_compra * 100 + index + 1,
-                id_compra: selectedPurchase.id_compra,
-                id_producto: Number(d.id_producto),
-                cantidad: Number(d.cantidad),
-                precio_unitario: Number(d.precio_unitario),
-                subtotal: Number(d.subtotal),
-                nombre_producto: getProductName(d.id_producto)
-              }))
-            }
+            ...purchase,
+            id_proveedor: Number(formData.id_proveedor),
+            id_usuario: Number(formData.id_usuario),
+            fecha: formattedFecha,
+            total: Number(formData.total),
+            estado: formData.estado,
+            detalles: formData.detalles.map((d, index) => ({
+              id_detalle_compra: d.id_detalle_compra || selectedPurchase.id_compra * 100 + index + 1,
+              id_compra: selectedPurchase.id_compra,
+              id_producto: Number(d.id_producto),
+              cantidad: Number(d.cantidad),
+              precio_unitario: Number(d.precio_unitario),
+              subtotal: Number(d.subtotal),
+              nombre_producto: getProductName(d.id_producto)
+            }))
+          }
           : purchase
       )
     );

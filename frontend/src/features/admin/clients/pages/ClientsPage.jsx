@@ -1,9 +1,12 @@
-import { Plus, Download, RotateCcw, Award } from "lucide-react";
+import { useState } from "react";
+import { Plus, Download, RotateCcw, Award, LayoutGrid, Table } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useClients, availableLoyalties } from "../hooks/useClients";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import ClientsStats from "../components/ClientsStats";
 import ClientsTable from "../components/ClientsTable";
+import ClientCard from "../components/ClientCard";
 import ClientFormModal from "../components/ClientFormModal";
 import ClientDetailModal from "../components/ClientDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -12,6 +15,8 @@ import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 
 export default function ClientsPage() {
+  useSearchHighlight();
+  const [viewMode, setViewMode] = useState("table");
   const {
     clients,
     searchTerm,
@@ -150,11 +155,38 @@ export default function ClientsPage() {
             )}
           </div>
 
-          {/* Botón Exportar */}
+          {/* Botón Exportar y Selector de Vista */}
           <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
+                    ? "bg-card text-foreground shadow-xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }`}
+                title="Vista de Tabla"
+              >
+                <Table className="h-4 w-4" />
+                <span className="hidden sm:inline">Tabla</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
+                    ? "bg-card text-foreground shadow-xs border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                  }`}
+                title="Vista de Tarjetas 3D"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Tarjetas 3D</span>
+              </button>
+            </div>
+
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar
@@ -162,17 +194,32 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <ClientsTable
-          clients={filteredClients}
-          totalCount={clients.length}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onDetail={openDetailModal}
-          onToggleStatus={openDeactivateModal}
-          onEdit={openEditModal}
-          onDelete={openDeleteModal}
-        />
+        {viewMode === "table" ? (
+          <ClientsTable
+            clients={filteredClients}
+            totalCount={clients.length}
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onDetail={openDetailModal}
+            onToggleStatus={openDeactivateModal}
+            onEdit={openEditModal}
+            onDelete={openDeleteModal}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredClients.map((client) => (
+              <ClientCard
+                key={client.id_cliente}
+                client={client}
+                onDetail={openDetailModal}
+                onToggleStatus={openDeactivateModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal Crear */}

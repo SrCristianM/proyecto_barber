@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { useSales, clients } from "../hooks/useSales";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import SalesStats from "../components/SalesStats";
 import SalesTable from "../components/SalesTable";
 import SaleFormModal from "../components/SaleFormModal";
@@ -15,6 +16,7 @@ import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
 
 export default function SalesPage() {
+  useSearchHighlight();
   const {
     searchTerm,
     setSearchTerm,

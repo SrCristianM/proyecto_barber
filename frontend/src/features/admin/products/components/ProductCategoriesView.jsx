@@ -4,6 +4,7 @@ import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import TiltCard from "../../shared/components/TiltCard";
 import { useProductCategories } from "../hooks/useProductCategories";
 
 export default function ProductCategoriesView() {
@@ -132,46 +133,57 @@ export default function ProductCategoriesView() {
           No se encontraron categorías
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredCategories.map((cat) => (
-            <div
-              key={cat.id_categoria_producto}
-              className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Tag className="h-5 w-5 text-primary" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredCategories.map((cat) => {
+            const isActive = cat.estado === 1;
+            return (
+              <TiltCard key={cat.id_categoria_producto} maxTilt={6} scale={1.015}>
+                <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-3.5 hover:border-primary/40 hover:shadow-xl transition-all h-full">
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 text-primary">
+                        <Tag className="h-5 w-5" />
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${
+                          isActive ? "badge-glow-success" : "badge-glow-destructive"
+                        }`}
+                      >
+                        {isActive ? "Activa" : "Inactiva"}
+                      </span>
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-bold text-foreground text-base leading-snug">{cat.nombre}</p>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">ID #{cat.id_categoria_producto} · Categoría de Productos</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2 border-t border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(cat)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDeactivateModal(cat)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-xl transition-colors font-semibold cursor-pointer ${
+                        isActive
+                          ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
+                          : "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                      }`}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      {isActive ? "Desactivar" : "Activar"}
+                    </button>
+                  </div>
                 </div>
-                <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
-                  cat.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
-                }`}>
-                  {cat.estado === 1 ? "Activa" : "Inactiva"}
-                </span>
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{cat.nombre}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">ID #{cat.id_categoria_producto}</p>
-              </div>
-              <div className="flex gap-2 pt-1 border-t border-border">
-                <button
-                  onClick={() => openEditModal(cat)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs text-primary hover:bg-primary/10 rounded-lg transition-colors font-medium"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                  Editar
-                </button>
-                <button
-                  onClick={() => openDeactivateModal(cat)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs rounded-lg transition-colors font-medium ${
-                    cat.estado === 1 ? "text-warning hover:bg-warning/10" : "text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Power className="h-3.5 w-3.5" />
-                  {cat.estado === 1 ? "Desactivar" : "Activar"}
-                </button>
-              </div>
-            </div>
-          ))}
+              </TiltCard>
+            );
+          })}
         </div>
       )}
 

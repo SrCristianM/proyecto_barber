@@ -18,21 +18,21 @@ export default function SchedulesTable({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-3 px-4">
+            <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Barbero" field="id_barbero" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">Días</th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-3.5 px-4 font-semibold">Días</th>
+              <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Hora Inicio" field="hora_inicio" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Hora Fin" field="hora_fin" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">Acciones</th>
+              <th className="text-right py-3.5 px-4 font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -44,48 +44,46 @@ export default function SchedulesTable({
               </tr>
             ) : (
               schedules.map((schedule) => (
-                <tr key={schedule.id_horario} className="border-b border-border hover:bg-accent/40 transition-colors">
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-foreground">{getBarberName(schedule.id_barbero)}</span>
+                <tr key={schedule.id_horario} className="table-row-accent border-b border-border hover:bg-accent/40 transition-colors">
+                  <td className="py-3.5 px-4">
+                    <span className="font-semibold text-foreground text-sm">{getBarberName(schedule.id_barbero)}</span>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex flex-wrap gap-1">
+                  <td className="py-3.5 px-4">
+                    <div className="flex flex-wrap gap-1.5">
                       {(schedule.dias_semana || []).map((dia) => (
                         <span
                           key={dia}
-                          className="inline-block px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded font-medium"
+                          className="inline-block px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-lg font-semibold border border-primary/20"
                         >
                           {dia.slice(0, 3)}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-foreground font-mono text-xs">{schedule.hora_inicio}</td>
-                  <td className="py-3 px-4 text-foreground font-mono text-xs">{schedule.hora_fin}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-3.5 px-4 text-foreground font-mono text-sm font-medium">{schedule.hora_inicio}</td>
+                  <td className="py-3.5 px-4 text-foreground font-mono text-sm font-medium">{schedule.hora_fin}</td>
+                  <td className="py-3.5 px-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        schedule.estado === 1
-                          ? "bg-success/10 text-success"
-                          : "bg-muted text-muted-foreground"
+                      className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full border ${
+                        schedule.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                       }`}
                     >
                       {schedule.estado === 1 ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3.5 px-4">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onDetail(schedule)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         title="Ver detalle"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => onToggleStatus(schedule)}
-                        className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${
-                          schedule.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
+                        className={`p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
+                          schedule.estado === 1 ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground"
                         }`}
                         title={schedule.estado === 1 ? "Desactivar" : "Activar"}
                       >
@@ -93,14 +91,14 @@ export default function SchedulesTable({
                       </button>
                       <button
                         onClick={() => onEdit(schedule)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors"
+                        className="p-2 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
                         title="Editar"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => onDelete(schedule)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors"
+                        className="p-2 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
                         title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />

@@ -37,9 +37,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 <li key={item.path} className="relative">
                   <Link
                     to={item.path}
-                    className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors z-10 ${
+                    className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                       isActive
-                        ? "text-sidebar-primary-foreground font-medium"
+                        ? "text-white font-semibold drop-shadow-xs"
                         : "text-sidebar-foreground hover:bg-sidebar-accent/60"
                     }`}
                     title={!sidebarOpen ? item.label : undefined}
@@ -47,12 +47,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                     {isActive && (
                       <motion.div
                         layoutId="activeSidebarIndicator"
-                        className="absolute inset-0 bg-sidebar-primary rounded-lg -z-10 shadow-sm"
+                        className="gold-sidebar-active -z-10"
                         transition={{ type: "spring", stiffness: 350, damping: 30 }}
                       />
                     )}
-                    {item.icon}
-                    {sidebarOpen && <span className="truncate">{item.label}</span>}
+                    <span className="relative z-10 flex items-center gap-3 min-w-0">
+                      <span className="shrink-0">{item.icon}</span>
+                      {sidebarOpen && <span className="truncate">{item.label}</span>}
+                    </span>
                   </Link>
                 </li>
               );
@@ -65,9 +67,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           <div className="relative">
             <Link
               to="/dashboard/settings"
-              className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors z-10 ${
+              className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 isSettingsActive
-                  ? "text-sidebar-primary-foreground font-medium"
+                  ? "text-white font-semibold drop-shadow-xs"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/60"
               }`}
               title={!sidebarOpen ? "Configuración" : undefined}
@@ -75,12 +77,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               {isSettingsActive && (
                 <motion.div
                   layoutId="activeSidebarIndicator"
-                  className="absolute inset-0 bg-sidebar-primary rounded-lg -z-10 shadow-sm"
+                  className="gold-sidebar-active -z-10"
                   transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 />
               )}
-              <Settings className="h-5 w-5 shrink-0" />
-              {sidebarOpen && <span className="truncate">Configuración</span>}
+              <span className="relative z-10 flex items-center gap-3 min-w-0">
+                <Settings className="h-5 w-5 shrink-0" />
+                {sidebarOpen && <span className="truncate">Configuración</span>}
+              </span>
             </Link>
           </div>
         </div>

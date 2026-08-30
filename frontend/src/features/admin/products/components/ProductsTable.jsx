@@ -44,7 +44,12 @@ export default function ProductsTable({
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id_producto} className="border-b border-border hover:bg-accent/50 transition-colors">
+              <tr
+                key={product.id_producto}
+                id={`row-prd-${product.id_producto}`}
+                data-highlight-id={`prd-${product.id_producto}`}
+                className="border-b border-border hover:bg-accent/50 transition-colors"
+              >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {product.imagen_url ? (
@@ -64,24 +69,45 @@ export default function ProductsTable({
                   </div>
                 </td>
                 <td className="py-4 px-4 text-foreground">{getCategoryName(product.id_categoria_producto)}</td>
-                <td className="py-4 px-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      product.stock === 0
-                        ? "bg-destructive/10 text-destructive font-semibold"
-                        : product.stock <= 5
-                        ? "bg-warning/10 text-warning font-semibold"
-                        : "text-foreground"
-                    }`}
-                  >
-                    {product.stock} unidades
-                  </span>
+                <td className="py-3.5 px-4">
+                  <div className="space-y-1.5 min-w-[125px]">
+                    <div className="flex items-center justify-between text-xs">
+                      <span
+                        className={`font-bold ${
+                          product.stock === 0
+                            ? "text-destructive"
+                            : product.stock <= 4
+                            ? "text-amber-500"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {product.stock} uds
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {product.stock === 0 ? "Agotado" : product.stock <= 4 ? "Crítico" : "Óptimo"}
+                      </span>
+                    </div>
+                    {/* Barra de nivel de stock animada */}
+                    <div className="w-24 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          product.stock === 0
+                            ? "w-0"
+                            : product.stock <= 4
+                            ? "w-1/4 loyalty-progress-bronze"
+                            : product.stock <= 10
+                            ? "w-3/5 loyalty-progress-silver"
+                            : "w-full loyalty-progress-gold"
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </td>
-                <td className="py-4 px-4 font-semibold text-foreground">${Number(product.precio).toLocaleString()}</td>
-                <td className="py-4 px-4">
+                <td className="py-3.5 px-4 font-bold text-foreground text-sm font-mono">${Number(product.precio).toLocaleString("es-CO")}</td>
+                <td className="py-3.5 px-4">
                   <span
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      product.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                    className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                      product.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                     }`}
                   >
                     {product.estado === 1 ? "Activo" : "Inactivo"}

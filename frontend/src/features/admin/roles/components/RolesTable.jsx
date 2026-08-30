@@ -43,24 +43,50 @@ export default function RolesTable({
               </tr>
             ) : (
               roles.map((role) => (
-                <tr key={role.id_rol} className="border-b border-border hover:bg-accent/40 transition-colors">
+                <tr
+                  key={role.id_rol}
+                  id={`row-rol-${role.id_rol}`}
+                  data-highlight-id={`rol-${role.id_rol}`}
+                  className="border-b border-border hover:bg-accent/40 transition-colors"
+                >
                   <td className="py-3 px-4">
                     <span className="font-medium text-foreground">{role.nombre_rol}</span>
                   </td>
                   <td className="py-3 px-4 text-muted-foreground">{role.descripcion || "—"}</td>
                   <td className="py-3 px-4">
-                    <span className="text-xs text-muted-foreground">
-                      {(role.permisos || []).length} permisos
-                    </span>
+                    {(() => {
+                      const count = (role.permisos || []).length;
+                      const totalPossible = 23;
+                      const pct = Math.min(100, Math.round((count / totalPossible) * 100));
+                      const isFull = pct >= 90;
+                      const isMid = pct >= 50;
+
+                      return (
+                        <div className="space-y-1.5 min-w-[130px]">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-foreground">{count} permisos</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{pct}%</span>
+                          </div>
+                          <div className="w-24 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                            <div
+                              style={{ width: `${pct}%` }}
+                              className={`h-full rounded-full transition-all ${isFull
+                                ? "loyalty-progress-gold"
+                                : isMid
+                                  ? "loyalty-progress-silver"
+                                  : "loyalty-progress-bronze"
+                                }`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="py-3 px-4 text-muted-foreground text-xs">{role.fecha_creacion?.split(" ")[0]}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        role.estado === 1
-                          ? "bg-success/10 text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${role.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
+                        }`}
                     >
                       {role.estado === 1 ? "Activo" : "Inactivo"}
                     </span>
@@ -76,9 +102,8 @@ export default function RolesTable({
                       </button>
                       <button
                         onClick={() => onToggleStatus(role)}
-                        className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${
-                          role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
-                        }`}
+                        className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
+                          }`}
                         title={role.estado === 1 ? "Desactivar" : "Activar"}
                       >
                         <Power className="h-4 w-4" />

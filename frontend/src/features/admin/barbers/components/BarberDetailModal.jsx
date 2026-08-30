@@ -15,11 +15,10 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
             <span className="text-xl font-bold text-foreground">#{barber.id_barbero}</span>
           </div>
           <span
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border ${
-              barber.estado === 1
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border ${barber.estado === 1
                 ? "bg-success/10 text-success border-success/20"
                 : "bg-muted text-muted-foreground border-border"
-            }`}
+              }`}
           >
             {barber.estado === 1 ? "● Activo" : "● Inactivo"}
           </span>

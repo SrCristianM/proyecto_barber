@@ -1,35 +1,43 @@
 import { useState } from "react";
-import { Bell, Search, User, Sun, Moon } from "lucide-react";
+import { Bell, User, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNotifications } from "../shared/hooks/useNotifications";
 import NotificationPanel from "../shared/components/NotificationPanel";
+import AllNotificationsModal from "../shared/components/AllNotificationsModal";
+import GlobalSearchBar from "../shared/components/GlobalSearchBar";
 
 const TopBar = ({ isDark, setIsDark }) => {
   const [showNotifications, setShowNotifications] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const [showAllNotificationsModal, setShowAllNotificationsModal] = useState(false);
+
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAsUnread,
+    markAllAsRead,
+    deleteNotification,
+    clearReadNotifications
+  } = useNotifications();
+
+  const handleOpenAllNotifications = () => {
+    setShowNotifications(false);
+    setShowAllNotificationsModal(true);
+  };
 
   return (
-    <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between sticky top-0 z-30">
-      {/* Buscador */}
-      <div className="flex-1 max-w-xl">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            className="w-full pl-10 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground transition-all"
-          />
-        </div>
-      </div>
+    <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between sticky top-0 z-30 gap-4">
+      {/* Buscador Global Interactivo Multimódulo */}
+      <GlobalSearchBar />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 shrink-0">
         {/* Campanita con panel de notificaciones */}
         <div className="relative">
           <motion.button
             id="notification-bell"
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowNotifications((v) => !v)}
-            className={`p-2 hover:bg-accent rounded-lg text-foreground relative transition-colors cursor-pointer ${
+            className={`p-2 hover:bg-accent rounded-xl text-foreground relative transition-colors cursor-pointer ${
               showNotifications ? "bg-accent" : ""
             }`}
             title="Notificaciones"
@@ -52,18 +60,35 @@ const TopBar = ({ isDark, setIsDark }) => {
                 unreadCount={unreadCount}
                 onMarkAsRead={markAsRead}
                 onMarkAllAsRead={markAllAsRead}
+                onViewAll={handleOpenAllNotifications}
                 onClose={() => setShowNotifications(false)}
               />
             )}
           </AnimatePresence>
         </div>
 
+        {/* Modal de Centro de Notificaciones Completo */}
+        <AnimatePresence>
+          {showAllNotificationsModal && (
+            <AllNotificationsModal
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAsRead={markAsRead}
+              onMarkAsUnread={markAsUnread}
+              onMarkAllAsRead={markAllAsRead}
+              onDeleteNotification={deleteNotification}
+              onClearReadNotifications={clearReadNotifications}
+              onClose={() => setShowAllNotificationsModal(false)}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Toggle dark mode */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.88 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setIsDark(!isDark)}
-          className="p-2 hover:bg-accent rounded-lg text-foreground transition-colors cursor-pointer"
+          className="p-2 hover:bg-accent rounded-xl text-foreground transition-colors cursor-pointer"
           title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
         >
           <motion.div
@@ -79,12 +104,12 @@ const TopBar = ({ isDark, setIsDark }) => {
 
         {/* Avatar usuario */}
         <div className="flex items-center gap-3 pl-4 border-l border-border">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-xs">
-            <User className="h-5 w-5 text-primary-foreground" />
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-xs">
+            <User className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
           <div className="hidden md:block">
-            <p className="text-sm font-medium text-foreground">Admin</p>
-            <p className="text-xs text-muted-foreground">Administrador</p>
+            <p className="text-xs font-semibold text-foreground">Admin</p>
+            <p className="text-[11px] text-muted-foreground">Administrador</p>
           </div>
         </div>
       </div>

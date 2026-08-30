@@ -44,7 +44,12 @@ export default function ServicesTable({
           </thead>
           <tbody>
             {services.map((service) => (
-              <tr key={service.id_servicio} className="border-b border-border hover:bg-accent/50 transition-colors">
+              <tr
+                key={service.id_servicio}
+                id={`row-srv-${service.id_servicio}`}
+                data-highlight-id={`srv-${service.id_servicio}`}
+                className="border-b border-border hover:bg-accent/50 transition-colors"
+              >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {service.imagen_url ? (
@@ -67,17 +72,39 @@ export default function ServicesTable({
                     )}
 
                     <div>
-                      <p className="font-medium text-foreground">{service.nombre}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-bold text-foreground text-sm">{service.nombre}</p>
+                        {(service.id_servicio === 1 || service.id_servicio === 2) && (
+                          <span className="text-[10px] font-extrabold text-primary bg-primary/10 border border-primary/30 px-1.5 py-0.2 rounded-full">
+                            ★ TOP
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="py-4 px-4 text-foreground">{getCategoryName(service.id_categoria_servicio)}</td>
-                <td className="py-4 px-4 text-muted-foreground">{service.duracion_minutos} min</td>
-                <td className="py-4 px-4 font-semibold text-foreground">${Number(service.precio).toLocaleString()}</td>
-                <td className="py-4 px-4">
+                <td className="py-3.5 px-4 text-foreground text-sm font-medium">{getCategoryName(service.id_categoria_servicio)}</td>
+                <td className="py-3.5 px-4">
+                  <div className="space-y-1.5 min-w-[100px]">
+                    <span className="text-xs font-semibold text-foreground">{service.duracion_minutos} min</span>
+                    <div className="w-20 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                      <div
+                        className={`h-full rounded-full ${
+                          service.duracion_minutos <= 30
+                            ? "w-1/3 loyalty-progress-new"
+                            : service.duracion_minutos <= 45
+                            ? "w-2/3 loyalty-progress-silver"
+                            : "w-full loyalty-progress-gold"
+                        }`}
+                      />
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4 font-bold text-foreground text-sm font-mono">${Number(service.precio).toLocaleString("es-CO")}</td>
+                <td className="py-3.5 px-4">
                   <span
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      service.estado === 1 ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                    className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                      service.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                     }`}
                   >
                     {service.estado === 1 ? "Activo" : "Inactivo"}

@@ -2,6 +2,7 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, Rotate
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppointments } from "../hooks/useAppointments";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import AppointmentsCalendarView from "../components/AppointmentsCalendarView";
 import AppointmentsListView from "../components/AppointmentsListView";
 import AppointmentFormModal from "../components/AppointmentFormModal";
@@ -10,6 +11,7 @@ import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 
 export default function AppointmentsPage() {
+  useSearchHighlight();
   const {
     appointmentsForDate,
     view,

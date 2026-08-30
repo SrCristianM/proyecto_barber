@@ -21,9 +21,11 @@ export default function FilterSelect({
         onChange={(e) => onChange(e.target.value)}
         className="bg-transparent text-xs font-medium text-foreground focus:outline-none cursor-pointer pr-4 appearance-none w-full"
       >
-        <option value="all">{placeholder}</option>
+        <option value="all" className="bg-card text-foreground dark:bg-[#13161B] dark:text-[#F8FAFC] py-1.5">
+          {placeholder}
+        </option>
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} className="bg-card text-foreground dark:bg-[#13161B] dark:text-[#F8FAFC] py-1.5">
             {opt.label}
           </option>
         ))}

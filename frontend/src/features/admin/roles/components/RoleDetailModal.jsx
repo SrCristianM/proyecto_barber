@@ -16,11 +16,10 @@ export default function RoleDetailModal({ role, onEdit, onClose }) {
             <span className="text-xl font-bold text-foreground">#{role.id_rol}</span>
           </div>
           <span
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border ${
-              role.estado === 1
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border ${role.estado === 1
                 ? "bg-success/10 text-success border-success/20"
                 : "bg-muted text-muted-foreground border-border"
-            }`}
+              }`}
           >
             {role.estado === 1 ? "● Activo" : "● Inactivo"}
           </span>

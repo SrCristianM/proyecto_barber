@@ -118,21 +118,28 @@ export default function SchedulesPage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg w-fit border border-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
-              activeTab === tab.key
-                ? "bg-card text-foreground shadow-xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tabs con animación de deslizamiento suave */}
+      <div className="flex items-center gap-1 bg-secondary/70 p-1.5 rounded-xl w-fit border border-border">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="schedulesTabPill"
+                  className="absolute inset-0 bg-card rounded-lg border border-border shadow-xs"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Horarios */}

@@ -332,25 +332,25 @@ export function useSales() {
       sales.map((sale) =>
         sale.id_venta === selectedSale.id_venta
           ? {
-              ...sale,
-              id_cliente: Number(formData.id_cliente),
-              id_usuario: Number(formData.id_usuario),
-              id_cita: formData.id_cita ? Number(formData.id_cita) : null,
-              fecha: formattedFecha,
-              total: formData.total,
-              estado: formData.estado,
-              detalles: formData.detalles.map((d, index) => ({
-                id_venta_detalle: d.id_venta_detalle || sale.id_venta * 10 + index + 1,
-                id_venta: sale.id_venta,
-                tipo_item: d.tipo_item,
-                id_producto: d.id_producto,
-                id_servicio: d.id_servicio,
-                cantidad: d.cantidad || 1,
-                precio_unitario: d.precio_unitario,
-                subtotal: d.subtotal,
-                nombre: d.nombre
-              }))
-            }
+            ...sale,
+            id_cliente: Number(formData.id_cliente),
+            id_usuario: Number(formData.id_usuario),
+            id_cita: formData.id_cita ? Number(formData.id_cita) : null,
+            fecha: formattedFecha,
+            total: formData.total,
+            estado: formData.estado,
+            detalles: formData.detalles.map((d, index) => ({
+              id_venta_detalle: d.id_venta_detalle || sale.id_venta * 10 + index + 1,
+              id_venta: sale.id_venta,
+              tipo_item: d.tipo_item,
+              id_producto: d.id_producto,
+              id_servicio: d.id_servicio,
+              cantidad: d.cantidad || 1,
+              precio_unitario: d.precio_unitario,
+              subtotal: d.subtotal,
+              nombre: d.nombre
+            }))
+          }
           : sale
       )
     );

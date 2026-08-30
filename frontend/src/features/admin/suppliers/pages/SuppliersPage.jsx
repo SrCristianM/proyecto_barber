@@ -2,6 +2,7 @@ import { Plus, Download, LayoutGrid, List, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useSuppliers } from "../hooks/useSuppliers";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import SuppliersStats from "../components/SuppliersStats";
 import SupplierCard from "../components/SupplierCard";
 import SuppliersTable from "../components/SuppliersTable";
@@ -12,6 +13,7 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 
 export default function SuppliersPage() {
+  useSearchHighlight();
   const {
     suppliers,
     searchTerm,

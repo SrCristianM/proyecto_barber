@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus, Download, AlertCircle, RotateCcw, Tag } from "lucide-react";
+import { Plus, Download, AlertCircle, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useProducts, categories } from "../hooks/useProducts";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import ProductsTable from "../components/ProductsTable";
+import ProductCard from "../components/ProductCard";
 import ProductFormModal from "../components/ProductFormModal";
 import ProductDetailModal from "../components/ProductDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -19,6 +21,8 @@ const TABS = [
 ];
 
 export default function ProductsPage() {
+  useSearchHighlight();
+  const [viewMode, setViewMode] = useState("table");
   const {
     products,
     searchTerm,
@@ -109,11 +113,10 @@ export default function ProductsPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
-              activeTab === tab.key
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${activeTab === tab.key
                 ? "bg-card text-foreground shadow-xs border border-border"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {tab.label}
           </button>
@@ -183,11 +186,38 @@ export default function ProductsPage() {
                 )}
               </div>
 
-              {/* Botón Exportar */}
+              {/* Botón Exportar y Selector de Vista */}
               <div className="flex items-center gap-2">
+                <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("table")}
+                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
+                        ? "bg-card text-foreground shadow-xs border border-border"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    title="Vista de Tabla"
+                  >
+                    <Table className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tabla</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
+                        ? "bg-card text-foreground shadow-xs border border-border"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    title="Vista de Tarjetas 3D"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tarjetas 3D</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Exportar
@@ -195,17 +225,32 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            <ProductsTable
-              products={filteredProducts}
-              totalCount={products.length}
-              sortField={sortField}
-              sortDir={sortDir}
-              onSort={handleSort}
-              onDetail={openDetailModal}
-              onToggleStatus={openDeactivateModal}
-              onEdit={openEditModal}
-              onDelete={openDeleteModal}
-            />
+            {viewMode === "table" ? (
+              <ProductsTable
+                products={filteredProducts}
+                totalCount={products.length}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                onDetail={openDetailModal}
+                onToggleStatus={openDeactivateModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id_producto}
+                    product={product}
+                    onDetail={openDetailModal}
+                    onToggleStatus={openDeactivateModal}
+                    onEdit={openEditModal}
+                    onDelete={openDeleteModal}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

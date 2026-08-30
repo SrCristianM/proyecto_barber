@@ -1,10 +1,11 @@
 import { Edit } from "lucide-react";
 
 const STATUS_CONFIG = {
-  Programada: "bg-primary/10 text-primary",
-  Completada: "bg-success/10 text-success",
-  Cancelada: "bg-destructive/10 text-destructive",
-  Reprogramada: "bg-warning/10 text-warning"
+  Programada: "badge-glow-primary",
+  Completada: "badge-glow-success",
+  Cancelada: "badge-glow-destructive",
+  Reprogramada: "badge-glow-warning",
+  "En Curso": "badge-glow-primary pulse-gold-glow"
 };
 
 export default function AppointmentsListView({ appointments, getClientName, getBarberName, getServiceInfo, onEdit }) {
@@ -24,6 +25,8 @@ export default function AppointmentsListView({ appointments, getClientName, getB
             return (
               <div
                 key={appointment.id_cita}
+                id={`row-app-${appointment.id_cita}`}
+                data-highlight-id={`app-${appointment.id_cita}`}
                 className="flex items-center justify-between p-3.5 bg-background rounded-xl border border-border hover:shadow-sm transition-shadow"
               >
                 {/* Hora */}

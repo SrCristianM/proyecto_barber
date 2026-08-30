@@ -45,37 +45,37 @@ export default function SuppliersTable({
             {suppliers.map((supplier) => (
               <tr
                 key={supplier.id_proveedor}
-                className="border-b border-border hover:bg-accent/40 transition-colors"
+                id={`row-sup-${supplier.id_proveedor}`}
+                data-highlight-id={`sup-${supplier.id_proveedor}`}
+                className="table-row-accent border-b border-border transition-colors"
               >
                 <td className="py-3.5 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Building2 className="h-4 w-4 text-primary" />
+                    <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                      <Building2 className="h-4.5 w-4.5" />
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground text-sm">{supplier.nombre}</p>
+                      <p className="font-bold text-foreground text-sm">{supplier.nombre}</p>
                       <p className="text-xs text-muted-foreground">ID #{supplier.id_proveedor}</p>
                     </div>
                   </div>
                 </td>
-                <td className="py-3.5 px-4 text-sm font-medium text-foreground">
+                <td className="py-3.5 px-4 text-xs font-mono font-medium text-foreground">
                   {supplier.nit || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-sm text-muted-foreground">
+                <td className="py-3.5 px-4 text-xs text-muted-foreground">
                   {supplier.telefono || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-sm text-muted-foreground">
+                <td className="py-3.5 px-4 text-xs text-muted-foreground">
                   {supplier.correo || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-sm text-muted-foreground max-w-[200px] truncate">
+                <td className="py-3.5 px-4 text-xs text-muted-foreground max-w-[200px] truncate">
                   {supplier.direccion || "—"}
                 </td>
                 <td className="py-3.5 px-4">
                   <span
-                    className={`inline-block px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                      supplier.estado === 1
-                        ? "bg-success/10 text-success border border-success/20"
-                        : "bg-muted text-muted-foreground border border-border"
+                    className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                      supplier.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                     }`}
                   >
                     {supplier.estado === 1 ? "Activo" : "Inactivo"}

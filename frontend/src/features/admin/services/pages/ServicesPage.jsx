@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus, Download, RotateCcw, Tag } from "lucide-react";
+import { Plus, Download, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useServices, availableCategories } from "../hooks/useServices";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import ServicesTable from "../components/ServicesTable";
+import ServiceCard from "../components/ServiceCard";
 import ServiceFormModal from "../components/ServiceFormModal";
 import ServiceDetailModal from "../components/ServiceDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -21,7 +23,9 @@ const TABS = [
 ];
 
 export default function ServicesPage() {
+  useSearchHighlight();
   const [activeTab, setActiveTab] = useState("services");
+  const [viewMode, setViewMode] = useState("table");
 
   const {
     services,
@@ -102,21 +106,28 @@ export default function ServicesPage() {
         )}
       </div>
 
-      {/* Tabs de navegación */}
-      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg w-fit border border-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${
-              activeTab === tab.key
-                ? "bg-card text-foreground shadow-xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tabs de navegación con animación de deslizamiento suave */}
+      <div className="flex items-center gap-1 bg-secondary/70 p-1.5 rounded-xl w-fit border border-border">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="servicesTabPill"
+                  className="absolute inset-0 bg-card rounded-lg border border-border shadow-xs"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Vista Servicios */}
@@ -170,11 +181,38 @@ export default function ServicesPage() {
                 )}
               </div>
 
-              {/* Botón Exportar */}
+              {/* Botón Exportar y Selector de Vista */}
               <div className="flex items-center gap-2">
+                <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("table")}
+                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
+                        ? "bg-card text-foreground shadow-xs border border-border"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    title="Vista de Tabla"
+                  >
+                    <Table className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tabla</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
+                        ? "bg-card text-foreground shadow-xs border border-border"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    title="Vista de Tarjetas 3D"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span className="hidden sm:inline">Tarjetas 3D</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Exportar
@@ -182,17 +220,32 @@ export default function ServicesPage() {
               </div>
             </div>
 
-            <ServicesTable
-              services={filteredServices}
-              totalCount={services.length}
-              sortField={sortField}
-              sortDir={sortDir}
-              onSort={handleSort}
-              onDetail={openDetailModal}
-              onToggleStatus={openDeactivateModal}
-              onEdit={openEditModal}
-              onDelete={openDeleteModal}
-            />
+            {viewMode === "table" ? (
+              <ServicesTable
+                services={filteredServices}
+                totalCount={services.length}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                onDetail={openDetailModal}
+                onToggleStatus={openDeactivateModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredServices.map((service) => (
+                  <ServiceCard
+                    key={service.id_servicio}
+                    service={service}
+                    onDetail={openDetailModal}
+                    onToggleStatus={openDeactivateModal}
+                    onEdit={openEditModal}
+                    onDelete={openDeleteModal}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

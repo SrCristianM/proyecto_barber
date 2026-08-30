@@ -1,8 +1,9 @@
-import { Plus, Download, LayoutGrid, List, RotateCcw, Building2 } from "lucide-react";
+import { Plus, Download, LayoutGrid, Table, RotateCcw, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { usePurchases, availableSuppliers } from "../hooks/usePurchases";
+import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import PurchasesStats from "../components/PurchasesStats";
 import PurchaseCard from "../components/PurchaseCard";
 import PurchasesTable from "../components/PurchasesTable";
@@ -15,6 +16,7 @@ import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
 
 export default function PurchasesPage() {
+  useSearchHighlight();
   const {
     purchases,
     searchTerm,
@@ -201,36 +203,11 @@ export default function PurchasesPage() {
             )}
           </div>
 
-          {/* Opciones a la derecha: Toggle Vista y Exportar */}
+          {/* Botón Exportar */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-secondary/50 border border-border rounded-lg p-0.5">
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "table"
-                    ? "bg-card text-primary shadow-xs font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Vista en Tabla"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("cards")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "cards"
-                    ? "bg-card text-primary shadow-xs font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Vista en Cards"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-            </div>
-
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar
