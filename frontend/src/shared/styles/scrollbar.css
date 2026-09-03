@@ -1,47 +1,38 @@
 /* ==========================================================================
-   ESTILOS GLOBALES DE SCROLLBAR - DORADO LUXURY & ACCESIBLE
+   SCROLLBAR GLOBAL (DASHBOARD & MÓDULOS DEL SISTEMA) - Minimalista y discreto
    ========================================================================== */
 
-/* Firefox */
+/* Firefox general */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #C9A24A #0D0D0D;
+  scrollbar-color: rgba(107, 114, 128, 0.25) transparent;
 }
 
-/* Chrome, Edge, Safari (Webkit) */
+/* Chrome, Edge, Safari (Webkit) para toda la app y modales */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0D0D0D;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #E6C76A 0%, #C9A24A 50%, #9E7D2E 100%);
-  border-radius: 9999px;
-  border: 2px solid #0D0D0D;
-  transition: all 0.2s ease-in-out;
+  background: rgba(107, 114, 128, 0.25);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #FFF0B3 0%, #E0B85C 50%, #C9A24A 100%);
-  box-shadow: 0 0 10px rgba(201, 162, 74, 0.6);
+  background: rgba(107, 114, 128, 0.45);
 }
 
-::-webkit-scrollbar-thumb:active {
-  background: #C9A24A;
-}
-
-/* Radix UI Scroll Area (Modales, Tablas, Paneles) */
+/* Radix UI Scroll Area (Modales, Tablas, Paneles del Dashboard) */
 [data-slot="scroll-area-scrollbar"] {
   background: transparent !important;
-  padding: 2px !important;
+  padding: 0 !important;
 }
 
-/* Ocultar botones de flecha en Radix */
 [data-slot="scroll-area-scrollbar"] button,
 [data-slot="scroll-area-scrollbar"] [data-radix-scroll-area-scroll-area-button] {
   display: none !important;
@@ -49,14 +40,51 @@
 }
 
 [data-slot="scroll-area-thumb"] {
-  background: linear-gradient(180deg, #E6C76A 0%, #C9A24A 50%, #9E7D2E 100%) !important;
-  border-radius: 9999px !important;
-  width: 6px !important;
+  background-color: rgba(107, 114, 128, 0.25) !important;
+  border-radius: 2px !important;
+  width: 4px !important;
   min-height: 24px !important;
-  border: 1px solid rgba(0, 0, 0, 0.3) !important;
 }
 
 [data-slot="scroll-area-thumb"]:hover {
-  background: linear-gradient(180deg, #FFF0B3 0%, #E0B85C 50%, #C9A24A 100%) !important;
-  box-shadow: 0 0 8px rgba(201, 162, 74, 0.5) !important;
+  background-color: rgba(107, 114, 128, 0.45) !important;
+}
+
+/* ==========================================================================
+   SCROLLBAR EXCLUSIVO PARA LA LANDING PAGE (INICIO) - Dorado Luxury
+   ========================================================================== */
+
+html.landing-active,
+body.landing-active {
+  scrollbar-width: thin;
+  scrollbar-color: #C9A24A #0D0D0D;
+}
+
+html.landing-active::-webkit-scrollbar,
+body.landing-active::-webkit-scrollbar,
+.landing-page-root::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.landing-active::-webkit-scrollbar-track,
+body.landing-active::-webkit-scrollbar-track,
+.landing-page-root::-webkit-scrollbar-track {
+  background: #0D0D0D;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+html.landing-active::-webkit-scrollbar-thumb,
+body.landing-active::-webkit-scrollbar-thumb,
+.landing-page-root::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #E6C76A 0%, #C9A24A 50%, #9E7D2E 100%);
+  border-radius: 9999px;
+  border: 2px solid #0D0D0D;
+}
+
+html.landing-active::-webkit-scrollbar-thumb:hover,
+body.landing-active::-webkit-scrollbar-thumb:hover,
+.landing-page-root::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #FFF0B3 0%, #E0B85C 50%, #C9A24A 100%);
+  box-shadow: 0 0 10px rgba(201, 162, 74, 0.6);
 }

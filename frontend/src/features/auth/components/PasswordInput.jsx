@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from "lucide-react";
+import { Lock, Eye, EyeOff } from "lucide-react";
 import { usePasswordVisibility } from "../hooks/usePasswordVisibility";
 import FormFieldError from "../../admin/shared/components/FormFieldError";
 
@@ -10,33 +10,37 @@ export default function PasswordInput({
   onChange,
   placeholder = "••••••••",
   error,
-  required = false
+  required = false,
 }) {
   const { visible, toggle } = usePasswordVisibility();
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-foreground mb-1.5">
-        {label} {required && <span className="text-destructive">*</span>}
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-xs font-semibold text-[#CCCCCC] uppercase tracking-wider">
+        {label} {required && <span className="text-red-400">*</span>}
       </label>
-      <div className="relative">
+      <div className="relative flex items-center">
+        <div className="absolute left-3.5 pointer-events-none text-[#8E8E93]">
+          <Lock className="w-4 h-4" />
+        </div>
         <input
           id={id}
           name={name ?? id}
           type={visible ? "text" : "password"}
           value={value}
           onChange={onChange}
-          className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm pr-10 transition-all ${
+          className={`w-full py-3 pl-10 pr-11 bg-[#181818] border rounded-xl focus:outline-none text-white text-xs sm:text-sm placeholder:text-[#555555] transition-all duration-200 ${
             error
-              ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-              : "border-input focus:ring-2 focus:ring-primary"
+              ? "border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
+              : "border-white/10 hover:border-white/20 focus:border-[#C9A24A] focus:ring-2 focus:ring-[#C9A24A]/30"
           }`}
           placeholder={placeholder}
         />
         <button
           type="button"
           onClick={toggle}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+          className="absolute right-3.5 p-1 text-[#8E8E93] hover:text-[#C9A24A] transition-colors cursor-pointer"
+          aria-label={visible ? "Ocultar contraseña" : "Ver contraseña"}
         >
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>

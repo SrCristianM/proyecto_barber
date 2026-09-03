@@ -37,22 +37,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 <li key={item.path} className="relative">
                   <Link
                     to={item.path}
-                    className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all ${
                       isActive
-                        ? "text-white font-semibold drop-shadow-xs"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/60"
+                        ? "text-sidebar-foreground dark:text-white font-semibold shadow-xs"
+                        : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
                     }`}
                     title={!sidebarOpen ? item.label : undefined}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="activeSidebarIndicator"
-                        className="gold-sidebar-active -z-10"
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                        className="sidebar-active-pill -z-10"
+                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
                       />
                     )}
                     <span className="relative z-10 flex items-center gap-3 min-w-0">
-                      <span className="shrink-0">{item.icon}</span>
+                      <span className={`shrink-0 transition-colors ${isActive ? "text-[#D4AF37]" : ""}`}>
+                        {item.icon}
+                      </span>
                       {sidebarOpen && <span className="truncate">{item.label}</span>}
                     </span>
                   </Link>
@@ -63,26 +65,26 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         </nav>
 
         {/* Settings */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border">
           <div className="relative">
             <Link
               to="/dashboard/settings"
-              className={`relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all ${
                 isSettingsActive
-                  ? "text-white font-semibold drop-shadow-xs"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/60"
+                  ? "text-sidebar-foreground dark:text-white font-semibold shadow-xs"
+                  : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/70"
               }`}
               title={!sidebarOpen ? "Configuración" : undefined}
             >
               {isSettingsActive && (
                 <motion.div
                   layoutId="activeSidebarIndicator"
-                  className="gold-sidebar-active -z-10"
-                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  className="sidebar-active-pill -z-10"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-3 min-w-0">
-                <Settings className="h-5 w-5 shrink-0" />
+                <Settings className={`h-5 w-5 shrink-0 transition-colors ${isSettingsActive ? "text-[#D4AF37]" : ""}`} />
                 {sidebarOpen && <span className="truncate">Configuración</span>}
               </span>
             </Link>

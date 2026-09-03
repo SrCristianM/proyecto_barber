@@ -23,7 +23,13 @@ export default function App() {
     return false;
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return !!localStorage.getItem("barber_current_user");
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     try {

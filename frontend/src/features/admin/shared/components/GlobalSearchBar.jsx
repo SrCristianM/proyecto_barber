@@ -73,6 +73,19 @@ export default function GlobalSearchBar() {
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Atajo de teclado global Ctrl + K / Cmd + K
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
   // Cerrar al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -117,23 +130,29 @@ export default function GlobalSearchBar() {
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Buscar clientes, proveedores, barberos, citas, productos..."
-          className="w-full pl-10 pr-9 py-2 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-xs sm:text-sm transition-all placeholder:text-muted-foreground shadow-2xs"
+          className="w-full pl-10 pr-20 py-2 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-xs sm:text-sm transition-all placeholder:text-muted-foreground shadow-2xs"
         />
 
-        {searchTerm && (
-          <button
-            type="button"
-            onClick={() => {
-              setSearchTerm("");
-              setIsOpen(false);
-              inputRef.current?.focus();
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
-            title="Borrar búsqueda"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setIsOpen(false);
+                inputRef.current?.focus();
+              }}
+              className="p-1 text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
+              title="Borrar búsqueda"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-muted-foreground bg-secondary/80 border border-border/80 rounded-md shadow-2xs">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          )}
+        </div>
       </div>
 
       {/* Menú Flotante de Resultados */}

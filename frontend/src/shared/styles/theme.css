@@ -461,50 +461,73 @@
   animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Indicador activo animado para el Sidebar y navegación */
-.gold-sidebar-active {
+/* Keyframe para el rayo de luz brillante giratorio en el borde */
+@keyframes borderGlowSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Indicador activo animado para el Sidebar */
+.sidebar-active-pill {
   position: absolute;
   inset: 0;
-  border-radius: 0.5rem;
-  background: linear-gradient(115deg,
-      #B58D3D 0%,
-      #C9A24A 25%,
-      #E8CB72 50%,
-      #C9A24A 75%,
-      #A77F2F 100%);
-  background-size: 250% 250%;
-  animation: rgb-line-flow 4s ease infinite;
-  box-shadow: 0 4px 14px -1px rgba(201, 162, 74, 0.45), 0 0 10px rgba(201, 162, 74, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border-radius: 0.75rem;
   overflow: hidden;
   pointer-events: none;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  border-left: 3.5px solid #D4AF37;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
-.gold-sidebar-active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg,
-      transparent,
-      rgba(255, 255, 255, 0.9),
-      transparent);
-  animation: border-beam-sweep 3s ease-in-out infinite;
-  pointer-events: none;
+.sidebar-active-pill::before,
+.sidebar-active-pill::after {
+  display: none;
 }
 
-.gold-sidebar-active::after {
+/* Modo oscuro: Negro mate con haz giratorio dorado de lujo */
+.dark .sidebar-active-pill {
+  background: transparent;
+  border: none;
+  box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), 0 0 14px 1px rgba(212, 175, 55, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .sidebar-active-pill::before {
+  display: block;
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.35) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmerWave 2.5s infinite;
-  pointer-events: none;
+  width: 250%;
+  height: 250%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    rgba(212, 175, 55, 0.5) 290deg,
+    #D4AF37 325deg,
+    #FFFCE6 345deg,
+    #D4AF37 360deg
+  );
+  animation: borderGlowSpin 3.5s linear infinite;
+  z-index: 1;
+}
+
+.dark .sidebar-active-pill::after {
+  display: block;
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  border-radius: calc(0.75rem - 1.5px);
+  background: #1A1F26;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(212, 175, 55, 0.08) 100%);
+  z-index: 2;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18);
 }
 
 /* Línea de luz activa en filas de tabla al pasar el ratón (sin romper columnas de la tabla) */

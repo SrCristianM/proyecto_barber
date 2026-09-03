@@ -72,7 +72,7 @@ export default function Hero() {
       />
 
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center w-full py-12 lg:py-16 relative z-10">
-        
+
         {/* Left column: Text & CTA */}
         <motion.div
           variants={containerVariants}
@@ -140,7 +140,7 @@ export default function Hero() {
               >
                 {/* Button shine animation */}
                 <span className="absolute inset-0 w-1/2 h-full bg-white/25 transform -skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-700 ease-out" />
-                
+
                 <span className="relative z-10 flex items-center gap-2">
                   RESERVAR CITA
                   <ChevronRight className="w-4 h-4 text-black group-hover:translate-x-1 transition-transform duration-300" />

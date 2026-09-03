@@ -1,20 +1,13 @@
 import { useState } from "react";
 import { ROLES } from "../../../../shared/types/database";
-
-const mockUsers = [
-  { id_usuario: 1, nombre: "Juan", apellido: "Pérez", correo: "juan@example.com", telefono: "+57 300 123 4567", id_rol: 1, estado: 1, fecha_registro: "2026-01-15 10:30:00" },
-  { id_usuario: 2, nombre: "María", apellido: "García", correo: "maria@example.com", telefono: "+57 301 234 5678", id_rol: 2, estado: 1, fecha_registro: "2026-02-20 14:15:00" },
-  { id_usuario: 3, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 302 345 6789", id_rol: 3, estado: 1, fecha_registro: "2026-03-10 09:00:00" },
-  { id_usuario: 4, nombre: "Ana", apellido: "Torres", correo: "ana@example.com", telefono: "+57 303 456 7890", id_rol: 3, estado: 1, fecha_registro: "2026-04-05 16:45:00" },
-  { id_usuario: 5, nombre: "Luis", apellido: "Martínez", correo: "luis@example.com", telefono: "+57 304 567 8901", id_rol: 3, estado: 0, fecha_registro: "2026-05-12 11:20:00" }
-];
+import { getStoredUsers, saveStoredUsers } from "../../../auth/services/authService";
 
 export const availableRoles = ROLES;
 
 const emptyForm = { nombre: "", apellido: "", correo: "", telefono: "", id_rol: 3, contrasena: "", estado: 1 };
 
 export function useUsers() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState(() => getStoredUsers());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [roleFilter, setRoleFilter] = useState("all"); // 'all' | id_rol
@@ -89,31 +82,33 @@ export function useUsers() {
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       id_rol: Number(formData.id_rol),
-      contrasena: formData.contrasena || "password123",
+      contrasena: formData.contrasena || "Admin123*",
       estado: 1,
       fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
-    setUsers([...users, newUser]);
+    const updated = [...users, newUser];
+    setUsers(updated);
+    saveStoredUsers(updated);
     setShowCreateModal(false);
     resetForm();
   };
 
   const handleEdit = () => {
     if (!selectedUser) return;
-    setUsers(
-      users.map((user) =>
-        user.id_usuario === selectedUser.id_usuario
-          ? {
-              ...user,
-              nombre: formData.nombre.trim(),
-              apellido: formData.apellido.trim(),
-              correo: formData.correo.trim(),
-              telefono: formData.telefono ? formData.telefono.trim() : null,
-              id_rol: Number(formData.id_rol)
-            }
-          : user
-      )
+    const updated = users.map((user) =>
+      user.id_usuario === selectedUser.id_usuario
+        ? {
+            ...user,
+            nombre: formData.nombre.trim(),
+            apellido: formData.apellido.trim(),
+            correo: formData.correo.trim(),
+            telefono: formData.telefono ? formData.telefono.trim() : null,
+            id_rol: Number(formData.id_rol)
+          }
+        : user
     );
+    setUsers(updated);
+    saveStoredUsers(updated);
     setShowEditModal(false);
     setSelectedUser(null);
     resetForm();
@@ -121,17 +116,19 @@ export function useUsers() {
 
   const handleDelete = () => {
     if (!selectedUser) return;
-    setUsers(users.filter((user) => user.id_usuario !== selectedUser.id_usuario));
+    const updated = users.filter((user) => user.id_usuario !== selectedUser.id_usuario);
+    setUsers(updated);
+    saveStoredUsers(updated);
     setShowDeleteModal(false);
     setSelectedUser(null);
   };
 
   const toggleStatus = (userId) => {
-    setUsers(
-      users.map((user) =>
-        user.id_usuario === userId ? { ...user, estado: user.estado === 1 ? 0 : 1 } : user
-      )
+    const updated = users.map((user) =>
+      user.id_usuario === userId ? { ...user, estado: user.estado === 1 ? 0 : 1 } : user
     );
+    setUsers(updated);
+    saveStoredUsers(updated);
   };
 
   const handleExport = () => {

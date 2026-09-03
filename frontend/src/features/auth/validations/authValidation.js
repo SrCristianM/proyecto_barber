@@ -18,6 +18,8 @@ export function validateLoginForm(formData) {
 
   if (!formData.contrasena || formData.contrasena.trim() === "") {
     errors.contrasena = "La contraseña es obligatoria para iniciar sesión.";
+  } else if (formData.contrasena.length < 8) {
+    errors.contrasena = "La contraseña debe tener al menos 8 caracteres.";
   }
 
   return {

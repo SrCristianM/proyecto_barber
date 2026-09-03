@@ -1,14 +1,28 @@
-import { useState } from "react";
-import { Bell, User, Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, User, Sun, Moon, LogOut } from "lucide-react";
+import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useNotifications } from "../shared/hooks/useNotifications";
 import NotificationPanel from "../shared/components/NotificationPanel";
 import AllNotificationsModal from "../shared/components/AllNotificationsModal";
 import GlobalSearchBar from "../shared/components/GlobalSearchBar";
+import { getCurrentUser, logoutUser } from "../../auth/services/authService";
+import { ROLES } from "../../../shared/types/database";
 
 const TopBar = ({ isDark, setIsDark }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAllNotificationsModal, setShowAllNotificationsModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+  }, []);
+
+  const getRoleName = (id_rol) => {
+    const r = ROLES.find((role) => role.id_rol === Number(id_rol));
+    return r ? r.nombre_rol : "Usuario";
+  };
 
   const {
     notifications,
@@ -102,15 +116,31 @@ const TopBar = ({ isDark, setIsDark }) => {
           </motion.div>
         </motion.button>
 
-        {/* Avatar usuario */}
+        {/* Avatar usuario y Perfil */}
         <div className="flex items-center gap-3 pl-4 border-l border-border">
           <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-xs">
             <User className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
-          <div className="hidden md:block">
-            <p className="text-xs font-semibold text-foreground">Admin</p>
-            <p className="text-[11px] text-muted-foreground">Administrador</p>
+          <div className="hidden md:block text-left">
+            <p className="text-xs font-semibold text-foreground">
+              {currentUser ? `${currentUser.nombre} ${currentUser.apellido}` : "Administrador"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {currentUser ? getRoleName(currentUser.id_rol) : "Administrador"}
+            </p>
           </div>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => {
+              logoutUser();
+              navigate("/login");
+            }}
+            className="p-2 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-xl transition-colors cursor-pointer ml-1"
+            title="Cerrar sesión"
+          >
+            <LogOut className="h-4.5 w-4.5" />
+          </motion.button>
         </div>
       </div>
     </header>

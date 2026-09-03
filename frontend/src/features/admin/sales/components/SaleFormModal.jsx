@@ -166,15 +166,32 @@ export default function SaleFormModal({
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div className="sm:col-span-8">
-                <label className="block text-[11px] text-muted-foreground mb-1">
-                  Ítem del Catálogo (Servicio / Producto)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] text-muted-foreground">
+                    Ítem del Catálogo (Servicio / Producto)
+                  </label>
+                  {(() => {
+                    const current = catalogItems.find((c) => c.id === selectedCatalogId);
+                    if (current?.tipo === "Producto") {
+                      return (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                          current.stock <= 3
+                            ? "bg-destructive/15 text-destructive border border-destructive/30 animate-pulse"
+                            : "bg-success/10 text-success"
+                        }`}>
+                          {current.stock <= 3 ? `⚠️ Stock Crítico: ${current.stock} un.` : `Stock: ${current.stock} un.`}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
                 <select
                   value={selectedCatalogId}
                   onChange={(e) => setSelectedCatalogId(e.target.value)}
                   className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
                 >
-                  <optgroup label="Servicios de Barbería">
+                  <optgroup label="✂️ Servicios de Barbería">
                     {catalogItems
                       .filter((c) => c.tipo === "Servicio")
                       .map((c) => (
@@ -183,12 +200,12 @@ export default function SaleFormModal({
                         </option>
                       ))}
                   </optgroup>
-                  <optgroup label="Productos en Venta">
+                  <optgroup label="🛍️ Productos en Venta">
                     {catalogItems
                       .filter((c) => c.tipo === "Producto")
                       .map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.nombre} — ${c.precio.toLocaleString("es-CO")} (Stock: {c.stock})
+                          {c.nombre} — ${c.precio.toLocaleString("es-CO")} ({c.stock <= 3 ? `⚠️ ¡Solo ${c.stock} en stock!` : `Stock: ${c.stock}`})
                         </option>
                       ))}
                   </optgroup>

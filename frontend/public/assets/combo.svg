@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000" width="2000" height="2000">
+  <defs>
+    <radialGradient id="combo-ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c9a24b" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#c9a24b" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#c9a24b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="chrome-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="25%" stop-color="#e2e8f0" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="75%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <linearGradient id="leather-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#451a03" />
+      <stop offset="30%" stop-color="#78350f" />
+      <stop offset="70%" stop-color="#2d1305" />
+      <stop offset="100%" stop-color="#140802" />
+    </linearGradient>
+    <linearGradient id="gold-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+    <filter id="chair-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="32" stdDeviation="36" flood-color="#000000" flood-opacity="0.7" />
+      <feDropShadow dx="0" dy="12" stdDeviation="22" flood-color="#c9a24b" flood-opacity="0.32" />
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="1000" cy="1000" r="900" fill="url(#combo-ambient)" />
+
+  <g filter="url(#chair-shadow)" transform="translate(1000, 1000)">
+    <!-- HYDRAULIC BASE (Heavy round chrome plate & footrest) -->
+    <!-- Base Plate -->
+    <ellipse cx="0" cy="720" rx="420" ry="120" fill="url(#chrome-grad)" stroke="#64748b" stroke-width="4" />
+    <ellipse cx="0" cy="700" rx="380" ry="90" fill="url(#chrome-grad)" />
+    <!-- Hydraulic Column cylinder -->
+    <rect x="-90" y="480" width="180" height="240" rx="20" fill="url(#chrome-grad)" stroke="#475569" stroke-width="4" />
+    <!-- Hydraulic Pump Foot Pedal -->
+    <path d="M 90 610 L 260 630 L 280 660 L 90 645 Z" fill="url(#chrome-grad)" stroke="#334155" stroke-width="3" />
+    <rect x="250" y="620" width="50" height="50" rx="8" fill="#1e293b" />
+
+    <!-- FOOTREST BRACKETS & FOOT PAD -->
+    <path d="M -160 520 L -320 620 L -300 660 L -140 560 Z" fill="url(#chrome-grad)" stroke="#334155" stroke-width="3" />
+    <ellipse cx="-310" cy="640" rx="130" ry="45" fill="url(#chrome-grad)" stroke="#64748b" stroke-width="3" />
+    <ellipse cx="-310" cy="635" rx="110" ry="35" fill="url(#gold-accent)" />
+    <text x="-380" y="642" font-family="'Oswald', sans-serif" font-size="18" font-weight="600" letter-spacing="3" fill="#140802">BARBERBOOK</text>
+
+    <!-- SEAT CUSHION (Plush tufted leather) -->
+    <!-- Seat undercarriage chrome bowl -->
+    <path d="M -290 410 C -290 500 290 500 290 410 Z" fill="url(#chrome-grad)" stroke="#475569" stroke-width="4" />
+    <!-- Main leather seat cushion -->
+    <ellipse cx="0" cy="400" rx="290" ry="95" fill="url(#leather-grad)" stroke="url(#gold-accent)" stroke-width="5" />
+    <!-- Tufting buttons on seat -->
+    <circle cx="-130" cy="390" r="10" fill="#1c0c05" stroke="#d97706" stroke-width="2" />
+    <circle cx="0" cy="385" r="10" fill="#1c0c05" stroke="#d97706" stroke-width="2" />
+    <circle cx="130" cy="390" r="10" fill="#1c0c05" stroke="#d97706" stroke-width="2" />
+
+    <!-- ARM RESTS (Padded leather with curved chrome supports) -->
+    <!-- Left Armrest -->
+    <g transform="translate(-280, 180)">
+      <path d="M -20 200 C -60 120 -50 0 -20 -80 L 30 -80 C 10 0 10 120 40 200 Z" fill="url(#chrome-grad)" stroke="#475569" stroke-width="4" />
+      <rect x="-45" y="-120" width="75" height="180" rx="28" fill="url(#leather-grad)" stroke="url(#gold-accent)" stroke-width="3" />
+      <!-- Chrome end cap -->
+      <circle cx="-7" cy="-115" r="18" fill="url(#chrome-grad)" />
+    </g>
+    <!-- Right Armrest (with recline lever) -->
+    <g transform="translate(280, 180)">
+      <path d="M 20 200 C 60 120 50 0 20 -80 L -30 -80 C -10 0 -10 120 -40 200 Z" fill="url(#chrome-grad)" stroke="#475569" stroke-width="4" />
+      <rect x="-30" y="-120" width="75" height="180" rx="28" fill="url(#leather-grad)" stroke="url(#gold-accent)" stroke-width="3" />
+      <circle cx="7" cy="-115" r="18" fill="url(#chrome-grad)" />
+      <!-- Recline Lever -->
+      <path d="M 40 40 L 90 20 L 100 35 L 50 60 Z" fill="url(#chrome-grad)" stroke="#334155" stroke-width="2" />
+      <ellipse cx="100" cy="25" rx="22" ry="14" fill="#ffffff" stroke="url(#gold-accent)" stroke-width="3" />
+    </g>
+
+    <!-- BACKREST (Ergonomic vintage tufted chair back) -->
+    <!-- Outer chrome frame -->
+    <rect x="-220" y="-360" width="440" height="660" rx="75" fill="url(#chrome-grad)" stroke="#475569" stroke-width="6" />
+    <!-- Inner leather tufted back pad -->
+    <rect x="-195" y="-335" width="390" height="610" rx="60" fill="url(#leather-grad)" stroke="url(#gold-accent)" stroke-width="4" />
+    <!-- Tufting pattern & buttons -->
+    <g>
+      <!-- Diamond stitch lines -->
+      <line x1="-150" y1="-220" x2="150" y2="60" stroke="#d97706" stroke-width="2" opacity="0.3" />
+      <line x1="150" y1="-220" x2="-150" y2="60" stroke="#d97706" stroke-width="2" opacity="0.3" />
+      <line x1="-150" y1="-60" x2="150" y2="200" stroke="#d97706" stroke-width="2" opacity="0.3" />
+      <line x1="150" y1="-60" x2="-150" y2="200" stroke="#d97706" stroke-width="2" opacity="0.3" />
+      <!-- Deep leather buttons with brass accent -->
+      <circle cx="-100" cy="-240" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+      <circle cx="100" cy="-240" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+      <circle cx="0" cy="-140" r="14" fill="#140802" stroke="#d97706" stroke-width="3.5" />
+      <circle cx="-100" cy="-40" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+      <circle cx="100" cy="-40" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+      <circle cx="0" cy="60" r="14" fill="#140802" stroke="#d97706" stroke-width="3.5" />
+      <circle cx="-100" cy="160" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+      <circle cx="100" cy="160" r="12" fill="#140802" stroke="#d97706" stroke-width="3" />
+    </g>
+
+    <!-- HEADREST (Adjustable vintage neck support) -->
+    <!-- Support bars -->
+    <rect x="-45" y="-530" width="18" height="180" fill="url(#chrome-grad)" stroke="#475569" stroke-width="2" />
+    <rect x="27" y="-530" width="18" height="180" fill="url(#chrome-grad)" stroke="#475569" stroke-width="2" />
+    <!-- Headrest cushion -->
+    <rect x="-140" y="-580" width="280" height="130" rx="45" fill="url(#leather-grad)" stroke="url(#gold-accent)" stroke-width="4" />
+    <circle cx="0" cy="-515" r="10" fill="#140802" stroke="#d97706" stroke-width="3" />
+    <!-- Polished Chrome Headrest Clamp Screw -->
+    <circle cx="75" cy="-440" r="16" fill="url(#chrome-grad)" stroke="#334155" stroke-width="2" />
+  </g>
+</svg>

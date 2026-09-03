@@ -1,4 +1,4 @@
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, RotateCcw } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, RotateCcw, Download } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppointments } from "../hooks/useAppointments";
@@ -9,11 +9,13 @@ import AppointmentFormModal from "../components/AppointmentFormModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import { exportToCsv } from "../../shared/utils/exportUtils";
 
 export default function AppointmentsPage() {
   useSearchHighlight();
   const {
     appointmentsForDate,
+    appointments,
     view,
     setView,
     selectedDate,
@@ -62,6 +64,24 @@ export default function AppointmentsPage() {
     toast.success("Cita actualizada correctamente");
   };
 
+  const handleExportAppointments = () => {
+    const dataToExport = appointmentsForDate.length ? appointmentsForDate : appointments;
+    const columns = [
+      { key: "id_cita", label: "ID Cita" },
+      { key: "fecha", label: "Fecha" },
+      { key: "hora", label: "Hora" },
+      { key: "cliente", label: "Cliente", valueGetter: (r) => getClientName(r.id_cliente) },
+      { key: "barbero", label: "Barbero", valueGetter: (r) => getBarberName(r.id_barbero) },
+      { key: "servicio", label: "Servicio", valueGetter: (r) => getServiceInfo(r.id_servicio)?.nombre || "" },
+      { key: "duracion", label: "Duración (min)", valueGetter: (r) => getServiceInfo(r.id_servicio)?.duracion_minutos || 30 },
+      { key: "precio", label: "Precio", valueGetter: (r) => `$${Number(r.precio || 0).toLocaleString("es-CO")}` },
+      { key: "estado", label: "Estado" }
+    ];
+
+    exportToCsv(`citas_${selectedDate}`, dataToExport, columns);
+    toast.success("Agenda de citas exportada a CSV exitosamente");
+  };
+
   const barberOptions = barbers.map((b) => ({
     value: b.id_barbero,
     label: b.nombre
@@ -75,15 +95,25 @@ export default function AppointmentsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Citas</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona las citas de la barbería y su disponibilidad</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          Agendar Cita
-        </motion.button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleExportAppointments}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-card hover:bg-accent border border-border text-foreground rounded-xl transition-colors text-sm font-medium shadow-2xs cursor-pointer"
+            title="Exportar agenda a Excel / CSV"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            Agendar Cita
+          </motion.button>
+        </div>
       </div>
 
       {/* Controles: vista + navegación de fecha */}
