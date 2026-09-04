@@ -55,6 +55,7 @@ export default function App() {
           setIsDark={setIsDark}
           isAuthenticated={isAuthenticated}
           onLogin={() => setIsAuthenticated(true)}
+          onLogout={() => setIsAuthenticated(false)}
         />
       </BrowserRouter>
       <Toaster

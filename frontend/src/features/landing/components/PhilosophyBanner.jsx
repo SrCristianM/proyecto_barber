@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ShieldCheck, Sparkles, Clock, Wine, Scissors, Award } from "lucide-react";
+import { ShieldCheck, Clock, Wine, Scissors, Award } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Link } from "react-router";
 

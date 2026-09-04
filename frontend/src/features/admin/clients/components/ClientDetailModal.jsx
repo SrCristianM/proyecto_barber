@@ -1,4 +1,4 @@
-import { MessageCircle, Phone, Award, Calendar, DollarSign, UserCheck, Sparkles } from "lucide-react";
+import { MessageCircle, Phone, Award, Calendar, DollarSign, UserCheck, Crown } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 
 const LOYALTY_CONFIG = {
@@ -6,7 +6,7 @@ const LOYALTY_CONFIG = {
     badge: "bg-amber-500/15 text-amber-500 border-amber-500/30",
     gradient: "from-amber-500/20 to-yellow-500/5",
     desc: "Cliente VIP - 15% Descuento Especial",
-    icon: Sparkles
+    icon: Crown
   },
   Plata: {
     badge: "bg-slate-300/15 text-slate-300 border-slate-300/30",

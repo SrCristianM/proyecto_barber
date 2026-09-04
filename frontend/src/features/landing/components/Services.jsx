@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router";
-import { Scissors, Sparkles, Clock, Check, ChevronRight, Crown } from "lucide-react";
+import { Scissors, Clock, Check, ChevronRight, Crown } from "lucide-react";
 
 const CATEGORIES = [
   { id: "all", label: "TODOS" },

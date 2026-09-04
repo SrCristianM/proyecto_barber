@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router";
-import { Scissors, ChevronRight, Star, Clock, Users, Award, Sparkles, ArrowDown } from "lucide-react";
+import { Scissors, ChevronRight, Star, Clock, Users, Award, ArrowDown } from "lucide-react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 

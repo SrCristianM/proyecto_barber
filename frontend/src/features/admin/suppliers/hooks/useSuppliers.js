@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockSuppliers = [
   {
@@ -8,7 +9,13 @@ const mockSuppliers = [
     telefono: "+57 310 987 6543",
     correo: "ventas@barberpro.com.co",
     direccion: "Carrera 43A # 18-50, Medellín",
-    estado: 1
+    estado: 1,
+    factura_pdf: {
+      nombre: "Factura_Inicial_BarberPro_2026.pdf",
+      tamano: "482 KB",
+      url: "#",
+      fecha: "15/01/2026"
+    }
   },
   {
     id_proveedor: 2,
@@ -17,7 +24,8 @@ const mockSuppliers = [
     telefono: "+57 320 456 7890",
     correo: "contacto@cosmeticoscapilar.com",
     direccion: "Calle 100 # 19-61, Bogotá",
-    estado: 1
+    estado: 1,
+    factura_pdf: null
   },
   {
     id_proveedor: 3,
@@ -26,7 +34,8 @@ const mockSuppliers = [
     telefono: "+57 315 678 1234",
     correo: "pedidos@barbersupplies.co",
     direccion: "Av. Roosevelt # 34-12, Cali",
-    estado: 1
+    estado: 1,
+    factura_pdf: null
   },
   {
     id_proveedor: 4,
@@ -35,7 +44,8 @@ const mockSuppliers = [
     telefono: "+57 318 234 5678",
     correo: "insumosvalle@gmail.com",
     direccion: "Calle 26 # 6N-45, Palmira",
-    estado: 1
+    estado: 1,
+    factura_pdf: null
   },
   {
     id_proveedor: 5,
@@ -44,7 +54,8 @@ const mockSuppliers = [
     telefono: "+57 300 789 0123",
     correo: "info@acerosbarber.com",
     direccion: "Calle 12 # 4-80, Bucaramanga",
-    estado: 0
+    estado: 0,
+    factura_pdf: null
   }
 ];
 
@@ -54,7 +65,8 @@ const emptyForm = {
   telefono: "",
   correo: "",
   direccion: "",
-  estado: 1
+  estado: 1,
+  factura_pdf: null
 };
 
 export function useSuppliers() {
@@ -127,7 +139,8 @@ export function useSuppliers() {
       telefono: formData.telefono ? formData.telefono.trim() : null,
       correo: formData.correo ? formData.correo.trim() : null,
       direccion: formData.direccion ? formData.direccion.trim() : null,
-      estado: formData.estado !== undefined ? Number(formData.estado) : 1
+      estado: formData.estado !== undefined ? Number(formData.estado) : 1,
+      factura_pdf: formData.factura_pdf || null
     };
 
     setSuppliers([newSupplier, ...suppliers]);
@@ -148,7 +161,8 @@ export function useSuppliers() {
               telefono: formData.telefono ? formData.telefono.trim() : null,
               correo: formData.correo ? formData.correo.trim() : null,
               direccion: formData.direccion ? formData.direccion.trim() : null,
-              estado: formData.estado !== undefined ? Number(formData.estado) : sup.estado
+              estado: formData.estado !== undefined ? Number(formData.estado) : sup.estado,
+              factura_pdf: formData.factura_pdf !== undefined ? formData.factura_pdf : sup.factura_pdf
             }
           : sup
       )
@@ -176,27 +190,30 @@ export function useSuppliers() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "NIT", "Teléfono", "Correo", "Dirección", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredSuppliers.map((s) =>
-        [
-          s.id_proveedor,
-          `"${s.nombre}"`,
-          `"${s.nit || ''}"`,
-          `"${s.telefono || ''}"`,
-          `"${s.correo || ''}"`,
-          `"${s.direccion || ''}"`,
-          `"${s.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `proveedores_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "REPORTE OFICIAL DE PROVEEDORES",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `proveedores_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_proveedor", width: 10, type: "number" },
+        { header: "Proveedor / Razón Social", key: "nombre", width: 34 },
+        { header: "NIT / Documento", key: "nit", width: 20 },
+        { header: "Teléfono", key: "telefono", width: 18 },
+        { header: "Correo Electrónico", key: "correo", width: 28 },
+        { header: "Dirección", key: "direccion", width: 32 },
+        { header: "Factura PDF", key: "tiene_pdf", width: 16 },
+        { header: "Estado", key: "estado_nombre", width: 14 }
+      ],
+      data: filteredSuppliers.map((s) => ({
+        ...s,
+        nit: s.nit || "—",
+        telefono: s.telefono || "—",
+        correo: s.correo || "—",
+        direccion: s.direccion || "—",
+        tiene_pdf: s.factura_pdf ? "Sí (Adjunto)" : "Sin archivo",
+        estado_nombre: s.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {
@@ -212,7 +229,8 @@ export function useSuppliers() {
       telefono: supplier.telefono || "",
       correo: supplier.correo || "",
       direccion: supplier.direccion || "",
-      estado: supplier.estado ?? 1
+      estado: supplier.estado ?? 1,
+      factura_pdf: supplier.factura_pdf || null
     });
     setShowEditModal(true);
   };

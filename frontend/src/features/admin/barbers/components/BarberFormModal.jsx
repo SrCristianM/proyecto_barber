@@ -1,125 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import MultiSelectSearchable from "../../shared/components/MultiSelectSearchable";
+import AvatarImageUploader from "../../shared/components/AvatarImageUploader";
 import { availableSpecialties } from "../hooks/useBarbers";
-import { User, ImageOff, Loader2, Sparkles, X } from "lucide-react";
 import { validateBarberForm } from "../validations/barberValidation";
-
-const SAMPLE_BARBER_IMAGES = [
-  { label: "Barbero 1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" },
-  { label: "Barbero 2", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" },
-  { label: "Barbero 3", url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80" }
-];
-
-function BarberImagePreview({ url, onClear, onSelectSample }) {
-  const [status, setStatus] = useState("idle");
-
-  useEffect(() => {
-    const trimmed = (url || "").trim();
-    if (!trimmed) {
-      setStatus("idle");
-      return;
-    }
-
-    setStatus("loading");
-    const timeout = setTimeout(() => {
-      const img = new Image();
-      img.referrerPolicy = "no-referrer";
-      img.onload = () => setStatus("ok");
-      img.onerror = () => setStatus("error");
-      img.src = trimmed;
-    }, 200);
-
-    return () => clearTimeout(timeout);
-  }, [url]);
-
-  if (status === "idle") {
-    return (
-      <div className="mt-2 p-2.5 rounded-lg border border-dashed border-border bg-muted/20">
-        <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Probar con avatar de ejemplo:
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {SAMPLE_BARBER_IMAGES.map((sample) => (
-            <button
-              key={sample.label}
-              type="button"
-              onClick={() => onSelectSample(sample.url)}
-              className="px-2.5 py-1 text-[11px] font-medium bg-card hover:bg-accent border border-border rounded-md text-foreground transition-colors"
-            >
-              {sample.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-2 space-y-2">
-      <div className="rounded-xl overflow-hidden border border-border bg-muted/30 relative flex items-center justify-center min-h-[120px]">
-        {status === "loading" && (
-          <div className="p-4 flex items-center justify-center gap-2 text-muted-foreground text-xs">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            Cargando foto…
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="p-3 flex flex-col items-center justify-center text-center gap-1">
-            <ImageOff className="h-5 w-5 text-destructive" />
-            <p className="text-xs font-semibold text-destructive">
-              Enlace no válido o imagen protegida
-            </p>
-            <p className="text-[11px] text-muted-foreground max-w-xs">
-              Usa la dirección directa de la imagen (.jpg, .png o .webp).
-            </p>
-            <div className="flex gap-2 mt-1">
-              <button
-                type="button"
-                onClick={() => onSelectSample(SAMPLE_BARBER_IMAGES[0].url)}
-                className="px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded font-medium"
-              >
-                Usar ejemplo
-              </button>
-              <button
-                type="button"
-                onClick={onClear}
-                className="px-2 py-1 text-xs border border-border hover:bg-accent rounded text-foreground"
-              >
-                Limpiar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {status === "ok" && (
-          <div className="p-3 flex items-center gap-3 w-full">
-            <img
-              src={url.trim()}
-              alt="Foto del barbero"
-              referrerPolicy="no-referrer"
-              className="w-16 h-16 rounded-full object-cover border-2 border-primary/40 shadow-sm shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-foreground">Vista previa cargada</p>
-              <p className="text-[11px] text-success">✓ Foto lista para guardar</p>
-            </div>
-            <button
-              type="button"
-              onClick={onClear}
-              className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Quitar imagen"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function BarberFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
@@ -131,6 +16,29 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
+
+  // Normalizar especialidades como array para el MultiSelectSearchable
+  const currentSpecialties = Array.isArray(formData.especialidades)
+    ? formData.especialidades
+    : formData.especialidad
+    ? formData.especialidad.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const handleSpecialtiesChange = (newSelected) => {
+    setFormData((prev) => ({
+      ...prev,
+      especialidades: newSelected,
+      especialidad: newSelected.join(", ")
+    }));
+    if (errors.especialidad) {
+      setErrors((prev) => ({ ...prev, especialidad: null }));
+    }
+  };
+
+  const specialtyOptions = availableSpecialties.map((esp) => ({
+    value: esp,
+    label: esp
+  }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -144,8 +52,17 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
   };
 
   return (
-    <Modal title={isCreate ? "Crear Nuevo Barbero" : "Editar Barbero"} onClose={onClose}>
+    <Modal title={isCreate ? "Crear Nuevo Barbero" : "Editar Barbero"} onClose={onClose} maxWidthClass="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* Componente visual del Avatar / Foto con subida local */}
+        <AvatarImageUploader
+          value={formData.imagen_url}
+          onChange={(newUrl) => handleChange("imagen_url", newUrl)}
+          label="Foto de Perfil del Barbero"
+        />
+        <FormFieldError error={errors.imagen_url} />
+
+        {/* Nombres y Apellidos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -190,87 +107,72 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Correo Electrónico <span className="text-destructive">*</span>
-          </label>
-          <input
-            type="email"
-            name="correo"
-            id="correo"
-            maxLength={120}
-            value={formData.correo}
-            onChange={(e) => handleChange("correo", e.target.value)}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.correo
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="correo@ejemplo.com"
-          />
-          <FormFieldError error={errors.correo} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
-          <input
-            type="tel"
-            name="telefono"
-            id="telefono"
-            maxLength={20}
-            value={formData.telefono || ""}
-            onChange={(e) => handleChange("telefono", e.target.value)}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.telefono
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="+57 300 123 4567"
-          />
-          <FormFieldError error={errors.telefono} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Especialidad</label>
-          <select
-            name="especialidad"
-            id="especialidad"
-            value={formData.especialidad}
-            onChange={(e) => handleChange("especialidad", e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-          >
-            {availableSpecialties.map((specialty) => (
-              <option key={specialty} value={specialty}>
-                {specialty}
-              </option>
-            ))}
-          </select>
-          <FormFieldError error={errors.especialidad} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            URL de Imagen <span className="text-muted-foreground font-normal text-xs">(Opcional, máx. 255 car.)</span>
-          </label>
-          <div className="relative">
-            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Correo y Teléfono */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Correo Electrónico <span className="text-destructive">*</span>
+            </label>
             <input
-              type="url"
-              name="imagen_url"
-              id="imagen_url"
-              maxLength={255}
-              value={formData.imagen_url || ""}
-              onChange={(e) => handleChange("imagen_url", e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              placeholder="https://images.unsplash.com/photo-..."
+              type="email"
+              name="correo"
+              id="correo"
+              maxLength={120}
+              value={formData.correo}
+              onChange={(e) => handleChange("correo", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.correo
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="correo@ejemplo.com"
             />
+            <FormFieldError error={errors.correo} />
           </div>
-          <FormFieldError error={errors.imagen_url} />
-          <BarberImagePreview
-            url={formData.imagen_url}
-            onClear={() => handleChange("imagen_url", "")}
-            onSelectSample={(sampleUrl) => handleChange("imagen_url", sampleUrl)}
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              name="telefono"
+              id="telefono"
+              maxLength={15}
+              value={formData.telefono || ""}
+              onKeyDown={(e) => {
+                const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+                if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+                if (!/^[0-9]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+                handleChange("telefono", onlyNums);
+              }}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.telefono
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: 3001234567"
+            />
+            <FormFieldError error={errors.telefono} />
+          </div>
+        </div>
+
+        {/* Especialidades: MultiSelect con Búsqueda y Chips */}
+        <div>
+          <MultiSelectSearchable
+            selectedValues={currentSpecialties}
+            onChange={handleSpecialtiesChange}
+            options={specialtyOptions}
+            label="Especialidades del Barbero (Selección múltiple)"
+            placeholder="Buscar y seleccionar especialidades..."
+            searchPlaceholder="Escribe para buscar especialidad (ej. Fade, Barba)..."
+            error={errors.especialidad}
           />
+          <FormFieldError error={errors.especialidad} />
         </div>
 
         <div className="flex gap-3 pt-3 border-t border-border">

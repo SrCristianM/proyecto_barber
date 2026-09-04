@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import NumericInput from "../../shared/components/NumericInput";
 import ImageUploader from "../../shared/components/ImageUploader";
 import { categories } from "../hooks/useProducts";
 import { validateProductForm } from "../validations/productValidation";
@@ -59,71 +61,48 @@ export default function ProductFormModal({ mode, formData, setFormData, onSubmit
 
         {/* Categoría de Producto */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Categoría <span className="text-destructive">*</span>
-          </label>
-          <select
-            name="id_categoria_producto"
-            id="id_categoria_producto"
+          <SearchableSelect
+            label="Categoría"
+            required
+            options={categories.map((cat) => ({ value: cat.id_categoria_producto, label: cat.nombre }))}
             value={formData.id_categoria_producto}
-            onChange={(e) => handleChange("id_categoria_producto", Number(e.target.value))}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.id_categoria_producto
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-          >
-            {categories.map((cat) => (
-              <option key={cat.id_categoria_producto} value={cat.id_categoria_producto}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-          <FormFieldError error={errors.id_categoria_producto} />
+            onChange={(val) => handleChange("id_categoria_producto", Number(val))}
+            placeholder="Seleccionar categoría de producto..."
+            error={errors.id_categoria_producto}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Stock Inicial */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Stock {isCreate ? "Inicial" : "Disponible"} <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="number"
-              min="0"
+            <NumericInput
+              label={`Stock ${isCreate ? "Inicial" : "Disponible"}`}
+              required
               name="stock"
               id="stock"
+              min={0}
+              allowDecimal={false}
               value={formData.stock}
-              onChange={(e) => handleChange("stock", parseInt(e.target.value, 10) || 0)}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.stock
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
+              onChange={(val) => handleChange("stock", Number(val) || 0)}
+              error={errors.stock}
+              placeholder="0"
             />
-            <FormFieldError error={errors.stock} />
           </div>
 
           {/* Precio de Venta */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Precio Unitario ($) <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="100"
+            <NumericInput
+              label="Precio Unitario ($)"
+              required
               name="precio"
               id="precio"
+              min={0}
+              allowDecimal={true}
               value={formData.precio}
-              onChange={(e) => handleChange("precio", parseFloat(e.target.value) || 0)}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.precio
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
+              onChange={(val) => handleChange("precio", Number(val) || 0)}
+              error={errors.precio}
+              placeholder="0"
             />
-            <FormFieldError error={errors.precio} />
           </div>
         </div>
 

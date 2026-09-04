@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NIVELES_FIDELIDAD } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockClients = [
   { id_cliente: 1, id_usuario: 4, nombre: "Pedro", apellido: "López", correo: "pedro@example.com", telefono: "+57 300 123 4567", direccion: "Calle 10 # 5-20", nivel_fidelidad: "Oro", estado: 1 },
@@ -142,28 +143,28 @@ export function useClients() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Dirección", "Fidelidad", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredClients.map((c) =>
-        [
-          c.id_cliente,
-          `"${c.nombre}"`,
-          `"${c.apellido}"`,
-          `"${c.correo}"`,
-          `"${c.telefono || ''}"`,
-          `"${c.direccion || ''}"`,
-          `"${c.nivel_fidelidad || 'Nuevo'}"`,
-          `"${c.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `clientes_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "REPORTE OFICIAL DE CLIENTES",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `clientes_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_cliente", width: 10, type: "number" },
+        { header: "Nombre", key: "nombre", width: 20 },
+        { header: "Apellido", key: "apellido", width: 20 },
+        { header: "Correo Electrónico", key: "correo", width: 30 },
+        { header: "Teléfono", key: "telefono", width: 18 },
+        { header: "Dirección", key: "direccion", width: 30 },
+        { header: "Nivel Fidelidad", key: "fidelidad", width: 16 },
+        { header: "Estado", key: "estado_nombre", width: 14 }
+      ],
+      data: filteredClients.map((c) => ({
+        ...c,
+        telefono: c.telefono || "—",
+        direccion: c.direccion || "—",
+        fidelidad: c.nivel_fidelidad || "Nuevo",
+        estado_nombre: c.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {

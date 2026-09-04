@@ -21,6 +21,26 @@ export default function FormInput({
     return null;
   };
 
+  const isPhone = type === "tel" || id === "telefono" || name === "telefono";
+
+  const handleKeyDown = (e) => {
+    if (isPhone) {
+      const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+      if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handleInputChange = (e) => {
+    if (isPhone) {
+      const cleaned = e.target.value.replace(/\D/g, "").slice(0, 15);
+      e.target.value = cleaned;
+    }
+    onChange?.(e);
+  };
+
   const inputIcon = getIcon();
 
   return (
@@ -38,8 +58,11 @@ export default function FormInput({
           id={id}
           name={name ?? id}
           type={type}
+          inputMode={isPhone ? "numeric" : undefined}
+          maxLength={isPhone ? 15 : undefined}
           value={value}
-          onChange={onChange}
+          onKeyDown={handleKeyDown}
+          onChange={handleInputChange}
           className={`w-full py-3 bg-[#181818] border rounded-xl focus:outline-none text-white text-xs sm:text-sm placeholder:text-[#555555] transition-all duration-200 ${
             inputIcon ? "pl-10 pr-4" : "px-4"
           } ${
@@ -47,7 +70,7 @@ export default function FormInput({
               ? "border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
               : "border-white/10 hover:border-white/20 focus:border-[#C9A24A] focus:ring-2 focus:ring-[#C9A24A]/30"
           }`}
-          placeholder={placeholder}
+          placeholder={isPhone && !placeholder ? "Ej: 3001234567" : placeholder}
         />
       </div>
       <FormFieldError error={error} />

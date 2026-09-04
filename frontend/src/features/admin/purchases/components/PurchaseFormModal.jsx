@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Plus, Trash2, ShoppingBag, AlertCircle, Building2, UserCheck, Calendar } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import NumericInput from "../../shared/components/NumericInput";
+import PdfUploader from "../../shared/components/PdfUploader";
 import {
   availableSuppliers,
   availableProducts,
@@ -70,28 +73,21 @@ export default function PurchaseFormModal({
             <label className="block text-sm font-medium text-foreground mb-1.5">
               Proveedor <span className="text-destructive">*</span>
             </label>
-            <select
-              name="id_proveedor"
-              id="id_proveedor"
+            <SearchableSelect
               value={formData.id_proveedor}
-              onChange={(e) => {
-                setFormData({ ...formData, id_proveedor: Number(e.target.value) });
+              onChange={(val) => {
+                setFormData({ ...formData, id_proveedor: Number(val) });
                 if (errors.id_proveedor) setErrors((prev) => ({ ...prev, id_proveedor: null }));
               }}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.id_proveedor
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-              required
-              autoFocus
-            >
-              {availableSuppliers.map((sup) => (
-                <option key={sup.id_proveedor} value={sup.id_proveedor}>
-                  {sup.nombre} {sup.nit ? `(${sup.nit})` : ""}
-                </option>
-              ))}
-            </select>
+              options={availableSuppliers.map((sup) => ({
+                value: sup.id_proveedor,
+                label: sup.nombre,
+                subtitle: sup.nit ? `NIT: ${sup.nit}` : undefined
+              }))}
+              placeholder="Seleccionar proveedor..."
+              searchPlaceholder="Buscar por nombre o NIT..."
+              error={errors.id_proveedor}
+            />
             <FormFieldError error={errors.id_proveedor} />
           </div>
 
@@ -164,6 +160,15 @@ export default function PurchaseFormModal({
           )}
         </div>
 
+        {/* Factura del Proveedor en PDF */}
+        <div className="border-t border-border/60 pt-4">
+          <PdfUploader
+            value={formData.factura_pdf}
+            onChange={(fileData) => setFormData((prev) => ({ ...prev, factura_pdf: fileData }))}
+            label="Factura del Proveedor (Documento PDF opcional)"
+          />
+        </div>
+
         {/* Sección: Detalle de Compra (detalle_compra) */}
         <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between mb-3">
@@ -181,39 +186,44 @@ export default function PurchaseFormModal({
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div className="sm:col-span-6">
                 <label className="block text-[11px] text-muted-foreground mb-1">Producto</label>
-                <select
+                <SearchableSelect
                   value={selectedProductId}
-                  onChange={handleProductSelectChange}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
-                >
-                  {availableProducts.map((p) => (
-                    <option key={p.id_producto} value={p.id_producto}>
-                      {p.nombre} (Stock actual: {p.stock})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => {
+                    setSelectedProductId(Number(val));
+                    const prod = availableProducts.find((p) => p.id_producto === Number(val));
+                    if (prod) setAddPrice(prod.precio_sugerido || prod.precio || 10000);
+                  }}
+                  options={availableProducts.map((p) => ({
+                    value: p.id_producto,
+                    label: p.nombre,
+                    subtitle: `Stock actual: ${p.stock} | Precio sugerido: $${p.precio_sugerido?.toLocaleString() || p.precio?.toLocaleString()}`
+                  }))}
+                  placeholder="Seleccionar producto..."
+                  searchPlaceholder="Buscar producto..."
+                  size="sm"
+                />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
-                <input
-                  type="number"
-                  min="1"
+                <NumericInput
+                  min={1}
                   value={addQuantity}
-                  onChange={(e) => setAddQuantity(parseInt(e.target.value, 10) || 1)}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center font-medium"
+                  onChange={(val) => setAddQuantity(parseInt(val, 10) || 1)}
+                  placeholder="1"
+                  className="py-1.5 text-xs text-center font-medium"
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-[11px] text-muted-foreground mb-1">Costo Unit. ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="100"
+                <NumericInput
+                  min={0}
+                  allowDecimals={true}
                   value={addPrice}
-                  onChange={(e) => setAddPrice(parseFloat(e.target.value) || 0)}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-right font-medium"
+                  onChange={(val) => setAddPrice(parseFloat(val) || 0)}
+                  placeholder="0"
+                  className="py-1.5 text-xs text-right font-medium"
                 />
               </div>
 
@@ -266,24 +276,22 @@ export default function PurchaseFormModal({
                         </select>
                       </td>
                       <td className="py-2.5 px-3">
-                        <input
-                          type="number"
-                          min="1"
+                        <NumericInput
+                          min={1}
                           name={`cantidad_${idx}`}
                           value={detalle.cantidad}
-                          onChange={(e) => updateProductRow(idx, "cantidad", e.target.value)}
-                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs text-center font-medium"
+                          onChange={(val) => updateProductRow(idx, "cantidad", val)}
+                          className="py-1 text-xs text-center font-medium"
                         />
                       </td>
                       <td className="py-2.5 px-3">
-                        <input
-                          type="number"
-                          min="0"
-                          step="100"
+                        <NumericInput
+                          min={0}
+                          allowDecimals={true}
                           name={`precio_unitario_${idx}`}
                           value={detalle.precio_unitario}
-                          onChange={(e) => updateProductRow(idx, "precio_unitario", e.target.value)}
-                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs text-right font-medium"
+                          onChange={(val) => updateProductRow(idx, "precio_unitario", val)}
+                          className="py-1 text-xs text-right font-medium"
                         />
                       </td>
                       <td className="py-2.5 px-3 text-right font-semibold text-foreground">

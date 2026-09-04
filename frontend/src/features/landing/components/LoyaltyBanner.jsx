@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Crown, Sparkles, Gift, Flame, ArrowRight, ShieldCheck } from "lucide-react";
+import { Crown, Gift, Flame, ArrowRight, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
 export default function LoyaltyBanner() {

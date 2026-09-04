@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ROLES } from "../../../../shared/types/database";
 import { getStoredUsers, saveStoredUsers } from "../../../auth/services/authService";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 export const availableRoles = ROLES;
 
@@ -132,28 +133,27 @@ export function useUsers() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Rol", "Estado", "Fecha Registro"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredUsers.map((u) =>
-        [
-          u.id_usuario,
-          `"${u.nombre}"`,
-          `"${u.apellido}"`,
-          `"${u.correo}"`,
-          `"${u.telefono || ''}"`,
-          `"${getRoleName(u.id_rol)}"`,
-          `"${u.estado === 1 ? 'Activo' : 'Inactivo'}"`,
-          `"${u.fecha_registro}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `usuarios_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "REPORTE OFICIAL DE USUARIOS",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `usuarios_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_usuario", width: 10, type: "number" },
+        { header: "Nombre", key: "nombre", width: 20 },
+        { header: "Apellido", key: "apellido", width: 20 },
+        { header: "Correo Electrónico", key: "correo", width: 30 },
+        { header: "Teléfono", key: "telefono", width: 18 },
+        { header: "Rol", key: "rol", width: 18 },
+        { header: "Estado", key: "estado_nombre", width: 14 },
+        { header: "Fecha Registro", key: "fecha_registro", width: 20 }
+      ],
+      data: filteredUsers.map((u) => ({
+        ...u,
+        telefono: u.telefono || "—",
+        rol: getRoleName(u.id_rol),
+        estado_nombre: u.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {

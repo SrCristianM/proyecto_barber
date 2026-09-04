@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router";
-import { Scissors, User, Calendar, Search, Sparkles, Clock, CheckCircle2 } from "lucide-react";
+import { Scissors, User, Calendar, Search, Clock, CheckCircle2 } from "lucide-react";
 
 export default function QuickBookingBar() {
   const [service, setService] = useState("Corte Tradicional & Fade");

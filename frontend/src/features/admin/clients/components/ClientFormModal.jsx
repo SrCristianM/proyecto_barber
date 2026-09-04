@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import NumericInput from "../../shared/components/NumericInput";
 import { availableLoyalties } from "../hooks/useClients";
 import { validateClientForm } from "../validations/clientValidation";
 
@@ -95,22 +97,17 @@ export default function ClientFormModal({ mode, formData, setFormData, onSubmit,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
-          <input
-            type="tel"
+          <NumericInput
+            label="Teléfono"
             name="telefono"
             id="telefono"
-            maxLength={20}
+            maxLength={15}
+            allowDecimal={false}
             value={formData.telefono || ""}
-            onChange={(e) => handleChange("telefono", e.target.value)}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.telefono
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="+57 300 123 4567"
+            onChange={(val) => handleChange("telefono", val)}
+            error={errors.telefono}
+            placeholder="Ej: 3001234567"
           />
-          <FormFieldError error={errors.telefono} />
         </div>
 
         <div>
@@ -135,20 +132,13 @@ export default function ClientFormModal({ mode, formData, setFormData, onSubmit,
         {/* Nivel de Fidelidad */}
         {!isCreate ? (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Nivel de Fidelidad</label>
-            <select
-              name="nivel_fidelidad"
-              id="nivel_fidelidad"
+            <SearchableSelect
+              label="Nivel de Fidelidad"
+              options={availableLoyalties.map((loyalty) => ({ value: loyalty, label: loyalty }))}
               value={formData.nivel_fidelidad}
-              onChange={(e) => handleChange("nivel_fidelidad", e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              {availableLoyalties.map((loyalty) => (
-                <option key={loyalty} value={loyalty}>
-                  {loyalty}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => handleChange("nivel_fidelidad", val)}
+              placeholder="Seleccionar nivel..."
+            />
           </div>
         ) : (
           <div className="flex items-center justify-between p-3.5 bg-secondary/30 rounded-xl border border-border/60">

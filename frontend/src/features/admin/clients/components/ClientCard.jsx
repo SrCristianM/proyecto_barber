@@ -1,4 +1,4 @@
-import { User, Eye, Power, Edit, Trash2, Mail, Phone, MapPin, Crown, Sparkles, Award } from "lucide-react";
+import { User, Eye, Power, Edit, Trash2, Mail, Phone, MapPin, Crown, UserCheck, Award } from "lucide-react";
 import TiltCard from "../../shared/components/TiltCard";
 
 const LOYALTY_CONFIG = {
@@ -25,7 +25,7 @@ const LOYALTY_CONFIG = {
   },
   Nuevo: {
     badge: "bg-sky-500/10 text-sky-400 border-sky-500/30",
-    icon: Sparkles,
+    icon: UserCheck,
     progressWidth: "w-1/6",
     progressClass: "loyalty-progress-new",
     points: "10%"

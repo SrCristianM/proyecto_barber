@@ -36,6 +36,13 @@ export function validateScheduleForm(formData) {
     }
   }
 
+  // Validación de Rango de Vigencia de Horario (fecha_inicio <= fecha_fin)
+  if (formData.fecha_inicio && formData.fecha_fin) {
+    if (formData.fecha_fin < formData.fecha_inicio) {
+      errors.fecha_fin = "La fecha de fin no puede ser anterior a la fecha de inicio del horario.";
+    }
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors

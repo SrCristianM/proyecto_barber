@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import NumericInput from "../../shared/components/NumericInput";
 import { availableCategories } from "../hooks/useServices";
-import { Scissors, ImageOff, Loader2, Sparkles, X } from "lucide-react";
+import { Scissors, ImageOff, Loader2, X } from "lucide-react";
 import { validateServiceForm } from "../validations/serviceValidation";
 
 const SAMPLE_IMAGES = [
@@ -37,7 +39,6 @@ function ImagePreview({ url, onClear, onSelectSample }) {
     return (
       <div className="mt-2 p-3 rounded-lg border border-dashed border-border bg-muted/20">
         <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
           O prueba con una imagen de ejemplo rápida:
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -183,68 +184,45 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Categoría <span className="text-destructive">*</span>
-          </label>
-          <select
-            name="id_categoria_servicio"
-            id="id_categoria_servicio"
+          <SearchableSelect
+            label="Categoría"
+            required
+            options={availableCategories.map((cat) => ({ value: cat.id_categoria_servicio, label: cat.nombre }))}
             value={formData.id_categoria_servicio}
-            onChange={(e) => handleChange("id_categoria_servicio", Number(e.target.value))}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.id_categoria_servicio
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-          >
-            {availableCategories.map((cat) => (
-              <option key={cat.id_categoria_servicio} value={cat.id_categoria_servicio}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-          <FormFieldError error={errors.id_categoria_servicio} />
+            onChange={(val) => handleChange("id_categoria_servicio", Number(val))}
+            placeholder="Seleccionar categoría de servicio..."
+            error={errors.id_categoria_servicio}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Duración (minutos) <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="number"
-              min="1"
+            <NumericInput
+              label="Duración (minutos)"
+              required
               name="duracion_minutos"
               id="duracion_minutos"
+              min={1}
+              allowDecimal={false}
               value={formData.duracion_minutos}
-              onChange={(e) => handleChange("duracion_minutos", parseInt(e.target.value, 10) || 0)}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.duracion_minutos
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
+              onChange={(val) => handleChange("duracion_minutos", Number(val) || 0)}
+              error={errors.duracion_minutos}
+              placeholder="30"
             />
-            <FormFieldError error={errors.duracion_minutos} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Precio ($) <span className="text-destructive">*</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="100"
+            <NumericInput
+              label="Precio ($)"
+              required
               name="precio"
               id="precio"
+              min={0}
+              allowDecimal={true}
               value={formData.precio}
-              onChange={(e) => handleChange("precio", parseFloat(e.target.value) || 0)}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.precio
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
+              onChange={(val) => handleChange("precio", Number(val) || 0)}
+              error={errors.precio}
+              placeholder="0"
             />
-            <FormFieldError error={errors.precio} />
           </div>
         </div>
 

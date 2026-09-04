@@ -1,4 +1,4 @@
-import { Building2, Phone, MessageCircle, Mail, ShoppingCart, DollarSign, CheckCircle2 } from "lucide-react";
+import { Building2, Phone, MessageCircle, Mail, ShoppingCart, DollarSign, CheckCircle2, FileText, ExternalLink } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 
 export default function SupplierDetailModal({ supplier, onEdit, onClose }) {
@@ -119,6 +119,41 @@ export default function SupplierDetailModal({ supplier, onEdit, onClose }) {
             </span>
             <p className="text-sm font-medium text-foreground">{supplier.direccion || "No especificada"}</p>
           </div>
+
+          {/* Factura / Documento Adjunto */}
+          {supplier.factura_pdf && (
+            <div className="sm:col-span-2 pt-2 border-t border-border/60">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                Documento de Factura / RUT Adjunto
+              </span>
+              <div className="flex items-center justify-between p-3 bg-card border border-primary/30 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center font-bold text-xs border border-red-500/20">
+                    PDF
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-semibold text-foreground">
+                      {supplier.factura_pdf.nombre || "Factura_Proveedor.pdf"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {supplier.factura_pdf.tamano || "Documento PDF"} • {supplier.factura_pdf.fecha || "Cargado"}
+                    </p>
+                  </div>
+                </div>
+                {supplier.factura_pdf.url && (
+                  <a
+                    href={supplier.factura_pdf.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg text-xs font-medium transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span>Ver Factura</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Acciones de Contacto Rápido Directo */}

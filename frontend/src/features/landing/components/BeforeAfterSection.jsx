@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "motion/react";
-import { Sparkles, Scissors, Clock, ArrowLeftRight, Check, ChevronRight } from "lucide-react";
+import { Scissors, Clock, ArrowLeftRight, Check, ChevronRight } from "lucide-react";
 import { Link } from "react-router";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
@@ -72,7 +72,7 @@ export default function BeforeAfterSection() {
                   style={{ filter: "brightness(0.9) contrast(1.05)" }}
                 />
                 <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-[#C9A24A]/60 text-[#C9A24A] text-[0.68rem] font-bold uppercase tracking-widest z-10 shadow-lg">
-                  DESPUÉS ✨
+                  DESPUÉS
                 </div>
               </div>
 

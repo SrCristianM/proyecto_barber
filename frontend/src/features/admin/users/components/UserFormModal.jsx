@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { availableRoles } from "../hooks/useUsers";
 import { validateUserForm } from "../validations/userValidation";
 
@@ -99,43 +100,42 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
           <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
           <input
             type="tel"
+            inputMode="numeric"
             name="telefono"
             id="telefono"
-            maxLength={20}
+            maxLength={15}
             value={formData.telefono || ""}
-            onChange={(e) => handleChange("telefono", e.target.value)}
+            onKeyDown={(e) => {
+              const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+              if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+              if (!/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+              }
+            }}
+            onChange={(e) => {
+              const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+              handleChange("telefono", onlyNums);
+            }}
             className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
               errors.telefono
                 ? "border-destructive focus:ring-2 focus:ring-destructive/30"
                 : "border-input focus:ring-2 focus:ring-primary"
             }`}
-            placeholder="+57 300 123 4567"
+            placeholder="Ej: 3001234567"
           />
           <FormFieldError error={errors.telefono} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Rol en el Sistema <span className="text-destructive">*</span>
-          </label>
-          <select
-            name="id_rol"
-            id="id_rol"
+          <SearchableSelect
+            label="Rol en el Sistema"
+            required
+            options={availableRoles.map((role) => ({ value: role.id_rol, label: role.nombre_rol }))}
             value={formData.id_rol}
-            onChange={(e) => handleChange("id_rol", Number(e.target.value))}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.id_rol
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-          >
-            {availableRoles.map((role) => (
-              <option key={role.id_rol} value={role.id_rol}>
-                {role.nombre_rol}
-              </option>
-            ))}
-          </select>
-          <FormFieldError error={errors.id_rol} />
+            onChange={(val) => handleChange("id_rol", Number(val))}
+            placeholder="Seleccionar rol de usuario..."
+            error={errors.id_rol}
+          />
         </div>
 
         {isCreate && (

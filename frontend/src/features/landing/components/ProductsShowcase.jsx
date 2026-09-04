@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Sparkles, ShoppingBag, Check, Star } from "lucide-react";
+import { ShoppingBag, Check, Star } from "lucide-react";
 import { Link } from "react-router";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 

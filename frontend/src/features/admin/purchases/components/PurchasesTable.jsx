@@ -1,5 +1,6 @@
-import { ShoppingBag, Eye, Edit, Trash2, Ban } from "lucide-react";
+import { ShoppingBag, Eye, Edit, Trash2, Ban, FileDown } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
+import { downloadPurchaseInvoicePDF } from "../../../../shared/utils/pdfInvoiceGenerator";
 
 export default function PurchasesTable({
   purchases,
@@ -110,24 +111,40 @@ export default function PurchasesTable({
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onDetail(purchase)}
-                        className="p-1.5 hover:bg-secondary rounded-md text-foreground transition-colors"
+                        className="p-1.5 hover:bg-secondary rounded-md text-foreground transition-colors cursor-pointer"
                         title="Ver Detalle"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      {!isAnulada && (
-                        <button
-                          onClick={() => onCancel(purchase)}
-                          className="p-1.5 hover:bg-warning/10 rounded-md text-warning transition-colors"
-                          title="Anular Compra"
-                        >
-                          <Ban className="h-4 w-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() =>
+                          downloadPurchaseInvoicePDF(
+                            purchase,
+                            { nombre: getSupplierName(purchase.id_proveedor) },
+                            { nombre: getUserName(purchase.id_usuario) }
+                          )
+                        }
+                        className="p-1.5 hover:bg-primary/10 rounded-md text-primary transition-colors cursor-pointer"
+                        title="Descargar Factura del Proveedor (PDF)"
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => !isAnulada && onCancel(purchase)}
+                        disabled={isAnulada}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          isAnulada
+                            ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
+                            : "hover:bg-warning/10 text-warning cursor-pointer"
+                        }`}
+                        title={isAnulada ? "Factura ya anulada (acción no disponible)" : "Anular Compra"}
+                      >
+                        <Ban className="h-4 w-4" />
+                      </button>
                       {!isAnulada && (
                         <button
                           onClick={() => onEdit(purchase)}
-                          className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors"
+                          className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors cursor-pointer"
                           title="Editar"
                         >
                           <Edit className="h-4 w-4" />

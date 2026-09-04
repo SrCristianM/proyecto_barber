@@ -217,8 +217,17 @@ export default function SettingsPage({ isDark, setIsDark }) {
                     </label>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={15}
                       value={business.telefono}
-                      onChange={(e) => updateBusiness({ ...business, telefono: e.target.value })}
+                      onKeyDown={(e) => {
+                        const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+                        if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+                        if (!/^[0-9]$/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      onChange={(e) => updateBusiness({ ...business, telefono: e.target.value.replace(/\D/g, "").slice(0, 15) })}
                       className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                     />
                   </div>

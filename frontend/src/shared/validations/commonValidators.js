@@ -9,8 +9,8 @@ export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 // Solo letras, espacios, acentos y diéresis (para nombres y apellidos)
 export const ONLY_LETTERS_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 
-// Teléfono: dígitos opcionales con '+' inicial, espacios o guiones
-export const PHONE_REGEX = /^\+?[0-9\s-]{7,20}$/;
+// Teléfono: solo dígitos numéricos de 10 a 15 caracteres
+export const PHONE_REGEX = /^[0-9]{10,15}$/;
 
 // NIT: alfanumérico con guión opcional
 export const NIT_REGEX = /^[0-9A-Za-z\s-]{3,30}$/;
@@ -85,22 +85,23 @@ export function validateStringLength(value, min = 0, max = 255, fieldName = "Est
 
 /**
  * Valida formato de número de teléfono.
+ * Solo se permiten dígitos numéricos y un mínimo estricto de 10 dígitos.
  */
 export function validatePhone(value, isMandatory = false) {
-  if (!value || value.trim() === "") {
+  if (!value || String(value).trim() === "") {
     return isMandatory ? "El número de teléfono es obligatorio." : null;
   }
-  const clean = value.trim();
-  if (clean.length > 20) {
-    return "El teléfono no puede superar los 20 caracteres.";
+  const clean = String(value).trim();
+  // Verificar que solo contenga dígitos numéricos
+  if (!/^[0-9]+$/.test(clean)) {
+    return "El teléfono solo debe contener números (sin letras ni caracteres especiales).";
   }
-  // Extraer solo los dígitos para comprobar cantidad mínima
-  const digits = clean.replace(/[^0-9]/g, "");
-  if (digits.length < 7) {
-    return "El teléfono debe contener al menos 7 dígitos numéricos.";
+  // Comprobar mínimo de 10 dígitos
+  if (clean.length < 10) {
+    return "El teléfono debe contener al menos 10 dígitos numéricos.";
   }
-  if (!PHONE_REGEX.test(clean)) {
-    return "El teléfono contiene caracteres no válidos (solo números, espacios y prefijo +).";
+  if (clean.length > 15) {
+    return "El teléfono no puede superar los 15 dígitos numéricos.";
   }
   return null;
 }

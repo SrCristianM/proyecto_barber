@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Scissors, Menu, X, Sparkles } from "lucide-react";
+import { Scissors, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 

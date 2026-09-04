@@ -9,7 +9,7 @@ import AppointmentFormModal from "../components/AppointmentFormModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
-import { exportToCsv } from "../../shared/utils/exportUtils";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 export default function AppointmentsPage() {
   useSearchHighlight();
@@ -66,20 +66,34 @@ export default function AppointmentsPage() {
 
   const handleExportAppointments = () => {
     const dataToExport = appointmentsForDate.length ? appointmentsForDate : appointments;
-    const columns = [
-      { key: "id_cita", label: "ID Cita" },
-      { key: "fecha", label: "Fecha" },
-      { key: "hora", label: "Hora" },
-      { key: "cliente", label: "Cliente", valueGetter: (r) => getClientName(r.id_cliente) },
-      { key: "barbero", label: "Barbero", valueGetter: (r) => getBarberName(r.id_barbero) },
-      { key: "servicio", label: "Servicio", valueGetter: (r) => getServiceInfo(r.id_servicio)?.nombre || "" },
-      { key: "duracion", label: "Duración (min)", valueGetter: (r) => getServiceInfo(r.id_servicio)?.duracion_minutos || 30 },
-      { key: "precio", label: "Precio", valueGetter: (r) => `$${Number(r.precio || 0).toLocaleString("es-CO")}` },
-      { key: "estado", label: "Estado" }
-    ];
-
-    exportToCsv(`citas_${selectedDate}`, dataToExport, columns);
-    toast.success("Agenda de citas exportada a CSV exitosamente");
+    exportToStyledExcel({
+      title: "AGENDA GENERAL DE CITAS",
+      subtitle: `Fecha: ${selectedDate} | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber`,
+      filename: `agenda_citas_${selectedDate}.xls`,
+      columns: [
+        { header: "ID Cita", key: "id_cita", width: 10, type: "number" },
+        { header: "Fecha", key: "fecha", width: 14 },
+        { header: "Hora", key: "hora", width: 12 },
+        { header: "Cliente", key: "cliente", width: 26 },
+        { header: "Barbero", key: "barbero", width: 24 },
+        { header: "Servicio / Paquete", key: "servicio", width: 30 },
+        { header: "Duración (min)", key: "duracion", width: 16, type: "number" },
+        { header: "Precio", key: "precio", width: 16, type: "currency" },
+        { header: "Estado", key: "estado", width: 16 }
+      ],
+      data: dataToExport.map((r) => ({
+        id_cita: r.id_cita,
+        fecha: r.fecha,
+        hora: r.hora,
+        cliente: getClientName(r.id_cliente),
+        barbero: getBarberName(r.id_barbero),
+        servicio: getServiceInfo(r.id_servicio)?.nombre || "Servicio General",
+        duracion: getServiceInfo(r.id_servicio)?.duracion_minutos || 30,
+        precio: Number(r.precio || 0),
+        estado: r.estado
+      }))
+    });
+    toast.success("Agenda de citas exportada a Excel profesionalmente");
   };
 
   const barberOptions = barbers.map((b) => ({
@@ -99,10 +113,10 @@ export default function AppointmentsPage() {
           <button
             onClick={handleExportAppointments}
             className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-card hover:bg-accent border border-border text-foreground rounded-xl transition-colors text-sm font-medium shadow-2xs cursor-pointer"
-            title="Exportar agenda a Excel / CSV"
+            title="Exportar agenda a Excel con diseño profesional"
           >
             <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="hidden sm:inline">Exportar Excel</span>
           </button>
           <motion.button
             whileHover={{ scale: 1.02 }}

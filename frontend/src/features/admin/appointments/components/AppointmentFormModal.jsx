@@ -3,6 +3,8 @@ import { Calendar as CalendarIcon, Clock, Scissors, UserCheck } from "lucide-rea
 import Modal from "../../shared/components/Modal";
 import DateRangePicker from "../../shared/components/DateRangePicker";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import MultiSelectSearchable from "../../shared/components/MultiSelectSearchable";
 import { ESTADOS_CITA } from "../../../../shared/types/database";
 import { validateAppointmentForm } from "../validations/appointmentValidation";
 
@@ -17,19 +19,86 @@ export default function AppointmentFormModal({
   setFormData,
   onSubmit,
   onClose,
-  clients,
-  barbers,
-  services
+  clients = [],
+  barbers = [],
+  services = [],
+  packages = []
 }) {
   const isCreate = mode === "create";
   const [errors, setErrors] = useState({});
 
-  const selectedService = services.find((s) => s.id_servicio === Number(formData.id_servicio));
+  const serviceOptions = (services || []).map((s) => ({
+    value: `svc-${s.id_servicio}`,
+    label: `${s.nombre} — $${Number(s.precio).toLocaleString("es-CO")} (${s.duracion_minutos} min)`,
+    category: "Servicios Individuales",
+    price: Number(s.precio) || 0,
+    duration: Number(s.duracion_minutos) || 0,
+    nombre: s.nombre
+  }));
+
+  const defaultPackages = [
+    { id_paquete: 1, nombre: "Paquete Básico (Corte + Afeitado)", descuento_porcentaje: 10, precio: 31500, duracion_minutos: 65 },
+    { id_paquete: 2, nombre: "Paquete Premium (Corte + Barba + Color)", descuento_porcentaje: 20, precio: 44000, duracion_minutos: 105 },
+    { id_paquete: 3, nombre: "Paquete Especial (Corte Clásico + Barba)", descuento_porcentaje: 15, precio: 34000, duracion_minutos: 75 }
+  ];
+
+  const actualPackages = packages && packages.length > 0 ? packages : defaultPackages;
+
+  const packageOptions = actualPackages.map((p) => ({
+    value: `pkg-${p.id_paquete}`,
+    label: `${p.nombre} — ${p.descuento_porcentaje}% DCTO ($${Number(p.precio || 30000).toLocaleString("es-CO")})`,
+    category: "Paquetes de Servicios",
+    price: Number(p.precio || 30000),
+    duration: Number(p.duracion_minutos || 60),
+    nombre: p.nombre
+  }));
+
+  const catalogOptions = [...serviceOptions, ...packageOptions];
+
+  // Identificar selección actual
+  const selectedValues = formData.servicios_seleccionados !== undefined
+    ? (Array.isArray(formData.servicios_seleccionados) ? formData.servicios_seleccionados : [])
+    : formData.id_servicio
+      ? [`svc-${formData.id_servicio}`]
+      : [];
+
+  const selectedItems = catalogOptions.filter((item) => selectedValues.includes(item.value));
+  const totalPrice = selectedItems.reduce((acc, curr) => acc + (curr.price || 0), 0);
+  const totalDuration = selectedItems.reduce((acc, curr) => acc + (curr.duration || 0), 0);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handleServicesChange = (newValues) => {
+    let firstServiceId = "";
+    for (const val of newValues) {
+      if (String(val).startsWith("svc-")) {
+        firstServiceId = Number(String(val).replace("svc-", ""));
+        break;
+      }
+    }
+    if (!firstServiceId && newValues.length > 0) {
+      firstServiceId = 1;
+    }
+
+    const items = catalogOptions.filter((item) => newValues.includes(item.value));
+    const calcPrice = items.reduce((acc, curr) => acc + (curr.price || 0), 0);
+    const calcDuration = items.reduce((acc, curr) => acc + (curr.duration || 0), 0);
+
+    setFormData((prev) => ({
+      ...prev,
+      servicios_seleccionados: newValues,
+      id_servicio: firstServiceId,
+      precio: calcPrice,
+      duracion_minutos: calcDuration
+    }));
+
+    if (errors.servicios || errors.id_servicio) {
+      setErrors((prev) => ({ ...prev, servicios: null, id_servicio: null }));
     }
   };
 
@@ -67,82 +136,44 @@ export default function AppointmentFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Cliente */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Cliente <span className="text-destructive">*</span>
-            </label>
-            <select
-              name="id_cliente"
-              id="id_cliente"
+            <SearchableSelect
+              label="Cliente"
+              required
+              options={clients.map((c) => ({ value: c.id_cliente, label: c.nombre }))}
               value={formData.id_cliente}
-              onChange={(e) => handleChange("id_cliente", Number(e.target.value))}
-              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.id_cliente
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-              autoFocus
-            >
-              <option value="">Seleccionar cliente</option>
-              {clients.map((c) => (
-                <option key={c.id_cliente} value={c.id_cliente}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-            <FormFieldError error={errors.id_cliente} />
+              onChange={(val) => handleChange("id_cliente", val)}
+              placeholder="Buscar o seleccionar cliente..."
+              error={errors.id_cliente}
+            />
           </div>
 
           {/* Barbero */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Barbero / Profesional <span className="text-destructive">*</span>
-            </label>
-            <select
-              name="id_barbero"
-              id="id_barbero"
+            <SearchableSelect
+              label="Barbero / Profesional"
+              required
+              options={barbers.map((b) => ({ value: b.id_barbero, label: b.nombre }))}
               value={formData.id_barbero}
-              onChange={(e) => handleChange("id_barbero", Number(e.target.value))}
-              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.id_barbero
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-            >
-              <option value="">Seleccionar barbero</option>
-              {barbers.map((b) => (
-                <option key={b.id_barbero} value={b.id_barbero}>
-                  {b.nombre}
-                </option>
-              ))}
-            </select>
-            <FormFieldError error={errors.id_barbero} />
+              onChange={(val) => handleChange("id_barbero", val)}
+              placeholder="Buscar o seleccionar barbero..."
+              error={errors.id_barbero}
+            />
           </div>
         </div>
 
-        {/* Fila 2: Servicio */}
+        {/* Fila 2: Servicios y Paquetes MultiSelect */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Servicio a Realizar <span className="text-destructive">*</span>
-          </label>
-          <select
-            name="id_servicio"
-            id="id_servicio"
-            value={formData.id_servicio}
-            onChange={(e) => handleChange("id_servicio", Number(e.target.value))}
-            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.id_servicio
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-          >
-            <option value="">Seleccionar servicio del catálogo</option>
-            {services.map((s) => (
-              <option key={s.id_servicio} value={s.id_servicio}>
-                {s.nombre} — ${Number(s.precio).toLocaleString("es-CO")} ({s.duracion_minutos} min)
-              </option>
-            ))}
-          </select>
-          <FormFieldError error={errors.id_servicio} />
+          <MultiSelectSearchable
+            label="Servicios y Paquetes de Barbería"
+            required
+            options={catalogOptions}
+            value={selectedValues}
+            selectedValues={selectedValues}
+            onChange={handleServicesChange}
+            placeholder="Buscar cortes, barbas, afeitados o paquetes promocionales..."
+            groupByCategory={true}
+            error={errors.servicios || errors.id_servicio}
+          />
         </div>
 
         {/* Fila 3: Selección Visual de Fecha con Calendario y Horas */}
@@ -227,16 +258,18 @@ export default function AppointmentFormModal({
             </div>
 
             {/* Resumen de servicio y precio */}
-            {selectedService && (
+            {selectedItems.length > 0 && (
               <div className="mt-3 p-3 bg-card border border-border/80 rounded-xl flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                    Total a pagar
+                    Total a pagar ({selectedItems.length} {selectedItems.length === 1 ? "ítem" : "ítems"})
                   </span>
-                  <span className="text-xs font-medium text-foreground">{selectedService.nombre}</span>
+                  <span className="text-xs font-medium text-foreground">
+                    Duración aprox: ~{totalDuration} min
+                  </span>
                 </div>
-                <span className="text-sm font-extrabold text-primary">
-                  ${Number(selectedService.precio).toLocaleString("es-CO")}
+                <span className="text-base font-extrabold text-primary">
+                  ${Number(totalPrice).toLocaleString("es-CO")}
                 </span>
               </div>
             )}

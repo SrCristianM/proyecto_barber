@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ROLES } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const emptyForm = {
   nombre_rol: "",
@@ -117,26 +118,24 @@ export function useRoles() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre Rol", "Descripción", "Permisos", "Estado", "Fecha Creación"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredRoles.map((r) =>
-        [
-          r.id_rol,
-          `"${r.nombre_rol}"`,
-          `"${r.descripcion || ''}"`,
-          `"${(r.permisos || []).join('; ')}"`,
-          `"${r.estado === 1 ? 'Activo' : 'Inactivo'}"`,
-          `"${r.fecha_creacion || ''}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `roles_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "MATRIZ OFICIAL DE ROLES Y PERMISOS",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `roles_seguridad_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_rol", width: 10, type: "number" },
+        { header: "Nombre del Rol", key: "nombre_rol", width: 22 },
+        { header: "Descripción", key: "descripcion", width: 35 },
+        { header: "Módulos Asignados", key: "permisos_str", width: 35 },
+        { header: "Estado", key: "estado_nombre", width: 14 }
+      ],
+      data: filteredRoles.map((r) => ({
+        ...r,
+        descripcion: r.descripcion || "Sin descripción",
+        permisos_str: (r.permisos || []).join(", ") || "Todos los permisos",
+        estado_nombre: r.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {

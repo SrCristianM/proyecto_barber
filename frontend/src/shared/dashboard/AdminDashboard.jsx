@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Clock,
   AlertCircle,
-  Sparkles,
   CheckCircle2,
   Scissors,
   Award,
@@ -164,8 +163,7 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Dashboard Ejecutivo</h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-              <Sparkles className="h-3 w-3" />
+            <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
               Tiempo Real
             </span>
           </div>

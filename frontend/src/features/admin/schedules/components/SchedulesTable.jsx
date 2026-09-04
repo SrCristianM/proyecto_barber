@@ -29,6 +29,7 @@ export default function SchedulesTable({
               <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Hora Fin" field="hora_fin" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
+              <th className="text-left py-3.5 px-4 font-semibold">Vigencia</th>
               <th className="text-left py-3.5 px-4 font-semibold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
@@ -38,7 +39,7 @@ export default function SchedulesTable({
           <tbody>
             {schedules.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
                   No se encontraron horarios
                 </td>
               </tr>
@@ -62,6 +63,20 @@ export default function SchedulesTable({
                   </td>
                   <td className="py-3.5 px-4 text-foreground font-mono text-sm font-medium">{schedule.hora_inicio}</td>
                   <td className="py-3.5 px-4 text-foreground font-mono text-sm font-medium">{schedule.hora_fin}</td>
+                  <td className="py-3.5 px-4 text-xs">
+                    {schedule.fecha_inicio || schedule.fecha_fin ? (
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-foreground text-xs">
+                          {schedule.fecha_inicio || "Desde inicio"}
+                        </span>
+                        <span className="text-muted-foreground text-[10px]">
+                          hasta {schedule.fecha_fin || "Indefinido"}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground font-medium text-xs">Permanente</span>
+                    )}
+                  </td>
                   <td className="py-3.5 px-4">
                     <span
                       className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full border ${

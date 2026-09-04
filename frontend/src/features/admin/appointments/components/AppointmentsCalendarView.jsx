@@ -1,4 +1,4 @@
-import { Plus, Clock, User, Sparkles, AlertCircle } from "lucide-react";
+import { Plus, Clock, User, AlertCircle } from "lucide-react";
 
 export default function AppointmentsCalendarView({
   timeSlots,
@@ -144,7 +144,6 @@ export default function AppointmentsCalendarView({
         </div>
 
         <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
           <span>Haz clic en cualquier celda para agendar o gestionar</span>
         </div>
       </div>

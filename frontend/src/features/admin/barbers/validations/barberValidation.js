@@ -33,9 +33,12 @@ export function validateBarberForm(formData) {
     if (phoneErr) errors.telefono = phoneErr;
   }
 
-  // Especialidad (Opcional, máx 100)
-  if (formData.especialidad) {
-    const espLenErr = validateStringLength(formData.especialidad, 0, 100, "La especialidad");
+  // Especialidad / Especialidades (Opcional, máx 100 caracteres)
+  const espValue = Array.isArray(formData.especialidades)
+    ? formData.especialidades.join(", ")
+    : (formData.especialidad || "");
+  if (espValue && espValue.trim() !== "") {
+    const espLenErr = validateStringLength(espValue, 0, 100, "Las especialidades");
     if (espLenErr) errors.especialidad = espLenErr;
   }
 

@@ -75,10 +75,22 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
           <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
           <input
             type="tel"
+            inputMode="numeric"
             name="telefono"
+            maxLength={15}
             value={formData.telefono}
-            onChange={handleChange}
-            placeholder="Ej: +57 300 123 4567"
+            onKeyDown={(e) => {
+              const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+              if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+              if (!/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+              }
+            }}
+            onChange={(e) => {
+              const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+              setFormData((prev) => ({ ...prev, telefono: onlyNums }));
+            }}
+            placeholder="Ej: 3001234567"
             className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
           />
         </div>

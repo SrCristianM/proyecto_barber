@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, ZoomIn, ChevronLeft, ChevronRight, Sparkles, Filter } from "lucide-react";
+import { X, ZoomIn, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 const GALLERY_CATEGORIES = [

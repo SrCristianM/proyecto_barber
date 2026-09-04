@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockBarbers = [
   { id_barbero: 1, id_usuario: 3, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 300 123 4567", especialidad: "Corte Clásico", imagen_url: "", estado: 1 },
@@ -142,27 +143,26 @@ export function useBarbers() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Apellido", "Correo", "Teléfono", "Especialidad", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredBarbers.map((b) =>
-        [
-          b.id_barbero,
-          `"${b.nombre}"`,
-          `"${b.apellido}"`,
-          `"${b.correo}"`,
-          `"${b.telefono || ''}"`,
-          `"${b.especialidad || ''}"`,
-          `"${b.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `barberos_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      filename: "reporte_barberos",
+      sheetName: "Barberos",
+      title: "Directorio de Barberos y Profesionales",
+      subtitle: "Equipo técnico de estilistas y barbería",
+      columns: [
+        { header: "ID", key: "id_barbero", type: "number", width: 60, align: "center" },
+        { header: "Nombre", key: "nombre", width: 120 },
+        { header: "Apellido", key: "apellido", width: 120 },
+        { header: "Correo Electrónico", key: "correo", width: 180 },
+        { header: "Teléfono de Contacto", key: "telefono", width: 130, align: "center" },
+        { header: "Especialidades", key: "especialidad", width: 220 },
+        { header: "Estado", key: "estadoLabel", type: "status", width: 90, align: "center" }
+      ],
+      data: filteredBarbers.map((b) => ({
+        ...b,
+        especialidad: b.especialidades ? b.especialidades.join(", ") : b.especialidad || "General",
+        estadoLabel: b.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {
@@ -172,12 +172,19 @@ export function useBarbers() {
 
   const openEditModal = (barber) => {
     setSelectedBarber(barber);
+    const espList = Array.isArray(barber.especialidades)
+      ? barber.especialidades
+      : barber.especialidad
+      ? barber.especialidad.split(",").map((s) => s.trim()).filter(Boolean)
+      : ["Corte Clásico"];
+
     setFormData({
-      nombre: barber.nombre,
-      apellido: barber.apellido,
-      correo: barber.correo,
+      nombre: barber.nombre || "",
+      apellido: barber.apellido || "",
+      correo: barber.correo || "",
       telefono: barber.telefono || "",
-      especialidad: barber.especialidad || "Corte Clásico",
+      especialidad: espList.join(", "),
+      especialidades: espList,
       imagen_url: barber.imagen_url || "",
       id_usuario: barber.id_usuario
     });

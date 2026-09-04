@@ -14,7 +14,6 @@ import {
   Package,
   ExternalLink,
   Filter,
-  Sparkles,
   Inbox
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";

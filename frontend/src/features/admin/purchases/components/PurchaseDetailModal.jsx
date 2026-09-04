@@ -1,6 +1,7 @@
-import { ShoppingBag, Building2, CheckCircle2, Ban } from "lucide-react";
+import { ShoppingBag, Building2, CheckCircle2, Ban, FileDown, FileText } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { availableSuppliers, availableUsers, availableProducts } from "../hooks/usePurchases";
+import { downloadPurchaseInvoicePDF } from "../../../../shared/utils/pdfInvoiceGenerator";
 
 export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
   if (!purchase) return null;
@@ -53,16 +54,51 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
           </div>
         </div>
 
-        {/* Proveedor Info */}
-        <div className="p-4 sm:p-5 bg-card border border-border rounded-2xl">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="h-4 w-4 text-primary" />
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Información del Proveedor</h4>
+        {/* Proveedor Info y Factura Adjunta */}
+        <div className="p-4 sm:p-5 bg-card border border-border rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Información del Proveedor</h4>
+            </div>
+            <button
+              onClick={() => downloadPurchaseInvoicePDF(purchase, supplier, user)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold transition-colors cursor-pointer"
+              title="Descargar Factura Oficial en PDF"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              <span>Descargar PDF</span>
+            </button>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="font-bold text-foreground text-base">{supplier?.nombre || "Proveedor"}</span>
             <span className="text-xs text-muted-foreground font-medium">{supplier?.nit ? `NIT: ${supplier.nit}` : "Sin NIT registrado"}</span>
           </div>
+
+          {/* Factura PDF adjunta si existe */}
+          {purchase.factura_pdf && (
+            <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 flex items-center justify-center font-bold text-[11px] border border-red-500/20 shrink-0">
+                  PDF
+                </div>
+                <div className="truncate">
+                  <p className="text-xs font-medium text-foreground truncate">
+                    {purchase.factura_pdf.nombre || `Factura_Compra_#${purchase.id_compra}.pdf`}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {purchase.factura_pdf.tamano || "Documento PDF"} • {purchase.factura_pdf.fecha || "Adjunto"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => downloadPurchaseInvoicePDF(purchase, supplier, user)}
+                className="text-xs text-primary font-semibold hover:underline shrink-0 cursor-pointer"
+              >
+                Descargar
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Desglose de Productos (detalle_compra) */}
@@ -115,7 +151,14 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+          <button
+            onClick={() => downloadPurchaseInvoicePDF(purchase, supplier, user)}
+            className="flex-1 py-3 bg-secondary/80 hover:bg-secondary border border-border rounded-xl transition-colors text-foreground font-semibold text-sm flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+          >
+            <FileDown className="h-4 w-4 text-primary" />
+            <span>Descargar Factura PDF</span>
+          </button>
           {!isAnulada && (
             <button
               onClick={onEdit}

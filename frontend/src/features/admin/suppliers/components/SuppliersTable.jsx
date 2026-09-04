@@ -1,4 +1,4 @@
-import { Building2, Eye, Power, Edit, Trash2 } from "lucide-react";
+import { Building2, Eye, Power, Edit, Trash2, FileText } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
 
 export default function SuppliersTable({
@@ -56,7 +56,17 @@ export default function SuppliersTable({
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-sm">{supplier.nombre}</p>
-                      <p className="text-xs text-muted-foreground">ID #{supplier.id_proveedor}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-muted-foreground">ID #{supplier.id_proveedor}</span>
+                        {supplier.factura_pdf && (
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 bg-red-500/10 text-red-400 border border-red-500/20 rounded"
+                            title={typeof supplier.factura_pdf === "object" ? supplier.factura_pdf.nombre : "Factura PDF adjunta"}
+                          >
+                            <FileText className="h-2.5 w-2.5" /> PDF
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </td>

@@ -201,9 +201,9 @@ export function useAppointments() {
       id_cliente: appointment.id_cliente,
       id_barbero: appointment.id_barbero,
       id_servicio: appointment.id_servicio,
-      fecha: appointment.fecha,
-      hora: appointment.hora.substring(0, 5),
-      estado: appointment.estado
+      fecha: appointment.fecha || new Date().toISOString().substring(0, 10),
+      hora: appointment.hora ? String(appointment.hora).substring(0, 5) : "09:00",
+      estado: appointment.estado || "Programada"
     });
     setShowFormModal(true);
   };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CATEGORIAS_PRODUCTO } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockProducts = [
   { id_producto: 1, nombre: "Gel para Cabello", id_categoria_producto: 1, stock: 25, precio: 15000, imagen_url: "", estado: 1 },
@@ -144,25 +145,26 @@ export function useProducts() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Categoría", "Stock", "Precio", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredProducts.map((p) =>
-        [
-          p.id_producto,
-          `"${p.nombre}"`,
-          `"${getCategoryName(p.id_categoria_producto)}"`,
-          p.stock,
-          p.precio,
-          `"${p.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `productos_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "CATÁLOGO OFICIAL DE PRODUCTOS E INVENTARIO",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `productos_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_producto", width: 10, type: "number" },
+        { header: "Nombre del Producto", key: "nombre", width: 30 },
+        { header: "Categoría", key: "categoria", width: 22 },
+        { header: "Stock Disponible", key: "stock", width: 16, type: "number" },
+        { header: "Precio Unitario", key: "precio", width: 18, type: "currency" },
+        { header: "Estado", key: "estado_nombre", width: 14 }
+      ],
+      data: filteredProducts.map((p) => ({
+        ...p,
+        categoria: getCategoryName(p.id_categoria_producto),
+        stock: Number(p.stock),
+        precio: Number(p.precio),
+        estado_nombre: p.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {

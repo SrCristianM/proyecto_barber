@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Plus, Edit, Power, Package, Check, Sparkles } from "lucide-react";
+import { Plus, Edit, Power, Package, Check } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import FormFieldError from "../../shared/components/FormFieldError";
+import NumericInput from "../../shared/components/NumericInput";
 import TiltCard from "../../shared/components/TiltCard";
 import { useServicePackages } from "../hooks/useServicePackages";
 import { validateServicePackageForm } from "../validations/serviceValidation";
@@ -106,29 +107,21 @@ export default function ServicePackagesView() {
 
         {/* Descuento Porcentaje */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Descuento Promocional (%)
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="0.5"
+          <NumericInput
+            label="Descuento Promocional (%)"
             name="descuento_porcentaje"
             id="descuento_porcentaje"
+            min={0}
+            max={100}
+            allowDecimal={true}
             value={formData.descuento_porcentaje}
-            onChange={(e) => {
-              setFormData({ ...formData, descuento_porcentaje: e.target.value });
+            onChange={(val) => {
+              setFormData({ ...formData, descuento_porcentaje: val });
               if (formErrors.descuento_porcentaje) setFormErrors((prev) => ({ ...prev, descuento_porcentaje: null }));
             }}
-            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              formErrors.descuento_porcentaje
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
+            error={formErrors.descuento_porcentaje}
             placeholder="0"
           />
-          <FormFieldError error={formErrors.descuento_porcentaje} />
           <span className="text-[11px] text-muted-foreground mt-1 block">
             Aplica sobre la sumatoria de servicios incluidos.
           </span>

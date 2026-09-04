@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DIAS_SEMANA } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
@@ -164,25 +165,28 @@ export function useSchedules() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Barbero", "Días", "Hora Inicio", "Hora Fin", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredSchedules.map((s) =>
-        [
-          s.id_horario,
-          `"${getBarberName(s.id_barbero)}"`,
-          `"${(s.dias_semana || []).join(", ")}"`,
-          `"${s.hora_inicio}"`,
-          `"${s.hora_fin}"`,
-          `"${s.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `horarios_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      filename: "reporte_horarios",
+      sheetName: "Horarios",
+      title: "Programación y Asignación de Horarios Semanales",
+      subtitle: "Turnos de atención y disponibilidad de barberos",
+      columns: [
+        { header: "ID", key: "id_horario", type: "number", width: 60, align: "center" },
+        { header: "Barbero", key: "barberoNombre", width: 160 },
+        { header: "Días de Atención", key: "diasTexto", width: 220 },
+        { header: "Hora Inicio", key: "hora_inicio", width: 100, align: "center" },
+        { header: "Hora Fin", key: "hora_fin", width: 100, align: "center" },
+        { header: "Vigencia / Período", key: "vigenciaTexto", width: 180, align: "center" },
+        { header: "Estado", key: "estadoLabel", type: "status", width: 90, align: "center" }
+      ],
+      data: filteredSchedules.map((s) => ({
+        ...s,
+        barberoNombre: getBarberName(s.id_barbero),
+        diasTexto: (s.dias_semana || []).join(", "),
+        vigenciaTexto: s.fecha_inicio || s.fecha_fin ? `${s.fecha_inicio || 'Inicio'} a ${s.fecha_fin || 'Indefinido'}` : "Permanente",
+        estadoLabel: s.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openEditModal = (schedule) => {
@@ -190,8 +194,8 @@ export function useSchedules() {
     setFormData({
       id_barbero: schedule.id_barbero,
       dias_semana: schedule.dias_semana || [],
-      hora_inicio: schedule.hora_inicio.substring(0, 5),
-      hora_fin: schedule.hora_fin.substring(0, 5),
+      hora_inicio: schedule.hora_inicio ? String(schedule.hora_inicio).substring(0, 5) : "08:00",
+      hora_fin: schedule.hora_fin ? String(schedule.hora_fin).substring(0, 5) : "18:00",
       fecha_inicio: schedule.fecha_inicio || null,
       fecha_fin: schedule.fecha_fin || null
     });

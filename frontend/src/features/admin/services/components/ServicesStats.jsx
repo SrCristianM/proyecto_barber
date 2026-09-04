@@ -1,4 +1,4 @@
-import { Scissors, Sparkles, Clock } from "lucide-react";
+import { Scissors, CheckCircle2, Clock } from "lucide-react";
 import { motion } from "motion/react";
 
 export default function ServicesStats({ services = [] }) {
@@ -18,7 +18,7 @@ export default function ServicesStats({ services = [] }) {
     {
       title: "Servicios Activos",
       value: activos,
-      icon: <Sparkles className="h-5 w-5 text-success" />,
+      icon: <CheckCircle2 className="h-5 w-5 text-success" />,
       color: "text-success"
     },
     {

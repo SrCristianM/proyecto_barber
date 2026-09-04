@@ -1,7 +1,8 @@
-import { ChevronDown } from "lucide-react";
+import SearchableSelect from "./SearchableSelect";
 
 /**
- * Componente unificado de Dropdown para filtros por Llave Foránea o Categoría.
+ * Componente unificado de Dropdown para filtros por Llave Foránea, Estado o Categoría.
+ * Implementa búsqueda, autocompletado y estilos modernos de forma consistente.
  */
 export default function FilterSelect({
   value,
@@ -12,25 +13,24 @@ export default function FilterSelect({
   icon = null,
   className = ""
 }) {
+  // Garantizar opción de "Todos" / limpiar
+  const allOption = { value: "all", label: placeholder };
+  const unifiedOptions = [allOption, ...options.filter((o) => o.value !== "all")];
+
   return (
-    <div className={`relative flex items-center bg-input-background border border-input rounded-lg px-2.5 h-10 ${className}`}>
-      {icon && <span className="mr-1.5 text-muted-foreground">{icon}</span>}
-      {label && <span className="text-xs text-muted-foreground mr-1.5 whitespace-nowrap">{label}:</span>}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-xs font-medium text-foreground focus:outline-none cursor-pointer pr-4 appearance-none w-full"
-      >
-        <option value="all" className="bg-card text-foreground dark:bg-[#13161B] dark:text-[#F8FAFC] py-1.5">
-          {placeholder}
-        </option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value} className="bg-card text-foreground dark:bg-[#13161B] dark:text-[#F8FAFC] py-1.5">
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+    <div className={`relative flex items-center min-w-[170px] ${className}`}>
+      <SearchableSelect
+        value={value ?? "all"}
+        onChange={(val) => onChange(val === "" ? "all" : val)}
+        options={unifiedOptions}
+        placeholder={placeholder}
+        searchPlaceholder={`Buscar en ${label || "filtro"}...`}
+        icon={icon}
+        label={label}
+        size="md"
+        allowClear={value !== "all" && value !== "" && value !== null}
+        className="w-full"
+      />
     </div>
   );
 }

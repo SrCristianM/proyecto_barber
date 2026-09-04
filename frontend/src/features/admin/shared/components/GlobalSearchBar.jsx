@@ -12,8 +12,7 @@ import {
   DollarSign,
   ShoppingCart,
   LayoutDashboard,
-  ArrowRight,
-  Sparkles
+  ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useGlobalSearch } from "../hooks/useGlobalSearch";

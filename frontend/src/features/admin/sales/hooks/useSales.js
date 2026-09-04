@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ESTADOS_VENTA } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockClientsList = [
   { id_cliente: 1, nombre: "Juan Pérez" },
@@ -223,17 +224,23 @@ export function useSales() {
 
   const resetForm = () => setFormData(emptyForm());
 
-  const addItemToSale = (item) => {
+  const addItemToSale = (item, quantity = 1) => {
+    const addQty = Math.max(1, parseInt(quantity, 10) || 1);
+    const tipo = item.tipo_item || item.tipo || "Servicio";
+    const precio = Number(item.precio_unitario ?? item.precio ?? 0);
+    const idServ = item.id_servicio ?? (tipo === "Servicio" ? (item.id_item ?? item.id) : null);
+    const idProd = item.id_producto ?? (tipo === "Producto" ? (item.id_item ?? item.id) : null);
+
     const existingIndex = formData.detalles.findIndex(
       (d) =>
-        (item.tipo_item === "Servicio" && d.id_servicio === item.id_servicio) ||
-        (item.tipo_item === "Producto" && d.id_producto === item.id_producto)
+        (tipo === "Servicio" && d.id_servicio === idServ) ||
+        (tipo === "Producto" && d.id_producto === idProd)
     );
 
     let updatedDetalles;
     if (existingIndex >= 0) {
       updatedDetalles = [...formData.detalles];
-      const newQty = (updatedDetalles[existingIndex].cantidad || 1) + 1;
+      const newQty = (updatedDetalles[existingIndex].cantidad || 1) + addQty;
       updatedDetalles[existingIndex] = {
         ...updatedDetalles[existingIndex],
         cantidad: newQty,
@@ -241,12 +248,12 @@ export function useSales() {
       };
     } else {
       const newDetalle = {
-        tipo_item: item.tipo_item,
-        id_servicio: item.id_servicio,
-        id_producto: item.id_producto,
-        cantidad: 1,
-        precio_unitario: item.precio_unitario,
-        subtotal: item.precio_unitario,
+        tipo_item: tipo,
+        id_servicio: idServ,
+        id_producto: idProd,
+        cantidad: addQty,
+        precio_unitario: precio,
+        subtotal: addQty * precio,
         nombre: item.nombre
       };
       updatedDetalles = [...formData.detalles, newDetalle];
@@ -377,32 +384,50 @@ export function useSales() {
   };
 
   const handleExport = () => {
-    const headers = ["ID Venta", "Fecha", "Cliente", "Usuario", "Total", "Estado", "Artículos"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredSales.map((s) => {
-        const itemNames = (s.detalles || []).map((d) => `${d.nombre} (x${d.cantidad})`).join("; ");
-        return `${s.id_venta},"${s.fecha}","${getClientName(s.id_cliente)}","${getUserName(s.id_usuario)}",${s.total},"${s.estado}","${itemNames}"`;
-      })
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `ventas_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "REPORTE OFICIAL DE FACTURACIÓN Y VENTAS",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `ventas_caja_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID Venta", key: "id_venta", width: 10, type: "number" },
+        { header: "Fecha y Hora", key: "fecha", width: 20 },
+        { header: "Cliente", key: "cliente_nombre", width: 26 },
+        { header: "Cajero / Usuario", key: "usuario_nombre", width: 24 },
+        { header: "Artículos Facturados", key: "articulos_str", width: 38 },
+        { header: "Total Venta", key: "total_monto", width: 18, type: "currency" },
+        { header: "Estado", key: "estado", width: 14 }
+      ],
+      data: filteredSales.map((s) => ({
+        id_venta: s.id_venta,
+        fecha: s.fecha,
+        cliente_nombre: getClientName(s.id_cliente),
+        usuario_nombre: getUserName(s.id_usuario),
+        articulos_str: (s.detalles || []).map((d) => `${d.nombre} (x${d.cantidad})`).join("; ") || "Venta directa",
+        total_monto: Number(s.total),
+        estado: s.estado
+      }))
+    });
   };
 
   const openEditModal = (sale) => {
     setSelectedSale(sale);
-    const selectedIds = (sale.detalles || []).map((d) =>
-      d.tipo_item === "Servicio" ? `s_${d.id_servicio}` : `p_${d.id_producto}`
-    );
+    const selectedIds = (sale.detalles || []).map((d) => {
+      const isServ = (d.tipo_item || d.tipo) === "Servicio";
+      return isServ ? `s_${d.id_servicio ?? d.id}` : `p_${d.id_producto ?? d.id}`;
+    });
+
+    const rawFecha = sale.fecha ? String(sale.fecha) : "";
+    const safeFecha = rawFecha.includes(" ")
+      ? rawFecha.replace(" ", "T").substring(0, 16)
+      : rawFecha.includes("T")
+      ? rawFecha.substring(0, 16)
+      : new Date().toISOString().substring(0, 16);
 
     setFormData({
       id_cliente: sale.id_cliente,
       id_usuario: sale.id_usuario,
       id_cita: sale.id_cita || null,
-      fecha: sale.fecha.replace(" ", "T").substring(0, 16),
+      fecha: safeFecha,
       estado: sale.estado,
       selectedItemIds: selectedIds,
       detalles: [...(sale.detalles || [])],

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import { ESTADOS_COMPRA } from "../../../../shared/types/database";
 
 export const availableSuppliers = [
@@ -102,7 +103,8 @@ const emptyForm = () => {
         nombre_producto: "Gel para Cabello"
       }
     ],
-    total: 10000
+    total: 10000,
+    factura_pdf: null
   };
 };
 
@@ -283,6 +285,7 @@ export function usePurchases() {
       fecha: formattedFecha,
       total: Number(formData.total),
       estado: formData.estado || "Registrada",
+      factura_pdf: formData.factura_pdf || null,
       detalles: formData.detalles.map((d, index) => ({
         id_detalle_compra: nextCompraId * 100 + index + 1,
         id_compra: nextCompraId,
@@ -316,6 +319,7 @@ export function usePurchases() {
             fecha: formattedFecha,
             total: Number(formData.total),
             estado: formData.estado,
+            factura_pdf: formData.factura_pdf !== undefined ? formData.factura_pdf : (selectedPurchase.factura_pdf || null),
             detalles: formData.detalles.map((d, index) => ({
               id_detalle_compra: d.id_detalle_compra || selectedPurchase.id_compra * 100 + index + 1,
               id_compra: selectedPurchase.id_compra,
@@ -352,29 +356,34 @@ export function usePurchases() {
   };
 
   const handleExport = () => {
-    const headers = ["ID Compra", "Fecha", "Proveedor", "NIT", "Usuario", "Total", "Estado", "Artículos"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredPurchases.map((p) => {
-        const itemNames = (p.detalles || []).map((d) => `${d.nombre_producto || getProductName(d.id_producto)} (x${d.cantidad} a $${d.precio_unitario})`).join("; ");
-        return [
-          p.id_compra,
-          `"${p.fecha}"`,
-          `"${getSupplierName(p.id_proveedor)}"`,
-          `"${getSupplierNit(p.id_proveedor)}"`,
-          `"${getUserName(p.id_usuario)}"`,
-          p.total,
-          `"${p.estado}"`,
-          `"${itemNames}"`
-        ].join(",");
+    exportToStyledExcel({
+      filename: "reporte_compras",
+      sheetName: "Compras",
+      title: "Registro de Facturas y Órdenes de Compra",
+      subtitle: "Adquisiciones de inventario a proveedores",
+      columns: [
+        { header: "ID Compra", key: "id_compra", type: "number", width: 70, align: "center" },
+        { header: "Fecha Emisión", key: "fecha", width: 130, align: "center" },
+        { header: "Proveedor", key: "proveedorNombre", width: 200 },
+        { header: "NIT / Identificación", key: "proveedorNit", width: 130, align: "center" },
+        { header: "Usuario Responsable", key: "usuarioNombre", width: 140 },
+        { header: "Total Compra", key: "total", type: "currency", width: 120 },
+        { header: "Estado", key: "estado", type: "status", width: 100, align: "center" },
+        { header: "Detalle de Artículos", key: "articulosTexto", width: 280 }
+      ],
+      data: filteredPurchases.map((p) => {
+        const itemNames = (p.detalles || [])
+          .map((d) => `${d.nombre_producto || getProductName(d.id_producto)} (x${d.cantidad} a $${d.precio_unitario})`)
+          .join("; ");
+        return {
+          ...p,
+          proveedorNombre: getSupplierName(p.id_proveedor),
+          proveedorNit: getSupplierNit(p.id_proveedor),
+          usuarioNombre: getUserName(p.id_usuario),
+          articulosTexto: itemNames
+        };
       })
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `compras_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    });
   };
 
   const openCreateModal = () => {
@@ -384,10 +393,17 @@ export function usePurchases() {
 
   const openEditModal = (purchase) => {
     setSelectedPurchase(purchase);
+    const rawFecha = purchase.fecha ? String(purchase.fecha) : "";
+    const safeFecha = rawFecha.includes(" ")
+      ? rawFecha.replace(" ", "T").substring(0, 16)
+      : rawFecha.includes("T")
+      ? rawFecha.substring(0, 16)
+      : new Date().toISOString().substring(0, 16);
+
     setFormData({
       id_proveedor: purchase.id_proveedor,
       id_usuario: purchase.id_usuario,
-      fecha: purchase.fecha.replace(" ", "T").substring(0, 16),
+      fecha: safeFecha,
       estado: purchase.estado,
       detalles: (purchase.detalles || []).map((d) => ({
         id_detalle_compra: d.id_detalle_compra,
@@ -397,7 +413,8 @@ export function usePurchases() {
         subtotal: d.subtotal,
         nombre_producto: d.nombre_producto || getProductName(d.id_producto)
       })),
-      total: purchase.total
+      total: purchase.total,
+      factura_pdf: purchase.factura_pdf || null
     });
     setShowEditModal(true);
   };

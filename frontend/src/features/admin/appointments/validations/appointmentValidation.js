@@ -19,9 +19,13 @@ export function validateAppointmentForm(formData, isCreate = true) {
     errors.id_barbero = "Debes seleccionar un barbero.";
   }
 
-  // Servicio
-  if (!formData.id_servicio || Number(formData.id_servicio) <= 0) {
-    errors.id_servicio = "Debes seleccionar un servicio del catálogo.";
+  // Servicio o Paquetes
+  const hasSelectedServices =
+    (Array.isArray(formData.servicios_seleccionados) && formData.servicios_seleccionados.length > 0) ||
+    (formData.id_servicio && Number(formData.id_servicio) > 0);
+
+  if (!hasSelectedServices) {
+    errors.servicios = "Debes seleccionar al menos un servicio o paquete del catálogo.";
   }
 
   // Fecha

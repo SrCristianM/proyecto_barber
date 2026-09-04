@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ShoppingBag, Plus, Trash2, UserCheck, Calendar } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
+import NumericInput from "../../shared/components/NumericInput";
 import { clients, users, saleStatuses, catalogItems } from "../hooks/useSales";
 import { validateSaleForm } from "../validations/saleValidation";
 
@@ -17,12 +19,25 @@ export default function SaleFormModal({
 }) {
   const isCreate = mode === "create";
   const currentUser = users.find((u) => u.id_usuario === Number(formData.id_usuario)) || users[0];
-  const [selectedCatalogId, setSelectedCatalogId] = useState(catalogItems[0]?.id || "");
+  const [selectedCatalogId, setSelectedCatalogId] = useState(catalogItems[0]?.id_item || catalogItems[0]?.id || "");
   const [addQty, setAddQty] = useState(1);
   const [errors, setErrors] = useState({});
 
+  const catalogOptions = (catalogItems || []).map((c) => {
+    const price = Number(c.precio_unitario ?? c.precio ?? 0);
+    const tipo = c.tipo_item ?? c.tipo ?? "";
+    const id = c.id_item ?? c.id ?? "";
+    const stockInfo = (c.stock !== undefined && tipo === "Producto")
+      ? (c.stock <= 3 ? ` (⚠️ Stock: ${c.stock})` : ` (Stock: ${c.stock})`)
+      : "";
+    return {
+      value: id,
+      label: `${tipo === "Servicio" ? "✂️" : "🛍️"} ${c.nombre} — $${price.toLocaleString("es-CO")}${stockInfo}`
+    };
+  });
+
   const handleAddNewItem = () => {
-    const item = catalogItems.find((c) => c.id === selectedCatalogId);
+    const item = catalogItems.find((c) => (c.id_item ?? c.id) === selectedCatalogId);
     if (!item) return;
     onAddItem(item, addQty);
     setAddQty(1);
@@ -53,31 +68,18 @@ export default function SaleFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Cliente */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Cliente <span className="text-destructive">*</span>
-            </label>
-            <select
-              name="id_cliente"
-              id="id_cliente"
+            <SearchableSelect
+              label="Cliente"
+              required
+              options={clients.map((client) => ({ value: client.id_cliente, label: client.nombre }))}
               value={formData.id_cliente}
-              onChange={(e) => {
-                setFormData({ ...formData, id_cliente: Number(e.target.value) });
+              onChange={(val) => {
+                setFormData({ ...formData, id_cliente: Number(val) });
                 if (errors.id_cliente) setErrors((prev) => ({ ...prev, id_cliente: null }));
               }}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.id_cliente
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-              autoFocus
-            >
-              {clients.map((client) => (
-                <option key={client.id_cliente} value={client.id_cliente}>
-                  {client.nombre}
-                </option>
-              ))}
-            </select>
-            <FormFieldError error={errors.id_cliente} />
+              placeholder="Buscar o seleccionar cliente..."
+              error={errors.id_cliente}
+            />
           </div>
 
           {/* Usuario / Cajero (Contexto de Sesión) */}
@@ -166,60 +168,25 @@ export default function SaleFormModal({
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
               <div className="sm:col-span-8">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-[11px] text-muted-foreground">
-                    Ítem del Catálogo (Servicio / Producto)
-                  </label>
-                  {(() => {
-                    const current = catalogItems.find((c) => c.id === selectedCatalogId);
-                    if (current?.tipo === "Producto") {
-                      return (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                          current.stock <= 3
-                            ? "bg-destructive/15 text-destructive border border-destructive/30 animate-pulse"
-                            : "bg-success/10 text-success"
-                        }`}>
-                          {current.stock <= 3 ? `⚠️ Stock Crítico: ${current.stock} un.` : `Stock: ${current.stock} un.`}
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-                <select
+                <SearchableSelect
+                  label="Ítem del Catálogo (Servicio / Producto)"
+                  options={catalogOptions}
                   value={selectedCatalogId}
-                  onChange={(e) => setSelectedCatalogId(e.target.value)}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary"
-                >
-                  <optgroup label="✂️ Servicios de Barbería">
-                    {catalogItems
-                      .filter((c) => c.tipo === "Servicio")
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nombre} — ${c.precio.toLocaleString("es-CO")}
-                        </option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="🛍️ Productos en Venta">
-                    {catalogItems
-                      .filter((c) => c.tipo === "Producto")
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nombre} — ${c.precio.toLocaleString("es-CO")} ({c.stock <= 3 ? `⚠️ ¡Solo ${c.stock} en stock!` : `Stock: ${c.stock}`})
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
+                  onChange={(val) => setSelectedCatalogId(val)}
+                  placeholder="Buscar servicio o producto..."
+                />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
-                <input
-                  type="number"
-                  min="1"
+                <NumericInput
+                  label="Cantidad"
+                  name="addQty"
+                  id="addQty"
+                  min={1}
+                  allowDecimal={false}
                   value={addQty}
-                  onChange={(e) => setAddQty(parseInt(e.target.value, 10) || 1)}
-                  className="w-full px-3 py-2 bg-input-background border border-input rounded-lg text-foreground text-xs focus:ring-2 focus:ring-primary text-center font-medium"
+                  onChange={(val) => setAddQty(Math.max(1, parseInt(val, 10) || 1))}
+                  placeholder="1"
                 />
               </div>
 
@@ -227,7 +194,7 @@ export default function SaleFormModal({
                 <button
                   type="button"
                   onClick={handleAddNewItem}
-                  className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-xs font-medium flex items-center justify-center gap-1 cursor-pointer"
+                  className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Agregar
@@ -268,14 +235,16 @@ export default function SaleFormModal({
                           {det.tipo_item}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 font-medium text-foreground">{det.nombre_item}</td>
+                      <td className="py-2.5 px-3 font-medium text-foreground">{det.nombre_item || det.nombre}</td>
                       <td className="py-2.5 px-3 text-center">
-                        <input
-                          type="number"
-                          min="1"
+                        <NumericInput
+                          name={`qty-${index}`}
+                          id={`qty-${index}`}
+                          min={1}
+                          allowDecimal={false}
                           value={det.cantidad}
-                          onChange={(e) => onUpdateItemQuantity(index, e.target.value)}
-                          className="w-14 px-1.5 py-1 bg-input-background border border-input rounded text-center text-xs font-semibold text-foreground"
+                          onChange={(val) => onUpdateItemQuantity(index, val)}
+                          className="w-14 mx-auto"
                         />
                       </td>
                       <td className="py-2.5 px-3 text-right text-muted-foreground">

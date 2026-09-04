@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CATEGORIAS_SERVICIO } from "../../../../shared/types/database";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
 const mockServices = [
   { id_servicio: 1, nombre: "Corte Clásico", id_categoria_servicio: 1, precio: 15000, duracion_minutos: 30, imagen_url: "", estado: 1 },
@@ -140,26 +141,26 @@ export function useServices() {
   };
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Categoría", "Precio", "Duración (min)", "Estado"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredServices.map((s) =>
-        [
-          s.id_servicio,
-          `"${s.nombre}"`,
-          `"${getCategoryName(s.id_categoria_servicio)}"`,
-          s.precio,
-          s.duracion_minutos,
-          `"${s.estado === 1 ? 'Activo' : 'Inactivo'}"`
-        ].join(",")
-      )
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `servicios_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+    exportToStyledExcel({
+      title: "CATÁLOGO OFICIAL DE SERVICIOS",
+      subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      filename: `servicios_${new Date().toISOString().split("T")[0]}.xls`,
+      columns: [
+        { header: "ID", key: "id_servicio", width: 10, type: "number" },
+        { header: "Nombre del Servicio", key: "nombre", width: 30 },
+        { header: "Categoría", key: "categoria", width: 22 },
+        { header: "Duración (min)", key: "duracion_minutos", width: 16, type: "number" },
+        { header: "Precio", key: "precio", width: 18, type: "currency" },
+        { header: "Estado", key: "estado_nombre", width: 14 }
+      ],
+      data: filteredServices.map((s) => ({
+        ...s,
+        categoria: getCategoryName(s.id_categoria_servicio),
+        duracion_minutos: Number(s.duracion_minutos),
+        precio: Number(s.precio),
+        estado_nombre: s.estado === 1 ? "Activo" : "Inactivo"
+      }))
+    });
   };
 
   const openCreateModal = () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import PdfUploader from "../../shared/components/PdfUploader";
 import { validateSupplierForm } from "../validations/supplierValidation";
 
 export default function SupplierFormModal({
@@ -114,12 +115,23 @@ export default function SupplierFormModal({
             <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
             <input
               type="tel"
+              inputMode="numeric"
               name="telefono"
               id="telefono"
-              maxLength={20}
-              placeholder="+57 300 000 0000"
+              maxLength={15}
+              placeholder="Ej: 3000000000"
               value={formData.telefono || ""}
-              onChange={(e) => handleChange("telefono", e.target.value)}
+              onKeyDown={(e) => {
+                const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+                if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+                if (!/^[0-9]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+                handleChange("telefono", onlyNums);
+              }}
               className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
                 errors.telefono
                   ? "border-destructive focus:ring-2 focus:ring-destructive/30"
@@ -167,6 +179,16 @@ export default function SupplierFormModal({
               }`}
             />
             <FormFieldError error={errors.direccion} />
+          </div>
+
+          {/* Adjuntar Factura / RUT en PDF */}
+          <div className="sm:col-span-2">
+            <PdfUploader
+              label="Factura o Certificado del Proveedor (PDF)"
+              value={formData.factura_pdf}
+              onChange={(val) => handleChange("factura_pdf", val)}
+              error={errors.factura_pdf}
+            />
           </div>
         </div>
 

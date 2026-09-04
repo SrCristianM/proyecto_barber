@@ -71,6 +71,17 @@ export const INITIAL_USERS = [
     estado: 0, // Inactivo
     contrasena: "Barbero123*",
     fecha_registro: "2026-05-12 11:20:00"
+  },
+  {
+    id_usuario: 7,
+    nombre: "Pedro",
+    apellido: "López",
+    correo: "cliente@example.com",
+    telefono: "3001234567",
+    id_rol: 4, // Cliente
+    estado: 1, // Activo
+    contrasena: "Cliente123*",
+    fecha_registro: "2026-06-01 08:00:00"
   }
 ];
 
@@ -92,6 +103,14 @@ export function getStoredUsers() {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
       return INITIAL_USERS;
+    }
+    // Asegurar que el usuario cliente por defecto esté disponible si no existía previamente
+    if (!parsed.some((u) => u.correo === "cliente@example.com")) {
+      const clientUser = INITIAL_USERS.find((u) => u.correo === "cliente@example.com");
+      if (clientUser) {
+        parsed.push(clientUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
     }
     return parsed;
   } catch (err) {

@@ -20,8 +20,12 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
         {/* Banner Superior Unificado */}
         <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-gradient-to-r from-primary/20 via-primary/5 to-transparent flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border flex items-center justify-center shadow-xs">
-              <Scissors className="h-6 w-6 text-primary" />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-card/80 border border-primary/30 flex items-center justify-center shadow-xs shrink-0">
+              {barber.imagen_url ? (
+                <img src={barber.imagen_url} alt={barber.nombre} className="w-full h-full object-cover" />
+              ) : (
+                <Scissors className="h-6 w-6 text-primary" />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
