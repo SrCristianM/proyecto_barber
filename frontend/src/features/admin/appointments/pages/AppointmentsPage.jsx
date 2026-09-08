@@ -71,15 +71,15 @@ export default function AppointmentsPage() {
       subtitle: `Fecha: ${selectedDate} | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber`,
       filename: `agenda_citas_${selectedDate}.xls`,
       columns: [
-        { header: "ID Cita", key: "id_cita", width: 10, type: "number" },
-        { header: "Fecha", key: "fecha", width: 14 },
-        { header: "Hora", key: "hora", width: 12 },
-        { header: "Cliente", key: "cliente", width: 26 },
-        { header: "Barbero", key: "barbero", width: 24 },
-        { header: "Servicio / Paquete", key: "servicio", width: 30 },
-        { header: "Duración (min)", key: "duracion", width: 16, type: "number" },
-        { header: "Precio", key: "precio", width: 16, type: "currency" },
-        { header: "Estado", key: "estado", width: 16 }
+        { header: "ID Cita", key: "id_cita", width: 80, type: "number", align: "center" },
+        { header: "Fecha", key: "fecha", width: 120, align: "center" },
+        { header: "Hora", key: "hora", width: 95, align: "center" },
+        { header: "Cliente", key: "cliente", width: 180 },
+        { header: "Barbero", key: "barbero", width: 170 },
+        { header: "Servicio / Paquete", key: "servicio", width: 220 },
+        { header: "Duración (min)", key: "duracion", width: 115, type: "number", align: "center" },
+        { header: "Precio", key: "precio", width: 130, type: "currency" },
+        { header: "Estado", key: "estado", width: 125, type: "status", align: "center" }
       ],
       data: dataToExport.map((r) => ({
         id_cita: r.id_cita,

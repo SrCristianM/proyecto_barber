@@ -1,6 +1,7 @@
 import { ShoppingBag, Eye, Edit, Trash2, Ban, FileDown } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
 import { downloadPurchaseInvoicePDF } from "../../../../shared/utils/pdfInvoiceGenerator";
+import { getSupplierObject, getUserObject } from "../hooks/usePurchases";
 
 export default function PurchasesTable({
   purchases,
@@ -120,12 +121,12 @@ export default function PurchasesTable({
                         onClick={() =>
                           downloadPurchaseInvoicePDF(
                             purchase,
-                            { nombre: getSupplierName(purchase.id_proveedor) },
-                            { nombre: getUserName(purchase.id_usuario) }
+                            getSupplierObject(purchase.id_proveedor),
+                            getUserObject(purchase.id_usuario)
                           )
                         }
                         className="p-1.5 hover:bg-primary/10 rounded-md text-primary transition-colors cursor-pointer"
-                        title="Descargar Factura del Proveedor (PDF)"
+                        title="Descargar Factura Oficial del Proveedor (PDF)"
                       >
                         <FileDown className="h-4 w-4" />
                       </button>

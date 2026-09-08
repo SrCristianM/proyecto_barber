@@ -97,47 +97,35 @@ export default function SaleFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Cita de Origen (Opcional) */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Origen de la Venta <span className="text-xs text-muted-foreground font-normal">(Opcional)</span>
-            </label>
-            <select
-              name="id_cita"
-              id="id_cita"
+            <SearchableSelect
+              label="Origen de la Venta"
               value={formData.id_cita || ""}
-              onChange={(e) =>
+              onChange={(val) =>
                 setFormData({
                   ...formData,
-                  id_cita: e.target.value ? Number(e.target.value) : null
+                  id_cita: val ? Number(val) : null
                 })
               }
-              className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              <option value="">Venta Directa en Mostrador</option>
-              <option value="1">Cita #1 — Servicio Juan Pérez</option>
-              <option value="2">Cita #2 — Servicio María García</option>
-              <option value="3">Cita #3 — Servicio Pedro López</option>
-            </select>
+              options={[
+                { value: "", label: "Venta Directa en Mostrador" },
+                { value: 1, label: "Cita #1 — Servicio Juan Pérez" },
+                { value: 2, label: "Cita #2 — Servicio María García" },
+                { value: 3, label: "Cita #3 — Servicio Pedro López" }
+              ]}
+              searchable={false}
+            />
           </div>
 
           {/* Estado de la Venta */}
           {!isCreate ? (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Estado de la Venta
-              </label>
-              <select
-                name="estado"
-                id="estado"
+              <SearchableSelect
+                label="Estado de la Venta"
                 value={formData.estado}
-                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              >
-                {saleStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, estado: val })}
+                options={saleStatuses.map((status) => ({ value: status, label: status }))}
+                searchable={false}
+              />
             </div>
           ) : (
             <div>

@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Scissors, Clock, Search, Filter, Info, ArrowRight, Check } from "lucide-react";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
+import ClientImage from "../components/ClientImage";
 import { getClientServices } from "../services/clientStorageService";
 import Modal from "../../admin/shared/components/Modal";
 
@@ -40,7 +42,7 @@ export default function ClientServicesPage() {
       {/* CABECERA */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Catálogo Oficial</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Catálogo Oficial</span>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground">Nuestros Servicios</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Explora nuestros cortes, tratamientos de barba y diseños de alta precisión.
@@ -50,7 +52,7 @@ export default function ClientServicesPage() {
         <button
           type="button"
           onClick={() => navigate("/portal/agendar")}
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C9A24A] to-[#B08A33] hover:from-[#d8b056] hover:to-[#C9A24A] text-black font-extrabold text-xs shadow-md shadow-[#C9A24A]/20 transition-all flex items-center gap-2 self-start md:self-auto cursor-pointer"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-2 self-start md:self-auto cursor-pointer"
         >
           <Scissors className="w-4 h-4" />
           <span>IR A AGENDAR CITA</span>
@@ -67,7 +69,7 @@ export default function ClientServicesPage() {
             placeholder="Buscar por corte, barba, estilo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24A]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#DFB755]"
           />
         </div>
 
@@ -80,7 +82,7 @@ export default function ClientServicesPage() {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? "bg-[#C9A24A] text-black shadow-sm"
+                  ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
@@ -96,22 +98,18 @@ export default function ClientServicesPage() {
           {filteredServices.map((svc) => (
             <div
               key={svc.id_servicio}
-              className="group rounded-3xl bg-card border border-border hover:border-[#C9A24A]/50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              className="group rounded-3xl bg-card border border-border hover:border-[#DFB755]/60 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 {/* Imagen de Servicio */}
                 <div className="relative h-48 w-full overflow-hidden bg-muted">
-                  {svc.imagen_url ? (
-                    <img
-                      src={svc.imagen_url}
-                      alt={svc.nombre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#C9A24A]/10 text-[#C9A24A]">
-                      <Scissors className="w-12 h-12" />
-                    </div>
-                  )}
+                  <ClientImage
+                    src={svc.imagen_url}
+                    alt={svc.nombre}
+                    type="service"
+                    category={svc.categoria}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
                   {/* Badge Categoría & Duración */}
@@ -122,14 +120,14 @@ export default function ClientServicesPage() {
                   </div>
 
                   <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-black/80 text-white backdrop-blur-sm">
-                    <Clock className="w-3.5 h-3.5 text-[#C9A24A]" />
+                    <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
                     <span>{svc.duracion_minutos} min</span>
                   </div>
                 </div>
 
                 {/* Info */}
                 <div className="p-5 space-y-2">
-                  <h3 className="text-lg font-black text-foreground group-hover:text-[#C9A24A] transition-colors">
+                  <h3 className="text-lg font-black text-foreground group-hover:text-[#DFB755] transition-colors">
                     {svc.nombre}
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
@@ -142,7 +140,7 @@ export default function ClientServicesPage() {
               <div className="p-5 pt-3 border-t border-border flex items-center justify-between bg-muted/10">
                 <div>
                   <span className="text-[10px] font-bold uppercase text-muted-foreground block">Precio</span>
-                  <span className="text-xl font-black text-[#C9A24A]">
+                  <span className="text-xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                     ${Number(svc.precio).toLocaleString("es-CO")}
                   </span>
                 </div>
@@ -160,7 +158,7 @@ export default function ClientServicesPage() {
                   <button
                     type="button"
                     onClick={() => navigate(`/portal/agendar?servicio=${svc.id_servicio}`)}
-                    className="px-4 py-2.5 rounded-xl bg-[#C9A24A] hover:bg-[#d8b056] text-black font-extrabold text-xs shadow-md shadow-[#C9A24A]/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>Agendar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -182,26 +180,30 @@ export default function ClientServicesPage() {
 
       {/* MODAL DETALLE DE SERVICIO */}
       {selectedService && (
-        <Modal title={selectedService.nombre} onClose={() => setSelectedService(null)} maxWidthClass="max-w-md">
-          <div className="space-y-4">
-            {selectedService.imagen_url && (
-              <div className="h-44 rounded-2xl overflow-hidden bg-muted">
-                <img src={selectedService.imagen_url} alt={selectedService.nombre} className="w-full h-full object-cover" />
-              </div>
-            )}
+        <Modal title={selectedService.nombre} onClose={() => setSelectedService(null)} maxWidthClass="max-w-lg">
+          <div className="space-y-5">
+            <div className="h-52 rounded-2xl overflow-hidden bg-muted">
+              <ClientImage
+                src={selectedService.imagen_url}
+                alt={selectedService.nombre}
+                type="service"
+                category={selectedService.categoria}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-            <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Categoría:</span>
+            <div className="p-5 sm:p-6 rounded-2xl bg-muted/40 border border-border space-y-3.5 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Categoría:</span>
                 <span className="font-bold text-foreground">{selectedService.categoria || "General"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Duración Estimada:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Duración Estimada:</span>
                 <span className="font-bold text-foreground">{selectedService.duracion_minutos} minutos</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-border">
-                <span className="text-muted-foreground">Precio Oficial:</span>
-                <span className="text-base font-black text-[#C9A24A]">
+              <div className="flex justify-between items-center pt-3 border-t border-border">
+                <span className="text-muted-foreground font-medium">Precio Oficial:</span>
+                <span className="text-xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                   ${Number(selectedService.precio).toLocaleString("es-CO")}
                 </span>
               </div>
@@ -231,7 +233,7 @@ export default function ClientServicesPage() {
                   setSelectedService(null);
                   navigate(`/portal/agendar?servicio=${id}`);
                 }}
-                className="px-5 py-2 rounded-xl bg-[#C9A24A] text-black font-extrabold text-xs hover:bg-[#d8b056] cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs cursor-pointer flex items-center gap-1.5 shadow-md shadow-[#DDAE41]/25"
               >
                 <span>Reservar este Servicio</span>
                 <ArrowRight className="w-3.5 h-3.5" />

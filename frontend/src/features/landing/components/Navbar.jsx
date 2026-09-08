@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Scissors, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
 const NAV_LINKS = [
   { name: "INICIO", href: "#" },
@@ -40,11 +41,11 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <motion.div
-            whileHover={{ rotate: 20, scale: 1.1 }}
+            whileHover={{ rotate: 15, scale: 1.1 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="w-8 h-8 rounded-lg bg-[#C9A24A]/10 border border-[#C9A24A]/30 flex items-center justify-center group-hover:border-[#C9A24A] transition-colors"
+            className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shadow-[#DDAE41]/25"
           >
-            <Scissors className="w-4 h-4 text-[#C9A24A]" />
+            <BarberScissorsIcon className="w-4 h-4 text-black" strokeWidth={2} />
           </motion.div>
           <div className="leading-tight">
             <div

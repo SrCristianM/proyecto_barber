@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { motion } from "motion/react";
 import { Scissors, ArrowLeft, Star, Award, ShieldCheck } from "lucide-react";
 import { ImageWithFallback } from "../../landing/components/figma/ImageWithFallback";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
 const AUTH_BG_IMG = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
 
@@ -44,8 +45,8 @@ export default function AuthCard({ children, wide = false }) {
             </Link>
 
             <div className="flex items-center gap-2.5 mt-8">
-              <div className="w-8 h-8 rounded-lg bg-[#C9A24A]/20 border border-[#C9A24A] flex items-center justify-center">
-                <Scissors className="w-4 h-4 text-[#C9A24A]" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm">
+                <BarberScissorsIcon className="w-4 h-4 text-black" strokeWidth={2} />
               </div>
               <div className="leading-tight">
                 <div style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.82rem" }} className="font-bold">

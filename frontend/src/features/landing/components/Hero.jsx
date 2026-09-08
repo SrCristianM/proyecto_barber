@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Scissors, ChevronRight, Star, Clock, Users, Award, ArrowDown } from "lucide-react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
 const HERO_IMG = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
 
@@ -236,9 +237,9 @@ export default function Hero() {
                 transform: "translateZ(50px)",
               }}
               whileHover={{ scale: 1.1, rotate: 6 }}
-              className="absolute -bottom-6 -left-4 sm:-left-6 hidden sm:flex w-20 h-20 lg:w-24 lg:h-24 items-center justify-center rounded-xl shadow-[0_15px_35px_rgba(201,162,74,0.45)] cursor-pointer group animate-float-slow z-20"
+              className="absolute -bottom-6 -left-4 sm:-left-6 hidden sm:flex w-20 h-20 lg:w-24 lg:h-24 items-center justify-center rounded-2xl shadow-[0_15px_35px_rgba(201,162,74,0.45)] cursor-pointer group animate-float-slow z-20 border border-[#FFE28A]/40"
             >
-              <Scissors className="w-9 h-9 lg:w-10 lg:h-10 text-black group-hover:rotate-45 transition-transform duration-300" />
+              <BarberScissorsIcon className="w-10 h-10 lg:w-12 lg:h-12 text-black group-hover:scale-110 transition-transform duration-300 drop-shadow-sm" strokeWidth={2} />
             </motion.div>
 
             {/* Floating Glassmorphism Social Proof Card */}

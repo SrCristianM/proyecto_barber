@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router";
 import { Scissors, User, Calendar, Search, Clock, CheckCircle2 } from "lucide-react";
+import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 
 export default function QuickBookingBar() {
   const [service, setService] = useState("Corte Tradicional & Fade");
@@ -26,56 +27,59 @@ export default function QuickBookingBar() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Selector 1: Servicio */}
-          <div className="bg-[#181818] border border-white/10 rounded-xl p-3 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
-            <label className="text-[0.65rem] font-bold text-[#8E8E93] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Scissors className="w-3.5 h-3.5 text-[#C9A24A]" />
-              Servicio
-            </label>
-            <select
+          <div className="bg-[#181818] border border-white/10 rounded-xl p-2.5 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
+            <SearchableSelect
+              label="Servicio"
+              icon={<Scissors className="w-3.5 h-3.5 text-[#C9A24A]" />}
               value={service}
-              onChange={(e) => setService(e.target.value)}
-              className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer w-full"
-            >
-              <option value="Corte Tradicional & Fade">Corte Tradicional & Fade ($25.000)</option>
-              <option value="Perfilado de Barba">Perfilado de Barba ($18.000)</option>
-              <option value="Combo VIP Tu Turno">Combo VIP Tu Turno ($38.000)</option>
-              <option value="Tratamiento Capilar">Tratamiento Capilar ($22.000)</option>
-            </select>
+              onChange={setService}
+              options={[
+                "Corte Tradicional & Fade",
+                "Perfilado de Barba",
+                "Combo VIP Tu Turno",
+                "Tratamiento Capilar"
+              ]}
+              searchable={false}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* Selector 2: Barbero */}
-          <div className="bg-[#181818] border border-white/10 rounded-xl p-3 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
-            <label className="text-[0.65rem] font-bold text-[#8E8E93] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-[#C9A24A]" />
-              Barbero
-            </label>
-            <select
+          <div className="bg-[#181818] border border-white/10 rounded-xl p-2.5 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
+            <SearchableSelect
+              label="Barbero"
+              icon={<User className="w-3.5 h-3.5 text-[#C9A24A]" />}
               value={barber}
-              onChange={(e) => setBarber(e.target.value)}
-              className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer w-full"
-            >
-              <option value="Cualquier Barbero">Cualquier Profesional</option>
-              <option value="Carlos 'Blade' Mendoza">Carlos "Blade" Mendoza (Master)</option>
-              <option value="Mateo Gómez">Mateo Gómez (Barba & Clásico)</option>
-              <option value="David Silva">David Silva (Contemporáneo)</option>
-            </select>
+              onChange={setBarber}
+              options={[
+                "Cualquier Profesional",
+                'Carlos "Blade" Mendoza',
+                "Mateo Gómez",
+                "David Silva"
+              ]}
+              searchable={false}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* Selector 3: Fecha */}
-          <div className="bg-[#181818] border border-white/10 rounded-xl p-3 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
-            <label className="text-[0.65rem] font-bold text-[#8E8E93] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#C9A24A]" />
-              Fecha
-            </label>
-            <select
+          <div className="bg-[#181818] border border-white/10 rounded-xl p-2.5 flex flex-col justify-center hover:border-[#C9A24A]/50 transition-colors">
+            <SearchableSelect
+              label="Fecha"
+              icon={<Calendar className="w-3.5 h-3.5 text-[#C9A24A]" />}
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-white text-xs font-semibold focus:outline-none cursor-pointer w-full"
-            >
-              <option value="Hoy">Hoy (Turnos rápidos)</option>
-              <option value="Mañana">Mañana</option>
-              <option value="Esta Semana">Esta Semana</option>
-            </select>
+              onChange={setDate}
+              options={[
+                "Hoy (Turnos rápidos)",
+                "Mañana",
+                "Esta Semana"
+              ]}
+              searchable={false}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           {/* CTA Button */}

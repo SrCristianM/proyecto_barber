@@ -15,6 +15,7 @@ import {
   Info
 } from "lucide-react";
 import { toast } from "sonner";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 
 const SECTIONS = [
   { key: "business", label: "Información del Negocio", icon: Store },
@@ -288,16 +289,17 @@ export default function SettingsPage({ isDark, setIsDark }) {
                       <Globe className="inline h-4 w-4 mr-1.5 text-muted-foreground" />
                       Zona Horaria
                     </label>
-                    <select
+                    <SearchableSelect
                       value={business.zona_horaria}
-                      onChange={(e) => updateBusiness({ ...business, zona_horaria: e.target.value })}
-                      className="w-full px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                    >
-                      <option value="America/Bogota">Bogotá (UTC-5)</option>
-                      <option value="America/New_York">New York (UTC-5)</option>
-                      <option value="America/Mexico_City">México (UTC-6)</option>
-                      <option value="America/Lima">Lima (UTC-5)</option>
-                    </select>
+                      onChange={(val) => updateBusiness({ ...business, zona_horaria: val })}
+                      options={[
+                        { value: "America/Bogota", label: "Bogotá (UTC-5)" },
+                        { value: "America/New_York", label: "New York (UTC-5)" },
+                        { value: "America/Mexico_City", label: "México (UTC-6)" },
+                        { value: "America/Lima", label: "Lima (UTC-5)" }
+                      ]}
+                      searchable={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -382,29 +384,37 @@ export default function SettingsPage({ isDark, setIsDark }) {
               </SettingRow>
 
               <SettingRow label="Idioma del sistema">
-                <select
-                  value={system.idioma}
-                  onChange={(e) => updateSystem({ ...system, idioma: e.target.value })}
-                  className="px-3 py-1.5 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                >
-                  <option value="es">Español</option>
-                  <option value="en">English</option>
-                  <option value="pt">Português</option>
-                </select>
+                <div className="w-48">
+                  <SearchableSelect
+                    value={system.idioma}
+                    onChange={(val) => updateSystem({ ...system, idioma: val })}
+                    options={[
+                      { value: "es", label: "Español" },
+                      { value: "en", label: "English" },
+                      { value: "pt", label: "Português" }
+                    ]}
+                    searchable={false}
+                    size="sm"
+                  />
+                </div>
               </SettingRow>
 
               <SettingRow label="Tiempo de sesión" description="Cerrar sesión automáticamente tras inactividad">
-                <select
-                  value={system.sesion_timeout}
-                  onChange={(e) => updateSystem({ ...system, sesion_timeout: e.target.value })}
-                  className="px-3 py-1.5 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                >
-                  <option value="15">15 minutos</option>
-                  <option value="30">30 minutos</option>
-                  <option value="60">1 hora</option>
-                  <option value="120">2 horas</option>
-                  <option value="0">Sin límite</option>
-                </select>
+                <div className="w-48">
+                  <SearchableSelect
+                    value={system.sesion_timeout}
+                    onChange={(val) => updateSystem({ ...system, sesion_timeout: val })}
+                    options={[
+                      { value: "15", label: "15 minutos" },
+                      { value: "30", label: "30 minutos" },
+                      { value: "60", label: "1 hora" },
+                      { value: "120", label: "2 horas" },
+                      { value: "0", label: "Sin límite" }
+                    ]}
+                    searchable={false}
+                    size="sm"
+                  />
+                </div>
               </SettingRow>
 
               {/* Info de versión */}

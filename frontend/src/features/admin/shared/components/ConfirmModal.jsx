@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Trash2, Power } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -44,22 +46,33 @@ export default function ConfirmModal({
   const config = variantConfig[variant] || variantConfig.delete;
   const Icon = config.icon;
 
-  return (
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  const modalContent = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/25 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 15 }}
         transition={{ type: "spring", damping: 25, stiffness: 350 }}
-        className="gold-modal-glow w-full max-w-md"
+        className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden my-auto"
       >
-        <div className="gold-modal-inner overflow-hidden">
+        <div className="overflow-hidden">
           {/* Header */}
           <div className="p-6 flex flex-col items-center text-center gap-4">
             <motion.div
@@ -102,4 +115,6 @@ export default function ConfirmModal({
       </motion.div>
     </motion.div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }

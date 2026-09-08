@@ -26,7 +26,7 @@ const INITIAL_SERVICES = [
   { id_servicio: 2, nombre: "Corte + Barba", id_categoria_servicio: 3, categoria: "Paquetes", precio: 25000, duracion_minutos: 45, descripcion: "Corte completo personalizado más arreglo y perfilado de barba con toalla caliente.", imagen_url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80", estado: 1 },
   { id_servicio: 3, nombre: "Afeitado Premium", id_categoria_servicio: 2, categoria: "Barba", precio: 20000, duracion_minutos: 35, descripcion: "Afeitado clásico a navaja tradicional con vapor ozono, toalla caliente y bálsamo hidratante.", imagen_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80", estado: 1 },
   { id_servicio: 4, nombre: "Diseño y Color", id_categoria_servicio: 4, categoria: "Especiales", precio: 30000, duracion_minutos: 60, descripcion: "Líneas, figuras freestyle, decoloración o matización de color con productos de alta gama.", imagen_url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 5, nombre: "Corte Niño", id_categoria_servicio: 1, categoria: "Cortes", precio: 12000, duracion_minutos: 20, descripcion: "Corte de cabello para niños hasta 12 años, con paciencia y estilo.", imagen_url: "", estado: 1 }
+  { id_servicio: 5, nombre: "Corte Niño", id_categoria_servicio: 1, categoria: "Cortes", precio: 12000, duracion_minutos: 20, descripcion: "Corte de cabello para niños hasta 12 años, con paciencia y estilo.", imagen_url: "https://images.unsplash.com/photo-1517832606589-7629c3395909?w=600&auto=format&fit=crop&q=80", estado: 1 }
 ];
 
 const INITIAL_PACKAGES = [
@@ -57,14 +57,14 @@ const INITIAL_PACKAGES = [
 ];
 
 const INITIAL_PRODUCTS = [
-  { id_producto: 1, nombre: "Gel para Cabello Extra Fijación", id_categoria_producto: 1, categoria: "Estilizado", stock: 25, precio: 15000, descripcion: "Fijación duradera 24h sin dejar residuos ni descamación con brillo natural.", imagen_url: "https://images.unsplash.com/photo-1598452963314-b09f397a5c48?w=500&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 2, nombre: "Cera Modeladora Mate", id_categoria_producto: 1, categoria: "Estilizado", stock: 8, precio: 18000, descripcion: "Acabado mate natural y textura maleable, ideal para peinados modernos.", imagen_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 3, nombre: "Shampoo Anticaída con Biotina", id_categoria_producto: 2, categoria: "Cuidado", stock: 15, precio: 22000, descripcion: "Fortalece la raíz y revitaliza el cuero cabelludo dejando frescura de mentol.", imagen_url: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=500&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 4, nombre: "Aceite Nutritivo para Barba", id_categoria_producto: 3, categoria: "Barba", stock: 12, precio: 25000, descripcion: "Fórmula enriquecida con aceite de argán y jojoba para hidratar y suavizar la barba.", imagen_url: "https://images.unsplash.com/photo-1608248597359-00f72365851d?w=500&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 5, nombre: "Navaja de Afeitar Clásica", id_categoria_producto: 4, categoria: "Herramientas", stock: 5, precio: 45000, descripcion: "Navaja de acero inoxidable con mango ergonómico para afeitados de precisión.", imagen_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=500&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 6, nombre: "Tijeras Profesionales de Corte", id_categoria_producto: 4, categoria: "Herramientas", stock: 10, precio: 65000, descripcion: "Acero japonés con filo dulce para cortes limpios y ergonómicos.", imagen_url: "", estado: 1 },
-  { id_producto: 7, nombre: "Peine Antiestático de Carbono", id_categoria_producto: 4, categoria: "Herramientas", stock: 30, precio: 8000, descripcion: "Resistente al calor y a productos químicos, desenredo suave.", imagen_url: "", estado: 1 },
-  { id_producto: 8, nombre: "Bálsamo Calmante Aftershave", id_categoria_producto: 3, categoria: "Barba", stock: 18, precio: 20000, descripcion: "Alivia la irritación post-afeitado con aloe vera y manzanilla.", imagen_url: "", estado: 1 }
+  { id_producto: 1, nombre: "Gel para Cabello Extra Fijación", id_categoria_producto: 1, categoria: "Estilizado", stock: 25, precio: 15000, descripcion: "Fijación duradera 24h sin dejar residuos ni descamación con brillo natural.", imagen_url: "https://images.unsplash.com/photo-1598452963314-b09f397a5c48?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 2, nombre: "Cera Modeladora Mate", id_categoria_producto: 1, categoria: "Estilizado", stock: 8, precio: 18000, descripcion: "Acabado mate natural y textura maleable, ideal para peinados modernos.", imagen_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 3, nombre: "Shampoo Anticaída con Biotina", id_categoria_producto: 2, categoria: "Cuidado", stock: 15, precio: 22000, descripcion: "Fortalece la raíz y revitaliza el cuero cabelludo dejando frescura de mentol.", imagen_url: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 4, nombre: "Aceite Nutritivo para Barba", id_categoria_producto: 3, categoria: "Barba", stock: 12, precio: 25000, descripcion: "Fórmula enriquecida con aceite de argán y jojoba para hidratar y suavizar la barba.", imagen_url: "https://images.unsplash.com/photo-1621607512214-68297480165e?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 5, nombre: "Navaja de Afeitar Clásica", id_categoria_producto: 4, categoria: "Herramientas", stock: 5, precio: 45000, descripcion: "Navaja de acero inoxidable con mango ergonómico para afeitados de precisión.", imagen_url: "https://images.unsplash.com/photo-1512690459411-b9245aed614b?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 6, nombre: "Tijeras Profesionales de Corte", id_categoria_producto: 4, categoria: "Herramientas", stock: 10, precio: 65000, descripcion: "Acero japonés con filo dulce para cortes limpios y ergonómicos.", imagen_url: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 7, nombre: "Peine Antiestático de Carbono", id_categoria_producto: 4, categoria: "Herramientas", stock: 30, precio: 8000, descripcion: "Resistente al calor y a productos químicos, desenredo suave.", imagen_url: "https://images.unsplash.com/photo-1590439471364-192aa70c0b53?w=600&auto=format&fit=crop&q=80", estado: 1 },
+  { id_producto: 8, nombre: "Bálsamo Calmante Aftershave", id_categoria_producto: 3, categoria: "Barba", stock: 18, precio: 20000, descripcion: "Alivia la irritación post-afeitado con aloe vera y manzanilla.", imagen_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&auto=format&fit=crop&q=80", estado: 1 }
 ];
 
 const INITIAL_BARBERS = [
@@ -187,11 +187,45 @@ function save(key, data) {
 }
 
 // ==========================================
-// CONSULTA DE CATÁLOGOS
+// CONSULTA DE CATÁLOGOS CON AUTO-REPARACIÓN DE IMÁGENES
 // ==========================================
 
+const DEFAULT_SERVICE_FALLBACKS = {
+  1: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80", // Corte Clásico
+  2: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80", // Corte + Barba
+  3: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80", // Afeitado Premium
+  4: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80", // Diseño y Color
+  5: "https://images.unsplash.com/photo-1517832606589-7629c3395909?w=600&auto=format&fit=crop&q=80"  // Corte Niño
+};
+
+const DEFAULT_PRODUCT_FALLBACKS = {
+  1: "https://images.unsplash.com/photo-1598452963314-b09f397a5c48?w=600&auto=format&fit=crop&q=80", // Gel
+  2: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80", // Cera Mate
+  3: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80", // Shampoo
+  4: "https://images.unsplash.com/photo-1621607512214-68297480165e?w=600&auto=format&fit=crop&q=80", // Aceite Barba
+  5: "https://images.unsplash.com/photo-1512690459411-b9245aed614b?w=600&auto=format&fit=crop&q=80", // Navaja
+  6: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=600&auto=format&fit=crop&q=80", // Tijeras
+  7: "https://images.unsplash.com/photo-1590439471364-192aa70c0b53?w=600&auto=format&fit=crop&q=80", // Peine
+  8: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&auto=format&fit=crop&q=80"  // Aftershave
+};
+
 export function getClientServices() {
-  return getOrInit(STORAGE_KEYS.SERVICES, INITIAL_SERVICES).filter((s) => s.estado === 1);
+  const services = getOrInit(STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
+  let changed = false;
+  const healed = services.map((s) => {
+    if (!s.imagen_url || s.imagen_url.trim() === "" || s.imagen_url.includes("placeholder")) {
+      changed = true;
+      return {
+        ...s,
+        imagen_url: DEFAULT_SERVICE_FALLBACKS[s.id_servicio] || "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80"
+      };
+    }
+    return s;
+  });
+  if (changed) {
+    save(STORAGE_KEYS.SERVICES, healed);
+  }
+  return healed.filter((s) => s.estado === 1);
 }
 
 export function getClientPackages() {
@@ -220,11 +254,66 @@ export function getClientPackages() {
 }
 
 export function getClientProducts() {
-  return getOrInit(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS).filter((p) => p.estado === 1);
+  const products = getOrInit(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  let changed = false;
+  const healed = products.map((p) => {
+    const isBadUrl =
+      !p.imagen_url ||
+      p.imagen_url.trim() === "" ||
+      p.imagen_url.includes("placeholder") ||
+      p.imagen_url.includes("photo-1608248597359-00f72365851d");
+    if (isBadUrl) {
+      changed = true;
+      return {
+        ...p,
+        imagen_url:
+          DEFAULT_PRODUCT_FALLBACKS[p.id_producto] ||
+          "https://images.unsplash.com/photo-1621607512214-68297480165e?w=600&auto=format&fit=crop&q=80"
+      };
+    }
+    return p;
+  });
+  if (changed) {
+    save(STORAGE_KEYS.PRODUCTS, healed);
+  }
+  return healed.filter((p) => p.estado === 1);
 }
 
 export function getClientBarbers() {
-  return getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS).filter((b) => b.estado === 1);
+  const barbers = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+  const barberFallbacks = [
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80"
+  ];
+
+  const barberMetadata = {
+    1: { rating: 4.9, reviewsCount: 148, badge: "Master Fade", nextSlot: "Hoy 16:00" },
+    2: { rating: 4.8, reviewsCount: 112, badge: "Color & Tendencias", nextSlot: "Hoy 17:30" },
+    3: { rating: 5.0, reviewsCount: 96, badge: "Navaja Clásica & Spa", nextSlot: "Mañana 10:00" }
+  };
+
+  let changed = false;
+  const healed = barbers.map((b, idx) => {
+    let img = b.imagen_url;
+    if (!img || img.trim() === "") {
+      changed = true;
+      img = barberFallbacks[idx % barberFallbacks.length];
+    }
+    const meta = barberMetadata[b.id_barbero] || { rating: 4.9, reviewsCount: 50, badge: "Especialista", nextSlot: "Disponible" };
+    return {
+      ...b,
+      imagen_url: img,
+      rating: meta.rating,
+      reviewsCount: meta.reviewsCount,
+      badge: meta.badge,
+      nextSlot: meta.nextSlot
+    };
+  });
+  if (changed) {
+    save(STORAGE_KEYS.BARBERS, healed);
+  }
+  return healed.filter((b) => b.estado === 1);
 }
 
 export function getClientSchedules() {
@@ -518,3 +607,331 @@ export function getClientPurchases() {
     .filter((s) => s.id_cliente === client.id_cliente)
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 }
+
+/**
+ * Crea una compra de productos para el cliente actual,
+ * descontando el stock correspondiente y registrando la orden en la base de datos de ventas.
+ */
+export function createClientPurchase({
+  items,
+  metodoPago = "Efectivo",
+  metodoEntrega = "Retiro en Salón",
+  direccionEnvio = "",
+  notas = ""
+}) {
+  const client = getCurrentClientProfile();
+  if (!client) {
+    return { success: false, error: "No hay una sesión de cliente activa." };
+  }
+
+  if (!items || items.length === 0) {
+    return { success: false, error: "El carrito de compras está vacío." };
+  }
+
+  const allProducts = getOrInit(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  const allSales = getOrInit(STORAGE_KEYS.SALES, INITIAL_SALES);
+
+  // Verificar stock disponible para cada producto
+  for (const item of items) {
+    const prod = allProducts.find((p) => p.id_producto === item.id_producto);
+    if (!prod) {
+      return { success: false, error: `El producto "${item.nombre}" no está disponible.` };
+    }
+    if (Number(prod.stock || 0) < Number(item.cantidad || 1)) {
+      return {
+        success: false,
+        error: `Solo quedan ${prod.stock} unidades disponibles de "${item.nombre}".`
+      };
+    }
+  }
+
+  // Descontar inventario
+  const updatedProducts = allProducts.map((p) => {
+    const purchasedItem = items.find((it) => it.id_producto === p.id_producto);
+    if (purchasedItem) {
+      return {
+        ...p,
+        stock: Math.max(0, Number(p.stock || 0) - Number(purchasedItem.cantidad || 1))
+      };
+    }
+    return p;
+  });
+  save(STORAGE_KEYS.PRODUCTS, updatedProducts);
+
+  // Generar ID único de venta
+  const maxSaleId = allSales.reduce((max, s) => Math.max(max, Number(s.id_venta || 0)), 0);
+  const newSaleId = maxSaleId + 1;
+
+  const now = new Date();
+  const dateStr = now.toISOString().split("T")[0];
+  const timeStr = now.toTimeString().split(" ")[0];
+  const fullDateTime = `${dateStr} ${timeStr}`;
+
+  const totalCalculado = items.reduce(
+    (sum, item) => sum + Number(item.precio || 0) * Number(item.cantidad || 1),
+    0
+  );
+
+  const detalles = items.map((item, idx) => ({
+    id_venta_detalle: Date.now() + idx,
+    id_venta: newSaleId,
+    tipo_item: "Producto",
+    id_producto: item.id_producto,
+    cantidad: item.cantidad,
+    precio_unitario: item.precio,
+    subtotal: Number(item.precio) * Number(item.cantidad),
+    nombre: item.nombre
+  }));
+
+  const newSale = {
+    id_venta: newSaleId,
+    id_cliente: client.id_cliente,
+    id_usuario: client.id_usuario || 1,
+    id_cita: null,
+    fecha: fullDateTime,
+    total: totalCalculado,
+    estado: "Activa",
+    metodo_pago: metodoPago,
+    metodo_entrega: metodoEntrega,
+    direccion_envio: direccionEnvio || client.direccion || "",
+    notas: notas,
+    detalles: detalles
+  };
+
+  allSales.unshift(newSale);
+  save(STORAGE_KEYS.SALES, allSales);
+
+  return { success: true, sale: newSale };
+}
+
+// ==========================================
+// LOOKBOOK DE ESTILOS & TENDENCIAS
+// ==========================================
+
+const INITIAL_LOOKBOOK = [
+  {
+    id: "look-1",
+    titulo: "Mid Skin Fade Texturizado",
+    categoria: "Corte",
+    servicioId: 1, // Corte Clásico o Fade
+    descripcion: "Degradado medio a piel limpia con textura marcada en la parte superior. Ideal para cabello liso o ligeramente ondulado.",
+    tipoCabello: "Todo tipo",
+    tiempoEstimado: "45 min",
+    imagen: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80",
+    etiquetas: ["Moderno", "Urbano", "Degradado"]
+  },
+  {
+    id: "look-2",
+    titulo: "Barba Esculpida & Toalla Caliente",
+    categoria: "Barba",
+    servicioId: 2, // Arreglo de Barba
+    descripcion: "Perfilado milimétrico a navaja libre con tratamiento de aceites esenciales hidratantes y toalla caliente aromática.",
+    tipoCabello: "Barba media/larga",
+    tiempoEstimado: "30 min",
+    imagen: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80",
+    etiquetas: ["Elegante", "Navaja", "Spa"]
+  },
+  {
+    id: "look-3",
+    titulo: "Executive Side Part & Fade",
+    categoria: "Corte",
+    servicioId: 1,
+    descripcion: "Raya lateral clásica con acabado pomada brillante, ideal para reuniones formales y estilo corporativo refinado.",
+    tipoCabello: "Lacio / Ondulado",
+    tiempoEstimado: "40 min",
+    imagen: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=600&auto=format&fit=crop&q=80",
+    etiquetas: ["Ejecutivo", "Clásico", "Formal"]
+  },
+  {
+    id: "look-4",
+    titulo: "Combo VIP: Fade + Barba + Mascarilla",
+    categoria: "Combos",
+    servicioId: 1,
+    paqueteId: 1,
+    descripcion: "Experiencia total de barbería con corte degradado, diseño de barba y mascarilla purificante de carbón activado.",
+    tipoCabello: "Todos",
+    tiempoEstimado: "70 min",
+    imagen: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80",
+    etiquetas: ["VIP", "Completo", "Relajante"]
+  }
+];
+
+export function getClientLookbook() {
+  const looks = getOrInit("tu_turno_client_lookbook", INITIAL_LOOKBOOK);
+  let changed = false;
+  const healed = looks.map((l) => {
+    if (!l.imagen || l.imagen.includes("photo-1517832606589-7629c3395909")) {
+      changed = true;
+      return {
+        ...l,
+        imagen: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80"
+      };
+    }
+    return l;
+  });
+  if (changed) {
+    save("tu_turno_client_lookbook", healed);
+  }
+  return healed;
+}
+
+// ==========================================
+// BITÁCORA DE ESTILO PERSONAL ("Mi Último Look")
+// ==========================================
+
+const INITIAL_STYLE_LOG = {
+  fecha: "2026-08-20",
+  barbero: "Carlos Rodríguez",
+  corte: "Mid Fade con caída natural",
+  guiaLateral: "Máquina #1.5 degradada a #0.5",
+  superior: "Tijera 3cm con textura en puntas",
+  barba: "Perfilado cuadrado bajo con toalla caliente",
+  productoUsado: "Cera efecto mate fijación fuerte"
+};
+
+export function getClientStyleLog() {
+  return getOrInit("tu_turno_client_style_log", INITIAL_STYLE_LOG);
+}
+
+export function saveClientStyleLog(data) {
+  save("tu_turno_client_style_log", data);
+  return data;
+}
+
+// ==========================================
+// RESEÑAS & CALIFICACIÓN POST-CITA
+// ==========================================
+
+export function getClientReviews() {
+  return getOrInit("tu_turno_client_reviews", [
+    {
+      id: "rev-1",
+      id_cita: 98,
+      barberoNombre: "Carlos Rodríguez",
+      calificacion: 5,
+      comentario: "Excelente corte, muy puntual y la atención con café estuvo impecable.",
+      fecha: "2026-08-20"
+    }
+  ]);
+}
+
+export function saveClientReview(reviewData) {
+  const reviews = getClientReviews();
+  const newReview = {
+    id: `rev-${Date.now()}`,
+    fecha: new Date().toISOString().split("T")[0],
+    ...reviewData
+  };
+  reviews.unshift(newReview);
+  save("tu_turno_client_reviews", reviews);
+  return { success: true, review: newReview };
+}
+
+// ==========================================
+// DETALLES DE FIDELIZACIÓN (Club VIP)
+// ==========================================
+
+export function getClientLoyaltyDetails() {
+  const profile = getCurrentClientProfile();
+  const appointments = getClientAppointments();
+  const completed = appointments.filter((a) => a.estado === "Completada").length;
+
+  const currentPoints = completed * 10;
+  const targetPoints = 100;
+  const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
+
+  return {
+    tier: profile?.nivel_fidelidad || "Plata",
+    currentPoints,
+    targetPoints,
+    progressPercent,
+    visitsCount: completed,
+    nextBenefit: "Servicio de Barba o Tratamiento Facial Gratis al llegar a 100 pts",
+    unlockedPerks: [
+      "Prioridad en lista de espera",
+      "Bebida de cortesía ilimitada en sala VIP",
+      "10% de descuento en ceras y pomadas"
+    ],
+    badges: [
+      { id: "b1", name: "Puntualidad de Oro", icon: "Clock", unlocked: true },
+      { id: "b2", name: "Estilo Frecuente", icon: "Scissors", unlocked: completed >= 3 },
+      { id: "b3", name: "Miembro VIP", icon: "Crown", unlocked: completed >= 5 }
+    ]
+  };
+}
+
+// ==========================================
+// RECOMPENSAS Y GAMIFICACIÓN ("Barber Rewards")
+// ==========================================
+
+const INITIAL_REWARDS = [
+  {
+    id: "rew-1",
+    titulo: "Café Espresso o Cerveza Artesanal",
+    descripcion: "Disfruta de una bebida prémium de cortesía durante tu servicio.",
+    puntosRequeridos: 30,
+    icono: "Coffee",
+    canjeado: false,
+    categoria: "Experiencia"
+  },
+  {
+    id: "rew-2",
+    titulo: "Toalla Aromática Facial Spa",
+    descripcion: "Relajación total con toalla al vapor y aceites esenciales de eucalipto.",
+    puntosRequeridos: 50,
+    icono: "Sparkles",
+    canjeado: false,
+    categoria: "Bienestar"
+  },
+  {
+    id: "rew-3",
+    titulo: "15% OFF en Ceras y Pomadas",
+    descripcion: "Válido en cualquier producto de estilizado de nuestro catálogo.",
+    puntosRequeridos: 75,
+    icono: "Tag",
+    canjeado: false,
+    categoria: "Descuento"
+  },
+  {
+    id: "rew-4",
+    titulo: "Corte de Mantenimiento Gratis",
+    descripcion: "Corte de cabello clásico o arreglo de barba 100% patrocinado por el club.",
+    puntosRequeridos: 100,
+    icono: "Crown",
+    canjeado: false,
+    categoria: "Servicio VIP"
+  }
+];
+
+export function getClientRewards() {
+  return getOrInit("tu_turno_client_rewards", INITIAL_REWARDS);
+}
+
+export function claimClientReward(rewardId) {
+  const rewards = getClientRewards();
+  const loyalty = getClientLoyaltyDetails();
+  const reward = rewards.find((r) => r.id === rewardId);
+
+  if (!reward) {
+    return { success: false, error: "Recompensa no encontrada." };
+  }
+
+  if (reward.canjeado) {
+    return { success: false, error: "Esta recompensa ya fue canjeada." };
+  }
+
+  if (loyalty.currentPoints < reward.puntosRequeridos) {
+    return {
+      success: false,
+      error: `Te faltan ${reward.puntosRequeridos - loyalty.currentPoints} puntos para canjear este beneficio.`
+    };
+  }
+
+  const updated = rewards.map((r) =>
+    r.id === rewardId ? { ...r, canjeado: true, fechaCanje: new Date().toISOString().split("T")[0] } : r
+  );
+  save("tu_turno_client_rewards", updated);
+  return { success: true, reward: { ...reward, canjeado: true } };
+}
+
+

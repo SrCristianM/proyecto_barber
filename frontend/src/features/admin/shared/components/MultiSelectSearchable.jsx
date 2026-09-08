@@ -181,9 +181,9 @@ export default function MultiSelectSearchable({
 
       {/* Dropdown flotante */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-card dark:bg-[#13161B] border border-border/80 rounded-xl shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-card dark:bg-[#151921] border border-border/70 rounded-2xl shadow-2xl overflow-hidden p-1.5 animate-in fade-in-0 zoom-in-95 duration-150">
           {/* Barra de búsqueda interactiva */}
-          <div className="p-2.5 border-b border-border/60 bg-muted/20">
+          <div className="p-1.5 mb-1 bg-muted/20 rounded-xl">
             <div className="relative flex items-center">
               <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <input
@@ -192,7 +192,7 @@ export default function MultiSelectSearchable({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full pl-8 pr-7 py-1.5 bg-input-background border border-border/70 rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full pl-8 pr-7 py-1.5 bg-input-background border border-border/60 rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 onClick={(e) => e.stopPropagation()}
               />
               {searchTerm && (
@@ -207,8 +207,8 @@ export default function MultiSelectSearchable({
             </div>
           </div>
 
-          {/* Opciones con o sin agrupación */}
-          <div className="max-h-60 overflow-y-auto py-1">
+          {/* Opciones con o sin agrupación (sin líneas divisorias) */}
+          <div className="max-h-60 overflow-y-auto py-0.5 space-y-0.5">
             {filteredOptions.length === 0 ? (
               <div className="p-3.5 text-center text-xs text-muted-foreground">
                 No se encontraron opciones coincidentes.
@@ -216,7 +216,7 @@ export default function MultiSelectSearchable({
             ) : hasGroups && groupedOptions ? (
               Object.entries(groupedOptions).map(([groupName, groupOpts]) => (
                 <div key={groupName} className="mb-1 last:mb-0">
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/40 border-y border-border/30">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-muted/30 rounded-lg mx-0.5 my-1">
                     {groupName}
                   </div>
                   {groupOpts.map((opt) => {
@@ -230,7 +230,7 @@ export default function MultiSelectSearchable({
                           e.stopPropagation();
                           handleToggle(opt.value);
                         }}
-                        className={`px-3.5 py-2.5 text-xs flex items-center justify-between cursor-pointer transition-colors select-none ${
+                        className={`px-3.5 py-2.5 text-xs sm:text-sm rounded-xl my-0.5 flex items-center justify-between cursor-pointer transition-colors select-none ${
                           isSelected
                             ? "bg-primary/15 text-primary font-bold"
                             : "text-foreground hover:bg-accent/60"
@@ -268,7 +268,7 @@ export default function MultiSelectSearchable({
                       e.stopPropagation();
                       handleToggle(opt.value);
                     }}
-                    className={`px-3.5 py-2.5 text-xs flex items-center justify-between cursor-pointer transition-colors select-none ${
+                    className={`px-3.5 py-2.5 text-xs sm:text-sm rounded-xl my-0.5 flex items-center justify-between cursor-pointer transition-colors select-none ${
                       isSelected
                         ? "bg-primary/15 text-primary font-bold"
                         : "text-foreground hover:bg-accent/60"

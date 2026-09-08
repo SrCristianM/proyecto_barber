@@ -1,5 +1,6 @@
 import Modal from "../../shared/components/Modal";
 import { useState } from "react";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { availableLoyalties } from "../hooks/useClients";
 
 export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
@@ -108,19 +109,13 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Nivel de Fidelidad</label>
-          <select
-            name="nivel_fidelidad"
+          <SearchableSelect
+            label="Nivel de Fidelidad"
             value={formData.nivel_fidelidad}
-            onChange={handleChange}
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-          >
-            {availableLoyalties.map((loyalty) => (
-              <option key={loyalty} value={loyalty}>
-                {loyalty}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setFormData((prev) => ({ ...prev, nivel_fidelidad: val }))}
+            options={availableLoyalties.map((loyalty) => ({ value: loyalty, label: loyalty }))}
+            searchable={false}
+          />
         </div>
 
         <div className="flex gap-3 pt-4">

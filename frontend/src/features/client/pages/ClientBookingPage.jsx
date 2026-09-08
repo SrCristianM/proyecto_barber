@@ -14,7 +14,10 @@ import {
   Search,
   X,
   AlertCircle,
-  Check
+  Check,
+  Star,
+  Share2,
+  Download
 } from "lucide-react";
 import ClientStarIcon from "../components/ClientStarIcon";
 import {
@@ -25,6 +28,11 @@ import {
   getAvailableSlots,
   bookAppointment
 } from "../services/clientStorageService";
+import {
+  createGoogleCalendarUrl,
+  downloadIcsFile,
+  createWhatsAppShareUrl
+} from "../utils/calendarUtils";
 
 export default function ClientBookingPage() {
   const [searchParams] = useSearchParams();
@@ -178,11 +186,12 @@ export default function ClientBookingPage() {
       return;
     }
 
-    // Efecto de celebración
+    // Efecto de celebración con destellos dorados
     confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 }
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF"]
     });
 
     toast.success("¡Cita reservada con éxito! Te esperamos en Tu Turno Barber.");
@@ -204,7 +213,7 @@ export default function ClientBookingPage() {
     <div className="max-w-4xl mx-auto space-y-8">
       {/* CABECERA */}
       <div className="text-center space-y-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Reserva en Línea</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Reserva en Línea</span>
         <h1 className="text-2xl sm:text-4xl font-black text-foreground">Agendar Cita</h1>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
           Reserva tu turno en pocos pasos con disponibilidad real en vivo.
@@ -224,16 +233,16 @@ export default function ClientBookingPage() {
                   <div
                     className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition-all ${
                       isCompleted
-                        ? "bg-[#C9A24A] text-black shadow-md shadow-[#C9A24A]/25"
+                        ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-md shadow-[#DDAE41]/25"
                         : isCurrent
-                        ? "bg-foreground text-background ring-4 ring-[#C9A24A]/20"
+                        ? "bg-foreground text-background ring-4 ring-[#DFB755]/30"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <span className={`text-[10px] sm:text-xs font-bold mt-1.5 hidden sm:block ${
-                    isCurrent ? "text-[#C9A24A]" : "text-muted-foreground"
+                    isCurrent ? "text-[#DDAE41] dark:text-[#E8C466]" : "text-muted-foreground"
                   }`}>
                     {s.title}
                   </span>
@@ -241,7 +250,7 @@ export default function ClientBookingPage() {
 
                 {idx < steps.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-2 transition-all ${
-                    currentStep > s.num ? "bg-[#C9A24A]" : "bg-border"
+                    currentStep > s.num ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" : "bg-border"
                   }`} />
                 )}
               </div>
@@ -274,7 +283,7 @@ export default function ClientBookingPage() {
                   onClick={() => setBookingType("services")}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     bookingType === "services"
-                      ? "bg-[#C9A24A] text-black shadow-sm"
+                      ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -290,7 +299,7 @@ export default function ClientBookingPage() {
                   }}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                     bookingType === "package"
-                      ? "bg-[#C9A24A] text-black shadow-sm"
+                      ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -310,7 +319,7 @@ export default function ClientBookingPage() {
                     placeholder="Buscar servicios por nombre..."
                     value={serviceSearch}
                     onChange={(e) => setServiceSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm focus:ring-2 focus:ring-[#DFB755]"
                   />
                 </div>
 
@@ -324,7 +333,7 @@ export default function ClientBookingPage() {
                       {selectedServices.map((s) => (
                         <span
                           key={s.id_servicio}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#C9A24A]/15 text-[#C9A24A] border border-[#C9A24A]/30 text-xs font-bold"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#DFB755]/15 text-[#DDAE41] dark:text-[#E8C466] border border-[#DFB755]/30 text-xs font-bold"
                         >
                           <span>{s.nombre}</span>
                           <button
@@ -360,14 +369,14 @@ export default function ClientBookingPage() {
                           }}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                             isSelected
-                              ? "bg-[#C9A24A]/10 border-[#C9A24A] ring-2 ring-[#C9A24A]/20"
-                              : "bg-card border-border hover:border-border/80 hover:bg-accent/40"
+                              ? "bg-[#DFB755]/10 border-[#DFB755] ring-2 ring-[#DFB755]/20"
+                              : "bg-card border-border hover:border-[#DFB755]/50 hover:bg-accent/40"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div className={`w-6 h-6 rounded-lg flex items-center justify-center border ${
                               isSelected
-                                ? "bg-[#C9A24A] border-[#C9A24A] text-black"
+                                ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] border-[#DFB755] text-black"
                                 : "border-muted-foreground/30 text-transparent"
                             }`}>
                               <Check className="w-3.5 h-3.5" />
@@ -380,7 +389,7 @@ export default function ClientBookingPage() {
                             </div>
                           </div>
 
-                          <span className="text-sm font-black text-[#C9A24A]">
+                          <span className="text-sm font-black text-[#DDAE41] dark:text-[#E8C466]">
                             ${Number(svc.precio).toLocaleString("es-CO")}
                           </span>
                         </div>
@@ -398,13 +407,13 @@ export default function ClientBookingPage() {
                       onClick={() => setSelectedPackageId(pkg.id_paquete)}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? "bg-[#C9A24A]/10 border-[#C9A24A] ring-2 ring-[#C9A24A]/20 shadow-md"
-                          : "bg-card border-border hover:border-border/80"
+                          ? "bg-[#DFB755]/10 border-[#DFB755] ring-2 ring-[#DFB755]/20 shadow-md"
+                          : "bg-card border-border hover:border-[#DFB755]/50"
                       }`}
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-[#C9A24A] text-black flex items-center gap-1">
+                          <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black flex items-center gap-1 shadow-sm">
                             <ClientStarIcon className="w-3 h-3 text-black" />
                             <span>{pkg.descuento_porcentaje}% OFF</span>
                           </span>
@@ -429,7 +438,7 @@ export default function ClientBookingPage() {
                         <span className="text-xs text-muted-foreground line-through">
                           ${Number(pkg.precioOriginal).toLocaleString("es-CO")}
                         </span>
-                        <span className="text-lg font-black text-[#C9A24A]">
+                        <span className="text-lg font-black text-[#DDAE41] dark:text-[#E8C466]">
                           ${Number(pkg.precioFinal).toLocaleString("es-CO")}
                         </span>
                       </div>
@@ -450,7 +459,7 @@ export default function ClientBookingPage() {
 
               <div className="text-right">
                 <span className="text-xs text-muted-foreground font-medium">Total a pagar:</span>
-                <p className="text-xl font-black text-[#C9A24A]">
+                <p className="text-xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                   ${Number(totalPrice).toLocaleString("es-CO")}
                 </p>
               </div>
@@ -500,29 +509,48 @@ export default function ClientBookingPage() {
                       onClick={() => setSelectedBarberId(b.id_barbero)}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
                         isSelected
-                          ? "bg-[#C9A24A]/10 border-[#C9A24A] ring-2 ring-[#C9A24A]/20 shadow-md"
-                          : "bg-card border-border hover:border-border/80"
+                          ? "bg-[#DFB755]/10 border-[#DFB755] ring-2 ring-[#DFB755]/20 shadow-md"
+                          : "bg-card border-border hover:border-[#DFB755]/50"
                       }`}
                     >
                       <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted shrink-0 border border-border">
                         {b.imagen_url ? (
-                          <img src={b.imagen_url} alt={b.nombre} className="w-full h-full object-cover" />
+                          <img
+                            src={b.imagen_url}
+                            alt={b.nombre}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
+                            }}
+                          />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-[#C9A24A]/20 text-[#C9A24A] font-bold text-base">
+                          <div className="w-full h-full flex items-center justify-center bg-[#DFB755]/20 text-[#DFB755] font-bold text-base">
                             {b.nombre.charAt(0)}
                           </div>
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-1">
                           <h3 className="text-sm font-black text-foreground truncate">{b.nombre}</h3>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#C9A24A] shrink-0" />}
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#DDAE41] dark:text-[#E8C466] shrink-0" />}
                         </div>
-                        <p className="text-xs text-[#C9A24A] font-semibold mt-0.5 truncate">{b.especialidad}</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">
-                          {b.telefono || "Barbero Oficial"}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-500">
+                            <Star className="w-3 h-3 fill-amber-500" />
+                            {b.rating || 4.9}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">({b.reviewsCount || 100}+ reseñas)</span>
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-[#DFB755]/15 text-[#DFB755] border border-[#DFB755]/30">
+                            {b.badge || "Especialista"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/50">
+                          <span>{b.especialidad}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                            ⚡ {b.nextSlot || "Hoy disponible"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -555,7 +583,7 @@ export default function ClientBookingPage() {
                   min={todayStr}
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-input-background border border-input text-foreground text-base focus:ring-2 focus:ring-[#C9A24A]"
+                  className="w-full px-4 py-3 rounded-xl bg-input-background border border-input text-foreground text-base focus:ring-2 focus:ring-[#DFB755]"
                   required
                 />
               </div>
@@ -592,7 +620,7 @@ export default function ClientBookingPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-4 text-xs">
                   <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-md bg-[#C9A24A]" />
+                    <span className="w-3 h-3 rounded-md bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" />
                     <span className="text-muted-foreground">Seleccionado</span>
                   </span>
                   <span className="flex items-center gap-1.5">
@@ -618,8 +646,8 @@ export default function ClientBookingPage() {
                           !slot.disponible
                             ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
                             : isSelected
-                            ? "bg-[#C9A24A] text-black shadow-lg shadow-[#C9A24A]/30 scale-105"
-                            : "bg-card border border-border hover:border-[#C9A24A] text-foreground hover:bg-accent"
+                            ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/25 scale-105"
+                            : "bg-card border border-border hover:border-[#DFB755] text-foreground hover:bg-accent"
                         }`}
                       >
                         <Clock className="w-3.5 h-3.5" />
@@ -679,7 +707,7 @@ export default function ClientBookingPage() {
                   <p className="text-base font-black text-foreground mt-1">
                     {selectedBarber?.nombre} {selectedBarber?.apellido || ""}
                   </p>
-                  <p className="text-xs text-[#C9A24A] font-semibold">
+                  <p className="text-xs text-[#DDAE41] dark:text-[#E8C466] font-semibold">
                     {selectedBarber?.especialidad}
                   </p>
                 </div>
@@ -713,19 +741,19 @@ export default function ClientBookingPage() {
                   placeholder="Ej: Prefiero fade alto, arreglo suave de barba, etc."
                   value={bookingNotes}
                   onChange={(e) => setBookingNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-input-background border border-input text-foreground text-xs"
+                  className="w-full px-3.5 py-2 rounded-xl bg-input-background border border-input text-foreground text-xs focus:ring-2 focus:ring-[#DFB755]"
                 />
               </div>
 
               {/* Total final */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#C9A24A]/15 to-transparent border border-[#C9A24A]/30 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#DFB755]/15 to-transparent border border-[#DFB755]/30 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold uppercase text-muted-foreground block">
                     Total a pagar en barbería
                   </span>
                   <span className="text-xs text-muted-foreground">Pago en efectivo o transferencia</span>
                 </div>
-                <span className="text-2xl font-black text-[#C9A24A]">
+                <span className="text-2xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                   ${Number(totalPrice).toLocaleString("es-CO")}
                 </span>
               </div>
@@ -758,7 +786,7 @@ export default function ClientBookingPage() {
                 (currentStep === 4 && !canAdvanceFromStep4)
               }
               onClick={() => setCurrentStep(currentStep + 1)}
-              className="px-6 py-2.5 rounded-xl bg-[#C9A24A] hover:bg-[#d8b056] text-black font-extrabold text-xs shadow-md shadow-[#C9A24A]/20 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <span>Continuar</span>
               <ChevronRight className="w-4 h-4" />
@@ -768,7 +796,7 @@ export default function ClientBookingPage() {
               type="button"
               disabled={isSubmitting}
               onClick={handleConfirmBooking}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#C9A24A] to-[#B08A33] hover:from-[#d8b056] hover:to-[#C9A24A] text-black font-extrabold text-sm shadow-xl shadow-[#C9A24A]/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-sm shadow-xl shadow-[#DDAE41]/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{isSubmitting ? "Confirmando..." : "CONFIRMAR CITA"}</span>

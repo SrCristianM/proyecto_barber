@@ -101,7 +101,7 @@ export default function ClientProfilePage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* CABECERA */}
       <div className="border-b border-border pb-6">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Datos de Cuenta</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Datos de Cuenta</span>
         <h1 className="text-2xl sm:text-3xl font-black text-foreground">Mi Perfil</h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Gestiona tu información de contacto, dirección y credenciales de acceso al portal.
@@ -109,9 +109,9 @@ export default function ClientProfilePage() {
       </div>
 
       {/* TARJETA RESUMEN DE FIDELIDAD */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-card via-card to-[#C9A24A]/10 border border-[#C9A24A]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-card via-card to-[#DFB755]/10 border border-[#DFB755]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#C9A24A]/20 border border-[#C9A24A]/40 flex items-center justify-center text-xl font-black text-[#C9A24A]">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#E8C466]/20 to-[#DDAE41]/20 border border-[#DFB755]/40 flex items-center justify-center text-xl font-black text-[#DDAE41] dark:text-[#E8C466]">
             {profile?.nombre ? profile.nombre.charAt(0) : "C"}
           </div>
           <div>
@@ -122,7 +122,7 @@ export default function ClientProfilePage() {
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#C9A24A]/20 border border-[#C9A24A]/40 text-xs font-extrabold text-[#C9A24A] self-start sm:self-auto">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#DFB755]/15 border border-[#DFB755]/40 text-xs font-extrabold text-[#DDAE41] dark:text-[#E8C466] self-start sm:self-auto shadow-sm">
           <Award className="w-4 h-4" />
           <span>Nivel {loyaltyTier}</span>
         </div>
@@ -145,7 +145,7 @@ export default function ClientProfilePage() {
                 value={formData.nombre}
                 onChange={(e) => handleChange("nombre", e.target.value)}
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-input-background border text-foreground text-sm focus:outline-none ${
-                  errors.nombre ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#C9A24A]"
+                  errors.nombre ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#DFB755]"
                 }`}
                 placeholder="Pedro"
               />
@@ -161,7 +161,7 @@ export default function ClientProfilePage() {
                 value={formData.apellido}
                 onChange={(e) => handleChange("apellido", e.target.value)}
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-input-background border text-foreground text-sm focus:outline-none ${
-                  errors.apellido ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#C9A24A]"
+                  errors.apellido ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#DFB755]"
                 }`}
                 placeholder="López"
               />
@@ -205,7 +205,7 @@ export default function ClientProfilePage() {
               type="text"
               value={formData.direccion}
               onChange={(e) => handleChange("direccion", e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm focus:ring-2 focus:ring-[#C9A24A]"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm focus:ring-2 focus:ring-[#DFB755]"
               placeholder="Calle 10 # 5-20"
             />
           </div>
@@ -214,7 +214,7 @@ export default function ClientProfilePage() {
         {/* CAMBIO DE CONTRASEÑA */}
         <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#C9A24A]" />
+            <Lock className="w-4 h-4 text-[#DFB755] dark:text-[#E8C466]" />
             <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground">
               Cambiar Contraseña (Opcional)
             </h3>
@@ -231,7 +231,7 @@ export default function ClientProfilePage() {
                 onChange={(e) => handleChange("nuevaContrasena", e.target.value)}
                 placeholder="Mínimo 8 caracteres"
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-input-background border text-foreground text-sm focus:outline-none ${
-                  errors.nuevaContrasena ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#C9A24A]"
+                  errors.nuevaContrasena ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#DFB755]"
                 }`}
               />
               <FormFieldError error={errors.nuevaContrasena} />
@@ -247,7 +247,7 @@ export default function ClientProfilePage() {
                 onChange={(e) => handleChange("confirmarContrasena", e.target.value)}
                 placeholder="Repite la nueva contraseña"
                 className={`w-full px-3.5 py-2.5 rounded-xl bg-input-background border text-foreground text-sm focus:outline-none ${
-                  errors.confirmarContrasena ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#C9A24A]"
+                  errors.confirmarContrasena ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#DFB755]"
                 }`}
               />
               <FormFieldError error={errors.confirmarContrasena} />
@@ -260,7 +260,7 @@ export default function ClientProfilePage() {
           <button
             type="submit"
             disabled={isSaving}
-            className="px-6 py-3 rounded-xl bg-[#C9A24A] hover:bg-[#d8b056] text-black font-extrabold text-xs shadow-md shadow-[#C9A24A]/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             <span>{isSaving ? "Guardando..." : "GUARDAR CAMBIOS"}</span>

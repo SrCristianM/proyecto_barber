@@ -1,12 +1,41 @@
-import { useState, useMemo } from "react";
-import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus } from "lucide-react";
+import ClientImage from "../components/ClientImage";
+import ClientCartDrawer from "../components/ClientCartDrawer";
 import { getClientProducts } from "../services/clientStorageService";
 import Modal from "../../admin/shared/components/Modal";
+import { toast } from "sonner";
 
 export default function ClientProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalQuantity, setModalQuantity] = useState(1);
+
+  // Estado del Carrito de Compras
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem("tu_turno_client_cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Persistir carrito en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem("tu_turno_client_cart", JSON.stringify(cart));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [cart]);
+
+  // Reiniciar cantidad del modal al cambiar de producto
+  useEffect(() => {
+    setModalQuantity(1);
+  }, [selectedProduct]);
 
   const products = useMemo(() => getClientProducts(), []);
 
@@ -33,15 +62,84 @@ export default function ClientProductsPage() {
     });
   }, [products, searchTerm, selectedCategory]);
 
+  const handleAddToCart = (product, quantity = 1) => {
+    if (Number(product.stock || 0) <= 0) {
+      toast.error("Este producto está agotado temporalmente.");
+      return;
+    }
+
+    setCart((prevCart) => {
+      const existing = prevCart.find((it) => it.id_producto === product.id_producto);
+      if (existing) {
+        const newQty = Math.min(Number(product.stock || 99), existing.cantidad + quantity);
+        toast.success(`Se actualizó la cantidad de "${product.nombre}" en tu carrito.`);
+        return prevCart.map((it) =>
+          it.id_producto === product.id_producto ? { ...it, cantidad: newQty } : it
+        );
+      }
+      toast.success(`¡"${product.nombre}" añadido al carrito!`);
+      return [
+        ...prevCart,
+        {
+          id_producto: product.id_producto,
+          nombre: product.nombre,
+          precio: Number(product.precio),
+          imagen_url: product.imagen_url,
+          categoria: product.categoria,
+          stock: Number(product.stock || 99),
+          cantidad: quantity
+        }
+      ];
+    });
+  };
+
+  const handleUpdateQuantity = (productId, newQty) => {
+    if (newQty <= 0) {
+      handleRemoveFromCart(productId);
+      return;
+    }
+    setCart((prev) =>
+      prev.map((it) => (it.id_producto === productId ? { ...it, cantidad: newQty } : it))
+    );
+  };
+
+  const handleRemoveFromCart = (productId) => {
+    setCart((prev) => prev.filter((it) => it.id_producto !== productId));
+    toast.info("Producto retirado del carrito.");
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
+  const totalCartCount = cart.reduce((sum, it) => sum + it.cantidad, 0);
+
   return (
     <div className="space-y-6">
       {/* CABECERA */}
-      <div className="border-b border-border pb-6">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Cuidado y Estilo</span>
-        <h1 className="text-2xl sm:text-3xl font-black text-foreground">Productos de Barbería</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Lleva a casa los mismos productos profesionales de fijación, cuidado y afeitado que usamos en nuestro salón.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Cuidado y Estilo</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground">Productos de Barbería</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Lleva a casa los mismos productos profesionales de fijación, cuidado y afeitado que usamos en nuestro salón.
+          </p>
+        </div>
+
+        {/* Botón Abrir Carrito */}
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="relative px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+        >
+          <ShoppingBag className="w-4 h-4 text-black" />
+          <span>VER CARRITO</span>
+          {totalCartCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-black text-white ml-1 animate-pulse">
+              {totalCartCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* FILTROS Y BÚSQUEDA */}
@@ -54,7 +152,7 @@ export default function ClientProductsPage() {
             placeholder="Buscar por gel, cera, shampoo, aceite..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24A]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#DFB755]"
           />
         </div>
 
@@ -67,7 +165,7 @@ export default function ClientProductsPage() {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? "bg-[#C9A24A] text-black shadow-sm"
+                  ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
               }`}
             >
@@ -86,22 +184,18 @@ export default function ClientProductsPage() {
             return (
               <div
                 key={prod.id_producto}
-                className="group rounded-3xl bg-card border border-border hover:border-[#C9A24A]/50 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                className="group rounded-3xl bg-card border border-border hover:border-[#DFB755]/50 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   {/* Imagen de Producto */}
                   <div className="relative h-44 w-full overflow-hidden bg-muted">
-                    {prod.imagen_url ? (
-                      <img
-                        src={prod.imagen_url}
-                        alt={prod.nombre}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#C9A24A]/10 text-[#C9A24A]">
-                        <ShoppingBag className="w-10 h-10" />
-                      </div>
-                    )}
+                    <ClientImage
+                      src={prod.imagen_url}
+                      alt={prod.nombre}
+                      type="product"
+                      category={prod.categoria}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
 
                     {/* Badge Categoría */}
                     <div className="absolute top-3 left-3">
@@ -128,7 +222,7 @@ export default function ClientProductsPage() {
 
                   {/* Info */}
                   <div className="p-4 space-y-1.5">
-                    <h3 className="text-sm font-extrabold text-foreground group-hover:text-[#C9A24A] transition-colors line-clamp-1">
+                    <h3 className="text-sm font-extrabold text-foreground group-hover:text-[#DDAE41] dark:group-hover:text-[#E8C466] transition-colors line-clamp-1">
                       {prod.nombre}
                     </h3>
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -137,23 +231,38 @@ export default function ClientProductsPage() {
                   </div>
                 </div>
 
-                {/* Pie con Precio y Detalle */}
-                <div className="p-4 pt-3 border-t border-border flex items-center justify-between bg-muted/10">
+                {/* Pie con Precio y Acciones */}
+                <div className="p-4 pt-3 border-t border-border flex items-center justify-between bg-muted/10 gap-2">
                   <div>
                     <span className="text-[10px] font-bold uppercase text-muted-foreground block">Precio</span>
-                    <span className="text-base font-black text-[#C9A24A]">
+                    <span className="text-base font-black text-[#DDAE41] dark:text-[#E8C466] whitespace-nowrap">
                       ${Number(prod.precio).toLocaleString("es-CO")}
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedProduct(prod)}
-                    className="px-3.5 py-1.5 rounded-xl border border-border hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <Info className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>Detalle</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedProduct(prod);
+                        setModalQuantity(1);
+                      }}
+                      className="p-2 rounded-xl border border-border hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Ver detalles"
+                    >
+                      <Info className="w-4 h-4 text-muted-foreground" />
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!isAvailable}
+                      onClick={() => handleAddToCart(prod, 1)}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] active:scale-95 text-black text-xs font-black shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>{isAvailable ? "Comprar" : "Agotado"}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -171,28 +280,36 @@ export default function ClientProductsPage() {
 
       {/* MODAL DETALLE DE PRODUCTO */}
       {selectedProduct && (
-        <Modal title={selectedProduct.nombre} onClose={() => setSelectedProduct(null)} maxWidthClass="max-w-md">
-          <div className="space-y-4">
-            {selectedProduct.imagen_url && (
-              <div className="h-44 rounded-2xl overflow-hidden bg-muted">
-                <img src={selectedProduct.imagen_url} alt={selectedProduct.nombre} className="w-full h-full object-cover" />
-              </div>
-            )}
+        <Modal 
+          title={selectedProduct.nombre} 
+          onClose={() => setSelectedProduct(null)} 
+          maxWidthClass="max-w-lg"
+        >
+          <div className="space-y-5">
+            <div className="h-52 rounded-2xl overflow-hidden bg-muted">
+              <ClientImage
+                src={selectedProduct.imagen_url}
+                alt={selectedProduct.nombre}
+                type="product"
+                category={selectedProduct.categoria}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-            <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Categoría:</span>
+            <div className="p-5 sm:p-6 rounded-2xl bg-muted/40 border border-border space-y-3.5 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Categoría:</span>
                 <span className="font-bold text-foreground">{selectedProduct.categoria || "General"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Disponibilidad en Salón:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Disponibilidad:</span>
                 <span className={`font-bold ${selectedProduct.stock > 0 ? "text-emerald-500" : "text-destructive"}`}>
                   {selectedProduct.stock > 0 ? `Disponible (${selectedProduct.stock} unidades)` : "Agotado temporalmente"}
                 </span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-border">
-                <span className="text-muted-foreground">Precio al Público:</span>
-                <span className="text-base font-black text-[#C9A24A]">
+              <div className="flex justify-between items-center pt-3 border-t border-border">
+                <span className="text-muted-foreground font-medium">Precio al Público:</span>
+                <span className="text-xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                   ${Number(selectedProduct.precio).toLocaleString("es-CO")}
                 </span>
               </div>
@@ -203,26 +320,86 @@ export default function ClientProductsPage() {
                 Información del Producto
               </span>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {selectedProduct.descripcion || "Producto original garantizado de alta calidad. Puedes solicitarlo directamente con tu barbero durante tu próxima cita."}
+                {selectedProduct.descripcion || "Producto original garantizado de alta calidad. Puedes solicitarlo para entrega o recogerlo directamente en nuestra barbería."}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl bg-[#C9A24A]/10 border border-[#C9A24A]/20 text-[11px] text-muted-foreground">
-              💡 <strong>Nota:</strong> Los productos se adquieren y entregan de manera presencial en nuestra barbería al momento de tu cita.
-            </div>
+            {/* Selector de cantidad y botón comprar */}
+            {Number(selectedProduct.stock || 0) > 0 ? (
+              <div className="pt-3 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                  <span className="text-xs font-bold text-muted-foreground">Cantidad:</span>
+                  <div className="flex items-center border border-border rounded-xl bg-background overflow-hidden p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setModalQuantity((q) => Math.max(1, q - 1))}
+                      disabled={modalQuantity <= 1}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-accent text-foreground disabled:opacity-30 cursor-pointer"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="w-10 text-center font-black text-sm text-foreground">
+                      {modalQuantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setModalQuantity((q) => Math.min(Number(selectedProduct.stock || 1), q + 1))}
+                      disabled={modalQuantity >= Number(selectedProduct.stock || 1)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-accent text-foreground disabled:opacity-30 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedProduct(null)}
-                className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/80 cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProduct(null)}
+                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-border text-xs font-bold hover:bg-accent cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAddToCart(selectedProduct, modalQuantity);
+                      setSelectedProduct(null);
+                    }}
+                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black text-xs font-black shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Agregar (${(Number(selectedProduct.precio) * modalQuantity).toLocaleString("es-CO")})</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProduct(null)}
+                  className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold hover:bg-accent/80 cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
           </div>
         </Modal>
       )}
+
+      {/* DRAWER DEL CARRITO DE COMPRAS */}
+      <ClientCartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onClearCart={handleClearCart}
+        onPurchaseSuccess={() => {
+          loadProducts();
+        }}
+      />
     </div>
   );
 }

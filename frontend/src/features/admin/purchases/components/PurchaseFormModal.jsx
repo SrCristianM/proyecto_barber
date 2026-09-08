@@ -134,20 +134,13 @@ export default function PurchaseFormModal({
           {/* Estado de la compra */}
           {!isCreate ? (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Estado</label>
-              <select
-                name="estado"
-                id="estado"
+              <SearchableSelect
+                label="Estado"
                 value={formData.estado}
-                onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              >
-                {purchaseStatuses.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setFormData({ ...formData, estado: val })}
+                options={purchaseStatuses.map((st) => ({ value: st, label: st }))}
+                searchable={false}
+              />
             </div>
           ) : (
             <div>
@@ -261,19 +254,19 @@ export default function PurchaseFormModal({
                 <tbody className="divide-y divide-border/60">
                   {formData.detalles.map((detalle, idx) => (
                     <tr key={idx} className="hover:bg-accent/30 transition-colors">
-                      <td className="py-2.5 px-3">
-                        <select
-                          name={`id_producto_${idx}`}
+                      <td className="py-2.5 px-3 min-w-[210px]">
+                        <SearchableSelect
                           value={detalle.id_producto}
-                          onChange={(e) => updateProductRow(idx, "id_producto", e.target.value)}
-                          className="w-full px-2 py-1.5 bg-input-background border border-input rounded-md text-foreground text-xs"
-                        >
-                          {availableProducts.map((p) => (
-                            <option key={p.id_producto} value={p.id_producto}>
-                              {p.nombre}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => updateProductRow(idx, "id_producto", val)}
+                          options={availableProducts.map((p) => ({
+                            value: p.id_producto,
+                            label: p.nombre,
+                            subtitle: `$${Number(p.precio_sugerido || 0).toLocaleString("es-CO")}`
+                          }))}
+                          size="sm"
+                          searchable={true}
+                          placeholder="Seleccionar producto..."
+                        />
                       </td>
                       <td className="py-2.5 px-3">
                         <NumericInput

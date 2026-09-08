@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { useScheduleNovelties, NOVELTY_TYPES } from "../hooks/useScheduleNovelties";
 import { validateNoveltyForm } from "../validations/scheduleValidation";
 import { ESTADOS_NOVEDAD } from "../../../../shared/types/database";
@@ -128,32 +129,32 @@ export default function ScheduleNoveltiesView() {
             </div>
 
             {/* Filtro por estado */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              <option value="all">Todos los estados</option>
-              {noveltyStatuses.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            <div className="w-44">
+              <SearchableSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "all", label: "Todos los estados" },
+                  ...noveltyStatuses.map((s) => ({ value: s, label: s }))
+                ]}
+                searchable={false}
+                size="sm"
+              />
+            </div>
 
             {/* Filtro por tipo */}
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-            >
-              <option value="all">Todos los tipos</option>
-              {noveltyTypes.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
+            <div className="w-44">
+              <SearchableSelect
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[
+                  { value: "all", label: "Todos los tipos" },
+                  ...noveltyTypes.map((t) => ({ value: t, label: t }))
+                ]}
+                searchable={false}
+                size="sm"
+              />
+            </div>
           </div>
 
           <button
@@ -288,57 +289,36 @@ export default function ScheduleNoveltiesView() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Barbero <span className="text-destructive">*</span>
-                </label>
-                <select
-                  name="id_barbero"
-                  id="id_barbero"
+                <SearchableSelect
+                  label="Barbero"
+                  required
                   value={formData.id_barbero || 1}
-                  onChange={(e) => {
-                    setFormData({ ...formData, id_barbero: Number(e.target.value) });
+                  onChange={(val) => {
+                    setFormData({ ...formData, id_barbero: Number(val) });
                     if (formErrors.id_barbero) setFormErrors((prev) => ({ ...prev, id_barbero: null }));
                   }}
-                  className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                    formErrors.id_barbero
-                      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                      : "border-input focus:ring-2 focus:ring-primary"
-                  }`}
-                  autoFocus
-                >
-                  {barbers.map((b) => (
-                    <option key={b.id_barbero} value={b.id_barbero}>
-                      {b.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={barbers.map((b) => ({ value: b.id_barbero, label: b.nombre }))}
+                  placeholder="Seleccionar barbero..."
+                  searchable={false}
+                  error={formErrors.id_barbero}
+                />
                 <FormFieldError error={formErrors.id_barbero} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Tipo de Novedad <span className="text-destructive">*</span>
-                </label>
-                <select
-                  name="tipo"
-                  id="tipo"
+                <SearchableSelect
+                  label="Tipo de Novedad"
+                  required
                   value={formData.tipo || "Permiso"}
-                  onChange={(e) => {
-                    setFormData({ ...formData, tipo: e.target.value });
+                  onChange={(val) => {
+                    setFormData({ ...formData, tipo: val });
                     if (formErrors.tipo) setFormErrors((prev) => ({ ...prev, tipo: null }));
                   }}
-                  className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                    formErrors.tipo
-                      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                      : "border-input focus:ring-2 focus:ring-primary"
-                  }`}
-                >
-                  {noveltyTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  options={noveltyTypes.map((t) => ({ value: t, label: t }))}
+                  placeholder="Seleccionar tipo..."
+                  searchable={false}
+                  error={formErrors.tipo}
+                />
                 <FormFieldError error={formErrors.tipo} />
               </div>
 
@@ -425,57 +405,36 @@ export default function ScheduleNoveltiesView() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Barbero <span className="text-destructive">*</span>
-                </label>
-                <select
-                  name="id_barbero"
-                  id="id_barbero"
+                <SearchableSelect
+                  label="Barbero"
+                  required
                   value={formData.id_barbero}
-                  onChange={(e) => {
-                    setFormData({ ...formData, id_barbero: Number(e.target.value) });
+                  onChange={(val) => {
+                    setFormData({ ...formData, id_barbero: Number(val) });
                     if (formErrors.id_barbero) setFormErrors((prev) => ({ ...prev, id_barbero: null }));
                   }}
-                  className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                    formErrors.id_barbero
-                      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                      : "border-input focus:ring-2 focus:ring-primary"
-                  }`}
-                  autoFocus
-                >
-                  {barbers.map((b) => (
-                    <option key={b.id_barbero} value={b.id_barbero}>
-                      {b.nombre}
-                    </option>
-                  ))}
-                </select>
+                  options={barbers.map((b) => ({ value: b.id_barbero, label: b.nombre }))}
+                  placeholder="Seleccionar barbero..."
+                  searchable={false}
+                  error={formErrors.id_barbero}
+                />
                 <FormFieldError error={formErrors.id_barbero} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Tipo de Novedad <span className="text-destructive">*</span>
-                </label>
-                <select
-                  name="tipo"
-                  id="tipo"
+                <SearchableSelect
+                  label="Tipo de Novedad"
+                  required
                   value={formData.tipo}
-                  onChange={(e) => {
-                    setFormData({ ...formData, tipo: e.target.value });
+                  onChange={(val) => {
+                    setFormData({ ...formData, tipo: val });
                     if (formErrors.tipo) setFormErrors((prev) => ({ ...prev, tipo: null }));
                   }}
-                  className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                    formErrors.tipo
-                      ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                      : "border-input focus:ring-2 focus:ring-primary"
-                  }`}
-                >
-                  {noveltyTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+                  options={noveltyTypes.map((t) => ({ value: t, label: t }))}
+                  placeholder="Seleccionar tipo..."
+                  searchable={false}
+                  error={formErrors.tipo}
+                />
                 <FormFieldError error={formErrors.tipo} />
               </div>
 
@@ -502,22 +461,13 @@ export default function ScheduleNoveltiesView() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Estado de la Solicitud
-                </label>
-                <select
-                  name="estado"
-                  id="estado"
+                <SearchableSelect
+                  label="Estado de la Solicitud"
                   value={formData.estado || "Pendiente"}
-                  onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-                >
-                  {noveltyStatuses.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setFormData({ ...formData, estado: val })}
+                  options={noveltyStatuses.map((s) => ({ value: s, label: s }))}
+                  searchable={false}
+                />
               </div>
 
               <div className="sm:col-span-2">

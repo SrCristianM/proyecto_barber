@@ -3,12 +3,72 @@ import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import { ESTADOS_COMPRA } from "../../../../shared/types/database";
 
 export const availableSuppliers = [
-  { id_proveedor: 1, nombre: "Distribuidora Barber Pro Colombia", nit: "901234567-1" },
-  { id_proveedor: 2, nombre: "Cosméticos & Cuidado Capilar S.A.S.", nit: "900876543-2" },
-  { id_proveedor: 3, nombre: "Herramientas & Barber Supplies", nit: "800345678-9" },
-  { id_proveedor: 4, nombre: "Insumos y Lociones del Valle", nit: "901567890-4" },
-  { id_proveedor: 5, nombre: "Navajas & Acero Premium Ltd", nit: "900654321-7" }
+  {
+    id_proveedor: 1,
+    nombre: "Distribuidora Barber Pro Colombia",
+    nit: "901.234.567-1",
+    telefono: "+57 (601) 745-8920",
+    correo: "ventas@barberprocolombia.com",
+    direccion: "Cra. 15 # 85-32, Zona Rosa",
+    ciudad: "Bogotá D.C."
+  },
+  {
+    id_proveedor: 2,
+    nombre: "Cosméticos & Cuidado Capilar S.A.S.",
+    nit: "900.876.543-2",
+    telefono: "+57 (604) 448-1122",
+    correo: "contacto@cuidadocapilar.com.co",
+    direccion: "Calle 10 # 43E-21, El Poblado",
+    ciudad: "Medellín"
+  },
+  {
+    id_proveedor: 3,
+    nombre: "Herramientas & Barber Supplies",
+    nit: "800.345.678-9",
+    telefono: "+57 (602) 667-3344",
+    correo: "pedidos@barbersupplies.co",
+    direccion: "Av. 6N # 28N-50, Sta. Mónica",
+    ciudad: "Cali"
+  },
+  {
+    id_proveedor: 4,
+    nombre: "Insumos y Lociones del Valle",
+    nit: "901.567.890-4",
+    telefono: "+57 318 554 9921",
+    correo: "servicio@insumosdelvalle.com",
+    direccion: "Cra. 1 # 44-12, San Fernando",
+    ciudad: "Cali"
+  },
+  {
+    id_proveedor: 5,
+    nombre: "Navajas & Acero Premium Ltd",
+    nit: "900.654.321-7",
+    telefono: "+57 310 998 7766",
+    correo: "ventas@aceropremium.com",
+    direccion: "Calle 72 # 20-15, Chapinero",
+    ciudad: "Bogotá D.C."
+  }
 ];
+
+export const getSupplierObject = (id_proveedor) => {
+  return availableSuppliers.find((s) => s.id_proveedor === Number(id_proveedor)) || {
+    id_proveedor: Number(id_proveedor),
+    nombre: "Distribuidora Barber Pro Colombia",
+    nit: "901.234.567-1",
+    telefono: "+57 (601) 745-8920",
+    correo: "ventas@barberprocolombia.com",
+    direccion: "Cra. 15 # 85-32, Zona Rosa",
+    ciudad: "Bogotá D.C."
+  };
+};
+
+export const getUserObject = (id_usuario) => {
+  return availableUsers.find((u) => u.id_usuario === Number(id_usuario)) || {
+    id_usuario: Number(id_usuario),
+    nombre: "Administrador Principal",
+    cargo: "Administrador del Sistema ERP"
+  };
+};
 
 export const availableProducts = [
   { id_producto: 1, nombre: "Gel para Cabello", id_categoria_producto: 1, precio_sugerido: 10000 },

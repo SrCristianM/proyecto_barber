@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 import {
   Calendar,
   Clock,
@@ -15,7 +16,9 @@ import {
   CalendarCheck,
   CalendarX,
   History,
-  ChevronRight
+  ChevronRight,
+  Share2,
+  Download
 } from "lucide-react";
 import {
   getClientAppointments,
@@ -23,6 +26,11 @@ import {
   rescheduleAppointment,
   getAvailableSlots
 } from "../services/clientStorageService";
+import {
+  createGoogleCalendarUrl,
+  downloadIcsFile,
+  createWhatsAppShareUrl
+} from "../utils/calendarUtils";
 import Modal from "../../admin/shared/components/Modal";
 
 export default function ClientMyAppointmentsPage() {
@@ -144,7 +152,7 @@ export default function ClientMyAppointmentsPage() {
       case "Reprogramada":
         return "bg-blue-500/15 text-blue-500 border-blue-500/30";
       case "Completada":
-        return "bg-[#C9A24A]/15 text-[#C9A24A] border-[#C9A24A]/30";
+        return "bg-[#DFB755]/15 text-[#DDAE41] dark:text-[#E8C466] border-[#DFB755]/30";
       case "Cancelada":
         return "bg-destructive/15 text-destructive border-destructive/30";
       default:
@@ -157,7 +165,7 @@ export default function ClientMyAppointmentsPage() {
       {/* CABECERA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Agenda Personal</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Agenda Personal</span>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground">Mis Citas</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Consulta tus citas activas, revisa tu historial o realiza reprogramaciones de turno.
@@ -166,7 +174,7 @@ export default function ClientMyAppointmentsPage() {
 
         <Link
           to="/portal/agendar"
-          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C9A24A] to-[#B08A33] hover:from-[#d8b056] hover:to-[#C9A24A] text-black font-extrabold text-xs shadow-md shadow-[#C9A24A]/20 transition-all flex items-center gap-2 self-start sm:self-auto"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/20 transition-all flex items-center gap-2 self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>AGENDAR NUEVA CITA</span>
@@ -180,7 +188,7 @@ export default function ClientMyAppointmentsPage() {
           onClick={() => setActiveTab("upcoming")}
           className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "upcoming"
-              ? "bg-[#C9A24A] text-black shadow-sm"
+              ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
           }`}
         >
@@ -193,7 +201,7 @@ export default function ClientMyAppointmentsPage() {
           onClick={() => setActiveTab("history")}
           className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === "history"
-              ? "bg-[#C9A24A] text-black shadow-sm"
+              ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
           }`}
         >
@@ -210,7 +218,7 @@ export default function ClientMyAppointmentsPage() {
               {upcomingAppointments.map((apt) => (
                 <div
                   key={apt.id_cita}
-                  className="rounded-3xl bg-card border border-border hover:border-[#C9A24A]/50 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                  className="rounded-3xl bg-card border border-border hover:border-[#DFB755]/50 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -225,7 +233,7 @@ export default function ClientMyAppointmentsPage() {
                     <div>
                       <h3 className="text-lg font-black text-foreground">{apt.tituloItem}</h3>
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                        <Scissors className="w-3.5 h-3.5 text-[#C9A24A]" />
+                        <Scissors className="w-3.5 h-3.5 text-[#DFB755]" />
                         Barbero: <strong>{apt.barberoNombre}</strong> ({apt.barberoEspecialidad})
                       </p>
                     </div>
@@ -252,12 +260,56 @@ export default function ClientMyAppointmentsPage() {
                   <div className="pt-3 border-t border-border flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-bold uppercase text-muted-foreground block">Monto</span>
-                      <span className="text-lg font-black text-[#C9A24A]">
+                      <span className="text-lg font-black text-[#DDAE41] dark:text-[#E8C466]">
                         ${Number(apt.precio).toLocaleString("es-CO")}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <a
+                        href={createGoogleCalendarUrl({
+                          titulo: apt.tituloItem,
+                          fecha: apt.fecha,
+                          hora: apt.hora
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-muted/50 hover:bg-muted text-foreground border border-border transition-colors"
+                        title="Añadir a Google Calendar"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-[#DFB755]" />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadIcsFile({
+                            titulo: apt.tituloItem,
+                            fecha: apt.fecha,
+                            hora: apt.hora
+                          })
+                        }
+                        className="p-2 rounded-xl bg-muted/50 hover:bg-muted text-foreground border border-border transition-colors cursor-pointer"
+                        title="Descargar archivo .ics para Apple Calendar"
+                      >
+                        <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+
+                      <a
+                        href={createWhatsAppShareUrl({
+                          tituloItem: apt.tituloItem,
+                          fecha: apt.fecha,
+                          hora: apt.hora,
+                          barberoNombre: apt.barberoNombre
+                        })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 transition-colors"
+                        title="Compartir por WhatsApp"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </a>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -302,7 +354,7 @@ export default function ClientMyAppointmentsPage() {
               <div className="pt-2">
                 <Link
                   to="/portal/agendar"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C9A24A] text-black font-extrabold text-xs shadow-md hover:bg-[#d8b056]"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md"
                 >
                   <span>AGENDAR MI PRÓXIMA CITA</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -321,7 +373,7 @@ export default function ClientMyAppointmentsPage() {
               placeholder="Buscar en historial por servicio, barbero, fecha o estado..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:ring-2 focus:ring-[#C9A24A]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:ring-2 focus:ring-[#DFB755]"
             />
           </div>
 
@@ -356,7 +408,7 @@ export default function ClientMyAppointmentsPage() {
                         <td className="py-3.5 px-4 text-muted-foreground">
                           {apt.barberoNombre}
                         </td>
-                        <td className="py-3.5 px-4 font-black text-[#C9A24A]">
+                        <td className="py-3.5 px-4 font-black text-[#DDAE41] dark:text-[#E8C466]">
                           ${Number(apt.precio).toLocaleString("es-CO")}
                         </td>
                         <td className="py-3.5 px-4 text-center">
@@ -396,50 +448,72 @@ export default function ClientMyAppointmentsPage() {
 
       {/* MODAL DETALLE DE CITA */}
       {showDetailModal && selectedApt && (
-        <Modal title={`Detalle de Cita #${selectedApt.id_cita}`} onClose={() => setShowDetailModal(false)}>
-          <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
-                <span className={`px-2.5 py-0.5 rounded-full font-bold border ${getStatusBadge(selectedApt.estado)}`}>
+        <Modal title={`Detalle de Cita #${selectedApt.id_cita}`} onClose={() => setShowDetailModal(false)} maxWidthClass="max-w-xl">
+          <div className="space-y-6">
+            <div className="p-6 sm:p-7 rounded-2xl bg-muted/40 border border-border space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-border/70">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Estado
+                </span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(selectedApt.estado)}`}>
                   {selectedApt.estado}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Servicio o Paquete:</span>
-                <span className="font-bold text-foreground">{selectedApt.tituloItem}</span>
+
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm text-muted-foreground">Servicio o Paquete:</span>
+                <span className="text-base font-bold text-foreground text-right">{selectedApt.tituloItem}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Barbero Asignado:</span>
-                <span className="font-bold text-foreground">{selectedApt.barberoNombre}</span>
+
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm text-muted-foreground">Barbero Asignado:</span>
+                <span className="text-sm font-bold text-foreground text-right">{selectedApt.barberoNombre}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Especialidad:</span>
-                <span className="text-foreground">{selectedApt.barberoEspecialidad}</span>
+
+              {selectedApt.barberoEspecialidad && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm text-muted-foreground">Especialidad:</span>
+                  <span className="text-sm text-foreground text-right">{selectedApt.barberoEspecialidad}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-background/60 border border-border/60">
+                <div>
+                  <span className="text-xs text-muted-foreground block mb-1">Fecha</span>
+                  <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-primary shrink-0" />
+                    {selectedApt.fecha}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block mb-1">Hora</span>
+                  <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <Clock className="h-4 w-4 text-primary shrink-0" />
+                    {selectedApt.hora.substring(0, 5)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Fecha:</span>
-                <span className="font-bold text-foreground">{selectedApt.fecha}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Hora:</span>
-                <span className="font-bold text-foreground">{selectedApt.hora.substring(0, 5)}</span>
-              </div>
+
               {selectedApt.notas && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Comentarios / Notas:</span>
-                  <span className="font-medium text-foreground">{selectedApt.notas}</span>
+                <div className="p-3.5 bg-muted/60 rounded-xl border border-border/60">
+                  <span className="text-xs text-muted-foreground font-semibold block mb-1">Notas:</span>
+                  <p className="text-sm text-foreground">{selectedApt.notas}</p>
                 </div>
               )}
+
               {selectedApt.motivo_cancelacion && (
-                <div className="flex justify-between text-destructive">
-                  <span className="font-bold">Motivo Cancelación:</span>
-                  <span>{selectedApt.motivo_cancelacion}</span>
+                <div className="p-3.5 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
+                  <span className="text-xs font-bold block mb-1">Motivo Cancelación:</span>
+                  <p className="text-sm font-medium">{selectedApt.motivo_cancelacion}</p>
                 </div>
               )}
-              <div className="flex justify-between pt-2 border-t border-border">
-                <span className="font-bold text-foreground">Total:</span>
-                <span className="text-base font-black text-[#C9A24A]">
+
+              <div className="flex justify-between items-center pt-3 border-t border-border">
+                <div>
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block">Total</span>
+                  <span className="text-xs text-muted-foreground">Tarifa del servicio</span>
+                </div>
+                <span className="text-2xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                   ${Number(selectedApt.precio).toLocaleString("es-CO")}
                 </span>
               </div>
@@ -449,7 +523,7 @@ export default function ClientMyAppointmentsPage() {
               <button
                 type="button"
                 onClick={() => setShowDetailModal(false)}
-                className="px-5 py-2 rounded-xl bg-accent text-accent-foreground text-xs font-bold cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-accent hover:bg-accent/80 text-accent-foreground text-xs font-bold cursor-pointer transition-colors"
               >
                 Cerrar
               </button>
@@ -476,7 +550,7 @@ export default function ClientMyAppointmentsPage() {
                 min={todayStr}
                 value={rescheduleDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm focus:ring-2 focus:ring-[#DFB755]"
                 required
               />
             </div>
@@ -497,8 +571,8 @@ export default function ClientMyAppointmentsPage() {
                         !slot.disponible
                           ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
                           : rescheduleSlot === slot.hora
-                          ? "bg-[#C9A24A] text-black font-extrabold shadow-md"
-                          : "bg-card border border-border hover:border-[#C9A24A] text-foreground"
+                          ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold shadow-md shadow-[#DDAE41]/25"
+                          : "bg-card border border-border hover:border-[#DFB755] text-foreground"
                       }`}
                     >
                       {slot.hora}
@@ -523,7 +597,7 @@ export default function ClientMyAppointmentsPage() {
               <button
                 type="submit"
                 disabled={!rescheduleSlot}
-                className="px-5 py-2 rounded-xl bg-[#C9A24A] text-black font-extrabold text-xs hover:bg-[#d8b056] disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold text-xs hover:from-[#F0CF78] hover:to-[#E8C466] disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 Confirmar Cambio
               </button>
@@ -547,19 +621,18 @@ export default function ClientMyAppointmentsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Motivo de Cancelación
-              </label>
-              <select
+              <SearchableSelect
+                label="Motivo de Cancelación"
                 value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm"
-              >
-                <option value="Cambio de planes personales">Cambio de planes personales</option>
-                <option value="Inconveniente de horario">Inconveniente de horario</option>
-                <option value="Prefiero agendar para otra semana">Prefiero agendar para otra semana</option>
-                <option value="Otro motivo">Otro motivo</option>
-              </select>
+                onChange={setCancelReason}
+                options={[
+                  "Cambio de planes personales",
+                  "Inconveniente de horario",
+                  "Prefiero agendar para otra semana",
+                  "Otro motivo"
+                ]}
+                searchable={false}
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-3 border-t border-border">

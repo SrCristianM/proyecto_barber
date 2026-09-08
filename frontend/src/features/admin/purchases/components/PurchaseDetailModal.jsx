@@ -74,6 +74,13 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
             <span className="font-bold text-foreground text-base">{supplier?.nombre || "Proveedor"}</span>
             <span className="text-xs text-muted-foreground font-medium">{supplier?.nit ? `NIT: ${supplier.nit}` : "Sin NIT registrado"}</span>
           </div>
+          {(supplier?.telefono || supplier?.correo || supplier?.direccion) && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-border/40 text-xs text-muted-foreground">
+              {supplier?.telefono && <div><span className="font-medium text-foreground">Teléfono:</span> {supplier.telefono}</div>}
+              {supplier?.correo && <div><span className="font-medium text-foreground">Correo:</span> {supplier.correo}</div>}
+              {supplier?.direccion && <div><span className="font-medium text-foreground">Dirección:</span> {supplier.direccion}</div>}
+            </div>
+          )}
 
           {/* Factura PDF adjunta si existe */}
           {purchase.factura_pdf && (

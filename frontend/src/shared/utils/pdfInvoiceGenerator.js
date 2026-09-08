@@ -1,202 +1,49 @@
 /**
  * @file pdfInvoiceGenerator.js
- * Generador y descargador de facturas en formato PDF para compras y proveedores.
- * Construye documentos PDF 1.4 nativos, limpios y compatibles con cualquier visor PDF sin requerir librerías pesadas.
+ * Generador y descargador de facturas y comprobantes oficiales en formato PDF nativo (PDF 1.4).
+ * Diseñado con tipografía calibrada, coordenadas absolutas (sin traslación relativa errónea)
+ * y diseño institucional premium acorde a la identidad de Tu Turno Barber.
  */
 
-// Helper para escapar strings en sintaxis PDF
-function escapePdf(str) {
-  return String(str || "")
+// Helper para limpiar y sanitizar cadenas para PDF estándar Helvetica (Type 1)
+function sanitizeForPdf(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remueve tildes y diacríticos para evitar caracteres corruptos
     .replace(/\\/g, "\\\\")
     .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)");
+    .replace(/\)/g, "\\)")
+    .replace(/\r?\n/g, " ");
+}
+
+// Operador de texto con posición absoluta garantizada mediante matriz 'Tm'
+function drawText(font, size, r, g, b, x, y, text) {
+  const safeText = sanitizeForPdf(text);
+  return `BT\n/${font} ${size} Tf\n${r} ${g} ${b} rg\n1 0 0 1 ${x} ${y} Tm\n(${safeText}) Tj\nET\n`;
+}
+
+// Operador de trazado de rectángulos
+function drawRect(r, g, b, x, y, w, h, fill = true, stroke = false, strokeR = 0, strokeG = 0, strokeB = 0, lineWidth = 1) {
+  let res = "";
+  if (fill) {
+    res += `${r} ${g} ${b} rg\n${x} ${y} ${w} ${h} re f\n`;
+  }
+  if (stroke) {
+    res += `${strokeR} ${strokeG} ${strokeB} RG\n${lineWidth} w\n${x} ${y} ${w} ${h} re s\n`;
+  }
+  return res;
+}
+
+// Operador de trazado de líneas
+function drawLine(r, g, b, x1, y1, x2, y2, lineWidth = 1) {
+  return `${r} ${g} ${b} RG\n${lineWidth} w\n${x1} ${y1} m ${x2} ${y2} l S\n`;
 }
 
 /**
- * Genera un Blob PDF nativo (especificación PDF 1.4) para una compra / factura de proveedor.
+ * Empaqueta un flujo de comandos PostScript en un archivo PDF 1.4 binario válido.
  */
-export function generatePurchaseInvoiceBlob(purchase, supplier = {}, user = {}) {
-  const invoiceNumber = purchase?.id_compra || "0";
-  const date = purchase?.fecha || new Date().toLocaleString("es-CO");
-  const status = purchase?.estado || "Registrada";
-  const total = purchase?.total || 0;
-  const supplierName = supplier?.nombre || "Proveedor General";
-  const supplierNit = supplier?.nit || "Sin NIT registrado";
-  const userName = user?.nombre || "Administrador del Sistema";
-  const items = purchase?.detalles || [];
-
-  // Construcción del contenido gráfico del PDF (PostScript commands)
-  let streamText = `
-% Franja de cabecera oscura
-0.10 0.10 0.12 rg
-0 710 612 82 re f
-
-% Acento dorado en la cabecera
-0.79 0.64 0.29 rg
-50 745 m 562 745 l S
-
-BT
-/F2 17 Tf
-1 1 1 rg
-50 752 Td
-(TU TURNO BARBER - FACTURA DE COMPRA) Tj
-ET
-
-BT
-/F1 10 Tf
-0.82 0.82 0.84 rg
-50 730 Td
-(Sistema ERP - Comprobante de Adquisicion de Inventario) Tj
-ET
-
-BT
-/F2 12 Tf
-0.79 0.64 0.29 rg
-410 752 Td
-(COMPRA #${escapePdf(invoiceNumber)}) Tj
-ET
-
-BT
-/F1 9 Tf
-1 1 1 rg
-410 730 Td
-(Estado: ${escapePdf(status)}  |  ${escapePdf(date)}) Tj
-ET
-
-% Recuadro de Metadatos de Proveedor y Registro
-0.96 0.96 0.98 rg
-50 610 512 85 re f
-0.84 0.85 0.88 RG
-1 w
-50 610 512 85 re s
-
-BT
-/F2 10 Tf
-0.12 0.12 0.14 rg
-65 675 Td
-(DATOS DEL PROVEEDOR Y REGISTRO) Tj
-ET
-
-BT
-/F1 9 Tf
-0.25 0.25 0.28 rg
-65 657 Td
-(Proveedor / Razon Social: ${escapePdf(supplierName)}) Tj
-65 642 Td
-(NIT / Identificacion: ${escapePdf(supplierNit)}) Tj
-65 627 Td
-(Registrado en el ERP por: ${escapePdf(userName)}) Tj
-ET
-
-BT
-/F1 9 Tf
-0.25 0.25 0.28 rg
-360 657 Td
-(Fecha Comprobante: ${escapePdf(date)}) Tj
-360 642 Td
-(Moneda: COP - Pesos Colombianos) Tj
-360 627 Td
-(Estado en Sistema: ${escapePdf(status)}) Tj
-ET
-
-% Encabezado de la tabla de productos
-0.14 0.14 0.17 rg
-50 568 512 24 re f
-
-BT
-/F2 9 Tf
-1 1 1 rg
-60 576 Td
-(ITEM / PRODUCTO) Tj
-310 576 Td
-(CANTIDAD) Tj
-380 576 Td
-(PRECIO UNIT.) Tj
-475 576 Td
-(SUBTOTAL) Tj
-ET
-`;
-
-  // Filas de productos
-  let currentY = 544;
-  items.forEach((item, index) => {
-    const prodName = item.nombre || item.nombre_producto || "Insumo de barbería";
-    const qty = item.cantidad || 1;
-    const price = Number(item.precio_unitario || 0);
-    const subtotal = Number(item.subtotal || price * qty);
-
-    if (index % 2 === 0) {
-      streamText += `
-0.98 0.98 0.99 rg
-50 ${currentY - 6} 512 20 re f
-`;
-    }
-    streamText += `
-0.88 0.88 0.91 RG
-0.5 w
-50 ${currentY - 6} 512 20 re s
-
-BT
-/F1 9 Tf
-0.15 0.15 0.18 rg
-60 ${currentY} Td
-(${escapePdf(prodName)}) Tj
-320 ${currentY} Td
-(${escapePdf(qty)} uds.) Tj
-385 ${currentY} Td
-($ ${price.toLocaleString("es-CO")}) Tj
-480 ${currentY} Td
-($ ${subtotal.toLocaleString("es-CO")}) Tj
-ET
-`;
-    currentY -= 22;
-  });
-
-  // Si no hubo items, renderizar fila vacía
-  if (items.length === 0) {
-    streamText += `
-BT
-/F1 9 Tf
-0.5 0.5 0.5 rg
-60 ${currentY} Td
-(Sin detalle de productos registrado) Tj
-ET
-`;
-    currentY -= 22;
-  }
-
-  // Recuadro de Total General
-  currentY -= 12;
-  streamText += `
-0.10 0.10 0.12 rg
-340 ${currentY - 8} 222 32 re f
-0.79 0.64 0.29 RG
-1 w
-340 ${currentY - 8} 222 32 re s
-
-BT
-/F2 10 Tf
-1 1 1 rg
-355 ${currentY + 4} Td
-(TOTAL COMPRA:) Tj
-/F2 12 Tf
-0.79 0.64 0.29 rg
-450 ${currentY + 4} Td
-($ ${Number(total).toLocaleString("es-CO")}) Tj
-ET
-
-% Nota legal inferior
-BT
-/F1 8 Tf
-0.52 0.52 0.56 rg
-50 45 Td
-(Documento generado por Tu Turno Barber ERP. Soporte interno de compras e ingreso a inventario de productos.) Tj
-50 33 Td
-(Valido para contabilidad y control de proveedores.) Tj
-ET
-`;
-
-  // Codificación UTF-8 para calcular longitud exacta
+function buildPdfDocument(streamText) {
   const encoder = new TextEncoder();
   const streamBytes = encoder.encode(streamText);
   const streamLength = streamBytes.length;
@@ -209,11 +56,9 @@ ET
   const obj6 = `6 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamText}\nendstream\nendobj\n`;
 
   const objList = [obj1, obj2, obj3, obj4, obj5, obj6];
-
   const headerStr = `%PDF-1.4\n%\xE2\xE3\xCF\xD3\n`;
   let bodyStr = "";
   const xrefOffsets = [0];
-
   let currentOffset = encoder.encode(headerStr).length;
 
   for (let i = 0; i < objList.length; i++) {
@@ -230,26 +75,186 @@ ET
   }
 
   const trailerStr = `trailer\n<< /Size ${objList.length + 1} /Root 1 0 R >>\nstartxref\n${startxref}\n%%EOF\n`;
-
   const totalContent = headerStr + bodyStr + xrefStr + trailerStr;
-  const pdfBytes = encoder.encode(totalContent);
+  return encoder.encode(totalContent);
+}
 
+/**
+ * Genera un Blob PDF nativo (especificación PDF 1.4) para una orden / factura de compra a proveedor.
+ */
+export function generatePurchaseInvoiceBlob(purchase, supplier = {}, user = {}) {
+  const invoiceRawId = purchase?.id_compra || "1";
+  const invoiceNumber = String(invoiceRawId).padStart(5, "0");
+  const dateStr = purchase?.fecha || new Date().toISOString().replace("T", " ").substring(0, 19);
+  const status = purchase?.estado || "Registrada";
+  const total = Number(purchase?.total || 0);
+
+  const supplierName = supplier?.nombre || "Distribuidora Barber Pro Colombia";
+  const supplierNit = supplier?.nit || "901.234.567-1";
+  const supplierPhone = supplier?.telefono || "+57 (601) 745-8920";
+  const supplierEmail = supplier?.correo || "contacto@proveedor.com";
+  const supplierAddress = supplier?.direccion || "Cra. 15 # 85-32, Zona Rosa";
+  const supplierCity = supplier?.ciudad || "Bogota D.C.";
+
+  const userName = user?.nombre || "Administrador Principal";
+  const items = purchase?.detalles || [];
+
+  let stream = "";
+
+  // 1. BANNER DE CABECERA INSTITUCIONAL (Y = 705 to 772)
+  // Fondo oscuro slate/carbón
+  stream += drawRect(0.06, 0.09, 0.16, 40, 705, 532, 67, true);
+  // Franja superior de acento dorado
+  stream += drawRect(0.85, 0.65, 0.18, 40, 768, 532, 4, true);
+
+  // Textos Izquierda de Cabecera
+  stream += drawText("F2", 15, 0.92, 0.72, 0.22, 55, 743, "TU TURNO BARBER");
+  stream += drawText("F2", 8.5, 1, 1, 1, 55, 729, "COMPROBANTE OFICIAL DE COMPRA - ENTRADA DE ALMACEN");
+  stream += drawText("F1", 7.5, 0.72, 0.76, 0.82, 55, 716, "Sistema ERP de Gestion y Abastecimiento de Inventario");
+
+  // Recuadro derecho Badge de Orden de Compra (X = 415, Y = 712, W = 145, H = 50)
+  stream += drawRect(0.12, 0.16, 0.25, 415, 712, 145, 50, true, true, 0.85, 0.65, 0.18, 1);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 425, 747, "ORDEN DE COMPRA");
+  stream += drawText("F2", 13, 1, 1, 1, 425, 731, `OC-${invoiceNumber}`);
+  const isAnulada = status.toLowerCase().includes("anul");
+  if (isAnulada) {
+    stream += drawText("F2", 7.5, 0.95, 0.35, 0.35, 425, 718, "ESTADO: ANULADA");
+  } else {
+    stream += drawText("F2", 7.5, 0.2, 0.85, 0.45, 425, 718, "ESTADO: REGISTRADA");
+  }
+
+  // 2. TARJETAS DUALES DE METADATOS (Y = 595 to 695, Altura = 100)
+  // Tarjeta Izquierda: Proveedor (X = 40, W = 258)
+  stream += drawRect(0.97, 0.98, 0.99, 40, 595, 258, 100, true, true, 0.86, 0.89, 0.93, 1);
+  // Barra de título del proveedor
+  stream += drawRect(0.1, 0.14, 0.22, 40, 675, 258, 20, true);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 48, 681, "DATOS DEL PROVEEDOR (EMISOR)");
+  stream += drawText("F2", 8.5, 0.12, 0.14, 0.18, 48, 658, `Razon Social: ${supplierName.substring(0, 32)}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 48, 644, `NIT / RUT: ${supplierNit}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 48, 630, `Telefono: ${supplierPhone}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 48, 616, `Correo: ${supplierEmail}`);
+  stream += drawText("F1", 7.5, 0.3, 0.34, 0.4, 48, 603, `Direccion: ${supplierAddress} (${supplierCity})`);
+
+  // Tarjeta Derecha: Barbería / Receptor (X = 314, W = 258)
+  stream += drawRect(0.97, 0.98, 0.99, 314, 595, 258, 100, true, true, 0.86, 0.89, 0.93, 1);
+  // Barra de título de la barbería
+  stream += drawRect(0.1, 0.14, 0.22, 314, 675, 258, 20, true);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 322, 681, "BARBERIA / RECEPTOR DEL PEDIDO");
+  stream += drawText("F2", 8.5, 0.12, 0.14, 0.18, 322, 658, "Razon Social: Tu Turno Barber S.A.S.");
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 322, 644, "NIT: 901.452.839-1  |  Regimen Comun");
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 322, 630, `Fecha Emision: ${dateStr}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 322, 616, `Responsable ERP: ${userName}`);
+  stream += drawText("F1", 7.5, 0.3, 0.34, 0.4, 322, 603, "Sede: Cra. 15 # 82-24, Local 102 (Bogota D.C.)");
+
+  // 3. TABLA DE ARTÍCULOS E INSUMOS (Y = 560 hacia abajo)
+  // Encabezado de la tabla (H = 22)
+  stream += drawRect(0.08, 0.12, 0.20, 40, 560, 532, 22, true);
+  stream += drawLine(0.85, 0.65, 0.18, 40, 560, 572, 560, 1.5); // Línea dorada divisoria
+
+  // Encabezados con coordenadas fijas absolutas (sin superposición)
+  stream += drawText("F2", 8, 1, 1, 1, 48, 567, "#");
+  stream += drawText("F2", 8, 1, 1, 1, 75, 567, "DESCRIPCION DEL ARTICULO / INSUMO");
+  stream += drawText("F2", 8, 1, 1, 1, 305, 567, "CANTIDAD");
+  stream += drawText("F2", 8, 1, 1, 1, 390, 567, "PRECIO UNITARIO");
+  stream += drawText("F2", 8, 1, 1, 1, 495, 567, "SUBTOTAL");
+
+  let currentY = 538;
+  const rowHeight = 22;
+
+  items.forEach((item, idx) => {
+    const isEven = idx % 2 === 0;
+    const prodName = item.nombre_producto || item.nombre || "Insumo de barberia";
+    const qty = item.cantidad || 1;
+    const price = Number(item.precio_unitario || 0);
+    const subtotal = Number(item.subtotal || price * qty);
+
+    // Fondo alternado
+    if (isEven) {
+      stream += drawRect(0.98, 0.98, 0.99, 40, currentY - 6, 532, rowHeight, true);
+    } else {
+      stream += drawRect(1, 1, 1, 40, currentY - 6, 532, rowHeight, true);
+    }
+    // Borde inferior sutil de cada fila
+    stream += drawLine(0.88, 0.9, 0.93, 40, currentY - 6, 572, currentY - 6, 0.5);
+
+    // Columnas individuales con coordenadas absolutas independientes
+    stream += drawText("F1", 8, 0.4, 0.44, 0.5, 48, currentY, String(idx + 1));
+    stream += drawText("F2", 8.5, 0.12, 0.15, 0.2, 75, currentY, prodName.substring(0, 42));
+    stream += drawText("F1", 8.5, 0.25, 0.28, 0.32, 312, currentY, `${qty} uds.`);
+    stream += drawText("F1", 8.5, 0.25, 0.28, 0.32, 390, currentY, `$ ${price.toLocaleString("es-CO")}`);
+    stream += drawText("F2", 8.5, 0.1, 0.12, 0.15, 495, currentY, `$ ${subtotal.toLocaleString("es-CO")}`);
+
+    currentY -= rowHeight;
+  });
+
+  if (items.length === 0) {
+    stream += drawRect(0.98, 0.98, 0.99, 40, currentY - 6, 532, rowHeight, true);
+    stream += drawLine(0.88, 0.9, 0.93, 40, currentY - 6, 572, currentY - 6, 0.5);
+    stream += drawText("F1", 8.5, 0.5, 0.5, 0.5, 75, currentY, "Sin desglose detallado de insumos registrado.");
+    currentY -= rowHeight;
+  }
+
+  // 4. RESUMEN FINANCIERO Y CONDICIONES DE PAGO
+  currentY -= 15;
+  const summaryBoxY = Math.max(currentY - 65, 175);
+
+  // Recuadro Izquierdo: Condiciones y Observaciones (X = 40, W = 285)
+  stream += drawRect(0.97, 0.98, 0.99, 40, summaryBoxY, 285, 80, true, true, 0.86, 0.89, 0.93, 1);
+  stream += drawRect(0.12, 0.16, 0.24, 40, summaryBoxY + 62, 285, 18, true);
+  stream += drawText("F2", 7.5, 0.92, 0.72, 0.22, 48, summaryBoxY + 67, "CONDICIONES DE PAGO Y RECEPCION");
+  stream += drawText("F1", 7.5, 0.25, 0.28, 0.32, 48, summaryBoxY + 48, "Metodo de Pago: Transferencia Bancaria (Contado)");
+  stream += drawText("F1", 7.5, 0.25, 0.28, 0.32, 48, summaryBoxY + 35, "Moneda: COP - Pesos Colombianos | IVA: 0% S.I.");
+  stream += drawText("F1", 7, 0.4, 0.45, 0.5, 48, summaryBoxY + 22, "Mercancia recibida a entera satisfaccion para inventario.");
+  stream += drawText("F1", 7, 0.4, 0.45, 0.5, 48, summaryBoxY + 10, "Sujeto a politicas de auditoria y control interno de salon.");
+
+  // Recuadro Derecho: Subtotales y Total Destacado (X = 345, W = 227)
+  stream += drawText("F1", 8, 0.35, 0.38, 0.44, 348, summaryBoxY + 64, "Subtotal Neto Insumos:");
+  stream += drawText("F1", 8, 0.2, 0.2, 0.2, 475, summaryBoxY + 64, `$ ${total.toLocaleString("es-CO")}`);
+
+  stream += drawText("F1", 8, 0.35, 0.38, 0.44, 348, summaryBoxY + 48, "IVA / Impuestos (0% S.I.):");
+  stream += drawText("F1", 8, 0.2, 0.2, 0.2, 475, summaryBoxY + 48, "$ 0");
+
+  stream += drawLine(0.85, 0.88, 0.92, 345, summaryBoxY + 40, 572, summaryBoxY + 40, 1);
+
+  // Recuadro de Total Destacado (X = 340, Y = summaryBoxY, W = 232, H = 34)
+  stream += drawRect(0.06, 0.09, 0.16, 340, summaryBoxY, 232, 34, true, true, 0.85, 0.65, 0.18, 1.5);
+  stream += drawText("F2", 9.5, 0.92, 0.72, 0.22, 350, summaryBoxY + 12, "TOTAL COMPRA:");
+  stream += drawText("F2", 12.5, 1, 1, 1, 455, summaryBoxY + 11, `$ ${total.toLocaleString("es-CO")}`);
+
+  // 5. SECCIÓN DE FIRMAS Y APROBACIONES (Y = 115)
+  const signY = 115;
+  // Firma proveedor
+  stream += drawLine(0.65, 0.7, 0.75, 60, signY + 25, 250, signY + 25, 1);
+  stream += drawText("F2", 7.5, 0.15, 0.18, 0.24, 75, signY + 12, "ENTREGADO POR (PROVEEDOR)");
+  stream += drawText("F1", 7, 0.45, 0.5, 0.55, 82, signY, "Firma, C.C. y Sello de Despacho");
+
+  // Firma receptor de la barbería
+  stream += drawLine(0.65, 0.7, 0.75, 360, signY + 25, 550, signY + 25, 1);
+  stream += drawText("F2", 7.5, 0.15, 0.18, 0.24, 375, signY + 12, "RECIBIDO (TU TURNO BARBER)");
+  stream += drawText("F1", 7, 0.45, 0.5, 0.55, 385, signY, "Firma y Cedula Responsable de Almacen");
+
+  // 6. PIE DE PÁGINA Y AUDITORÍA (Y = 35 to 65)
+  stream += drawLine(0.85, 0.88, 0.92, 40, 65, 572, 65, 0.75);
+  stream += drawText("F1", 7.5, 0.45, 0.5, 0.55, 40, 50, "Documento expedido por el Sistema ERP de Tu Turno Barber. Valido como comprobante interno de adquisicion.");
+  stream += drawText("F1", 7, 0.55, 0.6, 0.65, 40, 38, `Generado electronicamente el ${new Date().toLocaleString("es-CO")} - Bogota D.C., Colombia - Pagina 1 de 1`);
+
+  const pdfBytes = buildPdfDocument(stream);
   const cleanSupplier = (supplierName || "Proveedor").replace(/[^a-zA-Z0-9_-]/g, "_");
-  const filename = `Factura_Compra_#${invoiceNumber}_${cleanSupplier}.pdf`;
+  const filename = `Comprobante_Compra_#${invoiceNumber}_${cleanSupplier}.pdf`;
 
   const blob = new Blob([pdfBytes], { type: "application/pdf" });
   return { blob, filename };
 }
 
 /**
- * Descarga directamente la factura en PDF.
+ * Descarga directamente la factura o comprobante de compra en PDF.
  * Si la compra posee un archivo adjunto previamente subido por el usuario, descarga dicho archivo;
  * de lo contrario, genera el PDF nativo oficial de inmediato.
  */
 export function downloadPurchaseInvoicePDF(purchase, supplier = {}, user = {}) {
   if (!purchase) return;
 
-  // Si tiene archivo PDF ya adjunto
+  // Si tiene archivo PDF ya adjunto previamente
   if (purchase.factura_pdf?.url) {
     const link = document.createElement("a");
     link.href = purchase.factura_pdf.url;
@@ -273,202 +278,121 @@ export function downloadPurchaseInvoicePDF(purchase, supplier = {}, user = {}) {
 }
 
 /**
- * Genera un Blob PDF nativo para un comprobante de venta o compra del cliente.
+ * Genera un Blob PDF nativo para un comprobante de venta o compra del cliente (Cliente Portal / POS).
  */
 export function generateSaleReceiptBlob(sale, client = {}) {
-  const invoiceNumber = sale?.id_venta || "0";
-  const date = sale?.fecha || new Date().toLocaleString("es-CO");
+  const invoiceRawId = sale?.id_venta || "1";
+  const invoiceNumber = String(invoiceRawId).padStart(5, "0");
+  const dateStr = sale?.fecha || new Date().toISOString().replace("T", " ").substring(0, 19);
   const status = sale?.estado || "Activa";
-  const total = sale?.total || 0;
+  const total = Number(sale?.total || 0);
+
   const clientName = `${client?.nombre || "Cliente"} ${client?.apellido || ""}`.trim();
-  const clientEmail = client?.correo || "";
+  const clientEmail = client?.correo || "cliente@tuturnobarber.com";
+  const clientPhone = client?.telefono || "+57 (300) 000-0000";
   const items = sale?.detalles || [];
 
-  let streamText = `
-0.10 0.10 0.12 rg
-0 710 612 82 re f
+  let stream = "";
 
-0.79 0.64 0.29 rg
-50 745 m 562 745 l S
+  // 1. CABECERA
+  stream += drawRect(0.06, 0.09, 0.16, 40, 705, 532, 67, true);
+  stream += drawRect(0.85, 0.65, 0.18, 40, 768, 532, 4, true);
 
-BT
-/F2 17 Tf
-1 1 1 rg
-50 752 Td
-(TU TURNO BARBER - COMPROBANTE DE COMPRA) Tj
-ET
+  stream += drawText("F2", 15, 0.92, 0.72, 0.22, 55, 743, "TU TURNO BARBER");
+  stream += drawText("F2", 8.5, 1, 1, 1, 55, 729, "COMPROBANTE OFICIAL DE COMPRA Y SERVICIOS");
+  stream += drawText("F1", 7.5, 0.72, 0.76, 0.82, 55, 716, "Cuidado Personal, Estilo Masculino y Barberia Profesional");
 
-BT
-/F1 10 Tf
-0.82 0.82 0.84 rg
-50 730 Td
-(Facturacion Oficial de Barberia y Estilo) Tj
-ET
+  // Badge Documento Recibo
+  stream += drawRect(0.12, 0.16, 0.25, 415, 712, 145, 50, true, true, 0.85, 0.65, 0.18, 1);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 425, 747, "RECIBO DIGITAL");
+  stream += drawText("F2", 13, 1, 1, 1, 425, 731, `REC-${invoiceNumber}`);
+  stream += drawText("F2", 7.5, 0.2, 0.85, 0.45, 425, 718, `ESTADO: ${status.toUpperCase()}`);
 
-BT
-/F2 12 Tf
-0.79 0.64 0.29 rg
-410 752 Td
-(RECIBO #${escapePdf(invoiceNumber)}) Tj
-ET
+  // 2. METADATOS CLIENTE Y OPERACIÓN
+  // Tarjeta Cliente
+  stream += drawRect(0.97, 0.98, 0.99, 40, 605, 258, 90, true, true, 0.86, 0.89, 0.93, 1);
+  stream += drawRect(0.1, 0.14, 0.22, 40, 675, 258, 20, true);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 48, 681, "DATOS DEL CLIENTE");
+  stream += drawText("F2", 8.5, 0.12, 0.14, 0.18, 48, 658, `Nombre: ${clientName.substring(0, 32)}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 48, 644, `Correo: ${clientEmail}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 48, 630, `Telefono: ${clientPhone}`);
+  stream += drawText("F1", 7.5, 0.3, 0.34, 0.4, 48, 616, "Atencion: Barberia Presencial & Tienda Online");
 
-BT
-/F1 9 Tf
-0.82 0.82 0.84 rg
-410 730 Td
-(Estado: ${escapePdf(status)}) Tj
-ET
+  // Tarjeta Salón
+  stream += drawRect(0.97, 0.98, 0.99, 314, 605, 258, 90, true, true, 0.86, 0.89, 0.93, 1);
+  stream += drawRect(0.1, 0.14, 0.22, 314, 675, 258, 20, true);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 322, 681, "DATOS DE LA TRANSACCION");
+  stream += drawText("F2", 8.5, 0.12, 0.14, 0.18, 322, 658, "Establecimiento: Tu Turno Barber S.A.S.");
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 322, 644, `Fecha: ${dateStr}`);
+  stream += drawText("F1", 8, 0.3, 0.34, 0.4, 322, 630, "Metodo de Pago: Efectivo / Datafono / En Linea");
+  stream += drawText("F1", 7.5, 0.3, 0.34, 0.4, 322, 616, "Sede: Cra. 15 # 82-24, Local 102 (Bogota D.C.)");
 
-0.96 0.96 0.97 rg
-50 620 512 70 re f
-0.85 0.85 0.87 RG
-50 620 512 70 re S
+  // 3. TABLA DE ARTÍCULOS Y SERVICIOS
+  stream += drawRect(0.08, 0.12, 0.20, 40, 570, 532, 22, true);
+  stream += drawLine(0.85, 0.65, 0.18, 40, 570, 572, 570, 1.5);
 
-BT
-/F2 10 Tf
-0.2 0.2 0.2 rg
-65 670 Td
-(DATOS DEL CLIENTE) Tj
-ET
+  stream += drawText("F2", 8, 1, 1, 1, 48, 577, "#");
+  stream += drawText("F2", 8, 1, 1, 1, 75, 577, "DESCRIPCION DEL PRODUCTO O SERVICIO");
+  stream += drawText("F2", 8, 1, 1, 1, 305, 577, "CANTIDAD");
+  stream += drawText("F2", 8, 1, 1, 1, 390, 577, "PRECIO UNITARIO");
+  stream += drawText("F2", 8, 1, 1, 1, 495, 577, "SUBTOTAL");
 
-BT
-/F1 9 Tf
-0.3 0.3 0.3 rg
-65 654 Td
-(Cliente: ${escapePdf(clientName)}) Tj
-65 640 Td
-(Correo: ${escapePdf(clientEmail)}) Tj
-ET
+  let currentY = 548;
+  const rowHeight = 22;
 
-BT
-/F2 10 Tf
-0.2 0.2 0.2 rg
-340 670 Td
-(DETALLES DE LA OPERACION) Tj
-ET
+  items.forEach((item, idx) => {
+    const isEven = idx % 2 === 0;
+    const prodName = item.nombre || item.nombre_producto || `Item ${idx + 1}`;
+    const qty = item.cantidad || 1;
+    const price = Number(item.precio_unitario || item.precio || 0);
+    const subtotal = Number(item.subtotal || price * qty);
 
-BT
-/F1 9 Tf
-0.3 0.3 0.3 rg
-340 654 Td
-(Fecha de Emision: ${escapePdf(date)}) Tj
-340 640 Td
-(Metodo: Pago en Establecimiento) Tj
-ET
-
-0.15 0.15 0.18 rg
-50 580 512 24 re f
-
-BT
-/F2 9 Tf
-1 1 1 rg
-60 588 Td
-(ITEM / ARTICULO FACTURADO) Tj
-310 588 Td
-(CANT) Tj
-370 588 Td
-(PRECIO UNIT.) Tj
-480 588 Td
-(SUBTOTAL) Tj
-ET
-`;
-
-  let currentY = 556;
-  for (let i = 0; i < items.length; i++) {
-    const itm = items[i];
-    const name = escapePdf(itm.nombre || `Articulo ${i + 1}`);
-    const qty = String(itm.cantidad || 1);
-    const unitPrice = `$${Number(itm.precio_unitario || 0).toLocaleString("es-CO")}`;
-    const subtotal = `$${Number(itm.subtotal || 0).toLocaleString("es-CO")}`;
-
-    if (i % 2 === 1) {
-      streamText += `\n0.97 0.97 0.98 rg\n50 ${currentY - 5} 512 20 re f\n`;
+    if (isEven) {
+      stream += drawRect(0.98, 0.98, 0.99, 40, currentY - 6, 532, rowHeight, true);
+    } else {
+      stream += drawRect(1, 1, 1, 40, currentY - 6, 532, rowHeight, true);
     }
+    stream += drawLine(0.88, 0.9, 0.93, 40, currentY - 6, 572, currentY - 6, 0.5);
 
-    streamText += `
-BT
-/F1 9 Tf
-0.2 0.2 0.2 rg
-60 ${currentY} Td
-(${name.substring(0, 36)}) Tj
-318 ${currentY} Td
-(${qty}) Tj
-370 ${currentY} Td
-(${unitPrice}) Tj
-480 ${currentY} Td
-(${subtotal}) Tj
-ET
-`;
-    currentY -= 20;
-    if (currentY < 180) break;
+    stream += drawText("F1", 8, 0.4, 0.44, 0.5, 48, currentY, String(idx + 1));
+    stream += drawText("F2", 8.5, 0.12, 0.15, 0.2, 75, currentY, prodName.substring(0, 42));
+    stream += drawText("F1", 8.5, 0.25, 0.28, 0.32, 312, currentY, `${qty}`);
+    stream += drawText("F1", 8.5, 0.25, 0.28, 0.32, 390, currentY, `$ ${price.toLocaleString("es-CO")}`);
+    stream += drawText("F2", 8.5, 0.1, 0.12, 0.15, 495, currentY, `$ ${subtotal.toLocaleString("es-CO")}`);
+
+    currentY -= rowHeight;
+  });
+
+  if (items.length === 0) {
+    stream += drawRect(0.98, 0.98, 0.99, 40, currentY - 6, 532, rowHeight, true);
+    stream += drawLine(0.88, 0.9, 0.93, 40, currentY - 6, 572, currentY - 6, 0.5);
+    stream += drawText("F1", 8.5, 0.5, 0.5, 0.5, 75, currentY, "Sin detalle de articulos facturados.");
+    currentY -= rowHeight;
   }
 
-  streamText += `
-0.8 0.8 0.8 RG
-50 ${currentY + 6} m 562 ${currentY + 6} l S
+  // 4. TOTAL Y AGRADECIMIENTO
+  currentY -= 20;
+  const summaryBoxY = Math.max(currentY - 45, 180);
 
-0.79 0.64 0.29 rg
-350 ${currentY - 35} 212 32 re f
+  // Recuadro de agradecimiento
+  stream += drawRect(0.97, 0.98, 0.99, 40, summaryBoxY, 285, 48, true, true, 0.86, 0.89, 0.93, 1);
+  stream += drawText("F2", 8, 0.92, 0.72, 0.22, 50, summaryBoxY + 30, "GRACIAS POR SU PREFERENCIA");
+  stream += drawText("F1", 7.5, 0.3, 0.35, 0.4, 50, summaryBoxY + 16, "En Tu Turno Barber valoramos su confianza y satisfaccion.");
+  stream += drawText("F1", 7, 0.45, 0.5, 0.55, 50, summaryBoxY + 5, "Conserve este comprobante digital como soporte de pago.");
 
-BT
-/F2 12 Tf
-0 0 0 rg
-365 ${currentY - 23} Td
-(TOTAL PAGADO:) Tj
-ET
+  // Recuadro de Total
+  stream += drawRect(0.06, 0.09, 0.16, 340, summaryBoxY, 232, 48, true, true, 0.85, 0.65, 0.18, 1.5);
+  stream += drawText("F2", 10, 0.92, 0.72, 0.22, 352, summaryBoxY + 26, "TOTAL PAGADO:");
+  stream += drawText("F2", 14, 1, 1, 1, 445, summaryBoxY + 24, `$ ${total.toLocaleString("es-CO")}`);
+  stream += drawText("F1", 7.5, 0.7, 0.75, 0.82, 352, summaryBoxY + 10, "Impuestos incluidos - Moneda COP");
 
-BT
-/F2 12 Tf
-0 0 0 rg
-465 ${currentY - 23} Td
-($${escapePdf(Number(total).toLocaleString("es-CO"))}) Tj
-ET
+  // 5. PIE DE PÁGINA
+  stream += drawLine(0.85, 0.88, 0.92, 40, 65, 572, 65, 0.75);
+  stream += drawText("F1", 7.5, 0.45, 0.5, 0.55, 40, 50, "Tu Turno Barber ERP - Comprobante digital valido como constancia de adquisicion y servicio.");
+  stream += drawText("F1", 7, 0.55, 0.6, 0.65, 40, 38, `Emitido electronicamente el ${new Date().toLocaleString("es-CO")} - Sede Chapinero - Pagina 1 de 1`);
 
-BT
-/F1 8 Tf
-0.5 0.5 0.5 rg
-50 60 Td
-(Tu Turno Barber ERP - Comprobante digital valido como constancia de servicio y compra.) Tj
-50 48 Td
-(Gracias por preferir nuestros servicios profesionales de barberia.) Tj
-ET
-`;
-
-  const encoder = new TextEncoder();
-  const streamBytes = encoder.encode(streamText);
-  const streamLength = streamBytes.length;
-
-  const obj1 = `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`;
-  const obj2 = `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n`;
-  const obj3 = `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>\nendobj\n`;
-  const obj4 = `4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n`;
-  const obj5 = `5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n`;
-  const obj6 = `6 0 obj\n<< /Length ${streamLength} >>\nstream\n${streamText}\nendstream\nendobj\n`;
-
-  const objList = [obj1, obj2, obj3, obj4, obj5, obj6];
-  const headerStr = `%PDF-1.4\n%\xE2\xE3\xCF\xD3\n`;
-  let bodyStr = "";
-  const xrefOffsets = [0];
-  let currentOffset = encoder.encode(headerStr).length;
-
-  for (let i = 0; i < objList.length; i++) {
-    xrefOffsets.push(currentOffset);
-    bodyStr += objList[i];
-    currentOffset += encoder.encode(objList[i]).length;
-  }
-
-  const startxref = currentOffset;
-  let xrefStr = `xref\n0 ${objList.length + 1}\n0000000000 65535 f \n`;
-  for (let i = 1; i <= objList.length; i++) {
-    const offsetStr = String(xrefOffsets[i]).padStart(10, "0");
-    xrefStr += `${offsetStr} 00000 n \n`;
-  }
-
-  const trailerStr = `trailer\n<< /Size ${objList.length + 1} /Root 1 0 R >>\nstartxref\n${startxref}\n%%EOF\n`;
-  const totalContent = headerStr + bodyStr + xrefStr + trailerStr;
-  const pdfBytes = encoder.encode(totalContent);
-
-  const filename = `Comprobante_Compra_#${invoiceNumber}.pdf`;
+  const pdfBytes = buildPdfDocument(stream);
+  const filename = `Comprobante_Pago_#${invoiceNumber}.pdf`;
   const blob = new Blob([pdfBytes], { type: "application/pdf" });
   return { blob, filename };
 }

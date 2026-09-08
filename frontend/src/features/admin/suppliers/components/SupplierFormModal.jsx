@@ -2,6 +2,7 @@ import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
 import PdfUploader from "../../shared/components/PdfUploader";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { validateSupplierForm } from "../validations/supplierValidation";
 
 export default function SupplierFormModal({
@@ -88,17 +89,16 @@ export default function SupplierFormModal({
           {/* Estado */}
           {!isCreate ? (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Estado</label>
-              <select
-                name="estado"
-                id="estado"
+              <SearchableSelect
+                label="Estado"
                 value={formData.estado !== undefined ? formData.estado : 1}
-                onChange={(e) => handleChange("estado", Number(e.target.value))}
-                className="w-full px-4 py-2.5 bg-input-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
-              >
-                <option value={1}>Activo (Disponible para compras)</option>
-                <option value={0}>Inactivo</option>
-              </select>
+                onChange={(val) => handleChange("estado", Number(val))}
+                options={[
+                  { value: 1, label: "Activo (Disponible para compras)" },
+                  { value: 0, label: "Inactivo" }
+                ]}
+                searchable={false}
+              />
             </div>
           ) : (
             <div>

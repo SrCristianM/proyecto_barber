@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000" width="2000" height="2000">
+  <defs>
+    <radialGradient id="barba-ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c9a24b" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#c9a24b" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#c9a24b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="razor-blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="20%" stop-color="#f1f5f9" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="75%" stop-color="#64748b" />
+      <stop offset="100%" stop-color="#334155" />
+    </linearGradient>
+    <linearGradient id="damascus-pattern" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="30%" stop-color="#94a3b8" stop-opacity="0.3" />
+      <stop offset="70%" stop-color="#e2e8f0" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#475569" stop-opacity="0.4" />
+    </linearGradient>
+    <linearGradient id="razor-handle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a0800" />
+      <stop offset="25%" stop-color="#541b07" />
+      <stop offset="50%" stop-color="#78290f" />
+      <stop offset="75%" stop-color="#3e1305" />
+      <stop offset="100%" stop-color="#190400" />
+    </linearGradient>
+    <linearGradient id="brass-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#78350f" />
+    </linearGradient>
+    <filter id="razor-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="28" stdDeviation="35" flood-color="#000000" flood-opacity="0.65" />
+      <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#c9a24b" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="1000" cy="1000" r="900" fill="url(#barba-ambient)" />
+
+  <g filter="url(#razor-shadow)" transform="translate(1000, 1000) rotate(-18)">
+    <!-- THE HANDLE / SCALES (Open at ~135 degrees) -->
+    <g transform="translate(-160, 220) rotate(52)">
+      <!-- Outer scale handle curve -->
+      <path d="M 0 0 C 80 260 140 600 80 940 C 60 1020 0 1070 -50 1060 C -100 1050 -120 990 -90 920 C -30 600 -40 260 -70 0 Z" 
+            fill="url(#razor-handle)" stroke="#d97706" stroke-width="4" />
+      <!-- Wood grain highlights -->
+      <path d="M -15 150 C 35 380 75 660 35 900" stroke="#b45309" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6" />
+      <path d="M -45 200 C -5 420 25 700 -15 940" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.4" />
+      <!-- Brass wedge end pin -->
+      <circle cx="-25" cy="1000" r="16" fill="url(#brass-gold)" stroke="#451a03" stroke-width="3" />
+      <circle cx="-25" cy="1000" r="7" fill="#1c1917" />
+    </g>
+
+    <!-- THE STEEL BLADE & TANG -->
+    <g transform="translate(-160, 220) rotate(-55)">
+      <!-- Pivot Tang extending into handle -->
+      <path d="M -50 0 C -45 -90 -20 -180 30 -260 C 60 -290 90 -290 100 -250 C 110 -180 60 -90 40 0 Z" 
+            fill="url(#razor-blade)" stroke="#64748b" stroke-width="2" />
+      <!-- Tang Jimps (Grip ridges) -->
+      <line x1="10" y1="-150" x2="35" y2="-140" stroke="#1e293b" stroke-width="4"/><line x1="18" y1="-162" x2="43" y2="-152" stroke="#1e293b" stroke-width="4"/><line x1="26" y1="-174" x2="51" y2="-164" stroke="#1e293b" stroke-width="4"/><line x1="34" y1="-186" x2="59" y2="-176" stroke="#1e293b" stroke-width="4"/><line x1="42" y1="-198" x2="67" y2="-188" stroke="#1e293b" stroke-width="4"/>
+      <!-- Main Straight Razor Blade Body -->
+      <!-- Hollow-ground profile: Spine on top, sharp razor edge below, square / Spanish point at tip -->
+      <path d="M -20 -60 
+               C -20 -200 40 -380 40 -380 
+               L 880 -460 
+               C 920 -440 940 -400 930 -330 
+               C 910 -160 880 -80 840 -60 
+               L -20 -60 Z" 
+            fill="url(#razor-blade)" stroke="#94a3b8" stroke-width="3" />
+      <!-- Polished Razor Spine (Thick stabilizer ridge) -->
+      <path d="M 40 -380 L 880 -460 C 900 -430 890 -400 870 -390 L 40 -310 Z" fill="#ffffff" opacity="0.85" />
+      <!-- Ultra-sharp Cutting Edge Bevel -->
+      <path d="M -15 -60 L 840 -60 L 850 -45 L -10 -45 Z" fill="#ffffff" />
+      <!-- Etched Gold Filigree & Logo on Blade -->
+      <text x="320" y="-180" font-family="'Oswald', sans-serif" font-size="34" font-weight="600" letter-spacing="8" fill="url(#brass-gold)">BARBERBOOK • EXTRA HOLLOW GROUND</text>
+      <text x="440" y="-130" font-family="'Work Sans', sans-serif" font-size="18" font-weight="500" letter-spacing="4" fill="#fef08a" opacity="0.75">FIRST CLASS SOLINGEN STEEL</text>
+      <!-- Spanish point notch -->
+      <circle cx="910" cy="-330" r="18" fill="#0d0906" />
+    </g>
+
+    <!-- Brass Pivot Pin (Hinges blade and handle) -->
+    <circle cx="-160" cy="220" r="28" fill="url(#brass-gold)" stroke="#451a03" stroke-width="4" />
+    <circle cx="-160" cy="220" r="14" fill="#1c1917" />
+    <circle cx="-160" cy="220" r="7" fill="#fef08a" />
+  </g>
+</svg>

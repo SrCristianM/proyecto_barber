@@ -1,4 +1,5 @@
 import { Scissors, MapPin, Phone, Clock, ArrowUp, Instagram, MessageCircle, Mail } from "lucide-react";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import { Link } from "react-router";
 import { motion } from "motion/react";
 
@@ -27,8 +28,8 @@ export default function Footer() {
           {/* Col 1: Brand & Bio */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#C9A24A]/10 border border-[#C9A24A]/30 flex items-center justify-center">
-                <Scissors className="w-4 h-4 text-[#C9A24A]" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm">
+                <BarberScissorsIcon className="w-4 h-4 text-black" strokeWidth={2} />
               </div>
               <div>
                 <div style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.82rem" }} className="font-bold">

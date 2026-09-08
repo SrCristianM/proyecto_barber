@@ -1,8 +1,8 @@
 /**
  * @file excelExporter.js
- * Generador de archivos de Excel profesionales con diseño, estilos, membrete y formatos.
+ * Generador de archivos de Excel profesionales con diseño, estilos, membrete y formatos automáticos.
  * Utiliza el estándar Microsoft XML Spreadsheet 2003 para garantizar apertura nativa
- * en Excel, LibreOffice y Google Sheets sin dependencias externas pesadas.
+ * en Excel, LibreOffice y Google Sheets con auto-ajuste de columnas y formato monetario.
  */
 
 export function exportToStyledExcel({
@@ -10,7 +10,7 @@ export function exportToStyledExcel({
   sheetName = "Datos",
   title = "Reporte Administrativo",
   subtitle = "Sistema Tu Turno Barber ERP",
-  columns = [], // Array de { header: string, key: string, type?: 'string'|'number'|'currency'|'date', width?: number, align?: 'left'|'center'|'right' }
+  columns = [], // Array de { header: string, key: string, type?: 'string'|'number'|'currency'|'date'|'status', width?: number, align?: 'left'|'center'|'right' }
   data = []
 }) {
   const currentDate = new Date();
@@ -38,7 +38,7 @@ export function exportToStyledExcel({
     <Style ss:ID="Default" ss:Name="Normal">
       <Alignment ss:Vertical="Center"/>
       <Borders/>
-      <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#1E293B"/>
+      <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#1E293B"/>
       <Interior/>
       <NumberFormat/>
       <Protection/>
@@ -47,32 +47,36 @@ export function exportToStyledExcel({
     <!-- Membrete Título Principal -->
     <Style ss:ID="ReportTitle">
       <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-      <Font ss:FontName="Segoe UI" ss:Size="16" ss:Bold="1" ss:Color="#C9A24A"/>
+      <Font ss:FontName="Calibri" ss:Size="16" ss:Bold="1" ss:Color="#D97706"/>
+      <Interior ss:Color="#FFFBEB" ss:Pattern="Solid"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#F59E0B"/>
+      </Borders>
     </Style>
 
     <!-- Membrete Subtítulo -->
     <Style ss:ID="ReportSubtitle">
       <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Italic="1" ss:Color="#64748B"/>
+      <Font ss:FontName="Calibri" ss:Size="9.5" ss:Italic="1" ss:Color="#475569"/>
     </Style>
 
     <!-- Metadatos de Fecha y Cantidad -->
     <Style ss:ID="ReportMeta">
       <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Bold="1" ss:Color="#475569"/>
+      <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#0F766E"/>
     </Style>
 
     <!-- Encabezados de Columnas -->
     <Style ss:ID="HeaderCol">
       <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
       <Borders>
-        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#C9A24A"/>
-        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#D97706"/>
+        <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#0F172A"/>
         <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
         <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#334155"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
-      <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
+      <Font ss:FontName="Calibri" ss:Size="10.5" ss:Bold="1" ss:Color="#FFFFFF"/>
+      <Interior ss:Color="#0F172A" ss:Pattern="Solid"/>
     </Style>
 
     <!-- Celdas Normales de Texto (Izquierda) -->
@@ -83,7 +87,19 @@ export function exportToStyledExcel({
         <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
         <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Color="#1E293B"/>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+    </Style>
+
+    <!-- Celdas Normales con fondo alternado (Zebra) -->
+    <Style ss:ID="CellTextZebra">
+      <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+      <Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>
     </Style>
 
     <!-- Celdas Centradas -->
@@ -94,7 +110,17 @@ export function exportToStyledExcel({
         <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
         <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Color="#1E293B"/>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+    </Style>
+    <Style ss:ID="CellCenterZebra">
+      <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+      <Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>
     </Style>
 
     <!-- Celdas Numéricas -->
@@ -105,11 +131,22 @@ export function exportToStyledExcel({
         <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
         <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Color="#1E293B"/>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+      <NumberFormat ss:Format="#,##0"/>
+    </Style>
+    <Style ss:ID="CellNumberZebra">
+      <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B"/>
+      <Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>
       <NumberFormat ss:Format="#,##0"/>
     </Style>
 
-    <!-- Celdas de Moneda (Pesos) -->
+    <!-- Celdas de Moneda (Pesos Colombianos) -->
     <Style ss:ID="CellCurrency">
       <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
       <Borders>
@@ -117,68 +154,134 @@ export function exportToStyledExcel({
         <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
         <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Bold="1" ss:Color="#0F766E"/>
-      <NumberFormat ss:Format="&quot;$&quot;#,##0"/>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#047857"/>
+      <NumberFormat ss:Format="&quot;$&quot;\ #,##0"/>
+    </Style>
+    <Style ss:ID="CellCurrencyZebra">
+      <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+        <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+        <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#F1F5F9"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="10" ss:Bold="1" ss:Color="#047857"/>
+      <Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>
+      <NumberFormat ss:Format="&quot;$&quot;\ #,##0"/>
     </Style>
 
-    <!-- Celdas de Estado Activo -->
+    <!-- Celdas de Estado Activo / Exitoso -->
     <Style ss:ID="CellActive">
       <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
       <Borders>
         <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Bold="1" ss:Color="#15803D"/>
+      <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#166534"/>
       <Interior ss:Color="#DCFCE7" ss:Pattern="Solid"/>
     </Style>
 
-    <!-- Celdas de Estado Inactivo / Anulado -->
+    <!-- Celdas de Estado Inactivo / Cancelado -->
     <Style ss:ID="CellInactive">
       <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
       <Borders>
         <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
       </Borders>
-      <Font ss:FontName="Segoe UI" ss:Size="9" ss:Bold="1" ss:Color="#B91C1C"/>
+      <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#991B1B"/>
       <Interior ss:Color="#FEE2E2" ss:Pattern="Solid"/>
+    </Style>
+
+    <!-- Celdas de Estado Pendiente / Programada -->
+    <Style ss:ID="CellPending">
+      <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+      <Borders>
+        <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/>
+      </Borders>
+      <Font ss:FontName="Calibri" ss:Size="9.5" ss:Bold="1" ss:Color="#854D0E"/>
+      <Interior ss:Color="#FEF9C3" ss:Pattern="Solid"/>
     </Style>
   </Styles>
 
   <Worksheet ss:Name="${sheetName}">
     <Table ss:DefaultRowHeight="20">`;
 
-  // Ancho de columnas
+  // CÁLCULO INTELIGENTE DEL ANCHO DE COLUMNAS (AUTO-FIT CON MARGEN CÓMODO)
   columns.forEach((col) => {
-    const width = col.width || 120;
-    xml += `\n      <Column ss:Width="${width}"/>`;
+    const headerLen = String(col.header || "").length;
+    let maxContentLen = headerLen;
+
+    data.forEach((row) => {
+      const val = row[col.key];
+      if (val !== undefined && val !== null) {
+        let str;
+        if (col.type === "currency") {
+          str = `$ ${Number(val).toLocaleString("es-CO")}`;
+        } else {
+          str = String(val);
+        }
+        if (str.length > maxContentLen) {
+          maxContentLen = str.length;
+        }
+      }
+    });
+
+    let finalWidth;
+    if (col.width && col.width >= 50) {
+      // Ancho ya provisto explícitamente en puntos (ej. 120, 180, 240)
+      finalWidth = Math.max(col.width, maxContentLen * 8 + 25);
+    } else if (col.width && col.width < 50) {
+      // Ancho provisto erróneamente en número de caracteres (ej. 10, 14, 26)
+      // Lo escalamos adecuadamente a puntos de Excel
+      finalWidth = Math.max(col.width * 8.5 + 30, maxContentLen * 8 + 25);
+    } else {
+      // Auto-cálculo según longitud máxima de contenido + margen
+      finalWidth = Math.max(maxContentLen * 8.5 + 30, 95);
+    }
+
+    // Reglas de ancho mínimo según el tipo de dato
+    if (col.type === "currency") finalWidth = Math.max(finalWidth, 115);
+    if (col.type === "number") finalWidth = Math.max(finalWidth, 85);
+    if (col.key?.includes("fecha") || col.key?.includes("date")) finalWidth = Math.max(finalWidth, 115);
+    if (col.key?.includes("correo") || col.key?.includes("email")) finalWidth = Math.max(finalWidth, 190);
+    if (col.key?.includes("nombre") || col.key?.includes("cliente") || col.key?.includes("barbero") || col.key?.includes("proveedor")) {
+      finalWidth = Math.max(finalWidth, 160);
+    }
+    if (col.key?.includes("servicio") || col.key?.includes("paquete") || col.key?.includes("articulo")) {
+      finalWidth = Math.max(finalWidth, 180);
+    }
+
+    // Acotar entre 80 y 380 puntos
+    finalWidth = Math.min(Math.max(finalWidth, 80), 380);
+
+    xml += `\n      <Column ss:Width="${Math.round(finalWidth)}"/>`;
   });
 
   const totalCols = Math.max(columns.length, 1);
 
-  // Fila 1: Título de la Barbería / ERP
+  // Fila 1: Título de la Barbería / ERP con Membrete
   xml += `
-      <Row ss:Height="26">
+      <Row ss:Height="28">
         <Cell ss:MergeAcross="${totalCols - 1}" ss:StyleID="ReportTitle">
           <Data ss:Type="String">TU TURNO BARBER — ${title.toUpperCase()}</Data>
         </Cell>
       </Row>`;
 
-  // Fila 2: Subtítulo
+  // Fila 2: Subtítulo y fecha de exportación
   xml += `
-      <Row ss:Height="18">
+      <Row ss:Height="20">
         <Cell ss:MergeAcross="${totalCols - 1}" ss:StyleID="ReportSubtitle">
-          <Data ss:Type="String">${subtitle} • Generado el ${formattedDate}</Data>
+          <Data ss:Type="String">${subtitle} | Exportado el ${formattedDate}</Data>
         </Cell>
       </Row>`;
 
-  // Fila 3: Total Registros
+  // Fila 3: Total Registros y estado
   xml += `
-      <Row ss:Height="18">
+      <Row ss:Height="20">
         <Cell ss:MergeAcross="${totalCols - 1}" ss:StyleID="ReportMeta">
           <Data ss:Type="String">Total de registros exportados: ${data.length}</Data>
         </Cell>
       </Row>
-      <Row ss:Height="8"/>`; // Fila de separación
+      <Row ss:Height="10"/>`; // Fila de separación elegante
 
-  // Fila 4: Encabezados
+  // Fila 5: Encabezados de Columnas
   xml += `
       <Row ss:Height="26">`;
   columns.forEach((col) => {
@@ -190,8 +293,10 @@ export function exportToStyledExcel({
   xml += `
       </Row>`;
 
-  // Filas de datos
-  data.forEach((row) => {
+  // Filas de datos con Zebra striping
+  data.forEach((row, rowIndex) => {
+    const isEven = rowIndex % 2 === 0;
+
     xml += `
       <Row ss:Height="22">`;
 
@@ -199,27 +304,32 @@ export function exportToStyledExcel({
       let rawVal = row[col.key];
       if (rawVal === undefined || rawVal === null) rawVal = "";
 
-      // Determinar estilo
-      let styleID = "CellText";
+      let styleID = isEven ? "CellText" : "CellTextZebra";
       let dataType = "String";
       let displayVal = String(rawVal);
 
       if (col.type === "currency") {
-        styleID = "CellCurrency";
+        styleID = isEven ? "CellCurrency" : "CellCurrencyZebra";
         dataType = "Number";
         const num = Number(rawVal);
         displayVal = isNaN(num) ? "0" : String(num);
       } else if (col.type === "number") {
-        styleID = "CellNumber";
+        styleID = isEven ? "CellNumber" : "CellNumberZebra";
         dataType = "Number";
         const num = Number(rawVal);
         displayVal = isNaN(num) ? "0" : String(num);
-      } else if (col.type === "status") {
-        const isPos = String(rawVal).toLowerCase().includes("act") || String(rawVal).toLowerCase().includes("reg") || String(rawVal).toLowerCase().includes("comp");
-        styleID = isPos ? "CellActive" : "CellInactive";
+      } else if (col.type === "status" || col.key?.includes("estado")) {
+        const lower = String(rawVal).toLowerCase();
+        if (lower.includes("act") || lower.includes("comp") || lower.includes("regis") || lower.includes("aprob")) {
+          styleID = "CellActive";
+        } else if (lower.includes("cancel") || lower.includes("anul") || lower.includes("inact")) {
+          styleID = "CellInactive";
+        } else {
+          styleID = "CellPending";
+        }
         dataType = "String";
       } else if (col.align === "center") {
-        styleID = "CellCenter";
+        styleID = isEven ? "CellCenter" : "CellCenterZebra";
       }
 
       xml += `
@@ -236,13 +346,19 @@ export function exportToStyledExcel({
     </Table>
     <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
       <Selected/>
+      <FreezePanes/>
+      <FrozenNoSplit/>
+      <SplitHorizontal>5</SplitHorizontal>
+      <TopRowBottomPane>5</TopRowBottomPane>
+      <ActivePane>2</ActivePane>
       <ProtectObjects>False</ProtectObjects>
       <ProtectScenarios>False</ProtectScenarios>
     </WorksheetOptions>
+    <AutoFilter x:Range="R5C1:R${data.length + 5}C${totalCols}" xmlns="urn:schemas-microsoft-com:office:excel"/>
   </Worksheet>
 </Workbook>`;
 
-  // Descarga del archivo
+  // Descarga del archivo en formato nativo Excel (.xls)
   const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);

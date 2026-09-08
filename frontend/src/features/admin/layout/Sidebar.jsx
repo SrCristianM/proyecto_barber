@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router";
 import { motion } from "motion/react";
 import { Scissors, Settings, Menu } from "lucide-react";
 import { menuItems } from "./menuItems";
+import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
@@ -13,10 +14,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-          {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              <Scissors className="h-6 w-6 text-primary" />
-              <span className="font-bold text-sidebar-foreground">Tu Turno</span>
+          {sidebarOpen ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shadow-[#DDAE41]/20 shrink-0">
+                <BarberScissorsIcon className="w-4 h-4" strokeWidth={2} />
+              </div>
+              <div className="leading-tight">
+                <span className="font-extrabold text-sidebar-foreground text-sm tracking-wide block">
+                  Tu Turno
+                </span>
+                <span className="text-[10px] font-bold text-primary tracking-wider uppercase block">
+                  Admin
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shrink-0">
+              <BarberScissorsIcon className="w-4 h-4" strokeWidth={2} />
             </div>
           )}
           <motion.button

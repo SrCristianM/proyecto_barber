@@ -35,7 +35,7 @@ export default function ClientMyPurchasesPage() {
       {/* CABECERA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[#C9A24A]">Facturación Personal</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#DFB755] dark:text-[#E8C466]">Facturación Personal</span>
           <h1 className="text-2xl sm:text-3xl font-black text-foreground">Mis Compras</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Consulta el historial detallado de tus servicios y productos facturados con opción de comprobante oficial.
@@ -46,7 +46,7 @@ export default function ClientMyPurchasesPage() {
           to="/portal/productos"
           className="px-5 py-2.5 rounded-xl border border-border hover:bg-accent text-foreground font-bold text-xs transition-colors flex items-center gap-2 self-start sm:self-auto"
         >
-          <ShoppingBag className="w-4 h-4 text-[#C9A24A]" />
+          <ShoppingBag className="w-4 h-4 text-[#DFB755] dark:text-[#E8C466]" />
           <span>Explorar Productos</span>
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function ClientMyPurchasesPage() {
           placeholder="Buscar por # de recibo, fecha, producto o servicio..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A24A]"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#DFB755]"
         />
       </div>
 
@@ -99,7 +99,7 @@ export default function ClientMyPurchasesPage() {
                       </span>
                     </td>
 
-                    <td className="py-4 px-4 font-black text-[#C9A24A] text-sm">
+                    <td className="py-4 px-4 font-black text-[#DDAE41] dark:text-[#E8C466] text-sm">
                       ${Number(sale.total).toLocaleString("es-CO")}
                     </td>
 
@@ -123,7 +123,7 @@ export default function ClientMyPurchasesPage() {
                         <button
                           type="button"
                           onClick={() => handleDownload(sale)}
-                          className="px-3 py-1.5 rounded-lg bg-[#C9A24A]/15 text-[#C9A24A] hover:bg-[#C9A24A] hover:text-black border border-[#C9A24A]/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-[#DFB755]/15 text-[#DDAE41] dark:text-[#E8C466] hover:bg-gradient-to-r hover:from-[#E8C466] hover:to-[#DDAE41] hover:text-black border border-[#DFB755]/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
                           title="Descargar Comprobante PDF"
                         >
                           <Download className="w-3.5 h-3.5" />
@@ -152,38 +152,56 @@ export default function ClientMyPurchasesPage() {
         <Modal
           title={`Comprobante de Venta #VENTA-${String(selectedSale.id_venta).padStart(4, "0")}`}
           onClose={() => setSelectedSale(null)}
-          maxWidthClass="max-w-lg"
+          maxWidthClass="max-w-xl"
         >
-          <div className="space-y-4">
-            <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Fecha de Emisión:</span>
+          <div className="space-y-5">
+            <div className="p-5 sm:p-6 rounded-2xl bg-muted/40 border border-border space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Fecha de Emisión:</span>
                 <span className="font-bold text-foreground">{selectedSale.fecha}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cliente:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Cliente:</span>
                 <span className="font-bold text-foreground">{client?.nombre} {client?.apellido}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estado:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground font-medium">Estado:</span>
                 <span className="font-bold text-emerald-500">{selectedSale.estado || "Activa"}</span>
               </div>
+              {selectedSale.metodo_pago && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Método de Pago:</span>
+                  <span className="font-bold text-foreground">{selectedSale.metodo_pago}</span>
+                </div>
+              )}
+              {selectedSale.metodo_entrega && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Modalidad:</span>
+                  <span className="font-bold text-foreground">{selectedSale.metodo_entrega}</span>
+                </div>
+              )}
+              {selectedSale.direccion_envio && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground font-medium">Dirección de Envío:</span>
+                  <span className="font-bold text-foreground text-right max-w-xs truncate">{selectedSale.direccion_envio}</span>
+                </div>
+              )}
             </div>
 
             {/* Desglose de ítems */}
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+            <div className="space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
                 Artículos Facturados
               </span>
               <div className="space-y-2">
                 {(selectedSale.detalles || []).map((d, index) => (
                   <div
                     key={index}
-                    className="p-3 rounded-xl bg-card border border-border flex items-center justify-between text-xs"
+                    className="p-3.5 rounded-xl bg-card border border-border flex items-center justify-between text-sm"
                   >
                     <div>
                       <p className="font-bold text-foreground">{d.nombre}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {d.cantidad} x ${Number(d.precio_unitario).toLocaleString("es-CO")}
                       </p>
                     </div>
@@ -196,9 +214,12 @@ export default function ClientMyPurchasesPage() {
             </div>
 
             {/* Total */}
-            <div className="p-4 rounded-2xl bg-[#C9A24A]/10 border border-[#C9A24A]/30 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase text-foreground">Total de la Compra:</span>
-              <span className="text-xl font-black text-[#C9A24A]">
+            <div className="p-5 rounded-2xl bg-[#DFB755]/10 border border-[#DFB755]/30 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase text-foreground block">Total de la Compra</span>
+                <span className="text-xs text-muted-foreground">IVA incluido</span>
+              </div>
+              <span className="text-2xl font-black text-[#DDAE41] dark:text-[#E8C466]">
                 ${Number(selectedSale.total).toLocaleString("es-CO")}
               </span>
             </div>
@@ -216,7 +237,7 @@ export default function ClientMyPurchasesPage() {
               <button
                 type="button"
                 onClick={() => handleDownload(selectedSale)}
-                className="px-5 py-2 rounded-xl bg-[#C9A24A] text-black font-extrabold text-xs hover:bg-[#d8b056] transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold text-xs hover:from-[#F0CF78] hover:to-[#E8C466] transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-[#DDAE41]/20"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Descargar Comprobante (PDF)</span>

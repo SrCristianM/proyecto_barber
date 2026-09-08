@@ -2,3 +2,78 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './scrollbar.css';
+
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-gold-shimmer {
+  background-size: 200% auto;
+  animation: goldShimmer 4s ease-in-out infinite;
+}
+
+@keyframes snipCut {
+  0% {
+    transform: scale(0.6) rotate(-25deg);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.15) rotate(0deg);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1) rotate(15deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.7) rotate(35deg);
+    opacity: 0;
+  }
+}
+
+@keyframes snipFade {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes snipP1 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-18px, -18px) scale(0); opacity: 0; }
+}
+@keyframes snipP2 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(18px, -16px) scale(0); opacity: 0; }
+}
+@keyframes snipP3 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-14px, 18px) scale(0); opacity: 0; }
+}
+@keyframes snipP4 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(16px, 16px) scale(0); opacity: 0; }
+}
+
+.animate-snip-cut {
+  animation: snipCut 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.animate-snip-fade {
+  animation: snipFade 0.65s ease-out forwards;
+}
+.animate-snip-p1 {
+  animation: snipP1 0.6s ease-out forwards;
+}
+.animate-snip-p2 {
+  animation: snipP2 0.6s ease-out forwards;
+}
+.animate-snip-p3 {
+  animation: snipP3 0.6s ease-out forwards;
+}
+.animate-snip-p4 {
+  animation: snipP4 0.6s ease-out forwards;
+}
+
