@@ -54,8 +54,13 @@ export default function Login({ onLogin }) {
 
       toast.success(`¡Bienvenido, ${authResult.user.nombre}!`);
       if (onLogin) onLogin(authResult.user);
-      const targetPath = authResult.user.id_rol === 4 ? "/portal" : "/dashboard";
-      navigate(targetPath);
+      let targetPath = "/dashboard";
+      if (Number(authResult.user.id_rol) === 4) {
+        targetPath = "/portal";
+      } else if (Number(authResult.user.id_rol) === 3) {
+        targetPath = "/barbero";
+      }
+      navigate(targetPath, { replace: true });
     }, 400);
   };
 

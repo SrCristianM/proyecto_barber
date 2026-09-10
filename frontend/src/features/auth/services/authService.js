@@ -43,7 +43,7 @@ export const INITIAL_USERS = [
     id_usuario: 4,
     nombre: "Carlos",
     apellido: "Rodríguez",
-    correo: "carlos@example.com",
+    correo: "barbero@tuturnobarber.com",
     telefono: "+57 302 345 6789",
     id_rol: 3, // Barbero
     estado: 1,
@@ -104,13 +104,34 @@ export function getStoredUsers() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
       return INITIAL_USERS;
     }
+    let updated = false;
     // Asegurar que el usuario cliente por defecto esté disponible si no existía previamente
     if (!parsed.some((u) => u.correo === "cliente@example.com")) {
       const clientUser = INITIAL_USERS.find((u) => u.correo === "cliente@example.com");
       if (clientUser) {
         parsed.push(clientUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        updated = true;
       }
+    }
+    // Asegurar que el usuario barbero por defecto esté disponible para pruebas
+    const hasBarber = parsed.some((u) => u.correo.toLowerCase() === "barbero@tuturnobarber.com");
+    if (!hasBarber) {
+      const defaultBarber = INITIAL_USERS.find((u) => u.correo === "barbero@tuturnobarber.com") || {
+        id_usuario: 4,
+        nombre: "Carlos",
+        apellido: "Rodríguez",
+        correo: "barbero@tuturnobarber.com",
+        telefono: "+57 302 345 6789",
+        id_rol: 3,
+        estado: 1,
+        contrasena: "Barbero123*",
+        fecha_registro: "2026-03-10 09:00:00"
+      };
+      parsed.push(defaultBarber);
+      updated = true;
+    }
+    if (updated) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
     }
     return parsed;
   } catch (err) {

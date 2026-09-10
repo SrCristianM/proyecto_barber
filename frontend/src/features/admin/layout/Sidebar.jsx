@@ -15,9 +15,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
           {sidebarOpen ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shadow-[#DDAE41]/20 shrink-0">
-                <BarberScissorsIcon className="w-4 h-4" strokeWidth={2} />
+            <Link to="/dashboard" className="flex items-center gap-2.5 group overflow-hidden">
+              <div className="relative overflow-hidden rounded-xl border border-[#C9A24A]/35 bg-black/70 p-0.5 shadow-sm shrink-0 group-hover:border-[#E8C466]/70 transition-all duration-300">
+                <img
+                  src="/logo.png"
+                  alt="Tu Turno Barber"
+                  className="h-9 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                />
               </div>
               <div className="leading-tight">
                 <span className="font-extrabold text-sidebar-foreground text-sm tracking-wide block">
@@ -27,11 +31,17 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   Admin
                 </span>
               </div>
-            </div>
+            </Link>
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shrink-0">
-              <BarberScissorsIcon className="w-4 h-4" strokeWidth={2} />
-            </div>
+            <Link to="/dashboard" className="flex items-center justify-center">
+              <div className="relative overflow-hidden rounded-lg border border-[#C9A24A]/35 bg-black/70 p-0.5 shadow-sm shrink-0 hover:border-[#E8C466]/70 transition-all duration-300">
+                <img
+                  src="/logo.png"
+                  alt="Tu Turno Barber"
+                  className="h-7 w-auto object-contain"
+                />
+              </div>
+            </Link>
           )}
           <motion.button
             whileTap={{ scale: 0.92 }}

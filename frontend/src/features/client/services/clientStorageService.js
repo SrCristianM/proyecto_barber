@@ -129,6 +129,34 @@ const INITIAL_APPOINTMENTS = [
     precio: 20000,
     fecha_registro: "2026-04-08 14:15:00",
     notas: ""
+  },
+  {
+    id_cita: 104,
+    id_cliente: 1,
+    id_barbero: 1,
+    id_servicio: 1,
+    id_paquete: null,
+    nombre_item: "Corte Clásico Degradado",
+    fecha: "2026-06-12",
+    hora: "14:00",
+    estado: "Completada",
+    precio: 15000,
+    fecha_registro: "2026-06-10 10:00:00",
+    notas: ""
+  },
+  {
+    id_cita: 105,
+    id_cliente: 1,
+    id_barbero: 2,
+    id_servicio: 2,
+    id_paquete: null,
+    nombre_item: "Corte + Ritual Barba",
+    fecha: "2026-07-05",
+    hora: "16:00",
+    estado: "Completada",
+    precio: 25000,
+    fecha_registro: "2026-07-03 11:30:00",
+    notas: ""
   }
 ];
 
@@ -828,7 +856,7 @@ export function saveClientReview(reviewData) {
 }
 
 // ==========================================
-// DETALLES DE FIDELIZACIÓN (Club VIP)
+// DETALLES DE FIDELIZACIÓN (Club VIP - Sistema de Cortes y Sellos)
 // ==========================================
 
 export function getClientLoyaltyDetails() {
@@ -836,75 +864,101 @@ export function getClientLoyaltyDetails() {
   const appointments = getClientAppointments();
   const completed = appointments.filter((a) => a.estado === "Completada").length;
 
-  const currentPoints = completed * 10;
-  const targetPoints = 100;
-  const progressPercent = Math.min(100, Math.round((currentPoints / targetPoints) * 100));
+  const targetCortes = 5; // Tarjeta de sellos: cada 5 cortes se gana una recompensa
+  const sellosCiclo = completed > 0 && completed % 5 === 0 ? 5 : completed % 5;
+  const cortesFaltantes = 5 - sellosCiclo;
+  const progressPercent = Math.min(100, Math.round((sellosCiclo / targetCortes) * 100));
+  const cicloActual = Math.floor((completed - (sellosCiclo === 5 ? 1 : 0)) / 5) + 1;
+
+  let nextBenefitText = "";
+  if (completed === 0) {
+    nextBenefitText = "Completa tu primer servicio para empezar a sellar tu tarjeta virtual.";
+  } else if (cortesFaltantes === 0 || sellosCiclo === 5) {
+    nextBenefitText = "¡Felicidades! Completaste los 5 cortes. Reclama tu 5° Corte Gratis.";
+  } else if (cortesFaltantes === 1) {
+    nextBenefitText = "¡Solo te falta 1 corte para tu 5° Corte Gratis!";
+  } else {
+    nextBenefitText = `Te faltan ${cortesFaltantes} cortes para tu 5° Corte Gratis.`;
+  }
 
   return {
     tier: profile?.nivel_fidelidad || "Plata",
-    currentPoints,
-    targetPoints,
+    serviciosRealizados: completed,
+    targetCortes,
+    sellosCiclo,
+    cortesFaltantes,
+    cicloActual,
     progressPercent,
     visitsCount: completed,
-    nextBenefit: "Servicio de Barba o Tratamiento Facial Gratis al llegar a 100 pts",
+    nextBenefit: nextBenefitText,
     unlockedPerks: [
-      "Prioridad en lista de espera",
+      "Prioridad en lista de espera y citas VIP",
       "Bebida de cortesía ilimitada en sala VIP",
       "10% de descuento en ceras y pomadas"
     ],
     badges: [
       { id: "b1", name: "Puntualidad de Oro", icon: "Clock", unlocked: true },
-      { id: "b2", name: "Estilo Frecuente", icon: "Scissors", unlocked: completed >= 3 },
-      { id: "b3", name: "Miembro VIP", icon: "Crown", unlocked: completed >= 5 }
+      { id: "b2", name: "Estilo Frecuente (3 cortes)", icon: "Scissors", unlocked: completed >= 3 },
+      { id: "b3", name: "Miembro VIP (5 cortes)", icon: "Crown", unlocked: completed >= 5 }
     ]
   };
 }
 
 // ==========================================
-// RECOMPENSAS Y GAMIFICACIÓN ("Barber Rewards")
+// RECOMPENSAS Y GAMIFICACIÓN ("Barber Rewards por Servicios")
 // ==========================================
 
 const INITIAL_REWARDS = [
   {
     id: "rew-1",
-    titulo: "Café Espresso o Cerveza Artesanal",
-    descripcion: "Disfruta de una bebida prémium de cortesía durante tu servicio.",
-    puntosRequeridos: 30,
+    titulo: "Bebida Especial de Cortesía VIP",
+    descripcion: "Disfruta de café espresso recién molido o cerveza artesanal fría durante tu servicio.",
+    serviciosRequeridos: 3,
     icono: "Coffee",
     canjeado: false,
     categoria: "Experiencia"
   },
   {
     id: "rew-2",
-    titulo: "Toalla Aromática Facial Spa",
-    descripcion: "Relajación total con toalla al vapor y aceites esenciales de eucalipto.",
-    puntosRequeridos: 50,
-    icono: "Sparkles",
+    titulo: "¡5° Corte Clásico o Barba GRATIS!",
+    descripcion: "Corte de cabello clásico o arreglo completo de barba 100% gratis por completar 5 visitas.",
+    serviciosRequeridos: 5,
+    icono: "Crown",
     canjeado: false,
-    categoria: "Bienestar"
+    categoria: "Corte Gratis"
   },
   {
     id: "rew-3",
-    titulo: "15% OFF en Ceras y Pomadas",
-    descripcion: "Válido en cualquier producto de estilizado de nuestro catálogo.",
-    puntosRequeridos: 75,
-    icono: "Tag",
+    titulo: "Toalla Facial Spa + 20% OFF en Productos",
+    descripcion: "Ritual aromático al vapor con aceites esenciales y descuento en ceras o pomadas.",
+    serviciosRequeridos: 8,
+    icono: "Sparkles",
     canjeado: false,
-    categoria: "Descuento"
+    categoria: "Bienestar y Estilo"
   },
   {
     id: "rew-4",
-    titulo: "Corte de Mantenimiento Gratis",
-    descripcion: "Corte de cabello clásico o arreglo de barba 100% patrocinado por el club.",
-    puntosRequeridos: 100,
-    icono: "Crown",
+    titulo: "Combo Supremo VIP de Lujo Gratis",
+    descripcion: "Corte prémium + Perfilado de barba + Limpieza facial purificante 100% patrocinado.",
+    serviciosRequeridos: 10,
+    icono: "Gift",
     canjeado: false,
-    categoria: "Servicio VIP"
+    categoria: "Premio Supremo"
   }
 ];
 
 export function getClientRewards() {
-  return getOrInit("tu_turno_client_rewards", INITIAL_REWARDS);
+  const existing = getOrInit("tu_turno_client_rewards", INITIAL_REWARDS);
+  // Auto-migración si existen recompensas antiguas basadas en puntos
+  if (Array.isArray(existing) && existing.some((r) => !r.serviciosRequeridos && r.puntosRequeridos)) {
+    const migrated = INITIAL_REWARDS.map((initial) => {
+      const match = existing.find((e) => e.id === initial.id);
+      return match ? { ...initial, canjeado: !!match.canjeado, fechaCanje: match.fechaCanje } : initial;
+    });
+    save("tu_turno_client_rewards", migrated);
+    return migrated;
+  }
+  return existing;
 }
 
 export function claimClientReward(rewardId) {
@@ -920,10 +974,11 @@ export function claimClientReward(rewardId) {
     return { success: false, error: "Esta recompensa ya fue canjeada." };
   }
 
-  if (loyalty.currentPoints < reward.puntosRequeridos) {
+  if (loyalty.serviciosRealizados < reward.serviciosRequeridos) {
+    const faltan = reward.serviciosRequeridos - loyalty.serviciosRealizados;
     return {
       success: false,
-      error: `Te faltan ${reward.puntosRequeridos - loyalty.currentPoints} puntos para canjear este beneficio.`
+      error: `Te faltan ${faltan} ${faltan === 1 ? "corte o servicio" : "cortes o servicios"} para desbloquear este beneficio.`
     };
   }
 

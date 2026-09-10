@@ -44,12 +44,16 @@ export default function AuthCard({ children, wide = false }) {
               <span>Volver a la página principal</span>
             </Link>
 
-            <div className="flex items-center gap-2.5 mt-8">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm">
-                <BarberScissorsIcon className="w-4 h-4 text-black" strokeWidth={2} />
+            <div className="flex items-center gap-3 mt-8">
+              <div className="relative overflow-hidden rounded-xl border border-[#C9A24A]/35 bg-black/70 p-0.5 shadow-md shadow-[#C9A24A]/10 shrink-0">
+                <img
+                  src="/logo.png"
+                  alt="Tu Turno Barber"
+                  className="h-10 w-auto object-contain"
+                />
               </div>
               <div className="leading-tight">
-                <div style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.82rem" }} className="font-bold">
+                <div style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.85rem" }} className="font-bold">
                   TU TURNO
                 </div>
                 <div style={{ color: "#8E8E93", letterSpacing: "0.28em", fontSize: "0.58rem" }} className="font-medium">

@@ -31,7 +31,7 @@ export default function LoyaltyBanner() {
             </h2>
 
             <p className="text-[#A0A0A0] text-sm sm:text-base leading-relaxed">
-              Premia tu fidelidad. Cada visita a nuestra barbería suma puntos automáticos a tu perfil para canjear por cortes gratis, tratamientos y descuentos exclusivos.
+              Premia tu fidelidad. Cada visita a nuestra barbería sella tu tarjeta virtual para obtener tu 5° corte gratis, tratamientos de spa y beneficios exclusivos.
             </p>
 
             {/* Perks list */}
@@ -40,8 +40,8 @@ export default function LoyaltyBanner() {
                 <div className="w-9 h-9 rounded-lg bg-[#C9A24A]/20 flex items-center justify-center text-[#C9A24A] mb-3">
                   <Flame className="w-5 h-5" />
                 </div>
-                <h4 className="text-white font-bold text-xs mb-1">Acumula Puntos</h4>
-                <p className="text-[#7A7A7A] text-[0.7rem]">1 punto por cada servicio realizado.</p>
+                <h4 className="text-white font-bold text-xs mb-1">Acumula Sellos</h4>
+                <p className="text-[#7A7A7A] text-[0.7rem]">1 sello por cada corte o servicio realizado.</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#151515] border border-white/10 flex flex-col justify-between">
@@ -49,7 +49,7 @@ export default function LoyaltyBanner() {
                   <Gift className="w-5 h-5" />
                 </div>
                 <h4 className="text-white font-bold text-xs mb-1">5° Corte Gratis</h4>
-                <p className="text-[#7A7A7A] text-[0.7rem]">O ritual de barba bonificado al 100%.</p>
+                <p className="text-[#7A7A7A] text-[0.7rem]">O ritual de barba bonificado cada 5 cortes.</p>
               </div>
 
               <div className="p-4 rounded-xl bg-[#151515] border border-white/10 flex flex-col justify-between">

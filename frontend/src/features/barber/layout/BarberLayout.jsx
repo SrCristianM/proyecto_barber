@@ -5,8 +5,9 @@ import {
   Scissors,
   Calendar,
   Clock,
-  ShoppingBag,
-  Receipt,
+  AlertCircle,
+  Package,
+  BarChart3,
   User,
   LogOut,
   Menu,
@@ -17,30 +18,32 @@ import {
   Home,
   CheckCircle2,
   ChevronRight,
-  Music2
+  Music2,
+  Sparkles
 } from "lucide-react";
-import ClientStarIcon from "../components/ClientStarIcon";
-import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import SpotifyIcon from "../../../shared/ui/SpotifyIcon";
-import ClientRouteProgressBar from "../components/ClientRouteProgressBar";
-import ClientSnipEffect from "../components/ClientSnipEffect";
-import SalonLiveRadar from "../components/SalonLiveRadar";
-import ClientMobileDock from "../components/ClientMobileDock";
-import { SalonAudioProvider, useSalonAudio } from "../context/SalonAudioContext";
-import { logoutUser, getCurrentUser } from "../../auth/services/authService";
-import { getCurrentClientProfile, getClientAppointments } from "../services/clientStorageService";
+import ClientRouteProgressBar from "../../client/components/ClientRouteProgressBar";
+import ClientSnipEffect from "../../client/components/ClientSnipEffect";
+import SalonLiveRadar from "../../client/components/SalonLiveRadar";
+import BarberMobileDock from "../components/BarberMobileDock";
+import { SalonAudioProvider, useSalonAudio } from "../../client/context/SalonAudioContext";
+import { logoutUser } from "../../auth/services/authService";
+import {
+  getCurrentBarberProfile,
+  getBarberAppointments,
+  getBarberNovelties
+} from "../services/barberStorageService";
 
-export default function ClientLayout({ isDark, setIsDark, onLogout }) {
+export default function BarberLayout({ isDark, setIsDark, onLogout }) {
   return (
     <SalonAudioProvider>
-      <ClientLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />
+      <BarberLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />
     </SalonAudioProvider>
   );
 }
 
-function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
+function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
   const {
-    isPlaying,
     isAudioActive,
     soundSource,
     activePlaylistTitle,
@@ -49,21 +52,30 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   } = useSalonAudio();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [clientProfile, setClientProfile] = useState(null);
-  const [upcomingCount, setUpcomingCount] = useState(0);
+  const [barberProfile, setBarberProfile] = useState(null);
+  const [todayAppointmentsCount, setTodayAppointmentsCount] = useState(0);
+  const [pendingNoveltiesCount, setPendingNoveltiesCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   useEffect(() => {
-    const profile = getCurrentClientProfile();
-    setClientProfile(profile);
+    const profile = getCurrentBarberProfile();
+    setBarberProfile(profile);
 
-    const appointments = getClientAppointments();
-    const upcoming = appointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada");
-    setUpcomingCount(upcoming.length);
-  }, [location.pathname]);
+    const appointments = getBarberAppointments();
+    const todayApts = appointments.filter(
+      (a) => a.fecha === todayStr && (a.estado === "Programada" || a.estado === "Reprogramada")
+    );
+    setTodayAppointmentsCount(todayApts.length);
 
-  // Cerrar menú móvil al cambiar de ruta
+    const novelties = getBarberNovelties();
+    const pendingNovs = novelties.filter((n) => n.estado === "Pendiente");
+    setPendingNoveltiesCount(pendingNovs.length);
+  }, [location.pathname, todayStr]);
+
+  // Cerrar menú móvil y notificaciones al cambiar de ruta
   useEffect(() => {
     setMobileMenuOpen(false);
     setShowNotifications(false);
@@ -77,33 +89,31 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   };
 
   const navLinks = [
-    { to: "/portal", label: "Inicio", icon: Home, end: true },
-    { to: "/portal/agendar", label: "Agendar Cita", icon: Calendar, highlight: true },
-    { to: "/portal/mis-citas", label: "Mis Citas", icon: Clock, badge: upcomingCount > 0 ? upcomingCount : null },
-    { to: "/portal/servicios", label: "Servicios", icon: Scissors },
-    { to: "/portal/paquetes", label: "Paquetes", icon: ClientStarIcon },
-    { to: "/portal/productos", label: "Productos", icon: ShoppingBag },
-    { to: "/portal/mis-compras", label: "Mis Compras", icon: Receipt },
-    { to: "/portal/perfil", label: "Mi Perfil", icon: User }
+    { to: "/barbero", label: "Inicio", icon: Home, end: true },
+    { to: "/barbero/agenda", label: "Mi Agenda", icon: Calendar },
+    { to: "/barbero/horarios", label: "Mis Horarios", icon: Clock },
+    {
+      to: "/barbero/novedades",
+      label: "Novedades",
+      icon: AlertCircle,
+      badge: pendingNoveltiesCount > 0 ? pendingNoveltiesCount : null,
+      badgeColor: "bg-amber-500 text-black"
+    },
+    { to: "/barbero/paquetes", label: "Paquetes", icon: Package },
+    {
+      to: "/barbero/citas",
+      label: "Mis Citas",
+      icon: Scissors,
+      badge: todayAppointmentsCount > 0 ? todayAppointmentsCount : null,
+      badgeColor: "bg-destructive text-white"
+    },
+    { to: "/barbero/reportes", label: "Reportes", icon: BarChart3 }
   ];
 
-  const user = getCurrentUser();
-  const displayName = clientProfile?.nombre || user?.nombre || "Cliente";
-  const userInitials = `${displayName.charAt(0)}${(clientProfile?.apellido || user?.apellido || "").charAt(0)}`.toUpperCase() || "CL";
-  const loyaltyTier = clientProfile?.nivel_fidelidad || "Nuevo";
-
-  const getTierColor = (tier) => {
-    switch (tier) {
-      case "Oro":
-        return "bg-amber-500/15 text-amber-500 border-amber-500/30";
-      case "Plata":
-        return "bg-slate-300/15 text-slate-300 border-slate-400/30";
-      case "Bronce":
-        return "bg-amber-700/15 text-amber-600 border-amber-700/30";
-      default:
-        return "bg-primary/15 text-primary border-primary/30";
-    }
-  };
+  const displayName = barberProfile ? `${barberProfile.nombre} ${barberProfile.apellido || ""}`.trim() : "Barbero";
+  const userInitials = barberProfile
+    ? `${(barberProfile.nombre || "B").charAt(0)}${(barberProfile.apellido || "").charAt(0)}`.toUpperCase()
+    : "BR";
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
@@ -113,14 +123,14 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
       {/* EFECTO SNIP CLICK RIPPLE GLOBAL */}
       <ClientSnipEffect />
 
-      {/* HEADER PRINCIPAL CLIENTE (ESTRUCTURA DE DOS NIVELES ESPACIOSA) */}
+      {/* HEADER PRINCIPAL BARBERO (IDENTIDAD VISUAL DEL CLIENTE COMPARTIDA) */}
       <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-md transition-all shadow-xs">
-        {/* FILA 1: MARCA, IDENTIDAD Y ACCIONES DE USUARIO */}
+        {/* FILA 1: MARCA, BADGE DE ROL, RADAR Y ACCIONES */}
         <div className="border-b border-border/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 sm:h-18">
-              {/* Logo y Marca */}
-              <NavLink to="/portal" className="flex items-center gap-3 group">
+              {/* Logo y Marca con distintivo de Barbero */}
+              <NavLink to="/barbero" className="flex items-center gap-3 group">
                 <div className="relative overflow-hidden rounded-xl border border-[#C9A24A]/35 bg-black/70 p-0.5 shadow-md shadow-[#DDAE41]/15 transition-transform group-hover:scale-105 shrink-0">
                   <img
                     src="/logo.png"
@@ -129,14 +139,18 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-base sm:text-lg font-black tracking-wider text-foreground">
-                    TU TURNO <span className="text-[#DFB755] dark:text-[#E8C466]">BARBER</span>
-                  </span>
-                  <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase flex items-center gap-1.5">
-                    Portal Cliente
-                    <span className={`px-2 py-0.2 rounded-full text-[9px] border font-bold ${getTierColor(loyaltyTier)}`}>
-                      {loyaltyTier}
+                  <div className="flex items-center gap-2">
+                    <span className="text-base sm:text-lg font-black tracking-wider text-foreground">
+                      TU TURNO <span className="text-[#DFB755] dark:text-[#E8C466]">BARBER</span>
                     </span>
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#DFB755]/15 text-[#DFB755] border border-[#DFB755]/30">
+                      <Sparkles className="w-2.5 h-2.5" /> Barbero
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase flex items-center gap-1.5">
+                    Portal Profesional
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="text-emerald-500 font-bold">En Línea</span>
                   </span>
                 </div>
               </NavLink>
@@ -146,15 +160,15 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                 <SalonLiveRadar compact={true} />
               </div>
 
-              {/* Controles de la derecha (CTA Rápido, Tema, Notificaciones, Perfil, Logout) */}
+              {/* Controles de la derecha (Música, Tema, Notificaciones, Perfil, Logout) */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Botón CTA Rápido Destacado */}
+                {/* Botón CTA Rápido: Ver Agenda de Hoy */}
                 <NavLink
-                  to="/portal/agendar"
+                  to="/barbero/agenda"
                   className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-sm shadow-[#DDAE41]/25 transition-all cursor-pointer mr-1"
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>Agendar Cita</span>
+                  <span>Ver Mi Agenda</span>
                 </NavLink>
 
                 {/* Mini reproductor de música del salón en vivo & Spotify */}
@@ -173,9 +187,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                       ? soundSource === "spotify"
                         ? `Spotify en vivo: ${activePlaylistTitle} • Clic para pausar`
                         : "Música del salón sonando en vivo • Clic para pausar"
-                      : soundSource === "spotify"
-                      ? `Spotify: ${activePlaylistTitle} • Clic para reproducir`
-                      : "Escuchar música en vivo del salón (Lo-Fi & Jazz)"
+                      : "Escuchar música del salón"
                   }
                 >
                   {soundSource === "spotify" ? (
@@ -189,21 +201,9 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   )}
                   {isAudioActive && (
                     <span className="flex items-end gap-0.5 h-3 px-0.5">
-                      <span
-                        className={`w-0.5 h-2 rounded-full animate-pulse ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
-                      <span
-                        className={`w-0.5 h-3 rounded-full animate-bounce ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
-                      <span
-                        className={`w-0.5 h-1.5 rounded-full animate-pulse ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
+                      <span className={`w-0.5 h-2 rounded-full animate-pulse ${soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"}`} />
+                      <span className={`w-0.5 h-3 rounded-full animate-bounce ${soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"}`} />
+                      <span className={`w-0.5 h-1.5 rounded-full animate-pulse ${soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"}`} />
                     </span>
                   )}
                 </button>
@@ -218,16 +218,16 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
                 </button>
 
-                {/* Notificaciones */}
+                {/* Notificaciones del Barbero */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    title="Notificaciones"
+                    title="Notificaciones de agenda y novedades"
                   >
                     <Bell className="w-4 h-4" />
-                    {upcomingCount > 0 && (
+                    {(todayAppointmentsCount > 0 || pendingNoveltiesCount > 0) && (
                       <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#DFB755] ring-2 ring-background" />
                     )}
                   </button>
@@ -239,59 +239,90 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-80 rounded-2xl bg-card border border-border shadow-xl p-4 z-50"
+                        className="absolute right-0 mt-2 w-84 rounded-2xl bg-card border border-border shadow-xl p-4 z-50"
                       >
                         <div className="flex items-center justify-between pb-2 border-b border-border mb-3">
-                          <span className="text-xs font-bold uppercase tracking-wider text-foreground">Notificaciones</span>
-                          <span className="text-[11px] text-muted-foreground font-medium">{upcomingCount} activa(s)</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                            Notificaciones Barbero
+                          </span>
+                          <span className="text-[11px] text-muted-foreground font-medium">
+                            {todayAppointmentsCount + pendingNoveltiesCount} novedad(es)
+                          </span>
                         </div>
-                        {upcomingCount > 0 ? (
-                          <div className="space-y-2">
-                            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs">
+
+                        <div className="space-y-2.5">
+                          {todayAppointmentsCount > 0 && (
+                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-xs">
                               <p className="font-semibold text-foreground flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                                Tienes {upcomingCount} cita(s) programada(s)
+                                <CheckCircle2 className="w-3.5 h-3.5 text-[#DFB755]" />
+                                Tienes {todayAppointmentsCount} cita(s) hoy
                               </p>
                               <p className="text-muted-foreground text-[11px] mt-1">
-                                Revisa los detalles en tu sección de Mis Citas para estar al tanto de tu turno.
+                                Consulta tu agenda del día para conocer horarios y especificaciones de clientes.
                               </p>
                               <button
                                 type="button"
                                 onClick={() => {
                                   setShowNotifications(false);
-                                  navigate("/portal/mis-citas");
+                                  navigate("/barbero/agenda");
                                 }}
                                 className="mt-2 text-[11px] font-bold text-[#DFB755] hover:underline flex items-center gap-1 cursor-pointer"
                               >
-                                Ver mis citas <ChevronRight className="w-3 h-3" />
+                                Ver agenda de hoy <ChevronRight className="w-3 h-3" />
                               </button>
                             </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground text-center py-4">
-                            No tienes notificaciones pendientes por el momento.
-                          </p>
-                        )}
+                          )}
+
+                          {pendingNoveltiesCount > 0 && (
+                            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
+                              <p className="font-semibold text-foreground flex items-center gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                                {pendingNoveltiesCount} solicitud(es) de novedad en revisión
+                              </p>
+                              <p className="text-muted-foreground text-[11px] mt-1">
+                                La administración está revisando tus solicitudes de cancelación o turno.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowNotifications(false);
+                                  navigate("/barbero/novedades");
+                                }}
+                                className="mt-2 text-[11px] font-bold text-amber-500 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                Ver mis novedades <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+
+                          {todayAppointmentsCount === 0 && pendingNoveltiesCount === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-4">
+                              No tienes alertas pendientes por el momento.
+                            </p>
+                          )}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                {/* Usuario Avatar y Dropdown Rápido */}
+                {/* Avatar y Perfil del Barbero */}
                 <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
                   <div
-                    onClick={() => navigate("/portal/perfil")}
+                    onClick={() => navigate("/barbero/perfil")}
                     className="flex items-center gap-2.5 cursor-pointer p-1.5 rounded-xl hover:bg-accent/60 transition-colors"
-                    title="Ver Mi Perfil"
+                    title="Ver Perfil de Barbero"
                   >
                     <div className="w-8 h-8 rounded-xl bg-[#DFB755]/20 border border-[#DFB755]/40 flex items-center justify-center text-xs font-bold text-[#DFB755] dark:text-[#E8C466]">
                       {userInitials}
                     </div>
                     <div className="hidden xl:flex flex-col text-left">
-                      <span className="text-xs font-bold text-foreground leading-tight truncate max-w-[120px]">
+                      <span className="text-xs font-bold text-foreground leading-tight truncate max-w-[130px]">
                         {displayName}
                       </span>
-                      <span className="text-[10px] text-muted-foreground leading-tight">Cliente {loyaltyTier}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight flex items-center gap-1">
+                        Barbero <span className="text-[#DFB755] font-bold">•</span> Carlos
+                      </span>
                     </div>
                   </div>
 
@@ -305,7 +336,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   </button>
                 </div>
 
-                {/* Botón menú móvil */}
+                {/* Botón Menú Móvil */}
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -319,7 +350,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
           </div>
         </div>
 
-        {/* FILA 2: BARRA DEDICADA DE MÓDULOS CON ANIMACIÓN DE DESLIZAMIENTO ACTIVA */}
+        {/* FILA 2: BARRA DEDICADA DE MÓDULOS DEL BARBERO */}
         <div className="hidden lg:block bg-background/85 backdrop-blur-md border-b border-border/80">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="flex items-center gap-1.5 xl:gap-2.5 py-2 overflow-x-auto no-scrollbar">
@@ -342,7 +373,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                       <>
                         {isActive && (
                           <motion.div
-                            layoutId="clientActiveNavTab"
+                            layoutId="barberActiveNavTab"
                             className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] shadow-md shadow-[#DDAE41]/25 z-0"
                             transition={{ type: "spring", stiffness: 380, damping: 30 }}
                           />
@@ -353,9 +384,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                           {item.badge && (
                             <span
                               className={`ml-1 px-1.5 py-0.2 text-[10px] font-extrabold rounded-full ${
-                                isActive
-                                  ? "bg-black text-[#E8C466]"
-                                  : "bg-destructive text-destructive-foreground"
+                                isActive ? "bg-black text-[#E8C466]" : item.badgeColor || "bg-destructive text-white"
                               }`}
                             >
                               {item.badge}
@@ -388,7 +417,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{displayName}</p>
-                    <p className="text-xs text-muted-foreground">Nivel: {loyaltyTier}</p>
+                    <p className="text-xs text-[#DFB755] font-semibold">Rol: Barbero Profesional</p>
                   </div>
                 </div>
                 <button
@@ -422,7 +451,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                         <span>{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                        <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-destructive text-white">
                           {item.badge}
                         </span>
                       )}
@@ -435,7 +464,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
         </AnimatePresence>
       </header>
 
-      {/* CONTENIDO PRINCIPAL CON TRANSICIONES SUAVES ENTRE MÓDULOS */}
+      {/* CONTENIDO PRINCIPAL CON TRANSICIONES SUAVES */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8">
         <AnimatePresence mode="wait">
           <motion.div
@@ -451,7 +480,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
         </AnimatePresence>
       </main>
 
-      {/* FOOTER CLIENTE */}
+      {/* FOOTER DEL BARBERO */}
       <footer className="border-t border-border/80 bg-card/40 py-8 mt-auto pb-24 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs text-muted-foreground">
           <div className="flex items-center gap-2.5">
@@ -463,26 +492,29 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
               />
             </div>
             <span className="font-bold text-foreground">Tu Turno Barber</span>
-            <span>— Portal Exclusivo para Clientes</span>
+            <span>— Portal Exclusivo para Barberos</span>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 text-xs">
-            <NavLink to="/portal/servicios" className="hover:text-[#DFB755] transition-colors">Servicios</NavLink>
-            <NavLink to="/portal/paquetes" className="hover:text-[#DFB755] transition-colors">Paquetes</NavLink>
-            <NavLink to="/portal/productos" className="hover:text-[#DFB755] transition-colors">Productos</NavLink>
-            <NavLink to="/portal/agendar" className="hover:text-[#DFB755] transition-colors font-semibold">Agendar Cita</NavLink>
-            <NavLink to="/portal/perfil" className="hover:text-[#DFB755] transition-colors">Mi Perfil</NavLink>
+            <NavLink to="/barbero" className="hover:text-[#DFB755] transition-colors">Inicio</NavLink>
+            <NavLink to="/barbero/agenda" className="hover:text-[#DFB755] transition-colors">Mi Agenda</NavLink>
+            <NavLink to="/barbero/horarios" className="hover:text-[#DFB755] transition-colors">Mis Horarios</NavLink>
+            <NavLink to="/barbero/novedades" className="hover:text-[#DFB755] transition-colors">Novedades</NavLink>
+            <NavLink to="/barbero/citas" className="hover:text-[#DFB755] transition-colors font-semibold">Mis Citas</NavLink>
+            <NavLink to="/barbero/reportes" className="hover:text-[#DFB755] transition-colors">Reportes</NavLink>
           </div>
 
           <div>
-            <span>© {new Date().getFullYear()} Tu Turno Barber. Todos los derechos reservados.</span>
+            <span>© {new Date().getFullYear()} Tu Turno Barber. Módulo de Operación Profesional.</span>
           </div>
         </div>
       </footer>
 
       {/* BARRA DE NAVEGACIÓN INFERIOR FLOTANTE GLASSMORPHISM PARA CELULARES */}
-      <ClientMobileDock upcomingCount={upcomingCount} />
+      <BarberMobileDock
+        pendingNoveltiesCount={pendingNoveltiesCount}
+        todayAppointmentsCount={todayAppointmentsCount}
+      />
     </div>
   );
 }
-

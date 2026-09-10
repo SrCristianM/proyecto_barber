@@ -22,8 +22,6 @@ import {
   Percent,
   Star,
   Bookmark,
-  ThumbsUp,
-  Flame,
   Zap,
   RotateCw
 } from "lucide-react";
@@ -32,20 +30,18 @@ import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import VipLoyaltyCard from "../components/VipLoyaltyCard";
 import ReviewModal from "../components/ReviewModal";
 import AnimatedCounter from "../components/AnimatedCounter";
-import ClientImage from "../components/ClientImage";
 import BarberPole from "../components/BarberPole";
 import StyleQuizModal from "../components/StyleQuizModal";
 import BarberRewardsModal from "../components/BarberRewardsModal";
 import SalonAmbienceWidget from "../components/SalonAmbienceWidget";
 import UpcomingAppointmentTimeline from "../components/UpcomingAppointmentTimeline";
-import BeardFadeVisualGuide from "../components/BeardFadeVisualGuide";
+import ClientPromoBanner from "../components/ClientPromoBanner";
 import SalonLiveRadar from "../components/SalonLiveRadar";
 import { createGoogleCalendarUrl, downloadIcsFile, createWhatsAppShareUrl } from "../utils/calendarUtils";
 import { Gift, Share2, Compass, Download } from "lucide-react";
 import {
   getCurrentClientProfile,
   getClientAppointments,
-  getClientServices,
   getClientPackages,
   cancelAppointment,
   rescheduleAppointment,
@@ -62,7 +58,6 @@ export default function ClientDashboard() {
   const [upcomingAppointment, setUpcomingAppointment] = useState(null);
   const [completedCount, setCompletedCount] = useState(0);
   const [favoriteBarber, setFavoriteBarber] = useState("Carlos Rodríguez");
-  const [services, setServices] = useState([]);
   const [packages, setPackages] = useState([]);
   const [loyaltyDetails, setLoyaltyDetails] = useState(null);
   const [styleLog, setStyleLog] = useState(null);
@@ -109,7 +104,6 @@ export default function ClientDashboard() {
       if (topBarber) setFavoriteBarber(topBarber);
     }
 
-    setServices(getClientServices().slice(0, 4));
     setPackages(getClientPackages().slice(0, 2));
     setLoyaltyDetails(getClientLoyaltyDetails());
     setStyleLog(getClientStyleLog());
@@ -214,10 +208,10 @@ export default function ClientDashboard() {
               type="button"
               onClick={() => setShowRewardsModal(true)}
               className="px-5 py-3.5 rounded-2xl bg-card border border-border hover:bg-accent text-foreground font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs"
-              title="Ver puntos y canjear premios de fidelidad"
+              title="Ver tarjeta de sellos y recompensas por cortes acumulados"
             >
               <Gift className="w-4 h-4 text-[#DFB755]" />
-              <span>Club Rewards</span>
+              <span>Mis Recompensas</span>
             </button>
 
             <Link
@@ -355,6 +349,9 @@ export default function ClientDashboard() {
               </div>
             </div>
           )}
+
+          {/* ESPACIO PUBLICITARIO & PROMOCIONES VIP */}
+          <ClientPromoBanner />
         </div>
 
         {/* COLUMNA DERECHA: TARJETA VIP 3D & CALIFICACIÓN (5 cols) */}
@@ -521,78 +518,6 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      {/* SECCIÓN DE SERVICIOS DESTACADOS */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight">
-              Servicios Más Solicitados
-            </h2>
-            <p className="text-xs text-muted-foreground">Los cortes, afeitados y perfilados preferidos de nuestra comunidad</p>
-          </div>
-          <Link
-            to="/portal/servicios"
-            className="text-xs font-bold text-[#DDAE41] dark:text-[#E8C466] hover:underline flex items-center gap-1 shrink-0"
-          >
-            <span>Ver catálogo completo</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {services.map((svc) => (
-            <div
-              key={svc.id_servicio}
-              className="group rounded-3xl bg-card border border-border hover:border-[#DFB755]/50 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between p-4"
-            >
-              <div className="space-y-3">
-                <div className="relative h-36 w-full rounded-2xl overflow-hidden bg-muted">
-                  <ClientImage
-                    src={svc.imagen_url}
-                    alt={svc.nombre}
-                    type="service"
-                    category={svc.categoria}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <span className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-black/75 text-white backdrop-blur-sm flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-[#DFB755]" />
-                    {svc.duracion_minutos} min
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-extrabold text-foreground group-hover:text-[#DDAE41] dark:group-hover:text-[#E8C466] transition-colors">
-                    {svc.nombre}
-                  </h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
-                    {svc.descripcion}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">Precio</span>
-                  <span className="text-base font-black text-[#DDAE41] dark:text-[#E8C466]">
-                    ${Number(svc.precio).toLocaleString("es-CO")}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate(`/portal/agendar?servicio=${svc.id_servicio}`)}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black text-xs font-black transition-all cursor-pointer shadow-xs"
-                >
-                  Agendar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* GUÍA VISUAL INTERACTIVA DE FADES Y BARBAS */}
-      <BeardFadeVisualGuide />
 
       {/* SECCIÓN DE EXPERIENCIA & GARANTÍAS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">

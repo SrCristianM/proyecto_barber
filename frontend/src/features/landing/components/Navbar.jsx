@@ -39,18 +39,22 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group">
+        <Link to="/" className="flex items-center gap-3 group">
           <motion.div
-            whileHover={{ rotate: 15, scale: 1.1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E8C466] to-[#DDAE41] flex items-center justify-center text-black shadow-sm shadow-[#DDAE41]/25"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            className="relative overflow-hidden rounded-xl border border-[#C9A24A]/30 bg-black/60 shadow-md shadow-[#C9A24A]/10 p-0.5 group-hover:border-[#E8C466]/70 transition-all duration-300"
           >
-            <BarberScissorsIcon className="w-4 h-4 text-black" strokeWidth={2} />
+            <img
+              src="/logo.png"
+              alt="Tu Turno Barbería"
+              className="h-9 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
           </motion.div>
-          <div className="leading-tight">
+          <div className="leading-tight hidden sm:block">
             <div
-              style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.82rem" }}
-              className="font-bold tracking-wider group-hover:text-[#E0B85C] transition-colors flex items-center gap-1"
+              style={{ color: "#C9A24A", letterSpacing: "0.18em", fontSize: "0.85rem" }}
+              className="font-bold tracking-wider group-hover:text-[#E0B85C] transition-colors"
             >
               TU TURNO
             </div>

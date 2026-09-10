@@ -67,16 +67,18 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
     }
   };
 
-  const currentPoints = loyalty?.currentPoints || 0;
+  const serviciosRealizados = loyalty?.serviciosRealizados ?? loyalty?.visitsCount ?? 0;
+  const sellosCiclo = loyalty?.sellosCiclo ?? (serviciosRealizados % 5 === 0 && serviciosRealizados > 0 ? 5 : serviciosRealizados % 5);
+  const cortesFaltantes = loyalty?.cortesFaltantes ?? (5 - sellosCiclo);
 
   return (
     <Modal
-      title="Club VIP · Barber Rewards"
+      title="Club VIP · Tarjeta de Fidelidad & Recompensas"
       onClose={onClose}
       maxWidthClass="max-w-2xl"
     >
       <div className="space-y-6">
-        {/* Banner de balance de puntos */}
+        {/* Banner de balance de servicios y sellos */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-card via-card/90 to-[#DFB755]/15 border border-[#DFB755]/30 p-5 sm:p-6 shadow-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -85,22 +87,55 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
                   Nivel {loyalty?.tier || "Plata"}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {loyalty?.visitsCount || 0} visitas registradas
+                  {serviciosRealizados} {serviciosRealizados === 1 ? "corte completado" : "cortes completados"} en total
                 </span>
               </div>
               <h3 className="text-2xl font-black text-foreground">
-                Tus Puntos Acumulados: <span className="text-[#DFB755]">{currentPoints} pts</span>
+                Tus Cortes Acumulados: <span className="text-[#DFB755]">{serviciosRealizados}</span>
               </h3>
               <p className="text-xs text-muted-foreground">
-                Acumulas 10 puntos por cada cita completada en la barbería.
+                Cada 5 cortes completados obtienes un servicio o corte 100% gratis.
               </p>
             </div>
 
-            <div className="p-3 rounded-2xl bg-background/80 border border-border/80 text-center shrink-0">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Próxima Meta</span>
-              <span className="text-base font-black text-foreground">{loyalty?.targetPoints || 100} pts</span>
-              <span className="text-[10px] text-[#DFB755] block">Corte Gratis</span>
+            <div className="p-3 rounded-2xl bg-background/80 border border-border/80 text-center shrink-0 min-w-[130px]">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">Tarjeta Actual</span>
+              <span className="text-base font-black text-[#DFB755]">{sellosCiclo} de 5 sellos</span>
+              <span className="text-[10px] text-muted-foreground block">
+                {cortesFaltantes === 0 ? "¡Corte Gratis listo!" : `Faltan ${cortesFaltantes} cortes`}
+              </span>
             </div>
+          </div>
+
+          {/* Mini tira de sellos en el modal */}
+          <div className="mt-4 pt-3 border-t border-border/60 grid grid-cols-5 gap-1.5">
+            {[1, 2, 3, 4, 5].map((num) => {
+              const isStamped = sellosCiclo >= num;
+              const isReward = num === 5;
+              return (
+                <div
+                  key={num}
+                  className={`py-1.5 px-2 rounded-xl text-center border text-[11px] font-bold flex items-center justify-center gap-1 transition-all ${
+                    isStamped
+                      ? isReward
+                        ? "bg-[#DFB755]/30 border-[#DFB755] text-[#FFE082] shadow-xs font-black"
+                        : "bg-[#DFB755]/15 border-[#DFB755]/50 text-[#DFB755]"
+                      : isReward
+                      ? "bg-muted/40 border-dashed border-[#DFB755]/40 text-muted-foreground"
+                      : "bg-muted/30 border-dashed border-border text-muted-foreground/60"
+                  }`}
+                >
+                  {isStamped ? (
+                    <>
+                      {isReward ? <Crown className="w-3.5 h-3.5 text-[#FFE082]" /> : <CheckCircle2 className="w-3 h-3 text-[#DFB755]" />}
+                      <span>{isReward ? "¡Premio!" : `#${num}`}</span>
+                    </>
+                  ) : (
+                    <span>{isReward ? "5° Gratis" : `#${num}`}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -109,7 +144,7 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Gift className="w-4 h-4 text-[#DFB755]" />
-              Beneficios y Premios Canjeables
+              Catálogo de Recompensas por Cortes
             </h4>
             <span className="text-xs text-muted-foreground">
               {rewards.filter((r) => r.canjeado).length} de {rewards.length} canjeados
@@ -119,7 +154,8 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {rewards.map((rew) => {
               const isClaimed = rew.canjeado;
-              const canAfford = currentPoints >= rew.puntosRequeridos;
+              const canAfford = serviciosRealizados >= (rew.serviciosRequeridos || 0);
+              const faltan = (rew.serviciosRequeridos || 0) - serviciosRealizados;
 
               return (
                 <div
@@ -142,11 +178,11 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
                           isClaimed
                             ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                             : canAfford
-                            ? "bg-[#DFB755]/20 text-[#DFB755]"
+                            ? "bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/40"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {rew.puntosRequeridos} PTS
+                        {rew.serviciosRequeridos} {rew.serviciosRequeridos === 1 ? "CORTE" : "CORTES"}
                       </span>
                     </div>
 
@@ -172,7 +208,7 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
                         className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5 text-black" />
-                        <span>Canjear Beneficio</span>
+                        <span>Reclamar Recompensa</span>
                       </button>
                     ) : (
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -180,7 +216,7 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
                           <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                           Bloqueado
                         </span>
-                        <span>Faltan {rew.puntosRequeridos - currentPoints} pts</span>
+                        <span>Faltan {faltan} {faltan === 1 ? "corte" : "cortes"}</span>
                       </div>
                     )}
                   </div>
