@@ -2,52 +2,6 @@ import { useState, useMemo } from "react";
 
 // Base de datos de búsqueda indexada para todos los módulos
 const GLOBAL_DATABASE = [
-  // Clientes
-  {
-    id: "cli-1",
-    category: "Clientes",
-    title: "Pedro López",
-    subtitle: "+57 300 123 4567 • pedro@example.com • Nivel Oro",
-    route: "/dashboard/clients?highlight=cli-1",
-    icon: "client",
-    keywords: ["pedro", "lopez", "oro", "cliente", "3001234567", "pedro@example.com"]
-  },
-  {
-    id: "cli-2",
-    category: "Clientes",
-    title: "Ana Martínez",
-    subtitle: "+57 301 234 5678 • ana.m@example.com • Nivel Plata",
-    route: "/dashboard/clients?highlight=cli-2",
-    icon: "client",
-    keywords: ["ana", "martinez", "plata", "cliente", "3012345678", "ana.m@example.com"]
-  },
-  {
-    id: "cli-3",
-    category: "Clientes",
-    title: "Roberto Sánchez",
-    subtitle: "+57 302 345 6789 • roberto@example.com • Nivel Bronce",
-    route: "/dashboard/clients?highlight=cli-3",
-    icon: "client",
-    keywords: ["roberto", "sanchez", "bronce", "cliente", "3023456789"]
-  },
-  {
-    id: "cli-4",
-    category: "Clientes",
-    title: "Laura Gómez",
-    subtitle: "+57 303 456 7890 • laura@example.com • Nivel Oro",
-    route: "/dashboard/clients?highlight=cli-4",
-    icon: "client",
-    keywords: ["laura", "gomez", "oro", "cliente", "3034567890"]
-  },
-  {
-    id: "cli-5",
-    category: "Clientes",
-    title: "Diego Torres",
-    subtitle: "+57 304 567 8901 • diego.t@example.com • Nivel Nuevo",
-    route: "/dashboard/clients?highlight=cli-5",
-    icon: "client",
-    keywords: ["diego", "torres", "nuevo", "cliente", "3045678901"]
-  },
 
   // Usuarios
   {
@@ -273,57 +227,6 @@ const GLOBAL_DATABASE = [
     route: "/dashboard/products?highlight=prd-6",
     icon: "product",
     keywords: ["tijeras", "profesionales", "corte", "herramienta", "65000"]
-  },
-
-  // Citas
-  {
-    id: "app-1",
-    category: "Citas",
-    title: "Cita: Juan Pérez — Corte Clásico",
-    subtitle: "Hoy a las 10:00 • Barbero: Carlos Rodríguez",
-    route: "/dashboard/appointments?highlight=app-1",
-    icon: "appointment",
-    keywords: ["cita", "juan", "perez", "carlos", "agenda", "10:00"]
-  },
-  {
-    id: "app-2",
-    category: "Citas",
-    title: "Cita: María García — Corte + Barba",
-    subtitle: "Hoy a las 11:30 • Barbero: Miguel Ángel",
-    route: "/dashboard/appointments?highlight=app-2",
-    icon: "appointment",
-    keywords: ["cita", "maria", "garcia", "miguel", "agenda", "11:30"]
-  },
-
-  // Ventas & Facturación
-  {
-    id: "sal-1",
-    category: "Ventas",
-    title: "Venta #006 — Mostrador",
-    subtitle: "Monto: $45.000 • Cliente: Juan Pérez",
-    route: "/dashboard/sales?highlight=sal-1",
-    icon: "sale",
-    keywords: ["venta", "006", "factura", "juan", "perez", "45000", "caja"]
-  },
-  {
-    id: "sal-2",
-    category: "Ventas",
-    title: "Venta #005 — Factura Directa",
-    subtitle: "Monto: $75.000 • Cliente: María García",
-    route: "/dashboard/sales?highlight=sal-2",
-    icon: "sale",
-    keywords: ["venta", "005", "factura", "maria", "garcia", "75000", "caja"]
-  },
-
-  // Compras
-  {
-    id: "pur-1",
-    category: "Compras",
-    title: "Orden de Compra #001 — Barber Pro",
-    subtitle: "Total: $350.000 • Proveedor: Distribuidora Barber Pro Colombia",
-    route: "/dashboard/purchases?highlight=pur-1",
-    icon: "purchase",
-    keywords: ["compra", "orden", "barber pro", "proveedor", "factura compra", "350000"]
   },
 
   // Roles

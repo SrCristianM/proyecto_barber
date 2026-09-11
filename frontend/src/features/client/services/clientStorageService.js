@@ -23,173 +23,35 @@ const STORAGE_KEYS = {
 };
 
 // Datos iniciales si aún no se han persistido
-const INITIAL_SERVICES = [
-  { id_servicio: 1, nombre: "Corte Clásico", id_categoria_servicio: 1, categoria: "Cortes", precio: 15000, duracion_minutos: 30, descripcion: "Corte tradicional a tijera o máquina con acabado y perfilado profesional.", imagen_url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 2, nombre: "Corte + Barba", id_categoria_servicio: 3, categoria: "Paquetes", precio: 25000, duracion_minutos: 45, descripcion: "Corte completo personalizado más arreglo y perfilado de barba con toalla caliente.", imagen_url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 3, nombre: "Afeitado Premium", id_categoria_servicio: 2, categoria: "Barba", precio: 20000, duracion_minutos: 35, descripcion: "Afeitado clásico a navaja tradicional con vapor ozono, toalla caliente y bálsamo hidratante.", imagen_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 4, nombre: "Diseño y Color", id_categoria_servicio: 4, categoria: "Especiales", precio: 30000, duracion_minutos: 60, descripcion: "Líneas, figuras freestyle, decoloración o matización de color con productos de alta gama.", imagen_url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 5, nombre: "Corte Niño", id_categoria_servicio: 1, categoria: "Cortes", precio: 12000, duracion_minutos: 20, descripcion: "Corte de cabello para niños hasta 12 años, con paciencia y estilo.", imagen_url: "https://images.unsplash.com/photo-1517832606589-7629c3395909?w=600&auto=format&fit=crop&q=80", estado: 1 }
-];
+const INITIAL_SERVICES = [];
 
-const INITIAL_PACKAGES = [
+const INITIAL_PACKAGES = [];
+
+const INITIAL_PRODUCTS = [];
+
+const INITIAL_BARBERS = [
   {
-    id_paquete: 1,
-    nombre: "Paquete Básico",
-    descripcion: "Combinación ideal para mantener tu estilo fresco y cuidado esencial.",
-    descuento_porcentaje: 10,
-    estado: 1,
-    servicios_ids: [1, 3] // Corte Clásico (15.000) + Afeitado Premium (20.000) = 35.000 -> 31.500
-  },
-  {
-    id_paquete: 2,
-    nombre: "Paquete Premium",
-    descripcion: "El tratamiento definitivo de barbería: corte y barba más diseño personalizado.",
-    descuento_porcentaje: 20,
-    estado: 1,
-    servicios_ids: [2, 4] // Corte+Barba (25.000) + Diseño y Color (30.000) = 55.000 -> 44.000
-  },
-  {
-    id_paquete: 3,
-    nombre: "Paquete Especial Caballero",
-    descripcion: "Corte de temporada acompañado de perfilado completo de barba.",
-    descuento_porcentaje: 15,
-    estado: 1,
-    servicios_ids: [1, 2] // Corte Clásico (15.000) + Corte+Barba (25.000) = 40.000 -> 34.000
+    id_barbero: 1,
+    id_usuario: 4,
+    nombre: "Carlos",
+    apellido: "Rodríguez",
+    correo: "barbero@tuturnobarber.com",
+    telefono: "+57 302 345 6789",
+    especialidad: "Corte Clásico & Fade",
+    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    estado: 1
   }
 ];
 
-const INITIAL_PRODUCTS = [
-  { id_producto: 1, nombre: "Gel para Cabello Extra Fijación", id_categoria_producto: 1, categoria: "Estilizado", stock: 25, precio: 15000, descripcion: "Fijación duradera 24h sin dejar residuos ni descamación con brillo natural.", imagen_url: "https://images.unsplash.com/photo-1598452963314-b09f397a5c48?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 2, nombre: "Cera Modeladora Mate", id_categoria_producto: 1, categoria: "Estilizado", stock: 8, precio: 18000, descripcion: "Acabado mate natural y textura maleable, ideal para peinados modernos.", imagen_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 3, nombre: "Shampoo Anticaída con Biotina", id_categoria_producto: 2, categoria: "Cuidado", stock: 15, precio: 22000, descripcion: "Fortalece la raíz y revitaliza el cuero cabelludo dejando frescura de mentol.", imagen_url: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 4, nombre: "Aceite Nutritivo para Barba", id_categoria_producto: 3, categoria: "Barba", stock: 12, precio: 25000, descripcion: "Fórmula enriquecida con aceite de argán y jojoba para hidratar y suavizar la barba.", imagen_url: "https://images.unsplash.com/photo-1621607512214-68297480165e?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 5, nombre: "Navaja de Afeitar Clásica", id_categoria_producto: 4, categoria: "Herramientas", stock: 5, precio: 45000, descripcion: "Navaja de acero inoxidable con mango ergonómico para afeitados de precisión.", imagen_url: "https://images.unsplash.com/photo-1512690459411-b9245aed614b?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 6, nombre: "Tijeras Profesionales de Corte", id_categoria_producto: 4, categoria: "Herramientas", stock: 10, precio: 65000, descripcion: "Acero japonés con filo dulce para cortes limpios y ergonómicos.", imagen_url: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 7, nombre: "Peine Antiestático de Carbono", id_categoria_producto: 4, categoria: "Herramientas", stock: 30, precio: 8000, descripcion: "Resistente al calor y a productos químicos, desenredo suave.", imagen_url: "https://images.unsplash.com/photo-1590439471364-192aa70c0b53?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_producto: 8, nombre: "Bálsamo Calmante Aftershave", id_categoria_producto: 3, categoria: "Barba", stock: 18, precio: 20000, descripcion: "Alivia la irritación post-afeitado con aloe vera y manzanilla.", imagen_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&auto=format&fit=crop&q=80", estado: 1 }
-];
+const INITIAL_SCHEDULES = [];
 
-const INITIAL_BARBERS = [
-  { id_barbero: 1, id_usuario: 4, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 300 123 4567", especialidad: "Corte Clásico", imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80", estado: 1 },
-  { id_barbero: 2, id_usuario: 5, nombre: "Miguel", apellido: "Ángel", correo: "miguel@example.com", telefono: "+57 301 234 5678", especialidad: "Diseño y Color", imagen_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80", estado: 1 },
-  { id_barbero: 3, id_usuario: 6, nombre: "Javier", apellido: "Torres", correo: "javier@example.com", telefono: "+57 302 345 6789", especialidad: "Barba Premium", imagen_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80", estado: 1 }
-];
-
-const INITIAL_SCHEDULES = [
-  { id_horario: 1, id_barbero: 1, dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"], hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1 },
-  { id_horario: 2, id_barbero: 2, dias_semana: ["Lunes", "Martes", "Miercoles", "Viernes", "Sabado"], hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1 },
-  { id_horario: 3, id_barbero: 3, dias_semana: ["Martes", "Miercoles", "Jueves", "Viernes", "Sabado"], hora_inicio: "10:00:00", hora_fin: "19:00:00", estado: 1 }
-];
-
-const INITIAL_CLIENTS = [
-  { id_cliente: 1, id_usuario: 7, nombre: "Pedro", apellido: "López", correo: "cliente@example.com", telefono: "3001234567", direccion: "Calle 10 # 5-20", nivel_fidelidad: "Oro", estado: 1 },
-  { id_cliente: 2, id_usuario: 8, nombre: "Ana", apellido: "Martínez", correo: "ana.m@example.com", telefono: "3012345678", direccion: "Carrera 15 # 45-12", nivel_fidelidad: "Plata", estado: 1 },
-  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "3023456789", direccion: "Av. Siempre Viva 123", nivel_fidelidad: "Bronce", estado: 1 }
-];
+const INITIAL_CLIENTS = [];
 
 const TODAY = new Date().toISOString().split("T")[0];
 
-const INITIAL_APPOINTMENTS = [
-  {
-    id_cita: 101,
-    id_cliente: 1,
-    id_barbero: 1,
-    id_servicio: 1,
-    id_paquete: null,
-    nombre_item: "Corte Clásico",
-    fecha: TODAY,
-    hora: "10:00",
-    estado: "Programada",
-    precio: 15000,
-    fecha_registro: "2026-06-01 08:00:00",
-    notas: "Cliente prefiere corte bajo a los lados."
-  },
-  {
-    id_cita: 102,
-    id_cliente: 1,
-    id_barbero: 2,
-    id_servicio: 2,
-    id_paquete: null,
-    nombre_item: "Corte + Barba",
-    fecha: "2026-05-20",
-    hora: "15:00",
-    estado: "Completada",
-    precio: 25000,
-    fecha_registro: "2026-05-18 10:30:00",
-    notas: ""
-  },
-  {
-    id_cita: 103,
-    id_cliente: 1,
-    id_barbero: 3,
-    id_servicio: 3,
-    id_paquete: null,
-    nombre_item: "Afeitado Premium",
-    fecha: "2026-04-10",
-    hora: "11:00",
-    estado: "Completada",
-    precio: 20000,
-    fecha_registro: "2026-04-08 14:15:00",
-    notas: ""
-  },
-  {
-    id_cita: 104,
-    id_cliente: 1,
-    id_barbero: 1,
-    id_servicio: 1,
-    id_paquete: null,
-    nombre_item: "Corte Clásico Degradado",
-    fecha: "2026-06-12",
-    hora: "14:00",
-    estado: "Completada",
-    precio: 15000,
-    fecha_registro: "2026-06-10 10:00:00",
-    notas: ""
-  },
-  {
-    id_cita: 105,
-    id_cliente: 1,
-    id_barbero: 2,
-    id_servicio: 2,
-    id_paquete: null,
-    nombre_item: "Corte + Ritual Barba",
-    fecha: "2026-07-05",
-    hora: "16:00",
-    estado: "Completada",
-    precio: 25000,
-    fecha_registro: "2026-07-03 11:30:00",
-    notas: ""
-  }
-];
+const INITIAL_APPOINTMENTS = [];
 
-const INITIAL_SALES = [
-  {
-    id_venta: 1,
-    id_cliente: 1,
-    id_usuario: 1,
-    id_cita: 102,
-    fecha: "2026-05-20 15:45:00",
-    total: 43000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 1, id_venta: 1, tipo_item: "Servicio", id_servicio: 2, cantidad: 1, precio_unitario: 25000, subtotal: 25000, nombre: "Corte + Barba" },
-      { id_venta_detalle: 2, id_venta: 1, tipo_item: "Producto", id_producto: 2, cantidad: 1, precio_unitario: 18000, subtotal: 18000, nombre: "Cera Modeladora Mate" }
-    ]
-  },
-  {
-    id_venta: 2,
-    id_cliente: 1,
-    id_usuario: 1,
-    id_cita: 103,
-    fecha: "2026-04-10 11:35:00",
-    total: 35000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 3, id_venta: 2, tipo_item: "Servicio", id_servicio: 3, cantidad: 1, precio_unitario: 20000, subtotal: 20000, nombre: "Afeitado Premium" },
-      { id_venta_detalle: 4, id_venta: 2, tipo_item: "Producto", id_producto: 1, cantidad: 1, precio_unitario: 15000, subtotal: 15000, nombre: "Gel para Cabello Extra Fijación" }
-    ]
-  }
-];
+const INITIAL_SALES = [];
 
 /** Lee o inicializa un array en localStorage */
 function getOrInit(key, initialData) {

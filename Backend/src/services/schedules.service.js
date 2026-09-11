@@ -95,13 +95,13 @@ export class SchedulesService {
     if (isDatabaseConnected()) {
       const sql = `
         SELECT hora, estado FROM cita
-        WHERE id_barbero = ? AND fecha = ? AND estado IN ('Programada', 'Reprogramada')
+        WHERE id_barbero = ? AND fecha = ? AND estado IN ('Programada', 'Confirmada', 'Reprogramada')
       `;
       const rows = await executeQuery(sql, [bId, dateStr]);
       bookedTimes = rows ? rows.map((r) => r.hora.substring(0, 5)) : [];
     } else {
       bookedTimes = mockStore.citas
-        .filter((c) => c.id_barbero === bId && c.fecha === dateStr && ["Programada", "Reprogramada"].includes(c.estado))
+        .filter((c) => c.id_barbero === bId && c.fecha === dateStr && ["Programada", "Confirmada", "Reprogramada"].includes(c.estado))
         .map((c) => c.hora.substring(0, 5));
     }
 

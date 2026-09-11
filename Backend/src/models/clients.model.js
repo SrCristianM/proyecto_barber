@@ -253,6 +253,33 @@ export class ClientsRepository {
 
     return newStatus;
   }
+
+  static async delete(id) {
+    const clientId = Number(id);
+    const client = await this.findById(clientId);
+    if (!client) return false;
+
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM cliente WHERE id_cliente = ?`, [clientId]);
+        if (client.id_usuario) {
+          await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [client.id_usuario]);
+        }
+      } catch (err) {
+        await executeQuery(`UPDATE cliente SET estado = 0 WHERE id_cliente = ?`, [clientId]);
+        if (client.id_usuario) {
+          await executeQuery(`UPDATE usuario SET estado = 0 WHERE id_usuario = ?`, [client.id_usuario]);
+        }
+      }
+      return true;
+    }
+
+    mockStore.clientes = mockStore.clientes.filter((c) => c.id_cliente !== clientId);
+    if (client.id_usuario) {
+      mockStore.usuarios = mockStore.usuarios.filter((u) => u.id_usuario !== client.id_usuario);
+    }
+    return true;
+  }
 }
 
 export { ClientsRepository as ClientsModel };

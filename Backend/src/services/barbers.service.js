@@ -54,4 +54,13 @@ export class BarbersService {
     const newStatus = await BarbersRepository.toggleStatus(id);
     return { id_barbero: Number(id), estado: newStatus };
   }
+
+  static async deleteBarber(id) {
+    const barber = await BarbersRepository.findById(id);
+    if (!barber) {
+      throw ApiError.notFound("Barbero no encontrado");
+    }
+    await BarbersRepository.delete(id);
+    return true;
+  }
 }

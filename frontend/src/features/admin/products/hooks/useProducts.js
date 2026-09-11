@@ -10,16 +10,7 @@ import {
   toggleProductStatus
 } from "../services/productsService";
 
-const mockProducts = [
-  { id_producto: 1, nombre: "Gel para Cabello", id_categoria_producto: 1, stock: 25, precio: 15000, imagen_url: "", estado: 1 },
-  { id_producto: 2, nombre: "Cera Modeladora", id_categoria_producto: 1, stock: 8, precio: 18000, imagen_url: "", estado: 1 },
-  { id_producto: 3, nombre: "Shampoo Premium", id_categoria_producto: 2, stock: 15, precio: 22000, imagen_url: "", estado: 1 },
-  { id_producto: 4, nombre: "Aceite para Barba", id_categoria_producto: 3, stock: 2, precio: 25000, imagen_url: "", estado: 1 },
-  { id_producto: 5, nombre: "Navaja Profesional", id_categoria_producto: 4, stock: 0, precio: 45000, imagen_url: "", estado: 0 },
-  { id_producto: 6, nombre: "Tijeras Profesionales", id_categoria_producto: 4, stock: 12, precio: 65000, imagen_url: "", estado: 1 },
-  { id_producto: 7, nombre: "Peine de Carbono", id_categoria_producto: 4, stock: 30, precio: 8000, imagen_url: "", estado: 1 },
-  { id_producto: 8, nombre: "Bálsamo para Barba", id_categoria_producto: 3, stock: 18, precio: 20000, imagen_url: "", estado: 1 }
-];
+const mockProducts = [];
 
 export const categories = CATEGORIAS_PRODUCTO;
 
@@ -32,7 +23,7 @@ const emptyForm = {
 };
 
 export function useProducts() {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
@@ -63,11 +54,10 @@ export function useProducts() {
   const filteredProducts = products
     .filter((product) => {
       const search = searchTerm.toLowerCase().trim();
-      const catName = getCategoryName(product.id_categoria_producto).toLowerCase();
       const matchesSearch =
         search === "" ||
         product.nombre.toLowerCase().includes(search) ||
-        catName.includes(search);
+        getCategoryName(product.id_categoria_producto).toLowerCase().includes(search);
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -96,7 +86,7 @@ export function useProducts() {
   useEffect(() => {
     getProducts()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setProducts(data);
         }
       })

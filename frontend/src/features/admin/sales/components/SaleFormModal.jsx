@@ -106,12 +106,24 @@ export default function SaleFormModal({
                   id_cita: val ? Number(val) : null
                 })
               }
-              options={[
-                { value: "", label: "Venta Directa en Mostrador" },
-                { value: 1, label: "Cita #1 — Servicio Juan Pérez" },
-                { value: 2, label: "Cita #2 — Servicio María García" },
-                { value: 3, label: "Cita #3 — Servicio Pedro López" }
-              ]}
+              options={(() => {
+                const base = [{ value: "", label: "Venta Directa en Mostrador" }];
+                try {
+                  const raw = localStorage.getItem("barber_appointments_db");
+                  const apts = raw ? JSON.parse(raw) : [];
+                  if (Array.isArray(apts)) {
+                    apts.forEach((a) => {
+                      base.push({
+                        value: a.id_cita,
+                        label: `Cita #${a.id_cita} — ${a.cliente_nombre || "Cliente"} (${(a.hora || "").substring(0, 5)})`
+                      });
+                    });
+                  }
+                } catch {
+                  // Fallback seguro
+                }
+                return base;
+              })()}
               searchable={false}
             />
           </div>

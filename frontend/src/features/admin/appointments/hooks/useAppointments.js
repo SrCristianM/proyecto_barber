@@ -8,6 +8,8 @@ import {
   updateAppointmentStatus,
   deleteAppointment
 } from "../services/appointmentsService";
+import { getBarbers } from "../../barbers/services/barbersService";
+import { getServices } from "../../services/services/servicesService";
 
 export function getRealClients() {
   try {
@@ -52,9 +54,7 @@ export function getRealClients() {
     }));
   } catch (err) {
     console.error("Error al obtener clientes reales:", err);
-    return [
-      { id_cliente: 1, nombre: "Pedro López", correo: "cliente@example.com", telefono: "3001234567" }
-    ];
+    return [];
   }
 }
 
@@ -74,13 +74,7 @@ const mockServicesList = [
 
 const TODAY = new Date().toISOString().split("T")[0];
 
-const mockAppointments = [
-  { id_cita: 1, id_cliente: 1, id_barbero: 1, id_servicio: 1, fecha: TODAY, hora: "09:00:00", estado: "Programada", precio: 15000, fecha_registro: "2026-06-01 08:00:00" },
-  { id_cita: 2, id_cliente: 2, id_barbero: 2, id_servicio: 2, fecha: TODAY, hora: "09:00:00", estado: "Completada", precio: 25000, fecha_registro: "2026-06-01 10:00:00" },
-  { id_cita: 3, id_cliente: 3, id_barbero: 3, id_servicio: 3, fecha: TODAY, hora: "10:00:00", estado: "Programada", precio: 20000, fecha_registro: "2026-06-01 11:30:00" },
-  { id_cita: 4, id_cliente: 4, id_barbero: 4, id_servicio: 4, fecha: TODAY, hora: "11:00:00", estado: "Reprogramada", precio: 30000, fecha_registro: "2026-06-01 14:00:00" },
-  { id_cita: 5, id_cliente: 5, id_barbero: 1, id_servicio: 1, fecha: TODAY, hora: "14:00:00", estado: "Programada", precio: 15000, fecha_registro: "2026-06-01 16:00:00" }
-];
+const mockAppointments = [];
 
 const timeSlots = Array.from({ length: 11 }, (_, i) => `${(i + 9).toString().padStart(2, "0")}:00`);
 
@@ -124,6 +118,8 @@ export function useAppointments() {
   const [formData, setFormData] = useState(emptyForm);
 
   const [clientsList, setClientsList] = useState(() => getRealClients());
+  const [barbersList, setBarbersList] = useState(mockBarbersList);
+  const [servicesList, setServicesList] = useState(mockServicesList);
 
   // ---- Helpers ----
   const getClientName = (id_cliente, apt) => {
@@ -142,9 +138,11 @@ export function useAppointments() {
   };
 
   const getBarberName = (id_barbero) =>
+    barbersList.find((b) => b.id_barbero === Number(id_barbero))?.nombre ||
     mockBarbersList.find((b) => b.id_barbero === Number(id_barbero))?.nombre || "Barbero Desconocido";
 
   const getServiceInfo = (id_servicio) =>
+    servicesList.find((s) => s.id_servicio === Number(id_servicio)) ||
     mockServicesList.find((s) => s.id_servicio === Number(id_servicio)) || {
       nombre: "Servicio General",
       duracion_minutos: 30,
@@ -200,7 +198,7 @@ export function useAppointments() {
       const data = localStorage.getItem("barber_appointments_db");
       if (data) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setAppointments(parsed);
           return;
         }
@@ -208,11 +206,26 @@ export function useAppointments() {
     } catch (e) {
       console.error(e);
     }
-    setAppointments(mockAppointments);
+    setAppointments([]);
   };
 
   useEffect(() => {
     setClientsList(getRealClients());
+
+    getBarbers().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setBarbersList(data.map((b) => ({
+          id_barbero: b.id_barbero,
+          nombre: `${b.nombre} ${b.apellido || ""}`.trim()
+        })));
+      }
+    }).catch(() => {});
+
+    getServices().then((data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setServicesList(data);
+      }
+    }).catch(() => {});
 
     getAppointments()
       .then((data) => {
@@ -348,9 +361,9 @@ export function useAppointments() {
     goToToday,
     formatDateDisplay,
     timeSlots,
-    barbers: mockBarbersList,
+    barbers: barbersList.length > 0 ? barbersList : mockBarbersList,
     clients: clientsList,
-    services: mockServicesList,
+    services: servicesList.length > 0 ? servicesList : mockServicesList,
     availableStatuses: ESTADOS_CITA,
     getClientName,
     getBarberName,

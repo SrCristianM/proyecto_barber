@@ -164,6 +164,20 @@ export class ServicesRepository {
     return newStatus;
   }
 
+  static async delete(id) {
+    const serviceId = Number(id);
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM servicio WHERE id_servicio = ?`, [serviceId]);
+      } catch (err) {
+        await executeQuery(`UPDATE servicio SET estado = 0 WHERE id_servicio = ?`, [serviceId]);
+      }
+      return true;
+    }
+    mockStore.servicios = mockStore.servicios.filter((s) => s.id_servicio !== serviceId);
+    return true;
+  }
+
   static async findAllCategories() {
     if (isDatabaseConnected()) {
       const sql = `SELECT * FROM categoria_servicio WHERE estado = 1 ORDER BY nombre ASC`;

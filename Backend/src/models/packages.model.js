@@ -201,6 +201,22 @@ export class PackagesRepository {
     if (target) target.estado = newStatus;
     return newStatus;
   }
+
+  static async delete(id) {
+    const pkgId = Number(id);
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM paquete_servicio_detalle WHERE id_paquete = ?`, [pkgId]);
+        await executeQuery(`DELETE FROM paquete_servicio WHERE id_paquete = ?`, [pkgId]);
+      } catch (err) {
+        await executeQuery(`UPDATE paquete_servicio SET estado = 0 WHERE id_paquete = ?`, [pkgId]);
+      }
+      return true;
+    }
+    mockStore.paquete_servicio_detalles = mockStore.paquete_servicio_detalles.filter((d) => d.id_paquete !== pkgId);
+    mockStore.paquete_servicios = mockStore.paquete_servicios.filter((p) => p.id_paquete !== pkgId);
+    return true;
+  }
 }
 
 export { PackagesRepository as PackagesModel };

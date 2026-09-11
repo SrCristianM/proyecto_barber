@@ -4,9 +4,7 @@ import { CATEGORIAS_SERVICIO } from "../../../../shared/types/database";
 const emptyForm = { nombre: "", estado: 1 };
 
 export function useServiceCategories() {
-  const [categories, setCategories] = useState(
-    CATEGORIAS_SERVICIO.map((c) => ({ ...c }))
-  );
+  const [categories, setCategories] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);

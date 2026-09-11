@@ -1,0 +1,669 @@
+{
+  "roles": [
+    {
+      "id_rol": 1,
+      "nombre_rol": "Administrador",
+      "descripcion": "Control total del sistema",
+      "estado": 1,
+      "fecha_creacion": "2026-01-15 00:00:00"
+    },
+    {
+      "id_rol": 2,
+      "nombre_rol": "Recepcionista",
+      "descripcion": "Gestión de agenda, ventas y clientes",
+      "estado": 1,
+      "fecha_creacion": "2026-02-20 00:00:00"
+    },
+    {
+      "id_rol": 3,
+      "nombre_rol": "Barbero",
+      "descripcion": "Consulta de horarios y citas asignadas",
+      "estado": 1,
+      "fecha_creacion": "2026-03-10 00:00:00"
+    },
+    {
+      "id_rol": 4,
+      "nombre_rol": "Cliente",
+      "descripcion": "Agenda y consulta sus propios servicios",
+      "estado": 1,
+      "fecha_creacion": "2026-04-05 00:00:00"
+    }
+  ],
+  "modulos": [
+    {
+      "id_modulo": 1,
+      "nombre_modulo": "usuarios"
+    },
+    {
+      "id_modulo": 2,
+      "nombre_modulo": "roles"
+    },
+    {
+      "id_modulo": 3,
+      "nombre_modulo": "citas"
+    },
+    {
+      "id_modulo": 4,
+      "nombre_modulo": "servicios"
+    },
+    {
+      "id_modulo": 5,
+      "nombre_modulo": "productos"
+    },
+    {
+      "id_modulo": 6,
+      "nombre_modulo": "ventas"
+    },
+    {
+      "id_modulo": 7,
+      "nombre_modulo": "horarios"
+    },
+    {
+      "id_modulo": 8,
+      "nombre_modulo": "clientes"
+    },
+    {
+      "id_modulo": 9,
+      "nombre_modulo": "proveedores"
+    },
+    {
+      "id_modulo": 10,
+      "nombre_modulo": "compras"
+    }
+  ],
+  "permisos": [
+    {
+      "id_permiso": 1,
+      "id_modulo": 1,
+      "accion": "ver"
+    },
+    {
+      "id_permiso": 2,
+      "id_modulo": 1,
+      "accion": "crear"
+    },
+    {
+      "id_permiso": 3,
+      "id_modulo": 1,
+      "accion": "editar"
+    },
+    {
+      "id_permiso": 4,
+      "id_modulo": 1,
+      "accion": "eliminar"
+    },
+    {
+      "id_permiso": 5,
+      "id_modulo": 2,
+      "accion": "ver"
+    },
+    {
+      "id_permiso": 6,
+      "id_modulo": 2,
+      "accion": "crear"
+    },
+    {
+      "id_permiso": 7,
+      "id_modulo": 2,
+      "accion": "editar"
+    },
+    {
+      "id_permiso": 8,
+      "id_modulo": 2,
+      "accion": "eliminar"
+    },
+    {
+      "id_permiso": 9,
+      "id_modulo": 3,
+      "accion": "ver"
+    },
+    {
+      "id_permiso": 10,
+      "id_modulo": 3,
+      "accion": "crear"
+    },
+    {
+      "id_permiso": 11,
+      "id_modulo": 3,
+      "accion": "editar"
+    },
+    {
+      "id_permiso": 12,
+      "id_modulo": 3,
+      "accion": "cancelar"
+    },
+    {
+      "id_permiso": 13,
+      "id_modulo": 4,
+      "accion": "leer"
+    }
+  ],
+  "rol_permisos": [
+    {
+      "id_rol": 1,
+      "id_permiso": 1
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 2
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 3
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 4
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 5
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 6
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 7
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 8
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 9
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 10
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 11
+    },
+    {
+      "id_rol": 1,
+      "id_permiso": 12
+    },
+    {
+      "id_rol": 3,
+      "id_permiso": 9
+    },
+    {
+      "id_rol": 3,
+      "id_permiso": 11
+    },
+    {
+      "id_rol": 4,
+      "id_permiso": 9
+    },
+    {
+      "id_rol": 4,
+      "id_permiso": 10
+    },
+    {
+      "id_rol": 2,
+      "id_permiso": 1
+    },
+    {
+      "id_rol": 2,
+      "id_permiso": 9
+    },
+    {
+      "id_rol": 2,
+      "id_permiso": 10
+    }
+  ],
+  "usuarios": [
+    {
+      "id_usuario": 1,
+      "nombre": "Cristian",
+      "apellido": "Mazo",
+      "correo": "cristianmazo957@gmail.com",
+      "contrasena": "$2a$10$R5F7eDK4YIcPt4oUwiPmi.gGrb1DRT8eM2nXwfF39bMU5nTGWqOSu",
+      "telefono": "+57 300 987 6543",
+      "id_rol": 1,
+      "estado": 1,
+      "fecha_registro": "2026-01-10 08:00:00"
+    },
+    {
+      "id_usuario": 3,
+      "nombre": "María",
+      "apellido": "García",
+      "correo": "maria@example.com",
+      "contrasena": "$2a$10$Ku.tqQGp/NPVGoaCStVTzOuQFtRYIyoEA9PK01Ly1jriIflVN9WfO",
+      "telefono": "+57 301 234 5678",
+      "id_rol": 2,
+      "estado": 1,
+      "fecha_registro": "2026-02-20 14:15:00"
+    },
+    {
+      "id_usuario": 4,
+      "nombre": "Carlos",
+      "apellido": "Rodríguez",
+      "correo": "barbero@tuturnobarber.com",
+      "contrasena": "$2a$10$..d9zrvkZBpDPQANvi.z.eblOC6bCJAR.juYapz84EHqG88H3e16q",
+      "telefono": "+57 302 345 6789",
+      "id_rol": 3,
+      "estado": 1,
+      "fecha_registro": "2026-03-10 09:00:00"
+    },
+    {
+      "id_usuario": 7,
+      "nombre": "Esteban",
+      "apellido": "Quintero",
+      "correo": "esteban@example.com",
+      "contrasena": "$2a$10$eQNyq1fjedmRq4EC4XH3KuALz7U358Osvhxfan1hlwMyYhpl38d9a",
+      "telefono": "+57 315 000 0000",
+      "id_rol": 2,
+      "estado": 0,
+      "fecha_registro": "2026-09-11 05:19:42"
+    },
+    {
+      "id_usuario": 8,
+      "nombre": "TestUser",
+      "apellido": "DeleteAudit",
+      "correo": "testuser_1789104735053@audit.com",
+      "contrasena": "$2a$10$v9jNK6TrH32oof9L.feaoeT5Q6b448JeG69Nyd5Q2AUA7YRTFrt4C",
+      "telefono": null,
+      "id_rol": 2,
+      "estado": 0,
+      "fecha_registro": "2026-09-11 05:32:15"
+    },
+    {
+      "id_usuario": 9,
+      "nombre": "TestUser",
+      "apellido": "DeleteAudit",
+      "correo": "testuser_1789104745306@audit.com",
+      "contrasena": "$2a$10$N9qo2IxDykU0Q/Dbu9bOa.FQD8xUhfIWBy0fvGSxsVzptxzWkXt6m",
+      "telefono": null,
+      "id_rol": 2,
+      "estado": 0,
+      "fecha_registro": "2026-09-11 05:32:25"
+    },
+    {
+      "id_usuario": 10,
+      "nombre": "TestUser",
+      "apellido": "DeleteAudit",
+      "correo": "testuser_1789104769700@audit.com",
+      "contrasena": "$2a$10$BcsPs0wmoacgw2W4cKUP7OLW1egAf0m5TALN1Kax/cwq3FRKRkhZ6",
+      "telefono": null,
+      "id_rol": 2,
+      "estado": 0,
+      "fecha_registro": "2026-09-11 05:32:49"
+    }
+  ],
+  "barberos": [
+    {
+      "id_barbero": 1,
+      "id_usuario": 4,
+      "especialidad": "Corte Clásico & Fade",
+      "imagen_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+      "estado": 1
+    }
+  ],
+  "clientes": [],
+  "categoria_servicios": [
+    {
+      "id_categoria_servicio": 1,
+      "nombre": "Cortes",
+      "estado": 1
+    },
+    {
+      "id_categoria_servicio": 2,
+      "nombre": "Barba",
+      "estado": 1
+    },
+    {
+      "id_categoria_servicio": 3,
+      "nombre": "Tratamientos",
+      "estado": 1
+    },
+    {
+      "id_categoria_servicio": 4,
+      "nombre": "Combos",
+      "estado": 1
+    }
+  ],
+  "servicios": [],
+  "paquete_servicios": [
+    {
+      "id_paquete": 1,
+      "nombre": "Combo Look VIP",
+      "descuento_porcentaje": 20,
+      "estado": 0
+    }
+  ],
+  "paquete_servicio_detalles": [
+    {
+      "id_paquete_detalle": 1,
+      "id_paquete": 1,
+      "id_servicio": 1
+    },
+    {
+      "id_paquete_detalle": 2,
+      "id_paquete": 1,
+      "id_servicio": 2
+    }
+  ],
+  "categoria_productos": [
+    {
+      "id_categoria_producto": 1,
+      "nombre": "Cuidado Capilar",
+      "estado": 1
+    },
+    {
+      "id_categoria_producto": 2,
+      "nombre": "Cuidado Barba",
+      "estado": 2
+    },
+    {
+      "id_categoria_producto": 3,
+      "nombre": "Herramientas & Accesorios",
+      "estado": 1
+    }
+  ],
+  "productos": [],
+  "proveedores": [],
+  "horarios": [],
+  "novedades": [
+    {
+      "id_novedad": 1,
+      "id_barbero": 1,
+      "tipo": "Permiso",
+      "fecha": "2026-09-20",
+      "descripcion": "Cita m�dica programada",
+      "estado": "Aprobado",
+      "fecha_registro": "2026-09-11 05:16:46"
+    }
+  ],
+  "citas": [
+    {
+      "id_cita": 1,
+      "id_cliente": 1,
+      "id_barbero": 1,
+      "fecha": "2026-09-14",
+      "hora": "10:00:00",
+      "estado": "Cancelada",
+      "fecha_registro": "2026-09-11 05:16:52"
+    },
+    {
+      "id_cita": 2,
+      "id_cliente": 1,
+      "id_barbero": 1,
+      "fecha": "2029-03-02",
+      "hora": "10:00:00",
+      "estado": "Programada",
+      "fecha_registro": "2026-09-11 05:33:07"
+    }
+  ],
+  "cita_detalles": [
+    {
+      "id_cita_detalle": 1,
+      "id_cita": 1,
+      "id_servicio": 1,
+      "precio": 15000
+    },
+    {
+      "id_cita_detalle": 2,
+      "id_cita": 2,
+      "id_servicio": 1,
+      "precio": 15000
+    }
+  ],
+  "compras": [
+    {
+      "id_compra": 1,
+      "id_proveedor": 1,
+      "id_usuario": 1,
+      "fecha": "2026-09-11 05:15:04",
+      "total": 75000,
+      "estado": "Anulada"
+    }
+  ],
+  "detalle_compras": [
+    {
+      "id_detalle_compra": 1,
+      "id_compra": 1,
+      "id_producto": 1,
+      "cantidad": 5,
+      "precio_unitario": 15000,
+      "subtotal": 75000
+    }
+  ],
+  "ventas": [
+    {
+      "id_venta": 1,
+      "id_cita": null,
+      "id_cliente": 1,
+      "id_usuario": 1,
+      "fecha": "2026-09-11 05:14:51",
+      "total": 15000,
+      "estado": "Anulada"
+    },
+    {
+      "id_venta": 2,
+      "id_cita": null,
+      "id_cliente": 1,
+      "id_usuario": 1,
+      "fecha": "2026-09-11 05:33:07",
+      "total": 50000,
+      "estado": "Anulada"
+    }
+  ],
+  "venta_detalles": [
+    {
+      "id_venta_detalle": 1,
+      "id_venta": 1,
+      "tipo_item": "Servicio",
+      "id_producto": null,
+      "id_servicio": 1,
+      "cantidad": 1,
+      "precio_unitario": 15000,
+      "subtotal": 15000
+    },
+    {
+      "id_venta_detalle": 2,
+      "id_venta": 2,
+      "tipo_item": "Producto",
+      "id_producto": 2,
+      "id_servicio": null,
+      "cantidad": 2,
+      "precio_unitario": 25000,
+      "subtotal": 50000
+    }
+  ],
+  "bitacora": [
+    {
+      "id_log": 1,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:10:01"
+    },
+    {
+      "id_log": 2,
+      "id_usuario": 3,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:10:01"
+    },
+    {
+      "id_log": 3,
+      "id_usuario": 4,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:10:02"
+    },
+    {
+      "id_log": 4,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:10:06"
+    },
+    {
+      "id_log": 5,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:10:27"
+    },
+    {
+      "id_log": 6,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:11:19"
+    },
+    {
+      "id_log": 7,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:14:27"
+    },
+    {
+      "id_log": 8,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:14:42"
+    },
+    {
+      "id_log": 9,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:14:51"
+    },
+    {
+      "id_log": 10,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:15:04"
+    },
+    {
+      "id_log": 11,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:15:09"
+    },
+    {
+      "id_log": 12,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:16:04"
+    },
+    {
+      "id_log": 13,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:16:41"
+    },
+    {
+      "id_log": 14,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:16:46"
+    },
+    {
+      "id_log": 15,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:16:52"
+    },
+    {
+      "id_log": 16,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:17:41"
+    },
+    {
+      "id_log": 17,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:17:54"
+    },
+    {
+      "id_log": 18,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:18:05"
+    },
+    {
+      "id_log": 19,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:19:32"
+    },
+    {
+      "id_log": 20,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:19:42"
+    },
+    {
+      "id_log": 21,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:21:21"
+    },
+    {
+      "id_log": 22,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:32:14"
+    },
+    {
+      "id_log": 23,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:32:25"
+    },
+    {
+      "id_log": 24,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:32:49"
+    },
+    {
+      "id_log": 25,
+      "id_usuario": 11,
+      "accion": "Registro de usuario",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:32:54"
+    },
+    {
+      "id_log": 26,
+      "id_usuario": 12,
+      "accion": "Registro de usuario",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:33:07"
+    },
+    {
+      "id_log": 27,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-11 05:33:07"
+    }
+  ]
+}

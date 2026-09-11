@@ -10,10 +10,17 @@ import {
 } from "../services/barbersService";
 
 const mockBarbers = [
-  { id_barbero: 1, id_usuario: 3, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 300 123 4567", especialidad: "Corte Clásico", imagen_url: "", estado: 1 },
-  { id_barbero: 2, id_usuario: 6, nombre: "Miguel", apellido: "Ángel", correo: "miguel@example.com", telefono: "+57 301 234 5678", especialidad: "Diseño y Color", imagen_url: "", estado: 1 },
-  { id_barbero: 3, id_usuario: 7, nombre: "Javier", apellido: "Torres", correo: "javier@example.com", telefono: "+57 302 345 6789", especialidad: "Barba Premium", imagen_url: "", estado: 1 },
-  { id_barbero: 4, id_usuario: 5, nombre: "Luis", apellido: "Martínez", correo: "luis@example.com", telefono: "+57 303 456 7890", especialidad: "Corte Moderno", imagen_url: "", estado: 0 }
+  {
+    id_barbero: 1,
+    id_usuario: 4,
+    nombre: "Carlos",
+    apellido: "Rodríguez",
+    correo: "barbero@tuturnobarber.com",
+    telefono: "+57 302 345 6789",
+    especialidad: "Corte Clásico & Fade",
+    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    estado: 1
+  }
 ];
 
 export const availableSpecialties = [

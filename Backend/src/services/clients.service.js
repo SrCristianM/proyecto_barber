@@ -62,4 +62,13 @@ export class ClientsService {
     const newStatus = await ClientsRepository.toggleStatus(id);
     return { id_cliente: Number(id), estado: newStatus };
   }
+
+  static async deleteClient(id) {
+    const client = await ClientsRepository.findById(id);
+    if (!client) {
+      throw ApiError.notFound("Cliente no encontrado");
+    }
+    await ClientsRepository.delete(id);
+    return true;
+  }
 }

@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
 
 import { env } from "./config/env.js";
+import { isDatabaseConnected } from "./config/db.js";
+import { mockStore } from "./config/mockStore.js";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import { ApiError } from "./errors/apiError.js";
 import { swaggerDocument } from "./docs/swagger.js";
@@ -57,6 +59,18 @@ if (env.NODE_ENV !== "test") {
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Persistencia automática en disco local para operaciones que alteran datos cuando MySQL no está activo
+app.use((req, res, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+    res.on("finish", () => {
+      if (res.statusCode >= 200 && res.statusCode < 400 && !isDatabaseConnected()) {
+        mockStore.saveToFile();
+      }
+    });
+  }
+  next();
+});
 
 // Servidor estático para archivos subidos
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));

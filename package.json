@@ -1,0 +1,22 @@
+{
+  "name": "proyecto-barber",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Tu Turno Barber - Sistema Integral de Gestión de Barbería",
+  "scripts": {
+    "dev": "node dev.js",
+    "dev:backend": "npm --prefix Backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start": "node dev.js",
+    "install:all": "npm --prefix Backend install && npm --prefix frontend install"
+  },
+  "keywords": [
+    "barber",
+    "management",
+    "react",
+    "express",
+    "mysql"
+  ],
+  "author": "Tu Turno Barber Team",
+  "license": "ISC"
+}

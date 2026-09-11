@@ -163,7 +163,7 @@ export default function ScheduleNoveltiesView() {
             className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer shadow-xs"
           >
             <Plus className="h-4 w-4" />
-            Registrar Novedad
+            {stats?.total === 0 ? "Crear primera novedad" : "Registrar Novedad"}
           </button>
         </div>
 

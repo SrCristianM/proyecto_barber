@@ -12,6 +12,36 @@ describe("Módulo de Inventario, Compras y Ventas Transaccionales", () => {
         contrasena: "Admin123*"
       });
     adminToken = res.body.data.token;
+
+    await request(app)
+      .post("/api/clients")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        nombre: "Test",
+        apellido: "Client",
+        correo: "testclient.sales@example.com",
+        telefono: "+57 300 222 3344"
+      });
+
+    await request(app)
+      .post("/api/suppliers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        nombre: "Distribuidora Test",
+        nit: "900123456-1",
+        telefono: "+57 300 000 1111",
+        correo: "ventas@testsupplier.com"
+      });
+
+    await request(app)
+      .post("/api/products")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        nombre: "Gel para Cabello Extra Fijación",
+        id_categoria_producto: 1,
+        stock: 25,
+        precio: 15000
+      });
   });
 
   it("Debería registrar una compra a proveedor e incrementar el stock atómicamente", async () => {

@@ -16,6 +16,8 @@ router.get("/", authenticate, authorizeRoles(ROLES.ADMIN), RolesController.getAl
 router.get("/:id", authenticate, authorizeRoles(ROLES.ADMIN), RolesController.getById);
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN), validate(createRoleValidation), RolesController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN), validate(updateRoleValidation), RolesController.update);
+router.put("/:id/permissions", authenticate, authorizeRoles(ROLES.ADMIN), RolesController.updatePermissions);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleRoleStatusValidation), RolesController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN), RolesController.delete);
 
 export default router;

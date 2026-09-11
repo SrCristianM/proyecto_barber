@@ -51,4 +51,13 @@ export class SuppliersService {
     const newStatus = await SuppliersRepository.toggleStatus(id);
     return { id_proveedor: Number(id), estado: newStatus };
   }
+
+  static async deleteSupplier(id) {
+    const supplier = await SuppliersRepository.findById(id);
+    if (!supplier) {
+      throw ApiError.notFound("Proveedor no encontrado");
+    }
+    await SuppliersRepository.delete(id);
+    return true;
+  }
 }

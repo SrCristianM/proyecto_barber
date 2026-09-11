@@ -53,6 +53,15 @@ export class ProductsController {
     }
   }
 
+  static async delete(req, res, next) {
+    try {
+      await ProductsService.deleteProduct(req.params.id);
+      return ApiResponse.success(res, null, "Producto eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getCategories(req, res, next) {
     try {
       const categories = await ProductsService.getAllCategories();

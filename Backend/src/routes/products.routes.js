@@ -25,5 +25,6 @@ router.get("/:id", optionalAuth, ProductsController.getById);
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), validate(createProductValidation), ProductsController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), validate(updateProductValidation), ProductsController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleProductStatusValidation), ProductsController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), ProductsController.delete);
 
 export default router;

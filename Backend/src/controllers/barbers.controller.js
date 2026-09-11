@@ -51,4 +51,13 @@ export class BarbersController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      await BarbersService.deleteBarber(req.params.id);
+      return ApiResponse.success(res, null, "Barbero eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -9,8 +9,8 @@ async function startServer() {
   // Intentar conectar a la base de datos
   await getDatabaseConnection();
 
-  const server = app.listen(PORT, () => {
-    logger.info(`💈 Servidor "Tu Turno Barber" Backend ejecutándose en: http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    logger.info(`💈 Servidor "Tu Turno Barber" Backend ejecutándose en: http://localhost:${PORT} (http://127.0.0.1:${PORT})`);
     logger.info(`📚 Documentación Swagger UI disponible en: http://localhost:${PORT}/api/docs`);
     logger.info(`🩺 Endpoint de diagnóstico disponible en: http://localhost:${PORT}/api/health`);
   });

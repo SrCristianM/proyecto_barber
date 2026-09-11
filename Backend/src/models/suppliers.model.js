@@ -149,6 +149,20 @@ export class SuppliersRepository {
     if (target) target.estado = newStatus;
     return newStatus;
   }
+
+  static async delete(id) {
+    const supplierId = Number(id);
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM proveedor WHERE id_proveedor = ?`, [supplierId]);
+      } catch (err) {
+        await executeQuery(`UPDATE proveedor SET estado = 0 WHERE id_proveedor = ?`, [supplierId]);
+      }
+      return true;
+    }
+    mockStore.proveedores = mockStore.proveedores.filter((prov) => prov.id_proveedor !== supplierId);
+    return true;
+  }
 }
 
 export { SuppliersRepository as SuppliersModel };

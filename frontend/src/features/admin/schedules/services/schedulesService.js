@@ -8,7 +8,7 @@ export async function getSchedules(barberId = null) {
 }
 
 export async function getBarberAvailability(barberId, date) {
-  return await apiRequest(`${API_URL}/availability?barbero=${barberId}&fecha=${date}`);
+  return await apiRequest(`${API_URL}/availability?id_barbero=${barberId}&fecha=${date}`);
 }
 
 export async function createSchedule(data) {

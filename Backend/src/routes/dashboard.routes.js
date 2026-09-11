@@ -6,6 +6,9 @@ import { ROLES } from "../config/constants.js";
 
 const router = Router();
 
+// Ruta raíz de dashboard (compatibilidad directa)
+router.get("/", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), DashboardController.getAdminStats);
+
 // Métricas de administrador y recepcionista
 router.get("/admin", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), DashboardController.getAdminStats);
 

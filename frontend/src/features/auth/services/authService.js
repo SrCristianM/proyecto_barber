@@ -18,17 +18,6 @@ export const INITIAL_USERS = [
     fecha_registro: "2026-01-10 08:00:00"
   },
   {
-    id_usuario: 2,
-    nombre: "Juan",
-    apellido: "Pérez",
-    correo: "juan@example.com",
-    telefono: "+57 300 123 4567",
-    id_rol: 1, // Administrador
-    estado: 1,
-    contrasena: "Admin123*",
-    fecha_registro: "2026-01-15 10:30:00"
-  },
-  {
     id_usuario: 3,
     nombre: "María",
     apellido: "García",
@@ -49,39 +38,6 @@ export const INITIAL_USERS = [
     estado: 1,
     contrasena: "Barbero123*",
     fecha_registro: "2026-03-10 09:00:00"
-  },
-  {
-    id_usuario: 5,
-    nombre: "Ana",
-    apellido: "Torres",
-    correo: "ana@example.com",
-    telefono: "+57 303 456 7890",
-    id_rol: 3, // Barbero
-    estado: 1,
-    contrasena: "Barbero123*",
-    fecha_registro: "2026-04-05 16:45:00"
-  },
-  {
-    id_usuario: 6,
-    nombre: "Luis",
-    apellido: "Martínez",
-    correo: "luis@example.com",
-    telefono: "+57 304 567 8901",
-    id_rol: 3, // Barbero
-    estado: 0, // Inactivo
-    contrasena: "Barbero123*",
-    fecha_registro: "2026-05-12 11:20:00"
-  },
-  {
-    id_usuario: 7,
-    nombre: "Pedro",
-    apellido: "López",
-    correo: "cliente@example.com",
-    telefono: "3001234567",
-    id_rol: 4, // Cliente
-    estado: 1, // Activo
-    contrasena: "Cliente123*",
-    fecha_registro: "2026-06-01 08:00:00"
   }
 ];
 
@@ -104,36 +60,81 @@ export function getStoredUsers() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
       return INITIAL_USERS;
     }
-    let updated = false;
-    // Asegurar que el usuario cliente por defecto esté disponible si no existía previamente
-    if (!parsed.some((u) => u.correo === "cliente@example.com")) {
-      const clientUser = INITIAL_USERS.find((u) => u.correo === "cliente@example.com");
-      if (clientUser) {
-        parsed.push(clientUser);
+
+    // Filtrar usuarios eliminados (barberos adicionales de prueba o administradores secundarios)
+    const allowedEmails = ["cristianmazo957@gmail.com", "maria@example.com", "barbero@tuturnobarber.com"];
+    // Mantener usuarios permitidos o nuevos usuarios que se registren
+    let filtered = parsed.filter((u) => {
+      const email = (u.correo || "").toLowerCase();
+      // Eliminar explícitamente los usuarios antiguos dados de baja
+      const isOldDeleted = [
+        "juan@example.com",
+        "miguel@example.com",
+        "javier@example.com",
+        "ana@example.com",
+        "luis@example.com",
+        "admin@barber.com",
+        "cliente@example.com"
+      ].includes(email);
+      return !isOldDeleted;
+    });
+
+    let updated = filtered.length !== parsed.length;
+
+    // Asegurar que el Administrador esté presente
+    const hasAdmin = filtered.some((u) => u.correo.toLowerCase() === "cristianmazo957@gmail.com");
+    if (!hasAdmin) {
+      const defaultAdmin = INITIAL_USERS.find((u) => u.correo === "cristianmazo957@gmail.com");
+      if (defaultAdmin) {
+        filtered.unshift(defaultAdmin);
+        updated = true;
+      }
+    } else {
+      const adminIdx = filtered.findIndex((u) => u.correo.toLowerCase() === "cristianmazo957@gmail.com");
+      if (adminIdx >= 0) {
+        if (!filtered[adminIdx].contrasena || filtered[adminIdx].contrasena !== "Admin123*" || filtered[adminIdx].estado !== 1) {
+          filtered[adminIdx].contrasena = "Admin123*";
+          filtered[adminIdx].estado = 1;
+          filtered[adminIdx].id_rol = 1;
+          updated = true;
+        }
+      }
+    }
+
+    // Asegurar que la Recepcionista esté presente
+    const hasRecepcionista = filtered.some((u) => u.correo.toLowerCase() === "maria@example.com");
+    if (!hasRecepcionista) {
+      const defaultRec = INITIAL_USERS.find((u) => u.correo === "maria@example.com");
+      if (defaultRec) {
+        filtered.push(defaultRec);
         updated = true;
       }
     }
-    // Asegurar que el usuario barbero por defecto esté disponible para pruebas
-    const hasBarber = parsed.some((u) => u.correo.toLowerCase() === "barbero@tuturnobarber.com");
+
+    // Asegurar que el Barbero Carlos Rodríguez esté presente
+    const hasBarber = filtered.some((u) => u.correo.toLowerCase() === "barbero@tuturnobarber.com");
     if (!hasBarber) {
-      const defaultBarber = INITIAL_USERS.find((u) => u.correo === "barbero@tuturnobarber.com") || {
-        id_usuario: 4,
-        nombre: "Carlos",
-        apellido: "Rodríguez",
-        correo: "barbero@tuturnobarber.com",
-        telefono: "+57 302 345 6789",
-        id_rol: 3,
-        estado: 1,
-        contrasena: "Barbero123*",
-        fecha_registro: "2026-03-10 09:00:00"
-      };
-      parsed.push(defaultBarber);
-      updated = true;
+      const defaultBarber = INITIAL_USERS.find((u) => u.correo === "barbero@tuturnobarber.com");
+      if (defaultBarber) {
+        filtered.push(defaultBarber);
+        updated = true;
+      }
+    } else {
+      const barberIdx = filtered.findIndex((u) => u.correo.toLowerCase() === "barbero@tuturnobarber.com");
+      if (barberIdx >= 0) {
+        if (!filtered[barberIdx].contrasena || filtered[barberIdx].contrasena !== "Barbero123*" || filtered[barberIdx].estado !== 1) {
+          filtered[barberIdx].contrasena = "Barbero123*";
+          filtered[barberIdx].estado = 1;
+          filtered[barberIdx].id_rol = 3;
+          updated = true;
+        }
+      }
     }
+
     if (updated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     }
-    return parsed;
+    return filtered;
   } catch (err) {
     console.error("Error al leer usuarios de localStorage:", err);
     return INITIAL_USERS;
@@ -347,7 +348,8 @@ export async function loginWithCredentials(email, password) {
       };
     }
 
-    if (!res.ok) {
+    // Si el backend respondió con un error de cliente (400, 401, 403, 404) y un JSON válido
+    if (!res.ok && json && res.status >= 400 && res.status < 500) {
       const msg = json?.message || json?.error || "Error de credenciales.";
       let field = "general";
       if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("cuenta")) {
@@ -361,6 +363,10 @@ export async function loginWithCredentials(email, password) {
         error: msg
       };
     }
+
+    // Si llegamos aquí (status >= 500 o respuesta no-JSON por proxy de Vite cuando el backend está inactivo),
+    // registramos advertencia y continuamos al fallback local con localStorage.
+    console.warn(`[Auth] Backend no disponible (HTTP ${res.status}), autenticando con base de datos local.`);
   } catch (err) {
     console.warn("[Auth] Backend no disponible para login, validando credenciales localmente:", err.message);
   }

@@ -49,4 +49,13 @@ export class PackagesController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      await PackagesService.deletePackage(req.params.id);
+      return ApiResponse.success(res, null, "Paquete eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

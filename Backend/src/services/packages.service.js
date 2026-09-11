@@ -36,4 +36,13 @@ export class PackagesService {
     const newStatus = await PackagesRepository.toggleStatus(id);
     return { id_paquete: Number(id), estado: newStatus };
   }
+
+  static async deletePackage(id) {
+    const pkg = await PackagesRepository.findById(id);
+    if (!pkg) {
+      throw ApiError.notFound("Paquete no encontrado");
+    }
+    await PackagesRepository.delete(id);
+    return true;
+  }
 }

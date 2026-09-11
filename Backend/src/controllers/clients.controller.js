@@ -60,4 +60,13 @@ export class ClientsController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      await ClientsService.deleteClient(req.params.id);
+      return ApiResponse.success(res, null, "Cliente eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

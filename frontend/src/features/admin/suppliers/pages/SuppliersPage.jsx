@@ -95,7 +95,7 @@ export default function SuppliersPage() {
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          Nuevo Proveedor
+          {suppliers.length === 0 ? "Crear primer proveedor" : "Nuevo Proveedor"}
         </motion.button>
       </div>
 

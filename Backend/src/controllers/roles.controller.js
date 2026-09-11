@@ -47,10 +47,29 @@ export class RolesController {
     }
   }
 
+  static async delete(req, res, next) {
+    try {
+      await RolesService.deleteRole(req.params.id);
+      return ApiResponse.success(res, null, "Rol eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getModules(req, res, next) {
     try {
       const modules = await RolesService.getSystemModules();
       return ApiResponse.success(res, modules, "Módulos y permisos del sistema obtenidos");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updatePermissions(req, res, next) {
+    try {
+      const permisos = req.body.permisos || req.body.permisos_ids;
+      const updatedRole = await RolesService.updateRole(req.params.id, { permisos });
+      return ApiResponse.success(res, updatedRole, "Permisos del rol actualizados exitosamente");
     } catch (error) {
       next(error);
     }

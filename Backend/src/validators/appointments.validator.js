@@ -11,7 +11,7 @@ export const createAppointmentValidation = [
       if (req.body.id_servicio) return true;
       throw new Error("Debes especificar al menos un servicio para la cita.");
     }),
-  body("estado").optional().isIn(["Programada", "Completada", "Cancelada", "Reprogramada"])
+  body("estado").optional().isIn(["Programada", "Confirmada", "En Proceso", "Completada", "Cancelada", "Reprogramada"])
 ];
 
 export const updateAppointmentValidation = [
@@ -19,11 +19,11 @@ export const updateAppointmentValidation = [
   body("id_barbero").optional().isInt({ min: 1 }),
   body("fecha").optional().matches(/^\d{4}-\d{2}-\d{2}$/),
   body("hora").optional().matches(/^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/),
-  body("estado").optional().isIn(["Programada", "Completada", "Cancelada", "Reprogramada"]),
+  body("estado").optional().isIn(["Programada", "Confirmada", "En Proceso", "Completada", "Cancelada", "Reprogramada"]),
   body("servicios").optional().isArray()
 ];
 
 export const updateStatusValidation = [
   param("id").isInt().withMessage("ID de cita inválido."),
-  body("estado").isIn(["Programada", "Completada", "Cancelada", "Reprogramada"]).withMessage("Estado de cita no válido.")
+  body("estado").isIn(["Programada", "Confirmada", "En Proceso", "Completada", "Cancelada", "Reprogramada"]).withMessage("Estado de cita no válido.")
 ];

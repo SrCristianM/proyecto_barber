@@ -52,6 +52,15 @@ export class ServicesController {
     }
   }
 
+  static async delete(req, res, next) {
+    try {
+      await ServicesService.deleteService(req.params.id);
+      return ApiResponse.success(res, null, "Servicio eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getCategories(req, res, next) {
     try {
       const categories = await ServicesService.getAllCategories();

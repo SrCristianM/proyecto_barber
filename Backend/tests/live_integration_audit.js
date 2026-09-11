@@ -55,7 +55,7 @@ async function runAudit() {
   const loginRes = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ correo: "admin@barber.com", contrasena: "Admin123*" })
+    body: JSON.stringify({ correo: "cristianmazo957@gmail.com", contrasena: "Admin123*" })
   });
   const loginData = await loginRes.json();
   assert(loginRes.status === 200 && loginData.data?.token, "Login de administrador retorna JWT");

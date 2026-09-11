@@ -37,6 +37,18 @@ export class RolesService {
     return { id_rol: Number(id), estado: newStatus };
   }
 
+  static async deleteRole(id) {
+    const role = await RolesRepository.findById(id);
+    if (!role) {
+      throw ApiError.notFound("Rol no encontrado");
+    }
+    if ([1, 2, 3, 4].includes(Number(id))) {
+      throw ApiError.badRequest("No se pueden eliminar los roles base del sistema.");
+    }
+    await RolesRepository.delete(id);
+    return true;
+  }
+
   static async getSystemModules() {
     return await RolesRepository.getSystemModules();
   }

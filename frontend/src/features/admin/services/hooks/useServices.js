@@ -10,13 +10,7 @@ import {
   toggleServiceStatus
 } from "../services/servicesService";
 
-const mockServices = [
-  { id_servicio: 1, nombre: "Corte Clásico", id_categoria_servicio: 1, precio: 15000, duracion_minutos: 30, imagen_url: "", estado: 1 },
-  { id_servicio: 2, nombre: "Corte + Barba", id_categoria_servicio: 3, precio: 25000, duracion_minutos: 45, imagen_url: "", estado: 1 },
-  { id_servicio: 3, nombre: "Afeitado Premium", id_categoria_servicio: 2, precio: 20000, duracion_minutos: 35, imagen_url: "", estado: 1 },
-  { id_servicio: 4, nombre: "Diseño y Color", id_categoria_servicio: 4, precio: 30000, duracion_minutos: 60, imagen_url: "", estado: 1 },
-  { id_servicio: 5, nombre: "Corte Niño", id_categoria_servicio: 1, precio: 12000, duracion_minutos: 20, imagen_url: "", estado: 0 }
-];
+const mockServices = [];
 
 export const availableCategories = CATEGORIAS_SERVICIO;
 
@@ -29,7 +23,7 @@ const emptyForm = {
 };
 
 export function useServices() {
-  const [services, setServices] = useState(mockServices);
+  const [services, setServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
@@ -46,7 +40,7 @@ export function useServices() {
   useEffect(() => {
     getServices()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setServices(data);
         }
       })

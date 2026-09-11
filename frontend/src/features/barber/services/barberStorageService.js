@@ -20,228 +20,30 @@ const STORAGE_KEYS = {
 const TODAY = new Date().toISOString().split("T")[0];
 
 const INITIAL_BARBERS = [
-  { id_barbero: 1, id_usuario: 4, nombre: "Carlos", apellido: "Rodríguez", correo: "barbero@tuturnobarber.com", telefono: "+57 302 345 6789", especialidad: "Corte Clásico & Fade", imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80", estado: 1 },
-  { id_barbero: 2, id_usuario: 5, nombre: "Miguel", apellido: "Ángel", correo: "miguel@example.com", telefono: "+57 301 234 5678", especialidad: "Diseño y Color", imagen_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80", estado: 1 },
-  { id_barbero: 3, id_usuario: 6, nombre: "Javier", apellido: "Torres", correo: "javier@example.com", telefono: "+57 302 345 6789", especialidad: "Barba Premium & Spa", imagen_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80", estado: 1 }
-];
-
-const INITIAL_SERVICES = [
-  { id_servicio: 1, nombre: "Corte Clásico", id_categoria_servicio: 1, categoria: "Cortes", precio: 15000, duracion_minutos: 30, descripcion: "Corte tradicional a tijera o máquina con acabado y perfilado profesional.", imagen_url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 2, nombre: "Corte + Barba", id_categoria_servicio: 3, categoria: "Paquetes", precio: 25000, duracion_minutos: 45, descripcion: "Corte completo personalizado más arreglo y perfilado de barba con toalla caliente.", imagen_url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 3, nombre: "Afeitado Premium", id_categoria_servicio: 2, categoria: "Barba", precio: 20000, duracion_minutos: 35, descripcion: "Afeitado clásico a navaja tradicional con vapor ozono, toalla caliente y bálsamo hidratante.", imagen_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 4, nombre: "Diseño y Color", id_categoria_servicio: 4, categoria: "Especiales", precio: 30000, duracion_minutos: 60, descripcion: "Líneas, figuras freestyle, decoloración o matización de color con productos de alta gama.", imagen_url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80", estado: 1 },
-  { id_servicio: 5, nombre: "Corte Niño", id_categoria_servicio: 1, categoria: "Cortes", precio: 12000, duracion_minutos: 20, descripcion: "Corte de cabello para niños hasta 12 años, con paciencia y estilo.", imagen_url: "https://images.unsplash.com/photo-1517832606589-7629c3395909?w=600&auto=format&fit=crop&q=80", estado: 1 }
-];
-
-const INITIAL_PACKAGES = [
   {
-    id_paquete: 1,
-    nombre: "Paquete Básico",
-    descripcion: "Combinación ideal para mantener tu estilo fresco y cuidado esencial.",
-    descuento_porcentaje: 10,
-    estado: 1,
-    servicios_ids: [1, 3]
-  },
-  {
-    id_paquete: 2,
-    nombre: "Paquete Premium",
-    descripcion: "El tratamiento definitivo de barbería: corte y barba más diseño personalizado.",
-    descuento_porcentaje: 20,
-    estado: 1,
-    servicios_ids: [2, 4]
-  },
-  {
-    id_paquete: 3,
-    nombre: "Paquete Especial Caballero",
-    descripcion: "Corte de temporada acompañado de perfilado completo de barba.",
-    descuento_porcentaje: 15,
-    estado: 1,
-    servicios_ids: [1, 2]
-  }
-];
-
-const INITIAL_SCHEDULES = [
-  {
-    id_horario: 1,
     id_barbero: 1,
-    dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
-    hora_inicio: "08:00:00",
-    hora_fin: "18:00:00",
-    fecha_inicio_vigencia: "2026-01-01",
-    fecha_fin_vigencia: "2026-12-31",
-    estado: 1
-  },
-  {
-    id_horario: 2,
-    id_barbero: 2,
-    dias_semana: ["Lunes", "Martes", "Miercoles", "Viernes", "Sabado"],
-    hora_inicio: "09:00:00",
-    hora_fin: "19:00:00",
-    fecha_inicio_vigencia: "2026-01-01",
-    fecha_fin_vigencia: "2026-12-31",
+    id_usuario: 4,
+    nombre: "Carlos",
+    apellido: "Rodríguez",
+    correo: "barbero@tuturnobarber.com",
+    telefono: "+57 302 345 6789",
+    especialidad: "Corte Clásico & Fade",
+    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
     estado: 1
   }
 ];
 
-const INITIAL_CLIENTS = [
-  { id_cliente: 1, id_usuario: 7, nombre: "Pedro", apellido: "López", correo: "cliente@example.com", telefono: "3001234567", nivel_fidelidad: "Oro" },
-  { id_cliente: 2, id_usuario: 8, nombre: "Ana", apellido: "Martínez", correo: "ana.m@example.com", telefono: "3012345678", nivel_fidelidad: "Plata" },
-  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "3023456789", nivel_fidelidad: "Bronce" }
-];
+const INITIAL_SERVICES = [];
 
-const INITIAL_BARBER_APPOINTMENTS = [
-  {
-    id_cita: 101,
-    id_cliente: 1,
-    id_barbero: 1,
-    id_servicio: 1,
-    id_paquete: null,
-    nombre_item: "Corte Clásico",
-    fecha: TODAY,
-    hora: "10:00",
-    estado: "Programada",
-    precio: 15000,
-    fecha_registro: "2026-06-01 08:00:00",
-    notas: "Cliente habitual, prefiere tijera arriba y máquina #2 a los lados."
-  },
-  {
-    id_cita: 102,
-    id_cliente: 4,
-    id_barbero: 1,
-    id_servicio: 2,
-    id_paquete: null,
-    nombre_item: "Corte + Barba",
-    fecha: TODAY,
-    hora: "11:30",
-    estado: "Programada",
-    precio: 25000,
-    fecha_registro: "2026-06-02 09:15:00",
-    notas: "Perfilado de barba con toalla caliente."
-  },
-  {
-    id_cita: 103,
-    id_cliente: 5,
-    id_barbero: 1,
-    id_servicio: 3,
-    id_paquete: null,
-    nombre_item: "Afeitado Premium",
-    fecha: TODAY,
-    hora: "14:00",
-    estado: "Programada",
-    precio: 20000,
-    fecha_registro: "2026-06-03 11:20:00",
-    notas: "Piel sensible, aplicar bálsamo refrescante."
-  },
-  {
-    id_cita: 104,
-    id_cliente: 3,
-    id_barbero: 1,
-    id_servicio: null,
-    id_paquete: 2,
-    nombre_item: "Paquete Premium (Corte+Barba & Color)",
-    fecha: TODAY,
-    hora: "16:00",
-    estado: "Programada",
-    precio: 44000,
-    fecha_registro: "2026-06-04 14:00:00",
-    notas: "Diseño freestyle en lateral derecho."
-  },
-  {
-    id_cita: 105,
-    id_cliente: 2,
-    id_barbero: 1,
-    id_servicio: 1,
-    id_paquete: null,
-    nombre_item: "Corte Clásico",
-    fecha: "2026-06-12",
-    hora: "14:00",
-    estado: "Completada",
-    precio: 15000,
-    fecha_registro: "2026-06-10 10:00:00",
-    notas: "Servicio completado satisfactoriamente."
-  },
-  {
-    id_cita: 106,
-    id_cliente: 1,
-    id_barbero: 1,
-    id_servicio: 2,
-    id_paquete: null,
-    nombre_item: "Corte + Barba",
-    fecha: "2026-06-10",
-    hora: "15:30",
-    estado: "Completada",
-    precio: 25000,
-    fecha_registro: "2026-06-08 16:20:00",
-    notas: "Cliente satisfecho."
-  },
-  {
-    id_cita: 107,
-    id_cliente: 3,
-    id_barbero: 1,
-    id_servicio: 4,
-    id_paquete: null,
-    nombre_item: "Diseño y Color",
-    fecha: "2026-06-08",
-    hora: "11:00",
-    estado: "Completada",
-    precio: 30000,
-    fecha_registro: "2026-06-06 09:00:00",
-    notas: "Decoloración y matiz platinado."
-  },
-  {
-    id_cita: 108,
-    id_cliente: 4,
-    id_barbero: 1,
-    id_servicio: 1,
-    id_paquete: null,
-    nombre_item: "Corte Clásico",
-    fecha: "2026-06-05",
-    hora: "10:00",
-    estado: "Cancelada",
-    precio: 15000,
-    fecha_registro: "2026-06-04 12:00:00",
-    notas: "Cliente no asistió por emergencia."
-  }
-];
+const INITIAL_PACKAGES = [];
 
-const INITIAL_NOVELTIES = [
-  {
-    id_novedad: 1,
-    id_barbero: 1,
-    tipo: "Permiso",
-    fecha: "2026-09-18",
-    cita_relacionada: "Ninguna",
-    motivo: "Cita médica odontológica",
-    descripcion: "Control médico programado en horas de la mañana (08:00 a 11:00 AM).",
-    estado: "Aprobada",
-    fecha_registro: "2026-09-05 09:30:00",
-    respuesta_admin: "Aprobado por administración. Turno ajustado."
-  },
-  {
-    id_novedad: 2,
-    id_barbero: 1,
-    tipo: "Solicitud de cancelación de cita",
-    fecha: TODAY,
-    cita_relacionada: "Cita #104 - Roberto Sánchez (16:00)",
-    motivo: "Inconveniente imprevisto en cabina",
-    descripcion: "Se requiere reprogramar o cancelar la cita por mantenimiento preventivo de estación de afeitado.",
-    estado: "Pendiente",
-    fecha_registro: `${TODAY} 08:15:00`,
-    respuesta_admin: null
-  },
-  {
-    id_novedad: 3,
-    id_barbero: 1,
-    tipo: "Cambio de turno",
-    fecha: "2026-09-22",
-    cita_relacionada: "Ninguna",
-    motivo: "Intercambio acordado con Miguel Ángel",
-    descripcion: "Cambio de jornada del martes en la tarde por el jueves en la mañana.",
-    estado: "Pendiente",
-    fecha_registro: "2026-09-08 14:40:00",
-    respuesta_admin: null
-  }
-];
+const INITIAL_SCHEDULES = [];
+
+const INITIAL_CLIENTS = [];
+
+const INITIAL_BARBER_APPOINTMENTS = [];
+
+const INITIAL_NOVELTIES = [];
 
 /** Helper para leer/inicializar localStorage */
 function getOrInit(key, initialData) {

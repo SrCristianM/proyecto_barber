@@ -25,5 +25,6 @@ router.get("/:id", optionalAuth, ServicesController.getById);
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN), validate(createServiceValidation), ServicesController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN), validate(updateServiceValidation), ServicesController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleServiceStatusValidation), ServicesController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN), ServicesController.delete);
 
 export default router;

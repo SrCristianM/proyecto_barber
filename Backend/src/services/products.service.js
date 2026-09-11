@@ -37,6 +37,15 @@ export class ProductsService {
     return { id_producto: Number(id), estado: newStatus };
   }
 
+  static async deleteProduct(id) {
+    const product = await ProductsRepository.findById(id);
+    if (!product) {
+      throw ApiError.notFound("Producto no encontrado");
+    }
+    await ProductsRepository.delete(id);
+    return true;
+  }
+
   static async getAllCategories() {
     return await ProductsRepository.findAllCategories();
   }

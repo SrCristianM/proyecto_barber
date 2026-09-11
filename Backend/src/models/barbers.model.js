@@ -224,6 +224,33 @@ export class BarbersRepository {
 
     return newStatus;
   }
+
+  static async delete(id) {
+    const barberId = Number(id);
+    const barber = await this.findById(barberId);
+    if (!barber) return false;
+
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM barbero WHERE id_barbero = ?`, [barberId]);
+        if (barber.id_usuario) {
+          await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [barber.id_usuario]);
+        }
+      } catch (err) {
+        await executeQuery(`UPDATE barbero SET estado = 0 WHERE id_barbero = ?`, [barberId]);
+        if (barber.id_usuario) {
+          await executeQuery(`UPDATE usuario SET estado = 0 WHERE id_usuario = ?`, [barber.id_usuario]);
+        }
+      }
+      return true;
+    }
+
+    mockStore.barberos = mockStore.barberos.filter((b) => b.id_barbero !== barberId);
+    if (barber.id_usuario) {
+      mockStore.usuarios = mockStore.usuarios.filter((u) => u.id_usuario !== barber.id_usuario);
+    }
+    return true;
+  }
 }
 
 export { BarbersRepository as BarbersModel };

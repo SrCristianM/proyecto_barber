@@ -21,5 +21,6 @@ router.post("/", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA),
 // Actualización y desactivación
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), validate(updateClientValidation), ClientsController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleClientStatusValidation), ClientsController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), ClientsController.delete);
 
 export default router;

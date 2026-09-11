@@ -233,6 +233,22 @@ export class RolesRepository {
     return newStatus;
   }
 
+  static async delete(id) {
+    const roleId = Number(id);
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM rol_permiso WHERE id_rol = ?`, [roleId]);
+        await executeQuery(`DELETE FROM rol WHERE id_rol = ?`, [roleId]);
+      } catch (err) {
+        await executeQuery(`UPDATE rol SET estado = 0 WHERE id_rol = ?`, [roleId]);
+      }
+      return true;
+    }
+    mockStore.rol_permisos = mockStore.rol_permisos.filter((rp) => rp.id_rol !== roleId);
+    mockStore.roles = mockStore.roles.filter((r) => r.id_rol !== roleId);
+    return true;
+  }
+
   static async getSystemModules() {
     if (isDatabaseConnected()) {
       const sql = `

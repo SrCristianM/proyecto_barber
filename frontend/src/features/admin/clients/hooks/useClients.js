@@ -10,13 +10,7 @@ import {
   toggleClientStatus
 } from "../services/clientsService";
 
-const mockClients = [
-  { id_cliente: 1, id_usuario: 4, nombre: "Pedro", apellido: "López", correo: "pedro@example.com", telefono: "+57 300 123 4567", direccion: "Calle 10 # 5-20", nivel_fidelidad: "Oro", estado: 1 },
-  { id_cliente: 2, id_usuario: 8, nombre: "Ana", apellido: "Martínez", correo: "ana.m@example.com", telefono: "+57 301 234 5678", direccion: "Carrera 15 # 45-12", nivel_fidelidad: "Plata", estado: 1 },
-  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "+57 302 345 6789", direccion: "Av. Siempre Viva 123", nivel_fidelidad: "Bronce", estado: 1 },
-  { id_cliente: 4, id_usuario: 10, nombre: "Laura", apellido: "Gómez", correo: "laura@example.com", telefono: "+57 303 456 7890", direccion: "Calle 80 # 20-30", nivel_fidelidad: "Oro", estado: 1 },
-  { id_cliente: 5, id_usuario: 11, nombre: "Diego", apellido: "Torres", correo: "diego.t@example.com", telefono: "+57 304 567 8901", direccion: "Diagonal 40 # 12-50", nivel_fidelidad: "Nuevo", estado: 0 }
-];
+const mockClients = [];
 
 export const availableLoyalties = NIVELES_FIDELIDAD;
 
@@ -31,7 +25,7 @@ const emptyForm = {
 };
 
 export function useClients() {
-  const [clients, setClients] = useState(mockClients);
+  const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [loyaltyFilter, setLoyaltyFilter] = useState("all"); // 'all' | 'Nuevo' | 'Bronce' | 'Plata' | 'Oro'
@@ -127,14 +121,12 @@ export function useClients() {
           }
         });
 
-      if (merged.length > 0) {
-        setClients(merged);
-        return;
-      }
+      setClients(merged);
+      return;
     } catch (e) {
       console.error(e);
     }
-    setClients(mockClients);
+    setClients([]);
   };
 
   useEffect(() => {

@@ -1,48 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import {
+  getPackages,
+  createPackage,
+  updatePackage,
+  deletePackage,
+  togglePackageStatus
+} from "../services/packagesService";
+import { getServices } from "../services/servicesService";
 
-// Catálogo de servicios disponibles para componer paquetes (paquete_servicio_detalle)
-export const availableServicesList = [
-  { id_servicio: 1, nombre: "Corte Clásico", precio: 15000, duracion_minutos: 30 },
-  { id_servicio: 2, nombre: "Corte + Barba", precio: 25000, duracion_minutos: 45 },
-  { id_servicio: 3, nombre: "Afeitado Premium", precio: 20000, duracion_minutos: 35 },
-  { id_servicio: 4, nombre: "Diseño y Color", precio: 30000, duracion_minutos: 60 },
-  { id_servicio: 5, nombre: "Corte Niño", precio: 12000, duracion_minutos: 20 }
-];
-
-// Datos mock de paquetes basados en la tabla `paquete_servicio` y puente `paquete_servicio_detalle`
-const mockPackages = [
-  {
-    id_paquete: 1,
-    nombre: "Paquete Básico",
-    descuento_porcentaje: 10,
-    estado: 1,
-    servicios_ids: [1, 3]
-  },
-  {
-    id_paquete: 2,
-    nombre: "Paquete Premium",
-    descuento_porcentaje: 20,
-    estado: 1,
-    servicios_ids: [2, 4]
-  },
-  {
-    id_paquete: 3,
-    nombre: "Paquete Especial",
-    descuento_porcentaje: 15,
-    estado: 0,
-    servicios_ids: [1, 2]
-  }
-];
+// Catálogo de servicios disponibles para componer paquetes
+export let availableServicesList = [];
 
 const emptyForm = {
   nombre: "",
   descuento_porcentaje: 0,
   estado: 1,
-  servicios_ids: [1, 2]
+  servicios_ids: []
 };
 
 export function useServicePackages() {
-  const [packages, setPackages] = useState(mockPackages);
+  const [packages, setPackages] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -50,8 +29,32 @@ export function useServicePackages() {
   const [formData, setFormData] = useState(emptyForm);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const loadPackagesData = async () => {
+    try {
+      const [pkgsData, srvsData] = await Promise.allSettled([
+        getPackages(),
+        getServices()
+      ]);
+
+      if (pkgsData.status === "fulfilled" && Array.isArray(pkgsData.value)) {
+        setPackages(pkgsData.value);
+      }
+
+      if (srvsData.status === "fulfilled" && Array.isArray(srvsData.value)) {
+        setServicesList(srvsData.value);
+        availableServicesList = srvsData.value;
+      }
+    } catch (err) {
+      console.warn("[Packages] Error al cargar paquetes o servicios:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    loadPackagesData();
+  }, []);
+
   const filteredPackages = packages.filter((p) =>
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const resetForm = () => setFormData(emptyForm);
@@ -64,44 +67,68 @@ export function useServicePackages() {
     setFormData({ ...formData, servicios_ids: next });
   };
 
-  const handleCreate = () => {
-    const next = {
-      id_paquete: Math.max(...packages.map((p) => p.id_paquete), 0) + 1,
-      nombre: formData.nombre,
+  const handleCreate = async () => {
+    const payload = {
+      nombre: formData.nombre.trim(),
       descuento_porcentaje: Number(formData.descuento_porcentaje) || 0,
-      estado: 1,
       servicios_ids: formData.servicios_ids || []
     };
-    setPackages([...packages, next]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createPackage(payload);
+      const newPkg = {
+        ...payload,
+        id_paquete: created?.id_paquete || Math.max(...packages.map((p) => p.id_paquete || 0), 0) + 1,
+        estado: 1
+      };
+      setPackages((prev) => [newPkg, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Paquete de servicios creado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el paquete de servicios.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedPackage) return;
-    setPackages(
-      packages.map((p) =>
-        p.id_paquete === selectedPackage.id_paquete
-          ? {
-              ...p,
-              nombre: formData.nombre,
-              descuento_porcentaje: Number(formData.descuento_porcentaje) || 0,
-              servicios_ids: formData.servicios_ids || []
-            }
-          : p
-      )
-    );
-    setShowEditModal(false);
-    setSelectedPackage(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      descuento_porcentaje: Number(formData.descuento_porcentaje) || 0,
+      servicios_ids: formData.servicios_ids || []
+    };
+
+    try {
+      await updatePackage(selectedPackage.id_paquete, payload);
+      setPackages((prev) =>
+        prev.map((p) =>
+          p.id_paquete === selectedPackage.id_paquete
+            ? { ...p, ...payload }
+            : p
+        )
+      );
+      setShowEditModal(false);
+      setSelectedPackage(null);
+      resetForm();
+      toast.success("Paquete actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el paquete.");
+    }
   };
 
-  const toggleStatus = (id) => {
-    setPackages(
-      packages.map((p) =>
-        p.id_paquete === id ? { ...p, estado: p.estado === 1 ? 0 : 1 } : p
-      )
-    );
+  const toggleStatus = async (id) => {
+    try {
+      await togglePackageStatus(id);
+      setPackages((prev) =>
+        prev.map((p) =>
+          p.id_paquete === id ? { ...p, estado: p.estado === 1 ? 0 : 1 } : p
+        )
+      );
+      setShowDeactivateModal(false);
+      toast.success("Estado del paquete actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del paquete.");
+    }
   };
 
   const openEditModal = (pkg) => {
@@ -121,8 +148,9 @@ export function useServicePackages() {
   };
 
   const getServiceNames = (servicios_ids = []) => {
+    const list = servicesList.length > 0 ? servicesList : availableServicesList;
     return servicios_ids
-      .map((id) => availableServicesList.find((s) => s.id_servicio === id)?.nombre)
+      .map((id) => list.find((s) => s.id_servicio === id)?.nombre)
       .filter(Boolean);
   };
 
@@ -149,6 +177,6 @@ export function useServicePackages() {
     openDeactivateModal,
     toggleServiceInForm,
     getServiceNames,
-    availableServicesList
+    availableServicesList: servicesList.length > 0 ? servicesList : availableServicesList
   };
 }

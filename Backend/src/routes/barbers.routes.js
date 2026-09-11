@@ -16,5 +16,6 @@ router.get("/:id", optionalAuth, BarbersController.getById);
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN), validate(createBarberValidation), BarbersController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.BARBERO), validate(updateBarberValidation), BarbersController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleBarberStatusValidation), BarbersController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN), BarbersController.delete);
 
 export default router;

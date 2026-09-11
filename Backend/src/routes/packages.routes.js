@@ -20,5 +20,6 @@ router.get("/:id", optionalAuth, PackagesController.getById);
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN), validate(createPackageValidation), PackagesController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN), validate(updatePackageValidation), PackagesController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(togglePackageStatusValidation), PackagesController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN), PackagesController.delete);
 
 export default router;

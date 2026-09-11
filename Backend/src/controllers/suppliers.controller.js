@@ -50,4 +50,13 @@ export class SuppliersController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      await SuppliersService.deleteSupplier(req.params.id);
+      return ApiResponse.success(res, null, "Proveedor eliminado exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

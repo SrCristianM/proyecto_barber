@@ -9,63 +9,7 @@ import {
   toggleSupplierStatus
 } from "../services/suppliersService";
 
-const mockSuppliers = [
-  {
-    id_proveedor: 1,
-    nombre: "Distribuidora Barber Pro Colombia",
-    nit: "901234567-1",
-    telefono: "+57 310 987 6543",
-    correo: "ventas@barberpro.com.co",
-    direccion: "Carrera 43A # 18-50, Medellín",
-    estado: 1,
-    factura_pdf: {
-      nombre: "Factura_Inicial_BarberPro_2026.pdf",
-      tamano: "482 KB",
-      url: "#",
-      fecha: "15/01/2026"
-    }
-  },
-  {
-    id_proveedor: 2,
-    nombre: "Cosméticos & Cuidado Capilar S.A.S.",
-    nit: "900876543-2",
-    telefono: "+57 320 456 7890",
-    correo: "contacto@cosmeticoscapilar.com",
-    direccion: "Calle 100 # 19-61, Bogotá",
-    estado: 1,
-    factura_pdf: null
-  },
-  {
-    id_proveedor: 3,
-    nombre: "Herramientas & Barber Supplies",
-    nit: "800345678-9",
-    telefono: "+57 315 678 1234",
-    correo: "pedidos@barbersupplies.co",
-    direccion: "Av. Roosevelt # 34-12, Cali",
-    estado: 1,
-    factura_pdf: null
-  },
-  {
-    id_proveedor: 4,
-    nombre: "Insumos y Lociones del Valle",
-    nit: "901567890-4",
-    telefono: "+57 318 234 5678",
-    correo: "insumosvalle@gmail.com",
-    direccion: "Calle 26 # 6N-45, Palmira",
-    estado: 1,
-    factura_pdf: null
-  },
-  {
-    id_proveedor: 5,
-    nombre: "Navajas & Acero Premium Ltd",
-    nit: "900654321-7",
-    telefono: "+57 300 789 0123",
-    correo: "info@acerosbarber.com",
-    direccion: "Calle 12 # 4-80, Bucaramanga",
-    estado: 0,
-    factura_pdf: null
-  }
-];
+const mockSuppliers = [];
 
 const emptyForm = {
   nombre: "",
@@ -78,7 +22,7 @@ const emptyForm = {
 };
 
 export function useSuppliers() {
-  const [suppliers, setSuppliers] = useState(mockSuppliers);
+  const [suppliers, setSuppliers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [viewMode, setViewMode] = useState("cards"); // 'cards' | 'table'
@@ -139,7 +83,7 @@ export function useSuppliers() {
   useEffect(() => {
     getSuppliers()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setSuppliers(data);
         }
       })

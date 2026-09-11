@@ -12,6 +12,7 @@ import { validateServicePackageForm } from "../validations/serviceValidation";
 
 export default function ServicePackagesView() {
   const {
+    packages = [],
     filteredPackages,
     searchTerm,
     setSearchTerm,
@@ -230,7 +231,7 @@ export default function ServicePackagesView() {
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          Nuevo Paquete
+          {packages?.length === 0 ? "Crear primer paquete" : "Nuevo Paquete"}
         </button>
       </div>
 

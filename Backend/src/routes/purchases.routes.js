@@ -23,10 +23,17 @@ router.post(
 
 // Anulación de compra con ajuste atómico de stock (Exclusivo Administrador)
 router.patch(
-  "/:id/anular",
+  ["/:id/anular", "/:id/cancel"],
   authenticate,
   authorizeRoles(ROLES.ADMIN),
   validate(cancelPurchaseValidation),
+  PurchasesController.cancel
+);
+
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
   PurchasesController.cancel
 );
 

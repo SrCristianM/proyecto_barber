@@ -10,53 +10,7 @@ const mockBarbersList = [
 
 export const NOVELTY_TYPES = ["Ausencia", "Cambio de turno", "Permiso", "Otro"];
 
-const mockNovelties = [
-  {
-    id_novedad: 1,
-    id_barbero: 1,
-    tipo: "Permiso",
-    fecha: "2026-08-28",
-    descripcion: "Cita médica en la mañana (08:00 - 12:00)",
-    estado: "Aprobado",
-    fecha_registro: "2026-08-20 09:30:00"
-  },
-  {
-    id_novedad: 2,
-    id_barbero: 2,
-    tipo: "Cambio de turno",
-    fecha: "2026-08-29",
-    descripcion: "Cambio de turno con Carlos para el sábado en la tarde",
-    estado: "Pendiente",
-    fecha_registro: "2026-08-22 14:15:00"
-  },
-  {
-    id_novedad: 3,
-    id_barbero: 3,
-    tipo: "Ausencia",
-    fecha: "2026-09-01",
-    descripcion: "Asuntos personales urgentes fuera de la ciudad",
-    estado: "Pendiente",
-    fecha_registro: "2026-08-23 11:00:00"
-  },
-  {
-    id_novedad: 4,
-    id_barbero: 4,
-    tipo: "Otro",
-    fecha: "2026-08-15",
-    descripcion: "Capacitación técnica de nuevas técnicas de corte",
-    estado: "Aprobado",
-    fecha_registro: "2026-08-10 16:00:00"
-  },
-  {
-    id_novedad: 5,
-    id_barbero: 1,
-    tipo: "Ausencia",
-    fecha: "2026-08-05",
-    descripcion: "Solicitud sin previo aviso fuera de los tiempos permitidos",
-    estado: "Rechazado",
-    fecha_registro: "2026-08-04 18:20:00"
-  }
-];
+const mockNovelties = [];
 
 const emptyForm = {
   id_barbero: 1,
@@ -67,7 +21,7 @@ const emptyForm = {
 };
 
 export function useScheduleNovelties() {
-  const [novelties, setNovelties] = useState(mockNovelties);
+  const [novelties, setNovelties] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");

@@ -38,84 +38,7 @@ export const catalogItems = [
   { id_item: "p_4", tipo_item: "Producto", id_servicio: null, id_producto: 4, nombre: "Aceite para Barba", precio_unitario: 25000 }
 ];
 
-const mockSales = [
-  {
-    id_venta: 1,
-    id_cliente: 1,
-    id_usuario: 1,
-    id_cita: 1,
-    fecha: "2026-06-02 09:30:00",
-    total: 30000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 1, id_venta: 1, tipo_item: "Servicio", id_producto: null, id_servicio: 1, cantidad: 1, precio_unitario: 15000, subtotal: 15000, nombre: "Corte Clásico" },
-      { id_venta_detalle: 2, id_venta: 1, tipo_item: "Producto", id_producto: 1, id_servicio: null, cantidad: 1, precio_unitario: 15000, subtotal: 15000, nombre: "Gel para Cabello" }
-    ]
-  },
-  {
-    id_venta: 2,
-    id_cliente: 2,
-    id_usuario: 2,
-    id_cita: 2,
-    fecha: "2026-06-02 10:15:00",
-    total: 25000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 3, id_venta: 2, tipo_item: "Servicio", id_producto: null, id_servicio: 2, cantidad: 1, precio_unitario: 25000, subtotal: 25000, nombre: "Corte + Barba" }
-    ]
-  },
-  {
-    id_venta: 3,
-    id_cliente: 3,
-    id_usuario: 1,
-    id_cita: 3,
-    fecha: "2026-06-02 11:00:00",
-    total: 45000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 4, id_venta: 3, tipo_item: "Servicio", id_producto: null, id_servicio: 3, cantidad: 1, precio_unitario: 20000, subtotal: 20000, nombre: "Afeitado Premium" },
-      { id_venta_detalle: 5, id_venta: 3, tipo_item: "Producto", id_producto: 4, id_servicio: null, cantidad: 1, precio_unitario: 25000, subtotal: 25000, nombre: "Aceite para Barba" }
-    ]
-  },
-  {
-    id_venta: 4,
-    id_cliente: 4,
-    id_usuario: 2,
-    id_cita: null,
-    fecha: "2026-06-01 16:30:00",
-    total: 30000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 6, id_venta: 4, tipo_item: "Servicio", id_producto: null, id_servicio: 4, cantidad: 1, precio_unitario: 30000, subtotal: 30000, nombre: "Diseño y Color" }
-    ]
-  },
-  {
-    id_venta: 5,
-    id_cliente: 5,
-    id_usuario: 1,
-    id_cita: null,
-    fecha: "2026-06-01 14:00:00",
-    total: 37000,
-    estado: "Activa",
-    detalles: [
-      { id_venta_detalle: 7, id_venta: 5, tipo_item: "Servicio", id_producto: null, id_servicio: 1, cantidad: 1, precio_unitario: 15000, subtotal: 15000, nombre: "Corte Clásico" },
-      { id_venta_detalle: 8, id_venta: 5, tipo_item: "Producto", id_producto: 3, id_servicio: null, cantidad: 1, precio_unitario: 22000, subtotal: 22000, nombre: "Shampoo Premium" }
-    ]
-  },
-  {
-    id_venta: 6,
-    id_cliente: 6,
-    id_usuario: 1,
-    id_cita: null,
-    fecha: "2026-05-31 15:45:00",
-    total: 43000,
-    estado: "Anulada",
-    detalles: [
-      { id_venta_detalle: 9, id_venta: 6, tipo_item: "Servicio", id_producto: null, id_servicio: 2, cantidad: 1, precio_unitario: 25000, subtotal: 25000, nombre: "Corte + Barba" },
-      { id_venta_detalle: 10, id_venta: 6, tipo_item: "Producto", id_producto: 2, id_servicio: null, cantidad: 1, precio_unitario: 18000, subtotal: 18000, nombre: "Cera Modeladora" }
-    ]
-  }
-];
+const mockSales = [];
 
 export const users = mockUsersList;
 export const saleStatuses = ESTADOS_VENTA;
@@ -134,7 +57,7 @@ const emptyForm = () => ({
 });
 
 export function useSales() {
-  const [sales, setSales] = useState(mockSales);
+  const [sales, setSales] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'Activa' | 'Anulada'
   const [clientFilter, setClientFilter] = useState("all"); // 'all' | id_cliente
@@ -321,7 +244,7 @@ export function useSales() {
       const data = localStorage.getItem("barber_sales_db");
       if (data) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setSales(parsed);
           return;
         }
@@ -329,7 +252,7 @@ export function useSales() {
     } catch (e) {
       console.error(e);
     }
-    setSales(mockSales);
+    setSales([]);
   };
 
   useEffect(() => {
@@ -572,6 +495,7 @@ export function useSales() {
     toggleStatus,
     getClientName,
     getUserName,
-    clients
+    clients,
+    sales
   };
 }

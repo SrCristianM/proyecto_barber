@@ -20,5 +20,6 @@ router.get("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA
 router.post("/", authenticate, authorizeRoles(ROLES.ADMIN), validate(createSupplierValidation), SuppliersController.create);
 router.put("/:id", authenticate, authorizeRoles(ROLES.ADMIN), validate(updateSupplierValidation), SuppliersController.update);
 router.patch("/:id/status", authenticate, authorizeRoles(ROLES.ADMIN), validate(toggleSupplierStatusValidation), SuppliersController.toggleStatus);
+router.delete("/:id", authenticate, authorizeRoles(ROLES.ADMIN), SuppliersController.delete);
 
 export default router;

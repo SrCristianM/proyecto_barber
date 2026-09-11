@@ -15,8 +15,14 @@ export const updateScheduleValidation = [
 ];
 
 export const availabilityValidation = [
-  query("id_barbero").isInt({ min: 1 }).withMessage("ID de barbero requerido."),
-  query("fecha").matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("La fecha debe tener formato YYYY-MM-DD.")
+  query("fecha").matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("La fecha debe tener formato YYYY-MM-DD."),
+  query("id_barbero").custom((value, { req }) => {
+    const id = value || req.query.barbero;
+    if (!id || isNaN(Number(id)) || Number(id) < 1) {
+      throw new Error("ID de barbero requerido.");
+    }
+    return true;
+  })
 ];
 
 export const createNoveltyValidation = [

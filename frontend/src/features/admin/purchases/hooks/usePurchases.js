@@ -95,56 +95,7 @@ export const availableUsers = [
 
 export const purchaseStatuses = ESTADOS_COMPRA;
 
-const mockPurchases = [
-  {
-    id_compra: 1,
-    id_proveedor: 1,
-    id_usuario: 1,
-    fecha: "2026-06-02 08:30:00",
-    total: 250000,
-    estado: "Registrada",
-    detalles: [
-      { id_detalle_compra: 1, id_compra: 1, id_producto: 1, cantidad: 15, precio_unitario: 10000, subtotal: 150000, nombre_producto: "Gel para Cabello" },
-      { id_detalle_compra: 2, id_compra: 1, id_producto: 2, cantidad: 8, precio_unitario: 12500, subtotal: 100000, nombre_producto: "Cera Modeladora" }
-    ]
-  },
-  {
-    id_compra: 2,
-    id_proveedor: 3,
-    id_usuario: 1,
-    fecha: "2026-06-01 11:15:00",
-    total: 420000,
-    estado: "Registrada",
-    detalles: [
-      { id_detalle_compra: 3, id_compra: 2, id_producto: 5, cantidad: 5, precio_unitario: 28000, subtotal: 140000, nombre_producto: "Navaja Profesional" },
-      { id_detalle_compra: 4, id_compra: 2, id_producto: 6, cantidad: 6, precio_unitario: 42000, subtotal: 252000, nombre_producto: "Tijeras Profesionales" },
-      { id_detalle_compra: 5, id_compra: 2, id_producto: 7, cantidad: 6, precio_unitario: 4666.67, subtotal: 28000, nombre_producto: "Peine de Carbono" }
-    ]
-  },
-  {
-    id_compra: 3,
-    id_proveedor: 2,
-    id_usuario: 2,
-    fecha: "2026-05-28 14:00:00",
-    total: 310000,
-    estado: "Registrada",
-    detalles: [
-      { id_detalle_compra: 6, id_compra: 3, id_producto: 3, cantidad: 12, precio_unitario: 15000, subtotal: 180000, nombre_producto: "Shampoo Premium" },
-      { id_detalle_compra: 7, id_compra: 3, id_producto: 8, cantidad: 10, precio_unitario: 13000, subtotal: 130000, nombre_producto: "Bálsamo para Barba" }
-    ]
-  },
-  {
-    id_compra: 4,
-    id_proveedor: 4,
-    id_usuario: 1,
-    fecha: "2026-05-20 16:45:00",
-    total: 160000,
-    estado: "Anulada",
-    detalles: [
-      { id_detalle_compra: 8, id_compra: 4, id_producto: 4, cantidad: 10, precio_unitario: 16000, subtotal: 160000, nombre_producto: "Aceite para Barba" }
-    ]
-  }
-];
+const mockPurchases = [];
 
 const emptyForm = () => {
   const now = new Date();
@@ -175,7 +126,7 @@ const emptyForm = () => {
 };
 
 export function usePurchases() {
-  const [purchases, setPurchases] = useState(mockPurchases);
+  const [purchases, setPurchases] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'Registrada' | 'Anulada'
   const [supplierFilter, setSupplierFilter] = useState("all");

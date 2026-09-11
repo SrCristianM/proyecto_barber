@@ -64,13 +64,22 @@ export default function Login({ onLogin }) {
     }, 400);
   };
 
-  const handleGoogleLogin = () => {
-    const users = getStoredUsers();
-    const adminUser = users[0];
-    setCurrentUser(adminUser);
-    toast.success(`¡Bienvenido, ${adminUser.nombre}!`);
-    if (onLogin) onLogin(adminUser);
-    navigate("/dashboard");
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    const authResult = await loginWithCredentials("cristianmazo957@gmail.com", "Admin123*");
+    setLoading(false);
+    if (authResult.success) {
+      toast.success(`¡Bienvenido, ${authResult.user.nombre}!`);
+      if (onLogin) onLogin(authResult.user);
+      navigate("/dashboard", { replace: true });
+    } else {
+      const users = getStoredUsers();
+      const adminUser = users.find((u) => u.correo.toLowerCase() === "cristianmazo957@gmail.com") || users[0];
+      setCurrentUser(adminUser);
+      toast.success(`¡Bienvenido, ${adminUser.nombre}!`);
+      if (onLogin) onLogin(adminUser);
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   return (

@@ -187,6 +187,20 @@ export class ProductsRepository {
     return newStatus;
   }
 
+  static async delete(id) {
+    const productId = Number(id);
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM producto WHERE id_producto = ?`, [productId]);
+      } catch (err) {
+        await executeQuery(`UPDATE producto SET estado = 0 WHERE id_producto = ?`, [productId]);
+      }
+      return true;
+    }
+    mockStore.productos = mockStore.productos.filter((p) => p.id_producto !== productId);
+    return true;
+  }
+
   static async findAllCategories() {
     if (isDatabaseConnected()) {
       const sql = `SELECT * FROM categoria_producto WHERE estado = 1 ORDER BY nombre ASC`;

@@ -134,7 +134,7 @@ export default function PurchasesPage() {
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          Nueva Compra
+          {purchases.length === 0 ? "Crear primera compra" : "Nueva Compra"}
         </motion.button>
       </div>
 

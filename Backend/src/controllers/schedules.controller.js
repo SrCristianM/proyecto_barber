@@ -5,7 +5,7 @@ export class SchedulesController {
   static async getAll(req, res, next) {
     try {
       const filters = {
-        barber: req.query.barber || "all",
+        barber: req.query.barber || req.query.id_barbero || req.query.barbero || "all",
         status: req.query.status || "all",
         day: req.query.day || "all"
       };
@@ -54,7 +54,8 @@ export class SchedulesController {
 
   static async getAvailability(req, res, next) {
     try {
-      const { id_barbero, fecha } = req.query;
+      const id_barbero = req.query.id_barbero || req.query.barbero;
+      const { fecha } = req.query;
       const availability = await SchedulesService.getAvailability(id_barbero, fecha);
       return ApiResponse.success(res, availability, "Disponibilidad calculada");
     } catch (error) {

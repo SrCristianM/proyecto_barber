@@ -4,10 +4,7 @@ import { CATEGORIAS_PRODUCTO } from "../../../../shared/types/database";
 const emptyForm = { nombre: "", estado: 1 };
 
 export function useProductCategories() {
-  const [categories, setCategories] = useState(
-    // Clonamos los objetos para que el estado sea independiente
-    CATEGORIAS_PRODUCTO.map((c) => ({ ...c }))
-  );
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "inactive"
   const [showCreateModal, setShowCreateModal] = useState(false);

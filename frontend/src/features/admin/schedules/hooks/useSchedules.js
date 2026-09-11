@@ -12,20 +12,10 @@ import {
 import { getBarbers } from "../../barbers/services/barbersService";
 
 const mockBarbersList = [
-  { id_barbero: 1, nombre: "Carlos Rodríguez" },
-  { id_barbero: 2, nombre: "Miguel Ángel" },
-  { id_barbero: 3, nombre: "Javier Torres" },
-  { id_barbero: 4, nombre: "Luis Martínez" }
+  { id_barbero: 1, nombre: "Carlos Rodríguez" }
 ];
 
-const mockSchedules = [
-  { id_horario: 1, id_barbero: 1, dias_semana: ["Lunes", "Martes"], hora_inicio: "09:00:00", hora_fin: "18:00:00", estado: 1 },
-  { id_horario: 2, id_barbero: 1, dias_semana: ["Miercoles", "Jueves"], hora_inicio: "09:00:00", hora_fin: "17:00:00", estado: 1 },
-  { id_horario: 3, id_barbero: 2, dias_semana: ["Lunes", "Martes", "Viernes"], hora_inicio: "10:00:00", hora_fin: "19:00:00", estado: 1 },
-  { id_horario: 4, id_barbero: 3, dias_semana: ["Lunes"], hora_inicio: "08:00:00", hora_fin: "16:00:00", estado: 1 },
-  { id_horario: 5, id_barbero: 3, dias_semana: ["Sabado"], hora_inicio: "09:00:00", hora_fin: "14:00:00", estado: 1 },
-  { id_horario: 6, id_barbero: 4, dias_semana: ["Viernes", "Sabado"], hora_inicio: "14:00:00", hora_fin: "20:00:00", estado: 0 }
-];
+const mockSchedules = [];
 
 export const barbers = mockBarbersList;
 export const daysOfWeek = DIAS_SEMANA;
@@ -40,7 +30,7 @@ const emptyForm = {
 };
 
 export function useSchedules() {
-  const [schedules, setSchedules] = useState(mockSchedules);
+  const [schedules, setSchedules] = useState([]);
   const [barbersList, setBarbersList] = useState(mockBarbersList);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
@@ -61,7 +51,7 @@ export function useSchedules() {
   useEffect(() => {
     getSchedules()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setSchedules(data);
         }
       })
@@ -331,6 +321,7 @@ export function useSchedules() {
     openDetailModal,
     openDeleteModal,
     openDeactivateModal,
-    getBarberName
+    getBarberName,
+    schedules
   };
 }

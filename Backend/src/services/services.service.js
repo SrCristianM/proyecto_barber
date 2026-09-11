@@ -37,6 +37,15 @@ export class ServicesService {
     return { id_servicio: Number(id), estado: newStatus };
   }
 
+  static async deleteService(id) {
+    const service = await ServicesRepository.findById(id);
+    if (!service) {
+      throw ApiError.notFound("Servicio no encontrado");
+    }
+    await ServicesRepository.delete(id);
+    return true;
+  }
+
   static async getAllCategories() {
     return await ServicesRepository.findAllCategories();
   }

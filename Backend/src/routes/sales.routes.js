@@ -23,10 +23,17 @@ router.post(
 
 // Anular venta y restituir inventario (Administrador)
 router.patch(
-  "/:id/anular",
+  ["/:id/anular", "/:id/cancel"],
   authenticate,
   authorizeRoles(ROLES.ADMIN),
   validate(cancelSaleValidation),
+  SalesController.cancel
+);
+
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
   SalesController.cancel
 );
 
