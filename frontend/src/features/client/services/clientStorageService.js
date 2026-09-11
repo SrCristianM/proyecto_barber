@@ -7,6 +7,8 @@
  */
 
 import { getCurrentUser, getStoredUsers, saveStoredUsers } from "../../auth/services/authService.js";
+import { createAppointment as apiCreateAppointment, updateAppointmentStatus as apiUpdateAppointmentStatus } from "../../admin/appointments/services/appointmentsService.js";
+import { createSale as apiCreateSale } from "../../admin/sales/services/salesService.js";
 
 // Claves de almacenamiento
 const STORAGE_KEYS = {
@@ -357,23 +359,49 @@ export function getCurrentClientProfile() {
   if (!user) return null;
 
   const clients = getOrInit(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
-  let client = clients.find((c) => c.id_usuario === user.id_usuario || c.correo === user.correo);
+  const cleanEmail = (user.correo || "").trim().toLowerCase();
+  let client = clients.find(
+    (c) =>
+      (user.id_usuario && Number(c.id_usuario) === Number(user.id_usuario)) ||
+      (c.correo && c.correo.toLowerCase() === cleanEmail)
+  );
 
   if (!client) {
-    // Si el usuario es rol 4 pero no tiene fila en cliente, se auto-crea
-    const nextId = Math.max(...clients.map((c) => c.id_cliente || 0), 0) + 1;
+    const nextId = Math.max(...clients.map((c) => Number(c.id_cliente) || 0), 0) + 1;
     client = {
       id_cliente: nextId,
       id_usuario: user.id_usuario,
-      nombre: user.nombre,
-      apellido: user.apellido,
-      correo: user.correo,
+      nombre: (user.nombre || "").trim(),
+      apellido: (user.apellido || "").trim(),
+      correo: cleanEmail,
       telefono: user.telefono || "",
       direccion: "No especificada",
       nivel_fidelidad: "Nuevo",
       estado: 1
     };
     save(STORAGE_KEYS.CLIENTS, [...clients, client]);
+  } else {
+    // Sincronizar en caso de que los datos del usuario hayan sido actualizados
+    let needsUpdate = false;
+    if (user.nombre && client.nombre !== user.nombre.trim()) {
+      client.nombre = user.nombre.trim();
+      needsUpdate = true;
+    }
+    if (user.apellido && client.apellido !== user.apellido.trim()) {
+      client.apellido = user.apellido.trim();
+      needsUpdate = true;
+    }
+    if (user.telefono && client.telefono !== user.telefono.trim()) {
+      client.telefono = user.telefono.trim();
+      needsUpdate = true;
+    }
+    if (user.correo && client.correo !== cleanEmail) {
+      client.correo = cleanEmail;
+      needsUpdate = true;
+    }
+    if (needsUpdate) {
+      save(STORAGE_KEYS.CLIENTS, clients);
+    }
   }
 
   return {
@@ -441,7 +469,12 @@ export function getClientAppointments() {
 
   // Filtrar citas correspondientes a este cliente
   return allAppointments
-    .filter((apt) => apt.id_cliente === client.id_cliente)
+    .filter(
+      (apt) =>
+        Number(apt.id_cliente) === Number(client.id_cliente) ||
+        (client.id_usuario && Number(apt.id_usuario) === Number(client.id_usuario)) ||
+        (apt.cliente_correo && client.correo && apt.cliente_correo.toLowerCase() === client.correo.toLowerCase())
+    )
     .map((apt) => {
       const barber = barbers.find((b) => b.id_barbero === Number(apt.id_barbero)) || {
         nombre: "Barbero Profesional",
@@ -542,9 +575,17 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
   }
 
   const nextId = Math.max(...allAppointments.map((a) => a.id_cita || 0), 100) + 1;
+  const clientFullName = `${client.nombre || ""} ${client.apellido || ""}`.trim() || "Cliente Registrado";
+
   const newAppointment = {
     id_cita: nextId,
     id_cliente: client.id_cliente,
+    id_usuario: client.id_usuario,
+    cliente_nombre: clientFullName,
+    cliente_telefono: client.telefono || "",
+    cliente_correo: client.correo || "",
+    cliente_direccion: client.direccion || "",
+    cliente_fidelidad: client.nivel_fidelidad || "Nuevo",
     id_barbero: Number(id_barbero),
     id_servicio: id_servicio ? Number(id_servicio) : null,
     id_paquete: id_paquete ? Number(id_paquete) : null,
@@ -559,6 +600,21 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
 
   const updatedAppointments = [newAppointment, ...allAppointments];
   save(STORAGE_KEYS.APPOINTMENTS, updatedAppointments);
+
+  apiCreateAppointment({
+    id_cliente: client.id_cliente,
+    id_barbero: Number(id_barbero),
+    id_servicio: id_servicio ? Number(id_servicio) : null,
+    id_paquete: id_paquete ? Number(id_paquete) : null,
+    fecha,
+    hora: hora.length === 5 ? `${hora}:00` : hora,
+    notas: notas.trim(),
+    cliente_nombre: clientFullName,
+    cliente_telefono: client.telefono || "",
+    cliente_correo: client.correo || ""
+  }).catch((err) => {
+    console.warn("[ClientStorage] Cita sincronizada localmente (API fallback):", err.message);
+  });
 
   return { success: true, appointment: newAppointment };
 }
@@ -619,6 +675,11 @@ export function cancelAppointment(id_cita, motivo = "Cancelada por el cliente") 
   };
 
   save(STORAGE_KEYS.APPOINTMENTS, allAppointments);
+
+  apiUpdateAppointmentStatus(id_cita, "Cancelada").catch((err) => {
+    console.warn("[ClientStorage] Cita cancelada localmente (API fallback):", err.message);
+  });
+
   return { success: true, appointment: allAppointments[aptIndex] };
 }
 
@@ -632,7 +693,12 @@ export function getClientPurchases() {
 
   const allSales = getOrInit(STORAGE_KEYS.SALES, INITIAL_SALES);
   return allSales
-    .filter((s) => s.id_cliente === client.id_cliente)
+    .filter(
+      (s) =>
+        Number(s.id_cliente) === Number(client.id_cliente) ||
+        (client.id_usuario && Number(s.id_usuario) === Number(client.id_usuario)) ||
+        (s.cliente_correo && client.correo && s.cliente_correo.toLowerCase() === client.correo.toLowerCase())
+    )
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 }
 
@@ -711,10 +777,16 @@ export function createClientPurchase({
     nombre: item.nombre
   }));
 
+  const clientFullName = `${client.nombre || ""} ${client.apellido || ""}`.trim() || "Cliente Registrado";
+
   const newSale = {
     id_venta: newSaleId,
     id_cliente: client.id_cliente,
     id_usuario: client.id_usuario || 1,
+    cliente_nombre: clientFullName,
+    cliente_telefono: client.telefono || "",
+    cliente_correo: client.correo || "",
+    cliente_fidelidad: client.nivel_fidelidad || "Nuevo",
     id_cita: null,
     fecha: fullDateTime,
     total: totalCalculado,
@@ -728,6 +800,24 @@ export function createClientPurchase({
 
   allSales.unshift(newSale);
   save(STORAGE_KEYS.SALES, allSales);
+
+  apiCreateSale({
+    id_cliente: client.id_cliente,
+    id_barbero: 1,
+    metodo_pago: metodoPago,
+    total: totalCalculado,
+    cliente_nombre: clientFullName,
+    detalles: items.map((it) => ({
+      tipo_item: "Producto",
+      id_producto: it.id_producto || null,
+      id_servicio: it.id_servicio || null,
+      id_paquete: it.id_paquete || null,
+      cantidad: Number(it.cantidad || 1),
+      precio_unitario: Number(it.precio || 0)
+    }))
+  }).catch((err) => {
+    console.warn("[ClientStorage] Venta sincronizada localmente (API fallback):", err.message);
+  });
 
   return { success: true, sale: newSale };
 }
@@ -844,10 +934,17 @@ export function getClientReviews() {
 }
 
 export function saveClientReview(reviewData) {
+  const client = getCurrentClientProfile();
   const reviews = getClientReviews();
+  const clientFullName = client ? `${client.nombre || ""} ${client.apellido || ""}`.trim() : "Cliente";
+
   const newReview = {
     id: `rev-${Date.now()}`,
     fecha: new Date().toISOString().split("T")[0],
+    id_cliente: client?.id_cliente || null,
+    id_usuario: client?.id_usuario || null,
+    cliente_nombre: clientFullName,
+    cliente_correo: client?.correo || "",
     ...reviewData
   };
   reviews.unshift(newReview);
@@ -881,8 +978,41 @@ export function getClientLoyaltyDetails() {
     nextBenefitText = `Te faltan ${cortesFaltantes} cortes para tu 5° Corte Gratis.`;
   }
 
+  // Nivel de fidelidad: todo cliente recién registrado inicia en 'Nuevo' (mínimo)
+  let currentTier = profile?.nivel_fidelidad || "Nuevo";
+  if (!profile?.nivel_fidelidad || profile.nivel_fidelidad === "Nuevo") {
+    if (completed >= 15) currentTier = "Oro";
+    else if (completed >= 8) currentTier = "Plata";
+    else if (completed >= 3) currentTier = "Bronce";
+    else currentTier = "Nuevo";
+  }
+
+  const perksByTier = {
+    Nuevo: [
+      "Registro inicial en el Club de Fidelidad Tu Turno",
+      "Suma sellos automáticos por cada corte realizado",
+      "Tu 5° corte del ciclo con beneficio especial"
+    ],
+    Bronce: [
+      "Bebida de cortesía en sala de espera",
+      "5% de descuento en ceras y fijadores",
+      "Acceso anticipado a combos de temporada"
+    ],
+    Plata: [
+      "Prioridad en lista de espera y citas VIP",
+      "Bebida de cortesía en sala VIP",
+      "10% de descuento en ceras y pomadas"
+    ],
+    Oro: [
+      "Atención VIP preferencial y reservas express",
+      "Bebida premium ilimitada en sala VIP",
+      "15% de descuento en productos y servicios",
+      "Corte de cumpleaños gratuito"
+    ]
+  };
+
   return {
-    tier: profile?.nivel_fidelidad || "Plata",
+    tier: currentTier,
     serviciosRealizados: completed,
     targetCortes,
     sellosCiclo,
@@ -891,13 +1021,9 @@ export function getClientLoyaltyDetails() {
     progressPercent,
     visitsCount: completed,
     nextBenefit: nextBenefitText,
-    unlockedPerks: [
-      "Prioridad en lista de espera y citas VIP",
-      "Bebida de cortesía ilimitada en sala VIP",
-      "10% de descuento en ceras y pomadas"
-    ],
+    unlockedPerks: perksByTier[currentTier] || perksByTier.Nuevo,
     badges: [
-      { id: "b1", name: "Puntualidad de Oro", icon: "Clock", unlocked: true },
+      { id: "b1", name: "Primer Corte", icon: "Scissors", unlocked: completed >= 1 },
       { id: "b2", name: "Estilo Frecuente (3 cortes)", icon: "Scissors", unlocked: completed >= 3 },
       { id: "b3", name: "Miembro VIP (5 cortes)", icon: "Crown", unlocked: completed >= 5 }
     ]

@@ -1,13 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { ESTADOS_CITA } from "../../../../shared/types/database";
+import {
+  getAppointments,
+  createAppointment,
+  updateAppointment,
+  updateAppointmentStatus,
+  deleteAppointment
+} from "../services/appointmentsService";
 
-const mockClientsList = [
-  { id_cliente: 1, nombre: "Juan Pérez" },
-  { id_cliente: 2, nombre: "María García" },
-  { id_cliente: 3, nombre: "Pedro López" },
-  { id_cliente: 4, nombre: "Ana Torres" },
-  { id_cliente: 5, nombre: "Carlos Ruiz" }
-];
+export function getRealClients() {
+  try {
+    const rawClients = localStorage.getItem("barber_clients_db");
+    const rawUsers = localStorage.getItem("barber_users_db");
+    const storedClients = rawClients ? JSON.parse(rawClients) : [];
+    const storedUsers = rawUsers ? JSON.parse(rawUsers) : [];
+
+    const clientList = [...storedClients];
+
+    storedUsers
+      .filter((u) => Number(u.id_rol) === 4)
+      .forEach((u) => {
+        const cleanEmail = (u.correo || "").trim().toLowerCase();
+        const exists = clientList.some(
+          (c) =>
+            (c.id_usuario && Number(c.id_usuario) === Number(u.id_usuario)) ||
+            (c.correo && c.correo.toLowerCase() === cleanEmail)
+        );
+        if (!exists) {
+          const nextId = Math.max(...clientList.map((c) => Number(c.id_cliente) || 0), 0) + 1;
+          clientList.push({
+            id_cliente: nextId,
+            id_usuario: u.id_usuario,
+            nombre: (u.nombre || "").trim(),
+            apellido: (u.apellido || "").trim(),
+            correo: cleanEmail,
+            telefono: u.telefono || "",
+            direccion: u.direccion || "No especificada",
+            nivel_fidelidad: "Nuevo",
+            estado: 1
+          });
+        }
+      });
+
+    return clientList.map((c) => ({
+      id_cliente: Number(c.id_cliente),
+      id_usuario: c.id_usuario,
+      nombre: `${c.nombre} ${c.apellido || ""}`.trim() || "Cliente",
+      correo: c.correo || "",
+      telefono: c.telefono || ""
+    }));
+  } catch (err) {
+    console.error("Error al obtener clientes reales:", err);
+    return [
+      { id_cliente: 1, nombre: "Pedro López", correo: "cliente@example.com", telefono: "3001234567" }
+    ];
+  }
+}
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
@@ -74,9 +123,23 @@ export function useAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
+  const [clientsList, setClientsList] = useState(() => getRealClients());
+
   // ---- Helpers ----
-  const getClientName = (id_cliente) =>
-    mockClientsList.find((c) => c.id_cliente === Number(id_cliente))?.nombre || "Cliente Desconocido";
+  const getClientName = (id_cliente, apt) => {
+    if (apt?.cliente_nombre && apt.cliente_nombre.trim() !== "" && apt.cliente_nombre !== "Cliente") {
+      return apt.cliente_nombre.trim();
+    }
+    const currentClients = clientsList.length > 0 ? clientsList : getRealClients();
+    const found = currentClients.find(
+      (c) =>
+        Number(c.id_cliente) === Number(id_cliente) ||
+        (apt?.id_usuario && Number(c.id_usuario) === Number(apt.id_usuario)) ||
+        (apt?.cliente_correo && c.correo && c.correo.toLowerCase() === apt.cliente_correo.toLowerCase())
+    );
+    if (found) return found.nombre;
+    return "Cliente Registrado";
+  };
 
   const getBarberName = (id_barbero) =>
     mockBarbersList.find((b) => b.id_barbero === Number(id_barbero))?.nombre || "Barbero Desconocido";
@@ -103,7 +166,7 @@ export function useAppointments() {
   const appointmentsForDate = appointments
     .filter((a) => a.fecha === selectedDate)
     .filter((apt) => {
-      const clientName = getClientName(apt.id_cliente).toLowerCase();
+      const clientName = getClientName(apt.id_cliente, apt).toLowerCase();
       const barberName = getBarberName(apt.id_barbero).toLowerCase();
       const search = searchTerm.toLowerCase().trim();
 
@@ -132,49 +195,104 @@ export function useAppointments() {
   const goToToday = () => setSelectedDate(TODAY);
   const isToday = selectedDate === TODAY;
 
+  const loadLocalAppointments = () => {
+    try {
+      const data = localStorage.getItem("barber_appointments_db");
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAppointments(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setAppointments(mockAppointments);
+  };
+
+  useEffect(() => {
+    setClientsList(getRealClients());
+
+    getAppointments()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setAppointments(data);
+        } else {
+          loadLocalAppointments();
+        }
+      })
+      .catch((err) => {
+        console.warn("[Appointments] Usando citas locales por fallback:", err.message);
+        loadLocalAppointments();
+      });
+  }, []);
+
   // ---- CRUD ----
   const resetForm = () => setFormData({ ...emptyForm, fecha: selectedDate });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const svc = getServiceInfo(Number(formData.id_servicio));
-    const newAppointment = {
-      id_cita: Math.max(...appointments.map((a) => a.id_cita), 0) + 1,
+    const payload = {
       id_cliente: Number(formData.id_cliente),
       id_barbero: Number(formData.id_barbero),
+      servicios: [Number(formData.id_servicio)],
       id_servicio: Number(formData.id_servicio),
       fecha: formData.fecha,
       hora: formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora,
-      estado: formData.estado || "Programada",
-      precio: svc.precio,
-      fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      estado: formData.estado || "Programada"
     };
-    setAppointments([...appointments, newAppointment]);
-    setShowFormModal(false);
-    resetForm();
+
+    try {
+      const created = await createAppointment(payload);
+      const newAppointment = {
+        ...payload,
+        id_cita: created?.id_cita || Math.max(...appointments.map((a) => a.id_cita), 0) + 1,
+        precio: svc.precio,
+        fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      };
+      setAppointments((prev) => [newAppointment, ...prev]);
+      setShowFormModal(false);
+      resetForm();
+      toast.success("Cita agendada exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al agendar la cita.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedAppointment) return;
     const svc = getServiceInfo(Number(formData.id_servicio));
-    setAppointments(
-      appointments.map((apt) =>
-        apt.id_cita === selectedAppointment.id_cita
-          ? {
-              ...apt,
-              id_cliente: Number(formData.id_cliente),
-              id_barbero: Number(formData.id_barbero),
-              id_servicio: Number(formData.id_servicio),
-              fecha: formData.fecha,
-              hora: formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora,
-              estado: formData.estado,
-              precio: svc.precio
-            }
-          : apt
-      )
-    );
-    setShowFormModal(false);
-    setSelectedAppointment(null);
-    resetForm();
+    const payload = {
+      id_cliente: Number(formData.id_cliente),
+      id_barbero: Number(formData.id_barbero),
+      servicios: [Number(formData.id_servicio)],
+      id_servicio: Number(formData.id_servicio),
+      fecha: formData.fecha,
+      hora: formData.hora.length === 5 ? `${formData.hora}:00` : formData.hora,
+      estado: formData.estado
+    };
+
+    try {
+      await updateAppointment(selectedAppointment.id_cita, payload);
+      setAppointments((prev) =>
+        prev.map((apt) =>
+          apt.id_cita === selectedAppointment.id_cita
+            ? {
+                ...apt,
+                ...payload,
+                precio: svc.precio
+              }
+            : apt
+        )
+      );
+      setShowFormModal(false);
+      setSelectedAppointment(null);
+      resetForm();
+      toast.success("Cita actualizada correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar la cita.");
+    }
   };
 
   /** Abrir modal de nueva cita con fecha/hora/barbero pre-llenados desde el calendario */
@@ -231,7 +349,7 @@ export function useAppointments() {
     formatDateDisplay,
     timeSlots,
     barbers: mockBarbersList,
-    clients: mockClientsList,
+    clients: clientsList,
     services: mockServicesList,
     availableStatuses: ESTADOS_CITA,
     getClientName,

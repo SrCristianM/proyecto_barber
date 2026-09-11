@@ -287,9 +287,9 @@ export function generateSaleReceiptBlob(sale, client = {}) {
   const status = sale?.estado || "Activa";
   const total = Number(sale?.total || 0);
 
-  const clientName = `${client?.nombre || "Cliente"} ${client?.apellido || ""}`.trim();
-  const clientEmail = client?.correo || "cliente@tuturnobarber.com";
-  const clientPhone = client?.telefono || "+57 (300) 000-0000";
+  const clientName = (sale?.cliente_nombre || `${client?.nombre || "Cliente"} ${client?.apellido || ""}`).trim();
+  const clientEmail = sale?.cliente_correo || client?.correo || "cliente@tuturnobarber.com";
+  const clientPhone = sale?.cliente_telefono || client?.telefono || "+57 (300) 000-0000";
   const items = sale?.detalles || [];
 
   let stream = "";

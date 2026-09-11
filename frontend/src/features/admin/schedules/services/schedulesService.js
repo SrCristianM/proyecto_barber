@@ -1,43 +1,38 @@
-/**
- * Servicio de acceso a datos para el módulo de schedules.
- *
- * Actualmente el hook useSchedules (en ../hooks) consume datos mock
- * directamente porque el proyecto todavía no está conectado a un backend.
- * Cuando exista la API real, las funciones de este archivo deben
- * reemplazar los mocks del hook, manteniendo la misma forma de datos
- * que ya consumen los componentes de este módulo.
- */
+import { apiRequest } from "../../../../shared/api/apiClient.js";
 
 const API_URL = "/api/schedules";
 
-export async function getSchedules() {
-  const res = await fetch(API_URL);
-  if (!res.ok) throw new Error("Error al obtener schedules");
-  return res.json();
+export async function getSchedules(barberId = null) {
+  const qs = barberId ? `?barbero=${barberId}` : "";
+  return await apiRequest(`${API_URL}${qs}`);
+}
+
+export async function getBarberAvailability(barberId, date) {
+  return await apiRequest(`${API_URL}/availability?barbero=${barberId}&fecha=${date}`);
 }
 
 export async function createSchedule(data) {
-  const res = await fetch(API_URL, {
+  return await apiRequest(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error("Error al crear Schedule");
-  return res.json();
 }
 
 export async function updateSchedule(id, data) {
-  const res = await fetch(`${API_URL}/${id}`, {
+  return await apiRequest(`${API_URL}/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error("Error al actualizar Schedule");
-  return res.json();
+}
+
+export async function toggleScheduleStatus(id) {
+  return await apiRequest(`${API_URL}/${id}/status`, {
+    method: "PATCH"
+  });
 }
 
 export async function deleteSchedule(id) {
-  const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Error al eliminar Schedule");
-  return true;
+  return await apiRequest(`${API_URL}/${id}`, {
+    method: "DELETE"
+  });
 }

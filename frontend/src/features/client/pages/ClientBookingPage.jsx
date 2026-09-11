@@ -26,7 +26,8 @@ import {
   getClientBarbers,
   getClientSchedules,
   getAvailableSlots,
-  bookAppointment
+  bookAppointment,
+  getCurrentClientProfile
 } from "../services/clientStorageService";
 import {
   createGoogleCalendarUrl,
@@ -41,11 +42,12 @@ export default function ClientBookingPage() {
   // Paso actual (1: Servicios/Paquete, 2: Barbero, 3: Fecha, 4: Horario, 5: Confirmación)
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Catálogos
+  // Catálogos y perfil de cliente
   const services = useMemo(() => getClientServices(), []);
   const packages = useMemo(() => getClientPackages(), []);
   const barbers = useMemo(() => getClientBarbers(), []);
   const schedules = useMemo(() => getClientSchedules(), []);
+  const clientProfile = useMemo(() => getCurrentClientProfile(), []);
 
   // Estado del agendamiento
   const [bookingType, setBookingType] = useState("services"); // 'services' | 'package'
@@ -766,6 +768,27 @@ export default function ClientBookingPage() {
                     <span className="text-[10px] font-bold uppercase text-muted-foreground">Hora de Turno</span>
                     <p className="text-xs sm:text-sm font-black text-foreground">{selectedTimeSlot}</p>
                   </div>
+                </div>
+              </div>
+
+              {/* Titular registrado de la Cita */}
+              <div className="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#DFB755]/15 text-[#DFB755] flex items-center justify-center font-black text-sm">
+                    {clientProfile?.nombre?.charAt(0) || "C"}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground block">
+                      Titular de la Cita (Tus Datos Registrados)
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-foreground">
+                      {clientProfile ? `${clientProfile.nombre} ${clientProfile.apellido || ""}`.trim() : "Cliente Registrado"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right text-xs text-muted-foreground">
+                  <span className="block font-semibold text-foreground">{clientProfile?.telefono || "Sin teléfono"}</span>
+                  <span className="text-[11px]">{clientProfile?.correo || ""}</span>
                 </div>
               </div>
 

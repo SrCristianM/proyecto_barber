@@ -165,7 +165,8 @@ export default function ClientDashboard() {
   };
 
   const displayName = profile?.nombre || "Amigo";
-  const loyaltyTier = profile?.nivel_fidelidad || "Plata";
+  const fullClientName = profile ? `${profile.nombre || ""} ${profile.apellido || ""}`.trim() : (displayName !== "Amigo" ? displayName : "Cliente VIP");
+  const loyaltyTier = loyaltyDetails?.tier || profile?.nivel_fidelidad || "Nuevo";
 
   return (
     <div className="space-y-8">
@@ -359,7 +360,7 @@ export default function ClientDashboard() {
           {/* Tarjeta VIP con inclinación 3D y barra de progreso */}
           <VipLoyaltyCard
             loyaltyDetails={loyaltyDetails}
-            clientName={displayName}
+            clientName={fullClientName}
           />
 
           {/* Tarjeta de Métricas Rápidas & Calificar Barbero */}

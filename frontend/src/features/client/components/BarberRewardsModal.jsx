@@ -84,7 +84,7 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/30">
-                  Nivel {loyalty?.tier || "Plata"}
+                  Nivel {loyalty?.tier || "Nuevo"}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {serviciosRealizados} {serviciosRealizados === 1 ? "corte completado" : "cortes completados"} en total

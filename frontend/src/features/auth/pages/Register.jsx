@@ -46,8 +46,8 @@ export default function Register() {
     setErrors({});
     setLoading(true);
 
-    setTimeout(() => {
-      const regResult = registerUser(formData);
+    setTimeout(async () => {
+      const regResult = await registerUser(formData);
       if (!regResult.success) {
         setLoading(false);
         setErrors({ correo: regResult.error });

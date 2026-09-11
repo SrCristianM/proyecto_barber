@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import { ESTADOS_COMPRA } from "../../../../shared/types/database";
+import {
+  getPurchases,
+  createPurchase,
+  cancelPurchase
+} from "../services/purchasesService";
 
 export const availableSuppliers = [
   {
@@ -332,35 +338,62 @@ export function usePurchases() {
     });
   };
 
-  const handleCreate = () => {
-    const nextCompraId = Math.max(...purchases.map((p) => p.id_compra), 0) + 1;
+  useEffect(() => {
+    getPurchases()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setPurchases(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Purchases] Usando compras locales por fallback:", err.message);
+      });
+  }, []);
+
+  const handleCreate = async () => {
     const formattedFecha = formData.fecha.includes(" ")
       ? formData.fecha
       : `${formData.fecha.replace("T", " ")}:00`;
 
-    const newPurchase = {
-      id_compra: nextCompraId,
+    const payload = {
       id_proveedor: Number(formData.id_proveedor),
-      id_usuario: Number(formData.id_usuario),
-      fecha: formattedFecha,
-      total: Number(formData.total),
-      estado: formData.estado || "Registrada",
-      factura_pdf: formData.factura_pdf || null,
-      detalles: formData.detalles.map((d, index) => ({
-        id_detalle_compra: nextCompraId * 100 + index + 1,
-        id_compra: nextCompraId,
+      detalles: formData.detalles.map((d) => ({
         id_producto: Number(d.id_producto),
         cantidad: Number(d.cantidad),
-        precio_unitario: Number(d.precio_unitario),
-        subtotal: Number(d.subtotal),
-        nombre_producto: getProductName(d.id_producto)
+        precio_unitario: Number(d.precio_unitario)
       }))
     };
 
-    setPurchases([newPurchase, ...purchases]);
-    setShowCreateModal(false);
-    resetForm();
-    return newPurchase;
+    try {
+      const created = await createPurchase(payload);
+      const nextCompraId = created?.id_compra || Math.max(...purchases.map((p) => p.id_compra), 0) + 1;
+      const newPurchase = {
+        id_compra: nextCompraId,
+        id_proveedor: Number(formData.id_proveedor),
+        id_usuario: Number(formData.id_usuario || 1),
+        fecha: formattedFecha,
+        total: Number(formData.total),
+        estado: "Registrada",
+        factura_pdf: formData.factura_pdf || null,
+        detalles: formData.detalles.map((d, index) => ({
+          id_detalle_compra: nextCompraId * 100 + index + 1,
+          id_compra: nextCompraId,
+          id_producto: Number(d.id_producto),
+          cantidad: Number(d.cantidad),
+          precio_unitario: Number(d.precio_unitario),
+          subtotal: Number(d.subtotal),
+          nombre_producto: getProductName(d.id_producto)
+        }))
+      };
+
+      setPurchases([newPurchase, ...purchases]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Compra registrada y stock actualizado exitosamente.");
+      return newPurchase;
+    } catch (err) {
+      toast.error(err.message || "Error al registrar la compra.");
+    }
   };
 
   const handleEdit = () => {
@@ -405,14 +438,23 @@ export function usePurchases() {
     setSelectedPurchase(null);
   };
 
-  const toggleStatus = (compraId) => {
-    setPurchases(
-      purchases.map((p) =>
-        p.id_compra === compraId
-          ? { ...p, estado: p.estado === "Registrada" ? "Anulada" : "Registrada" }
-          : p
-      )
-    );
+  const toggleStatus = async (compraId) => {
+    try {
+      const targetPurchase = purchases.find((p) => p.id_compra === compraId);
+      if (targetPurchase?.estado === "Registrada") {
+        await cancelPurchase(compraId);
+      }
+      setPurchases((prev) =>
+        prev.map((p) =>
+          p.id_compra === compraId
+            ? { ...p, estado: p.estado === "Registrada" ? "Anulada" : "Registrada" }
+            : p
+        )
+      );
+      toast.success("Estado de la orden de compra actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar estado de la compra.");
+    }
   };
 
   const handleExport = () => {

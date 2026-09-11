@@ -9,7 +9,7 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
 
   if (!sale) return null;
 
-  const clientName = clients.find((c) => c.id_cliente === Number(sale.id_cliente))?.nombre || "Cliente Desconocido";
+  const clientName = sale.cliente_nombre || clients.find((c) => c.id_cliente === Number(sale.id_cliente))?.nombre || "Cliente Desconocido";
   const userName = users.find((u) => u.id_usuario === Number(sale.id_usuario))?.nombre || "Usuario Desconocido";
 
   return (

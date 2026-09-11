@@ -86,9 +86,7 @@ const INITIAL_SCHEDULES = [
 const INITIAL_CLIENTS = [
   { id_cliente: 1, id_usuario: 7, nombre: "Pedro", apellido: "López", correo: "cliente@example.com", telefono: "3001234567", nivel_fidelidad: "Oro" },
   { id_cliente: 2, id_usuario: 8, nombre: "Ana", apellido: "Martínez", correo: "ana.m@example.com", telefono: "3012345678", nivel_fidelidad: "Plata" },
-  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "3023456789", nivel_fidelidad: "Bronce" },
-  { id_cliente: 4, id_usuario: 10, nombre: "Andrés", apellido: "Pérez", correo: "andres.p@example.com", telefono: "3034567890", nivel_fidelidad: "Oro" },
-  { id_cliente: 5, id_usuario: 11, nombre: "María", apellido: "Gómez", correo: "maria.g@example.com", telefono: "3045678901", nivel_fidelidad: "Nuevo" }
+  { id_cliente: 3, id_usuario: 9, nombre: "Roberto", apellido: "Sánchez", correo: "roberto@example.com", telefono: "3023456789", nivel_fidelidad: "Bronce" }
 ];
 
 const INITIAL_BARBER_APPOINTMENTS = [
@@ -328,12 +326,50 @@ export function getBarberAppointments() {
   return appointments
     .filter((a) => Number(a.id_barbero) === Number(barber.id_barbero))
     .map((apt) => {
-      const client = clients.find((c) => Number(c.id_cliente) === Number(apt.id_cliente)) || {
-        nombre: "Cliente",
-        apellido: "Registrado",
-        telefono: "Sin teléfono",
-        correo: "cliente@tuturno.com"
-      };
+      // 1. Si la cita ya contiene los datos reales guardados en bookAppointment, priorizarlos
+      let clientName = (apt.cliente_nombre || "").trim();
+      let clientPhone = apt.cliente_telefono || "";
+      let clientEmail = apt.cliente_correo || "";
+      let clientFidelity = apt.cliente_fidelidad || "";
+
+      // 2. Buscar en base de datos local de clientes (barber_clients_db)
+      const client = clients.find(
+        (c) =>
+          (apt.id_cliente && Number(c.id_cliente) === Number(apt.id_cliente)) ||
+          (apt.id_usuario && Number(c.id_usuario) === Number(apt.id_usuario)) ||
+          (apt.cliente_correo && c.correo && c.correo.toLowerCase() === apt.cliente_correo.toLowerCase())
+      );
+
+      if (client) {
+        if (!clientName || clientName === "Cliente") clientName = `${client.nombre} ${client.apellido || ""}`.trim();
+        if (!clientPhone) clientPhone = client.telefono || "";
+        if (!clientEmail) clientEmail = client.correo || "";
+        if (!clientFidelity) clientFidelity = client.nivel_fidelidad || "Nuevo";
+      }
+
+      // 3. Fallback a usuarios registrados (barber_users_db)
+      if (!clientName || clientName === "Cliente") {
+        try {
+          const rawUsers = localStorage.getItem("barber_users_db");
+          const users = rawUsers ? JSON.parse(rawUsers) : [];
+          const matchedUser = users.find(
+            (u) =>
+              (apt.id_usuario && Number(u.id_usuario) === Number(apt.id_usuario)) ||
+              (apt.cliente_correo && u.correo && u.correo.toLowerCase() === apt.cliente_correo.toLowerCase())
+          );
+          if (matchedUser) {
+            clientName = `${matchedUser.nombre} ${matchedUser.apellido || ""}`.trim();
+            if (!clientPhone) clientPhone = matchedUser.telefono || "";
+            if (!clientEmail) clientEmail = matchedUser.correo || "";
+          }
+        } catch {
+          // fallback silencioso
+        }
+      }
+
+      if (!clientName) clientName = "Cliente Registrado";
+      if (!clientPhone) clientPhone = "No especificado";
+      if (!clientFidelity) clientFidelity = "Nuevo";
 
       const service = apt.id_servicio
         ? services.find((s) => Number(s.id_servicio) === Number(apt.id_servicio))
@@ -345,10 +381,10 @@ export function getBarberAppointments() {
 
       return {
         ...apt,
-        cliente_nombre: `${client.nombre} ${client.apellido || ""}`.trim(),
-        cliente_telefono: client.telefono || "No especificado",
-        cliente_correo: client.correo || "",
-        cliente_fidelidad: client.nivel_fidelidad || "Nuevo",
+        cliente_nombre: clientName,
+        cliente_telefono: clientPhone,
+        cliente_correo: clientEmail,
+        cliente_fidelidad: clientFidelity,
         servicio_nombre: service ? service.nombre : apt.nombre_item || "Servicio General",
         servicio_precio: service ? service.precio : apt.precio,
         servicio_duracion: service ? service.duracion_minutos : 30,

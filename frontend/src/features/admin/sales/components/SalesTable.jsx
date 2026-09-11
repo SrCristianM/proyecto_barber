@@ -13,7 +13,8 @@ export default function SalesTable({
   onDelete,
   onDeactivate
 }) {
-  const getClientName = (id_cliente) => {
+  const getClientName = (id_cliente, sale) => {
+    if (sale?.cliente_nombre) return sale.cliente_nombre;
     const c = clients.find((client) => client.id_cliente === Number(id_cliente));
     return c ? c.nombre : "Cliente Desconocido";
   };
@@ -60,7 +61,7 @@ export default function SalesTable({
                       <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 border border-primary/20">
                         <DollarSign className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="font-semibold text-foreground text-sm">{getClientName(sale.id_cliente)}</span>
+                      <span className="font-semibold text-foreground text-sm">{getClientName(sale.id_cliente, sale)}</span>
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-muted-foreground text-sm max-w-[200px] truncate font-medium">

@@ -1,5 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getBarbers,
+  createBarber,
+  updateBarber,
+  deleteBarber,
+  toggleBarberStatus
+} from "../services/barbersService";
 
 const mockBarbers = [
   { id_barbero: 1, id_usuario: 3, nombre: "Carlos", apellido: "Rodríguez", correo: "carlos@example.com", telefono: "+57 300 123 4567", especialidad: "Corte Clásico", imagen_url: "", estado: 1 },
@@ -78,6 +86,18 @@ export function useBarbers() {
 
   const hasActiveFilters = searchTerm !== "" || statusFilter !== "all";
 
+  useEffect(() => {
+    getBarbers()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBarbers(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Barbers] Usando barberos locales por fallback:", err.message);
+      });
+  }, []);
+
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
@@ -85,13 +105,8 @@ export function useBarbers() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const nextBarberId = Math.max(...barbers.map((b) => b.id_barbero), 0) + 1;
-    const nextUserId = formData.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1;
-
-    const newBarber = {
-      id_barbero: nextBarberId,
-      id_usuario: nextUserId,
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
       correo: formData.correo.trim(),
@@ -100,46 +115,77 @@ export function useBarbers() {
       imagen_url: formData.imagen_url || null,
       estado: 1
     };
-    setBarbers([...barbers, newBarber]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createBarber(payload);
+      const newBarber = {
+        ...payload,
+        id_barbero: created?.id_barbero || Math.max(...barbers.map((b) => b.id_barbero), 0) + 1,
+        id_usuario: created?.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1
+      };
+      setBarbers((prev) => [newBarber, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Barbero registrado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al registrar el barbero.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedBarber) return;
-    setBarbers(
-      barbers.map((barber) =>
-        barber.id_barbero === selectedBarber.id_barbero
-          ? {
-              ...barber,
-              nombre: formData.nombre.trim(),
-              apellido: formData.apellido.trim(),
-              correo: formData.correo.trim(),
-              telefono: formData.telefono ? formData.telefono.trim() : null,
-              especialidad: formData.especialidad,
-              imagen_url: formData.imagen_url || null
-            }
-          : barber
-      )
-    );
-    setShowEditModal(false);
-    setSelectedBarber(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
+      especialidad: formData.especialidad,
+      imagen_url: formData.imagen_url || null
+    };
+
+    try {
+      await updateBarber(selectedBarber.id_barbero, payload);
+      setBarbers((prev) =>
+        prev.map((barber) =>
+          barber.id_barbero === selectedBarber.id_barbero
+            ? { ...barber, ...payload }
+            : barber
+        )
+      );
+      setShowEditModal(false);
+      setSelectedBarber(null);
+      resetForm();
+      toast.success("Perfil de barbero actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el barbero.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedBarber) return;
-    setBarbers(barbers.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero));
-    setShowDeleteModal(false);
-    setSelectedBarber(null);
+    try {
+      await deleteBarber(selectedBarber.id_barbero);
+      setBarbers((prev) => prev.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero));
+      setShowDeleteModal(false);
+      setSelectedBarber(null);
+      toast.success("Barbero eliminado.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el barbero.");
+    }
   };
 
-  const toggleStatus = (barberId) => {
-    setBarbers(
-      barbers.map((barber) =>
-        barber.id_barbero === barberId ? { ...barber, estado: barber.estado === 1 ? 0 : 1 } : barber
-      )
-    );
+  const toggleStatus = async (barberId) => {
+    try {
+      await toggleBarberStatus(barberId);
+      setBarbers((prev) =>
+        prev.map((barber) =>
+          barber.id_barbero === barberId ? { ...barber, estado: barber.estado === 1 ? 0 : 1 } : barber
+        )
+      );
+      toast.success("Estado del barbero actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del barbero.");
+    }
   };
 
   const handleExport = () => {

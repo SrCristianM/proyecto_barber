@@ -154,11 +154,10 @@ export default function BarberReportsPage() {
         {/* Citas Programadas */}
         <div
           onClick={() => setActiveTab("programadas")}
-          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
-            activeTab === "programadas"
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${activeTab === "programadas"
               ? "bg-[#DFB755]/10 border-[#DFB755] shadow-md shadow-[#DFB755]/15"
               : "bg-card border-border hover:border-[#DFB755]/40"
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -182,11 +181,10 @@ export default function BarberReportsPage() {
         {/* Citas Completadas */}
         <div
           onClick={() => setActiveTab("completadas")}
-          className={`p-5 rounded-2xl border transition-all cursor-pointer ${
-            activeTab === "completadas"
+          className={`p-5 rounded-2xl border transition-all cursor-pointer ${activeTab === "completadas"
               ? "bg-emerald-500/10 border-emerald-500 shadow-md shadow-emerald-500/15"
               : "bg-card border-border hover:border-emerald-500/40"
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -234,11 +232,10 @@ export default function BarberReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("programadas")}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === "programadas"
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${activeTab === "programadas"
               ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-md shadow-[#DDAE41]/25"
               : "text-muted-foreground hover:text-foreground hover:bg-accent"
-          }`}
+            }`}
         >
           <CalendarCheck2 className="w-4 h-4" />
           <span>Reporte: Citas Programadas ({reportsData.totalProgramadas})</span>
@@ -247,11 +244,10 @@ export default function BarberReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("completadas")}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === "completadas"
+          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${activeTab === "completadas"
               ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-md shadow-[#DDAE41]/25"
               : "text-muted-foreground hover:text-foreground hover:bg-accent"
-          }`}
+            }`}
         >
           <CheckCircle2 className="w-4 h-4" />
           <span>Reporte: Citas Completadas ({reportsData.totalCompletadas})</span>

@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { CATEGORIAS_PRODUCTO } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  toggleProductStatus
+} from "../services/productsService";
 
 const mockProducts = [
   { id_producto: 1, nombre: "Gel para Cabello", id_categoria_producto: 1, stock: 25, precio: 15000, imagen_url: "", estado: 1 },
@@ -85,6 +93,18 @@ export function useProducts() {
   const lowStockCount = products.filter((p) => p.stock <= 5).length;
   const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || categoryFilter !== "all";
 
+  useEffect(() => {
+    getProducts()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Products] Usando datos de respaldo local:", err.message);
+      });
+  }, []);
+
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
@@ -93,9 +113,8 @@ export function useProducts() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const newProduct = {
-      id_producto: Math.max(...products.map((p) => p.id_producto), 0) + 1,
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       id_categoria_producto: Number(formData.id_categoria_producto),
       stock: Number(formData.stock),
@@ -103,45 +122,75 @@ export function useProducts() {
       imagen_url: formData.imagen_url || null,
       estado: 1
     };
-    setProducts([...products, newProduct]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createProduct(payload);
+      const newProduct = {
+        ...payload,
+        id_producto: created?.id_producto || Math.max(...products.map((p) => p.id_producto), 0) + 1
+      };
+      setProducts((prev) => [newProduct, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Producto creado exitosamente en el catálogo.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el producto.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedProduct) return;
-    setProducts(
-      products.map((product) =>
-        product.id_producto === selectedProduct.id_producto
-          ? {
-              ...product,
-              nombre: formData.nombre.trim(),
-              id_categoria_producto: Number(formData.id_categoria_producto),
-              stock: Number(formData.stock),
-              precio: Number(formData.precio),
-              imagen_url: formData.imagen_url || null
-            }
-          : product
-      )
-    );
-    setShowEditModal(false);
-    setSelectedProduct(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      id_categoria_producto: Number(formData.id_categoria_producto),
+      stock: Number(formData.stock),
+      precio: Number(formData.precio),
+      imagen_url: formData.imagen_url || null
+    };
+
+    try {
+      await updateProduct(selectedProduct.id_producto, payload);
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id_producto === selectedProduct.id_producto
+            ? { ...product, ...payload }
+            : product
+        )
+      );
+      setShowEditModal(false);
+      setSelectedProduct(null);
+      resetForm();
+      toast.success("Producto actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el producto.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedProduct) return;
-    setProducts(products.filter((product) => product.id_producto !== selectedProduct.id_producto));
-    setShowDeleteModal(false);
-    setSelectedProduct(null);
+    try {
+      await deleteProduct(selectedProduct.id_producto);
+      setProducts((prev) => prev.filter((product) => product.id_producto !== selectedProduct.id_producto));
+      setShowDeleteModal(false);
+      setSelectedProduct(null);
+      toast.success("Producto eliminado del catálogo.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el producto.");
+    }
   };
 
-  const toggleStatus = (productId) => {
-    setProducts(
-      products.map((product) =>
-        product.id_producto === productId ? { ...product, estado: product.estado === 1 ? 0 : 1 } : product
-      )
-    );
+  const toggleStatus = async (productId) => {
+    try {
+      await toggleProductStatus(productId);
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id_producto === productId ? { ...product, estado: product.estado === 1 ? 0 : 1 } : product
+        )
+      );
+      toast.success("Estado del producto actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del producto.");
+    }
   };
 
   const handleExport = () => {

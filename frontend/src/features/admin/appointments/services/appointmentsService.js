@@ -1,43 +1,40 @@
-/**
- * Servicio de acceso a datos para el módulo de appointments.
- *
- * Actualmente el hook useAppointments (en ../hooks) consume datos mock
- * directamente porque el proyecto todavía no está conectado a un backend.
- * Cuando exista la API real, las funciones de este archivo deben
- * reemplazar los mocks del hook, manteniendo la misma forma de datos
- * que ya consumen los componentes de este módulo.
- */
+import { apiRequest } from "../../../../shared/api/apiClient.js";
 
 const API_URL = "/api/appointments";
 
-export async function getAppointments() {
-  const res = await fetch(API_URL);
-  if (!res.ok) throw new Error("Error al obtener appointments");
-  return res.json();
+export async function getAppointments(filters = {}) {
+  const query = new URLSearchParams();
+  if (filters.fecha) query.append("fecha", filters.fecha);
+  if (filters.barbero && filters.barbero !== "all") query.append("barbero", filters.barbero);
+  if (filters.cliente && filters.cliente !== "all") query.append("cliente", filters.cliente);
+  if (filters.estado && filters.estado !== "all") query.append("estado", filters.estado);
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  return await apiRequest(`${API_URL}${qs}`);
 }
 
 export async function createAppointment(data) {
-  const res = await fetch(API_URL, {
+  return await apiRequest(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error("Error al crear Appointment");
-  return res.json();
 }
 
 export async function updateAppointment(id, data) {
-  const res = await fetch(`${API_URL}/${id}`, {
+  return await apiRequest(`${API_URL}/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error("Error al actualizar Appointment");
-  return res.json();
+}
+
+export async function updateAppointmentStatus(id, estado) {
+  return await apiRequest(`${API_URL}/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado })
+  });
 }
 
 export async function deleteAppointment(id) {
-  const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Error al eliminar Appointment");
-  return true;
+  return await apiRequest(`${API_URL}/${id}`, {
+    method: "DELETE"
+  });
 }

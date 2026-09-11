@@ -1,5 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getSuppliers,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+  toggleSupplierStatus
+} from "../services/suppliersService";
 
 const mockSuppliers = [
   {
@@ -128,12 +136,22 @@ export function useSuppliers() {
     setStatusFilter("all");
   };
 
+  useEffect(() => {
+    getSuppliers()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSuppliers(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Suppliers] Usando proveedores locales por fallback:", err.message);
+      });
+  }, []);
+
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const nextId = Math.max(...suppliers.map((s) => s.id_proveedor), 0) + 1;
-    const newSupplier = {
-      id_proveedor: nextId,
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       nit: formData.nit ? formData.nit.trim() : null,
       telefono: formData.telefono ? formData.telefono.trim() : null,
@@ -143,50 +161,79 @@ export function useSuppliers() {
       factura_pdf: formData.factura_pdf || null
     };
 
-    setSuppliers([newSupplier, ...suppliers]);
-    setShowCreateModal(false);
-    resetForm();
-    return newSupplier;
+    try {
+      const created = await createSupplier(payload);
+      const newSupplier = {
+        ...payload,
+        id_proveedor: created?.id_proveedor || Math.max(...suppliers.map((s) => s.id_proveedor), 0) + 1
+      };
+      setSuppliers((prev) => [newSupplier, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Proveedor registrado exitosamente.");
+      return newSupplier;
+    } catch (err) {
+      toast.error(err.message || "Error al registrar el proveedor.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedSupplier) return;
-    setSuppliers(
-      suppliers.map((sup) =>
-        sup.id_proveedor === selectedSupplier.id_proveedor
-          ? {
-              ...sup,
-              nombre: formData.nombre.trim(),
-              nit: formData.nit ? formData.nit.trim() : null,
-              telefono: formData.telefono ? formData.telefono.trim() : null,
-              correo: formData.correo ? formData.correo.trim() : null,
-              direccion: formData.direccion ? formData.direccion.trim() : null,
-              estado: formData.estado !== undefined ? Number(formData.estado) : sup.estado,
-              factura_pdf: formData.factura_pdf !== undefined ? formData.factura_pdf : sup.factura_pdf
-            }
-          : sup
-      )
-    );
-    setShowEditModal(false);
-    setSelectedSupplier(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      nit: formData.nit ? formData.nit.trim() : null,
+      telefono: formData.telefono ? formData.telefono.trim() : null,
+      correo: formData.correo ? formData.correo.trim() : null,
+      direccion: formData.direccion ? formData.direccion.trim() : null,
+      estado: formData.estado !== undefined ? Number(formData.estado) : selectedSupplier.estado,
+      factura_pdf: formData.factura_pdf !== undefined ? formData.factura_pdf : selectedSupplier.factura_pdf
+    };
+
+    try {
+      await updateSupplier(selectedSupplier.id_proveedor, payload);
+      setSuppliers((prev) =>
+        prev.map((sup) =>
+          sup.id_proveedor === selectedSupplier.id_proveedor
+            ? { ...sup, ...payload }
+            : sup
+        )
+      );
+      setShowEditModal(false);
+      setSelectedSupplier(null);
+      resetForm();
+      toast.success("Proveedor actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el proveedor.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedSupplier) return;
-    setSuppliers(suppliers.filter((sup) => sup.id_proveedor !== selectedSupplier.id_proveedor));
-    setShowDeleteModal(false);
-    setSelectedSupplier(null);
+    try {
+      await deleteSupplier(selectedSupplier.id_proveedor);
+      setSuppliers((prev) => prev.filter((sup) => sup.id_proveedor !== selectedSupplier.id_proveedor));
+      setShowDeleteModal(false);
+      setSelectedSupplier(null);
+      toast.success("Proveedor eliminado.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el proveedor.");
+    }
   };
 
-  const toggleStatus = (supplierId) => {
-    setSuppliers(
-      suppliers.map((sup) =>
-        sup.id_proveedor === supplierId
-          ? { ...sup, estado: sup.estado === 1 ? 0 : 1 }
-          : sup
-      )
-    );
+  const toggleStatus = async (supplierId) => {
+    try {
+      await toggleSupplierStatus(supplierId);
+      setSuppliers((prev) =>
+        prev.map((sup) =>
+          sup.id_proveedor === supplierId
+            ? { ...sup, estado: sup.estado === 1 ? 0 : 1 }
+            : sup
+        )
+      );
+      toast.success("Estado del proveedor modificado.");
+    } catch (err) {
+      toast.error(err.message || "Error al modificar estado del proveedor.");
+    }
   };
 
   const handleExport = () => {

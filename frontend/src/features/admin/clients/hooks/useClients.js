@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { NIVELES_FIDELIDAD } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getClients,
+  createClient,
+  updateClient,
+  deleteClient,
+  toggleClientStatus
+} from "../services/clientsService";
 
 const mockClients = [
   { id_cliente: 1, id_usuario: 4, nombre: "Pedro", apellido: "López", correo: "pedro@example.com", telefono: "+57 300 123 4567", direccion: "Calle 10 # 5-20", nivel_fidelidad: "Oro", estado: 1 },
@@ -85,13 +93,67 @@ export function useClients() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const nextClientId = Math.max(...clients.map((c) => c.id_cliente), 0) + 1;
-    const nextUserId = formData.id_usuario || Math.max(...clients.map((c) => c.id_usuario), 20) + 1;
+  const loadLocalClients = () => {
+    try {
+      const rawClients = localStorage.getItem("barber_clients_db");
+      const rawUsers = localStorage.getItem("barber_users_db");
+      const storedClients = rawClients ? JSON.parse(rawClients) : [];
+      const storedUsers = rawUsers ? JSON.parse(rawUsers) : [];
 
-    const newClient = {
-      id_cliente: nextClientId,
-      id_usuario: nextUserId,
+      const merged = [...storedClients];
+
+      storedUsers
+        .filter((u) => Number(u.id_rol) === 4)
+        .forEach((u) => {
+          const cleanEmail = (u.correo || "").trim().toLowerCase();
+          const exists = merged.some(
+            (c) =>
+              (c.id_usuario && Number(c.id_usuario) === Number(u.id_usuario)) ||
+              (c.correo && c.correo.toLowerCase() === cleanEmail)
+          );
+          if (!exists) {
+            const nextId = Math.max(...merged.map((c) => Number(c.id_cliente) || 0), 0) + 1;
+            merged.push({
+              id_cliente: nextId,
+              id_usuario: u.id_usuario,
+              nombre: (u.nombre || "").trim(),
+              apellido: (u.apellido || "").trim(),
+              correo: cleanEmail,
+              telefono: u.telefono || "",
+              direccion: u.direccion || "No especificada",
+              nivel_fidelidad: "Nuevo",
+              estado: u.estado !== undefined ? u.estado : 1
+            });
+          }
+        });
+
+      if (merged.length > 0) {
+        setClients(merged);
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setClients(mockClients);
+  };
+
+  useEffect(() => {
+    getClients()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setClients(data);
+        } else {
+          loadLocalClients();
+        }
+      })
+      .catch((err) => {
+        console.warn("[Clients] Usando datos de clientes registrados locales:", err.message);
+        loadLocalClients();
+      });
+  }, []);
+
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
       correo: formData.correo.trim(),
@@ -100,46 +162,83 @@ export function useClients() {
       nivel_fidelidad: formData.nivel_fidelidad || "Nuevo",
       estado: 1
     };
-    setClients([...clients, newClient]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createClient(payload);
+      const newClient = {
+        ...payload,
+        id_cliente: created?.id_cliente || Math.max(...clients.map((c) => c.id_cliente), 0) + 1,
+        id_usuario: created?.id_usuario || Math.max(...clients.map((c) => c.id_usuario || 0), 20) + 1
+      };
+      setClients((prev) => {
+        const updated = [newClient, ...prev];
+        try {
+          localStorage.setItem("barber_clients_db", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Cliente registrado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al registrar el cliente.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedClient) return;
-    setClients(
-      clients.map((client) =>
-        client.id_cliente === selectedClient.id_cliente
-          ? {
-              ...client,
-              nombre: formData.nombre.trim(),
-              apellido: formData.apellido.trim(),
-              correo: formData.correo.trim(),
-              telefono: formData.telefono ? formData.telefono.trim() : null,
-              direccion: formData.direccion ? formData.direccion.trim() : null,
-              nivel_fidelidad: formData.nivel_fidelidad
-            }
-          : client
-      )
-    );
-    setShowEditModal(false);
-    setSelectedClient(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
+      direccion: formData.direccion ? formData.direccion.trim() : null,
+      nivel_fidelidad: formData.nivel_fidelidad
+    };
+
+    try {
+      await updateClient(selectedClient.id_cliente, payload);
+      setClients((prev) =>
+        prev.map((client) =>
+          client.id_cliente === selectedClient.id_cliente
+            ? { ...client, ...payload }
+            : client
+        )
+      );
+      setShowEditModal(false);
+      setSelectedClient(null);
+      resetForm();
+      toast.success("Cliente actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el cliente.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedClient) return;
-    setClients(clients.filter((client) => client.id_cliente !== selectedClient.id_cliente));
-    setShowDeleteModal(false);
-    setSelectedClient(null);
+    try {
+      await deleteClient(selectedClient.id_cliente);
+      setClients((prev) => prev.filter((client) => client.id_cliente !== selectedClient.id_cliente));
+      setShowDeleteModal(false);
+      setSelectedClient(null);
+      toast.success("Cliente eliminado.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el cliente.");
+    }
   };
 
-  const toggleStatus = (clientId) => {
-    setClients(
-      clients.map((client) =>
-        client.id_cliente === clientId ? { ...client, estado: client.estado === 1 ? 0 : 1 } : client
-      )
-    );
+  const toggleStatus = async (clientId) => {
+    try {
+      await toggleClientStatus(clientId);
+      setClients((prev) =>
+        prev.map((client) =>
+          client.id_cliente === clientId ? { ...client, estado: client.estado === 1 ? 0 : 1 } : client
+        )
+      );
+      toast.success("Estado del cliente actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del cliente.");
+    }
   };
 
   const handleExport = () => {

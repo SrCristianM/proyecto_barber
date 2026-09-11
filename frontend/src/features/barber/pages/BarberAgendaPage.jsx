@@ -253,16 +253,14 @@ export default function BarberAgendaPage() {
                 <div className="absolute inset-0 border border-[#DFB755]/40 bg-[#DFB755]/10 rounded-xl -z-10" />
               )}
               <span
-                className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors ${
-                  isSelected ? "text-black" : "text-muted-foreground group-hover:text-foreground"
-                }`}
+                className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors ${isSelected ? "text-black" : "text-muted-foreground group-hover:text-foreground"
+                  }`}
               >
                 {item.dayName}
               </span>
               <span
-                className={`text-base sm:text-lg font-black mt-0.5 transition-colors ${
-                  isSelected ? "text-black font-black" : "text-foreground"
-                }`}
+                className={`text-base sm:text-lg font-black mt-0.5 transition-colors ${isSelected ? "text-black font-black" : "text-foreground"
+                  }`}
               >
                 {item.dayNumber}
               </span>
@@ -386,23 +384,21 @@ export default function BarberAgendaPage() {
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.18 }}
                       whileHover={{ x: 3 }}
-                      className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                        isCurrentSlot
+                      className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${isCurrentSlot
                           ? "bg-[#DFB755]/10 border-l-4 border-l-[#DFB755] shadow-xs"
                           : isOccupied
-                          ? "bg-[#DFB755]/5 hover:bg-[#DFB755]/10 border-l-4 border-l-[#DFB755]/60"
-                          : "hover:bg-accent/40 border-l-4 border-l-transparent"
-                      }`}
+                            ? "bg-[#DFB755]/5 hover:bg-[#DFB755]/10 border-l-4 border-l-[#DFB755]/60"
+                            : "hover:bg-accent/40 border-l-4 border-l-transparent"
+                        }`}
                     >
                       {/* Hora */}
                       <div className="flex items-center gap-3 w-32 shrink-0">
-                        <div className={`p-2 rounded-xl transition-colors ${
-                          isCurrentSlot
+                        <div className={`p-2 rounded-xl transition-colors ${isCurrentSlot
                             ? "bg-[#DFB755] text-black shadow-md shadow-[#DFB755]/30 font-black"
                             : isOccupied
-                            ? "bg-[#DFB755]/15 text-[#DFB755]"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
+                              ? "bg-[#DFB755]/15 text-[#DFB755]"
+                              : "bg-muted text-muted-foreground"
+                          }`}>
                           <Clock className="w-4 h-4" />
                         </div>
                         <div>

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Crown, CheckCircle2, ShieldCheck, Gift, Clock, Scissors, QrCode, X, RotateCw } from "lucide-react";
 import AnimatedCounter from "./AnimatedCounter";
 
-export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cristian" }) {
+export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cliente VIP" }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const frontRef = useRef(null);
   const [cardHeight, setCardHeight] = useState(null);
@@ -23,7 +23,7 @@ export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cristian"
     setIsFlipped((prev) => !prev);
   };
 
-  const tier = loyaltyDetails?.tier || "Plata";
+  const tier = loyaltyDetails?.tier || "Nuevo";
   const serviciosRealizados = loyaltyDetails?.serviciosRealizados ?? loyaltyDetails?.visitsCount ?? 0;
   const sellosCiclo = loyaltyDetails?.sellosCiclo ?? (serviciosRealizados % 5 === 0 && serviciosRealizados > 0 ? 5 : serviciosRealizados % 5);
   const target = 5;
@@ -108,7 +108,7 @@ export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cristian"
                   Número de Miembro
                 </span>
                 <div className="text-white font-mono text-xs sm:text-sm tracking-[0.16em] font-bold text-[#FFE082]">
-                  TT-7892 • {(tier || "GOLD").toUpperCase()} TIER
+                  TT-7892 • {(tier || "NUEVO").toUpperCase()} TIER
                 </div>
                 <div className="text-emerald-400 text-[11px] font-bold flex items-center gap-1 justify-end pt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />

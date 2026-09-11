@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { ROLES } from "../../../../shared/types/database";
 import { getStoredUsers, saveStoredUsers } from "../../../auth/services/authService";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  toggleUserStatus
+} from "../services/usersService";
 
 export const availableRoles = ROLES;
 
@@ -75,61 +83,113 @@ export function useUsers() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const newUser = {
-      id_usuario: Math.max(...users.map((u) => u.id_usuario), 0) + 1,
+  useEffect(() => {
+    getUsers()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setUsers(data);
+          saveStoredUsers(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Users] Usando usuarios locales por fallback:", err.message);
+      });
+  }, []);
+
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       id_rol: Number(formData.id_rol),
       contrasena: formData.contrasena || "Admin123*",
-      estado: 1,
-      fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      estado: 1
     };
-    const updated = [...users, newUser];
-    setUsers(updated);
-    saveStoredUsers(updated);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createUser(payload);
+      const newUser = {
+        ...payload,
+        id_usuario: created?.id_usuario || Math.max(...users.map((u) => u.id_usuario), 0) + 1,
+        rol: getRoleName(payload.id_rol),
+        fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      };
+      const updated = [newUser, ...users];
+      setUsers(updated);
+      saveStoredUsers(updated);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Usuario creado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el usuario.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedUser) return;
-    const updated = users.map((user) =>
-      user.id_usuario === selectedUser.id_usuario
-        ? {
-            ...user,
-            nombre: formData.nombre.trim(),
-            apellido: formData.apellido.trim(),
-            correo: formData.correo.trim(),
-            telefono: formData.telefono ? formData.telefono.trim() : null,
-            id_rol: Number(formData.id_rol)
-          }
-        : user
-    );
-    setUsers(updated);
-    saveStoredUsers(updated);
-    setShowEditModal(false);
-    setSelectedUser(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      apellido: formData.apellido.trim(),
+      correo: formData.correo.trim(),
+      telefono: formData.telefono ? formData.telefono.trim() : null,
+      id_rol: Number(formData.id_rol)
+    };
+    if (formData.contrasena) {
+      payload.contrasena = formData.contrasena;
+    }
+
+    try {
+      await updateUser(selectedUser.id_usuario, payload);
+      const updated = users.map((user) =>
+        user.id_usuario === selectedUser.id_usuario
+          ? {
+              ...user,
+              ...payload,
+              rol: getRoleName(payload.id_rol)
+            }
+          : user
+      );
+      setUsers(updated);
+      saveStoredUsers(updated);
+      setShowEditModal(false);
+      setSelectedUser(null);
+      resetForm();
+      toast.success("Usuario actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el usuario.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedUser) return;
-    const updated = users.filter((user) => user.id_usuario !== selectedUser.id_usuario);
-    setUsers(updated);
-    saveStoredUsers(updated);
-    setShowDeleteModal(false);
-    setSelectedUser(null);
+    try {
+      await deleteUser(selectedUser.id_usuario);
+      const updated = users.filter((user) => user.id_usuario !== selectedUser.id_usuario);
+      setUsers(updated);
+      saveStoredUsers(updated);
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      toast.success("Usuario eliminado.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el usuario.");
+    }
   };
 
-  const toggleStatus = (userId) => {
-    const updated = users.map((user) =>
-      user.id_usuario === userId ? { ...user, estado: user.estado === 1 ? 0 : 1 } : user
-    );
-    setUsers(updated);
-    saveStoredUsers(updated);
+  const toggleStatus = async (userId) => {
+    try {
+      const targetUser = users.find((u) => u.id_usuario === userId);
+      const newStatus = targetUser?.estado === 1 ? 0 : 1;
+      await toggleUserStatus(userId, newStatus);
+      const updated = users.map((user) =>
+        user.id_usuario === userId ? { ...user, estado: newStatus } : user
+      );
+      setUsers(updated);
+      saveStoredUsers(updated);
+      toast.success("Estado del usuario modificado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del usuario.");
+    }
   };
 
   const handleExport = () => {

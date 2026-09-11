@@ -717,13 +717,12 @@ export default function BarberNoveltiesPage() {
 
                 {/* Paso 2: En Revisión */}
                 <div className="relative">
-                  <span className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-card ${
-                    selectedNovelty.estado === "Pendiente"
+                  <span className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-card ${selectedNovelty.estado === "Pendiente"
                       ? "bg-[#DFB755] text-black animate-pulse"
                       : selectedNovelty.estado === "Cancelada"
-                      ? "bg-muted text-muted-foreground"
-                      : "bg-emerald-500 text-black"
-                  }`}>
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-emerald-500 text-black"
+                    }`}>
                     {selectedNovelty.estado === "Pendiente" ? "•" : "✓"}
                   </span>
                   <div>
@@ -734,23 +733,22 @@ export default function BarberNoveltiesPage() {
                       {selectedNovelty.estado === "Pendiente"
                         ? "En bandeja de entrada para evaluación del Administrador"
                         : selectedNovelty.estado === "Cancelada"
-                        ? "Cancelaste esta solicitud antes de su resolución"
-                        : "Evaluada por el equipo administrativo"}
+                          ? "Cancelaste esta solicitud antes de su resolución"
+                          : "Evaluada por el equipo administrativo"}
                     </p>
                   </div>
                 </div>
 
                 {/* Paso 3: Resolución */}
                 <div className="relative">
-                  <span className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-card ${
-                    selectedNovelty.estado === "Aprobada"
+                  <span className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black ring-4 ring-card ${selectedNovelty.estado === "Aprobada"
                       ? "bg-emerald-500 text-black"
                       : selectedNovelty.estado === "Rechazada"
-                      ? "bg-destructive text-white"
-                      : selectedNovelty.estado === "Cancelada"
-                      ? "bg-muted-foreground text-card"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
+                        ? "bg-destructive text-white"
+                        : selectedNovelty.estado === "Cancelada"
+                          ? "bg-muted-foreground text-card"
+                          : "bg-muted text-muted-foreground"
+                    }`}>
                     {selectedNovelty.estado === "Aprobada" ? "✓" : selectedNovelty.estado === "Rechazada" || selectedNovelty.estado === "Cancelada" ? "✕" : "○"}
                   </span>
                   <div>
@@ -764,8 +762,8 @@ export default function BarberNoveltiesPage() {
                       {selectedNovelty.estado === "Pendiente"
                         ? "Pendiente de dictamen por la administración."
                         : selectedNovelty.respuesta_admin
-                        ? selectedNovelty.respuesta_admin
-                        : `Estado actual: ${selectedNovelty.estado}`}
+                          ? selectedNovelty.respuesta_admin
+                          : `Estado actual: ${selectedNovelty.estado}`}
                     </p>
                   </div>
                 </div>

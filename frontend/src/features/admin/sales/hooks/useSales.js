@@ -1,17 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { ESTADOS_VENTA } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getSales,
+  createSale,
+  cancelSale
+} from "../services/salesService";
 
-const mockClientsList = [
-  { id_cliente: 1, nombre: "Juan Pérez" },
-  { id_cliente: 2, nombre: "María García" },
-  { id_cliente: 3, nombre: "Pedro López" },
-  { id_cliente: 4, nombre: "Ana Torres" },
-  { id_cliente: 5, nombre: "Carlos Ruiz" },
-  { id_cliente: 6, nombre: "Roberto Sánchez" },
-  { id_cliente: 7, nombre: "Laura Martínez" },
-  { id_cliente: 8, nombre: "Diego Fernández" }
-];
+import { getRealClients } from "../../appointments/hooks/useAppointments";
+
+export const clients = new Proxy([], {
+  get(target, prop) {
+    const fresh = getRealClients();
+    const val = fresh[prop];
+    if (typeof val === "function") {
+      return val.bind(fresh);
+    }
+    return val;
+  }
+});
 
 const mockUsersList = [
   { id_usuario: 1, nombre: "Admin Principal" },
@@ -109,7 +117,6 @@ const mockSales = [
   }
 ];
 
-export const clients = mockClientsList;
 export const users = mockUsersList;
 export const saleStatuses = ESTADOS_VENTA;
 
@@ -143,8 +150,19 @@ export function useSales() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [formData, setFormData] = useState(emptyForm());
 
-  const getClientName = (id_cliente) => {
-    return mockClientsList.find((c) => c.id_cliente === Number(id_cliente))?.nombre || "Cliente Desconocido";
+  const getClientName = (id_cliente, sale) => {
+    if (sale?.cliente_nombre && sale.cliente_nombre.trim() !== "" && sale.cliente_nombre !== "Cliente") {
+      return sale.cliente_nombre.trim();
+    }
+    const currentClients = getRealClients();
+    const found = currentClients.find(
+      (c) =>
+        Number(c.id_cliente) === Number(id_cliente) ||
+        (sale?.id_usuario && Number(c.id_usuario) === Number(sale.id_usuario)) ||
+        (sale?.cliente_correo && c.correo && c.correo.toLowerCase() === sale.cliente_correo.toLowerCase())
+    );
+    if (found) return found.nombre;
+    return "Cliente Registrado";
   };
 
   const getUserName = (id_usuario) => {
@@ -162,7 +180,7 @@ export function useSales() {
 
   const filteredSales = sales
     .filter((sale) => {
-      const clientName = getClientName(sale.id_cliente);
+      const clientName = getClientName(sale.id_cliente, sale);
       const userName = getUserName(sale.id_usuario);
       const search = searchTerm.toLowerCase().trim();
       const matchesSearch =
@@ -298,35 +316,84 @@ export function useSales() {
     addItemToSale(item);
   };
 
-  const handleCreate = () => {
-    const nextVentaId = Math.max(...sales.map((s) => s.id_venta), 0) + 1;
+  const loadLocalSales = () => {
+    try {
+      const data = localStorage.getItem("barber_sales_db");
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSales(parsed);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setSales(mockSales);
+  };
+
+  useEffect(() => {
+    getSales()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSales(data);
+        } else {
+          loadLocalSales();
+        }
+      })
+      .catch((err) => {
+        console.warn("[Sales] Usando ventas locales por fallback:", err.message);
+        loadLocalSales();
+      });
+  }, []);
+
+  const handleCreate = async () => {
     const formattedFecha = formData.fecha.includes(" ")
       ? formData.fecha
       : `${formData.fecha.replace("T", " ")}:00`;
 
-    const newSale = {
-      id_venta: nextVentaId,
+    const payload = {
       id_cliente: Number(formData.id_cliente),
-      id_usuario: Number(formData.id_usuario),
       id_cita: formData.id_cita ? Number(formData.id_cita) : null,
-      fecha: formattedFecha,
-      total: formData.total,
-      estado: formData.estado || "Activa",
-      detalles: formData.detalles.map((d, index) => ({
-        id_venta_detalle: nextVentaId * 10 + index + 1,
-        id_venta: nextVentaId,
+      detalles: formData.detalles.map((d) => ({
         tipo_item: d.tipo_item,
-        id_producto: d.id_producto,
-        id_servicio: d.id_servicio,
-        cantidad: d.cantidad || 1,
-        precio_unitario: d.precio_unitario,
-        subtotal: d.subtotal,
-        nombre: d.nombre
+        id_producto: d.id_producto ? Number(d.id_producto) : null,
+        id_servicio: d.id_servicio ? Number(d.id_servicio) : null,
+        cantidad: Number(d.cantidad || 1),
+        precio_unitario: Number(d.precio_unitario)
       }))
     };
-    setSales([newSale, ...sales]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const created = await createSale(payload);
+      const nextVentaId = created?.id_venta || Math.max(...sales.map((s) => s.id_venta), 0) + 1;
+      const newSale = {
+        id_venta: nextVentaId,
+        id_cliente: Number(formData.id_cliente),
+        id_usuario: Number(formData.id_usuario),
+        id_cita: formData.id_cita ? Number(formData.id_cita) : null,
+        fecha: formattedFecha,
+        total: formData.total,
+        estado: "Activa",
+        detalles: formData.detalles.map((d, index) => ({
+          id_venta_detalle: nextVentaId * 10 + index + 1,
+          id_venta: nextVentaId,
+          tipo_item: d.tipo_item,
+          id_producto: d.id_producto,
+          id_servicio: d.id_servicio,
+          cantidad: d.cantidad || 1,
+          precio_unitario: d.precio_unitario,
+          subtotal: d.subtotal,
+          nombre: d.nombre
+        }))
+      };
+      setSales((prev) => [newSale, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Venta registrada y comprobante emitido exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al registrar la venta.");
+    }
   };
 
   const handleEdit = () => {
@@ -373,14 +440,23 @@ export function useSales() {
     setSelectedSale(null);
   };
 
-  const toggleStatus = (saleId) => {
-    setSales(
-      sales.map((sale) =>
-        sale.id_venta === saleId
-          ? { ...sale, estado: sale.estado === "Activa" ? "Anulada" : "Activa" }
-          : sale
-      )
-    );
+  const toggleStatus = async (saleId) => {
+    try {
+      const targetSale = sales.find((s) => s.id_venta === saleId);
+      if (targetSale?.estado === "Activa") {
+        await cancelSale(saleId);
+      }
+      setSales((prev) =>
+        prev.map((sale) =>
+          sale.id_venta === saleId
+            ? { ...sale, estado: sale.estado === "Activa" ? "Anulada" : "Activa" }
+            : sale
+        )
+      );
+      toast.success("Estado de la venta actualizado en caja.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar estado de la venta.");
+    }
   };
 
   const handleExport = () => {
@@ -495,6 +571,7 @@ export function useSales() {
     removeItemFromSale,
     toggleStatus,
     getClientName,
-    getUserName
+    getUserName,
+    clients
   };
 }

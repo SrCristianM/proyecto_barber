@@ -1,6 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { CATEGORIAS_SERVICIO } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getServices,
+  createService,
+  updateService,
+  deleteService,
+  toggleServiceStatus
+} from "../services/servicesService";
 
 const mockServices = [
   { id_servicio: 1, nombre: "Corte Clásico", id_categoria_servicio: 1, precio: 15000, duracion_minutos: 30, imagen_url: "", estado: 1 },
@@ -34,6 +42,18 @@ export function useServices() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+
+  useEffect(() => {
+    getServices()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setServices(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Services] Usando servicios locales por fallback:", err.message);
+      });
+  }, []);
 
   const getCategoryName = (id_cat) => {
     const c = CATEGORIAS_SERVICIO.find((cat) => cat.id_categoria_servicio === Number(id_cat));
@@ -89,55 +109,84 @@ export function useServices() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const newService = {
-      id_servicio: Math.max(...services.map((s) => s.id_servicio), 0) + 1,
+  const handleCreate = async () => {
+    const payload = {
       nombre: formData.nombre.trim(),
       id_categoria_servicio: Number(formData.id_categoria_servicio),
       precio: Number(formData.precio),
       duracion_minutos: Number(formData.duracion_minutos),
-      imagen_url: formData.imagen_url || null,
-      estado: 1
+      imagen_url: formData.imagen_url || null
     };
-    setServices([...services, newService]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const res = await createService(payload);
+      const newService = {
+        ...payload,
+        id_servicio: res?.id_servicio || Math.max(...services.map((s) => s.id_servicio), 0) + 1,
+        estado: 1
+      };
+      setServices((prev) => [newService, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Servicio creado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el servicio.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedService) return;
-    setServices(
-      services.map((service) =>
-        service.id_servicio === selectedService.id_servicio
-          ? {
-              ...service,
-              nombre: formData.nombre.trim(),
-              id_categoria_servicio: Number(formData.id_categoria_servicio),
-              precio: Number(formData.precio),
-              duracion_minutos: Number(formData.duracion_minutos),
-              imagen_url: formData.imagen_url || null
-            }
-          : service
-      )
-    );
-    setShowEditModal(false);
-    setSelectedService(null);
-    resetForm();
+    const payload = {
+      nombre: formData.nombre.trim(),
+      id_categoria_servicio: Number(formData.id_categoria_servicio),
+      precio: Number(formData.precio),
+      duracion_minutos: Number(formData.duracion_minutos),
+      imagen_url: formData.imagen_url || null
+    };
+
+    try {
+      await updateService(selectedService.id_servicio, payload);
+      setServices((prev) =>
+        prev.map((service) =>
+          service.id_servicio === selectedService.id_servicio
+            ? { ...service, ...payload }
+            : service
+        )
+      );
+      setShowEditModal(false);
+      setSelectedService(null);
+      resetForm();
+      toast.success("Servicio actualizado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el servicio.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedService) return;
-    setServices(services.filter((service) => service.id_servicio !== selectedService.id_servicio));
-    setShowDeleteModal(false);
-    setSelectedService(null);
+    try {
+      await deleteService(selectedService.id_servicio);
+      setServices((prev) => prev.filter((service) => service.id_servicio !== selectedService.id_servicio));
+      setShowDeleteModal(false);
+      setSelectedService(null);
+      toast.success("Servicio eliminado con éxito.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el servicio.");
+    }
   };
 
-  const toggleStatus = (serviceId) => {
-    setServices(
-      services.map((service) =>
-        service.id_servicio === serviceId ? { ...service, estado: service.estado === 1 ? 0 : 1 } : service
-      )
-    );
+  const toggleStatus = async (serviceId) => {
+    try {
+      await toggleServiceStatus(serviceId);
+      setServices((prev) =>
+        prev.map((service) =>
+          service.id_servicio === serviceId ? { ...service, estado: service.estado === 1 ? 0 : 1 } : service
+        )
+      );
+      toast.success("Estado del servicio actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del servicio.");
+    }
   };
 
   const handleExport = () => {

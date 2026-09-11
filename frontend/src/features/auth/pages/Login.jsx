@@ -35,8 +35,8 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     // 2. Validación estricta contra base de datos de usuarios
-    setTimeout(() => {
-      const authResult = loginWithCredentials(correo, contrasena);
+    setTimeout(async () => {
+      const authResult = await loginWithCredentials(correo, contrasena);
 
       if (!authResult.success) {
         setLoading(false);

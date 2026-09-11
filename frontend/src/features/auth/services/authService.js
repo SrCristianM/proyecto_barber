@@ -161,13 +161,105 @@ export function findUserByEmail(email) {
   return users.find((u) => u.correo.toLowerCase() === cleanEmail) || null;
 }
 
+import { setStoredToken, clearStoredToken } from "../../../shared/api/apiClient.js";
+
 /**
- * Registra un nuevo usuario en la base de datos.
+ * Sincroniza un usuario con rol cliente en la base de datos local de clientes (barber_clients_db).
+ * Garantiza que el nombre, apellido, teléfono y correo reales estén siempre disponibles para citas y ventas.
  */
-export function registerUser(userData) {
-  const users = getStoredUsers();
+export function syncClientStorage(user, direccion = "No especificada") {
+  if (!user || Number(user.id_rol) !== 4) return;
+  try {
+    const rawClients = localStorage.getItem("barber_clients_db");
+    const clients = rawClients ? JSON.parse(rawClients) : [];
+    const cleanEmail = (user.correo || "").trim().toLowerCase();
+
+    const idx = clients.findIndex(
+      (c) =>
+        (user.id_usuario && Number(c.id_usuario) === Number(user.id_usuario)) ||
+        (c.correo && c.correo.toLowerCase() === cleanEmail)
+    );
+
+    if (idx >= 0) {
+      clients[idx] = {
+        ...clients[idx],
+        id_usuario: user.id_usuario || clients[idx].id_usuario,
+        nombre: user.nombre ? user.nombre.trim() : clients[idx].nombre,
+        apellido: user.apellido ? user.apellido.trim() : clients[idx].apellido,
+        correo: user.correo ? user.correo.trim().toLowerCase() : clients[idx].correo,
+        telefono: user.telefono ? user.telefono.trim() : (clients[idx].telefono || ""),
+        direccion: direccion && direccion !== "No especificada" ? direccion.trim() : (clients[idx].direccion || "No especificada"),
+        estado: 1
+      };
+    } else {
+      const nextId = Math.max(...clients.map((c) => Number(c.id_cliente) || 0), 0) + 1;
+      clients.push({
+        id_cliente: nextId,
+        id_usuario: user.id_usuario,
+        nombre: (user.nombre || "").trim(),
+        apellido: (user.apellido || "").trim(),
+        correo: cleanEmail,
+        telefono: user.telefono ? user.telefono.trim() : "",
+        direccion: direccion ? direccion.trim() : "No especificada",
+        nivel_fidelidad: "Nuevo",
+        estado: 1
+      });
+    }
+    localStorage.setItem("barber_clients_db", JSON.stringify(clients));
+  } catch (err) {
+    console.error("Error al sincronizar cliente en localStorage:", err);
+  }
+}
+
+/**
+ * Registra un nuevo usuario en la base de datos (con llamada al Backend API).
+ */
+export async function registerUser(userData) {
   const cleanEmail = userData.correo.trim().toLowerCase();
 
+  // 1. Intentar registrar en Backend API
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nombre: userData.nombre.trim(),
+        apellido: userData.apellido.trim(),
+        correo: cleanEmail,
+        contrasena: userData.contrasena,
+        telefono: userData.telefono ? userData.telefono.trim() : null,
+        direccion: userData.direccion ? userData.direccion.trim() : null,
+        id_rol: userData.id_rol ? Number(userData.id_rol) : 4
+      })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json?.data) {
+      const { token, user } = json.data;
+      if (token) setStoredToken(token);
+      if (user) {
+        // Sincronizar en almacenamiento local para consistencia
+        const users = getStoredUsers();
+        if (!users.some((u) => u.correo.toLowerCase() === cleanEmail)) {
+          users.push(user);
+          saveStoredUsers(users);
+        }
+        syncClientStorage(user, userData.direccion);
+      }
+      return { success: true, user: user || json.data };
+    }
+
+    if (!res.ok) {
+      const errorMsg = json?.message || json?.error || "Error al registrar la cuenta.";
+      return { success: false, error: errorMsg };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para registro, usando fallback local:", err.message);
+  }
+
+  // Fallback local en desarrollo si el backend no responde
+  const users = getStoredUsers();
   const existing = users.find((u) => u.correo.toLowerCase() === cleanEmail);
   if (existing) {
     return { success: false, error: "Ya existe un usuario registrado con este correo electrónico." };
@@ -178,23 +270,24 @@ export function registerUser(userData) {
     id_usuario: nextId,
     nombre: userData.nombre.trim(),
     apellido: userData.apellido.trim(),
-    correo: userData.correo.trim(),
+    correo: cleanEmail,
     telefono: userData.telefono ? userData.telefono.trim() : null,
-    id_rol: userData.id_rol ? Number(userData.id_rol) : 4, // Rol 4: Cliente por defecto
+    id_rol: userData.id_rol ? Number(userData.id_rol) : 4,
     contrasena: userData.contrasena,
-    estado: 1, // Activo
+    estado: 1,
     fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
   };
 
   const updatedUsers = [...users, newUser];
   saveStoredUsers(updatedUsers);
+  syncClientStorage(newUser, userData.direccion);
   return { success: true, user: newUser };
 }
 
 /**
- * Valida credenciales de inicio de sesión contra la base de datos.
+ * Valida credenciales de inicio de sesión contra el Backend API con fallback local.
  */
-export function loginWithCredentials(email, password) {
+export async function loginWithCredentials(email, password) {
   const cleanEmail = (email || "").trim().toLowerCase();
   const cleanPass = password || "";
 
@@ -222,6 +315,57 @@ export function loginWithCredentials(email, password) {
     };
   }
 
+  // 1. Intentar autenticar contra el Backend API
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: cleanEmail, contrasena: cleanPass })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json?.data) {
+      const { token, user } = json.data;
+      setStoredToken(token);
+      setCurrentUser(user);
+
+      // Sincronizar en localStorage
+      const users = getStoredUsers();
+      const idx = users.findIndex((u) => u.correo.toLowerCase() === cleanEmail);
+      if (idx >= 0) {
+        users[idx] = { ...users[idx], ...user };
+      } else {
+        users.push(user);
+      }
+      saveStoredUsers(users);
+
+      return {
+        success: true,
+        user,
+        token
+      };
+    }
+
+    if (!res.ok) {
+      const msg = json?.message || json?.error || "Error de credenciales.";
+      let field = "general";
+      if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("cuenta")) {
+        field = "correo";
+      } else if (msg.toLowerCase().includes("contraseña")) {
+        field = "contrasena";
+      }
+      return {
+        success: false,
+        field,
+        error: msg
+      };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para login, validando credenciales localmente:", err.message);
+  }
+
+  // 2. Fallback local si el backend no responde
   const users = getStoredUsers();
   const user = users.find((u) => u.correo.toLowerCase() === cleanEmail);
 
@@ -249,9 +393,7 @@ export function loginWithCredentials(email, password) {
     };
   }
 
-  // Guardar sesión actual
   setCurrentUser(user);
-
   return {
     success: true,
     user
@@ -260,6 +402,7 @@ export function loginWithCredentials(email, password) {
 
 /**
  * Obtiene el usuario autenticado actualmente.
+ * Retorna null si no hay sesión activa en localStorage.
  */
 export function getCurrentUser() {
   try {
@@ -268,15 +411,21 @@ export function getCurrentUser() {
   } catch (err) {
     console.error("Error al obtener el usuario actual:", err);
   }
-  return INITIAL_USERS[0]; // Retorna el admin principal si no hay sesión
+  return null;
 }
 
 /**
  * Establece el usuario autenticado actualmente.
+ * Sincroniza automáticamente los datos del cliente registrado.
  */
 export function setCurrentUser(user) {
   try {
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    if (user) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      syncClientStorage(user);
+    } else {
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
   } catch (err) {
     console.error("Error al guardar usuario actual:", err);
   }
@@ -287,6 +436,7 @@ export function setCurrentUser(user) {
  */
 export function logoutUser() {
   try {
+    clearStoredToken();
     localStorage.removeItem(CURRENT_USER_KEY);
   } catch (err) {
     console.error("Error al cerrar sesión:", err);

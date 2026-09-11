@@ -1,6 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { DIAS_SEMANA } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getSchedules,
+  createSchedule,
+  updateSchedule,
+  deleteSchedule,
+  toggleScheduleStatus
+} from "../services/schedulesService";
+import { getBarbers } from "../../barbers/services/barbersService";
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
@@ -32,6 +41,7 @@ const emptyForm = {
 
 export function useSchedules() {
   const [schedules, setSchedules] = useState(mockSchedules);
+  const [barbersList, setBarbersList] = useState(mockBarbersList);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [barberFilter, setBarberFilter] = useState("all"); // 'all' | id_barbero
@@ -48,8 +58,35 @@ export function useSchedules() {
   const itemsPerPage = 8;
   const [formData, setFormData] = useState(emptyForm);
 
+  useEffect(() => {
+    getSchedules()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSchedules(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("[Schedules] Usando horarios locales por fallback:", err.message);
+      });
+
+    getBarbers()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBarbersList(
+            data.map((b) => ({
+              id_barbero: b.id_barbero,
+              nombre: `${b.nombre} ${b.apellido || ""}`.trim()
+            }))
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn("[Schedules] Usando barberos locales para horarios:", err.message);
+      });
+  }, []);
+
   const getBarberName = (id_barbero) => {
-    const b = mockBarbersList.find((barber) => barber.id_barbero === Number(id_barbero));
+    const b = barbersList.find((barber) => barber.id_barbero === Number(id_barbero));
     return b ? b.nombre : "Sin Barbero";
   };
 
@@ -109,11 +146,14 @@ export function useSchedules() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const dias = formData.dias_semana || [];
-    if (dias.length === 0) return;
-    const newSchedule = {
-      id_horario: Math.max(...schedules.map((s) => s.id_horario), 0) + 1,
+    if (dias.length === 0) {
+      toast.error("Debes seleccionar al menos un día de la semana.");
+      return;
+    }
+
+    const payload = {
       id_barbero: Number(formData.id_barbero),
       dias_semana: dias,
       hora_inicio: formData.hora_inicio.length === 5 ? `${formData.hora_inicio}:00` : formData.hora_inicio,
@@ -122,46 +162,76 @@ export function useSchedules() {
       fecha_fin: formData.fecha_fin || null,
       estado: 1
     };
-    setSchedules([...schedules, newSchedule]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const res = await createSchedule(payload);
+      const newSchedule = {
+        ...payload,
+        id_horario: res?.id_horario || Math.max(...schedules.map((s) => s.id_horario), 0) + 1
+      };
+      setSchedules((prev) => [newSchedule, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Horario asignado exitosamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el horario.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedSchedule) return;
-    setSchedules(
-      schedules.map((schedule) =>
-        schedule.id_horario === selectedSchedule.id_horario
-          ? {
-              ...schedule,
-              id_barbero: Number(formData.id_barbero),
-              dias_semana: formData.dias_semana || [],
-              hora_inicio: formData.hora_inicio.length === 5 ? `${formData.hora_inicio}:00` : formData.hora_inicio,
-              hora_fin: formData.hora_fin.length === 5 ? `${formData.hora_fin}:00` : formData.hora_fin,
-              fecha_inicio: formData.fecha_inicio || null,
-              fecha_fin: formData.fecha_fin || null
-            }
-          : schedule
-      )
-    );
-    setShowEditModal(false);
-    setSelectedSchedule(null);
-    resetForm();
+    const payload = {
+      id_barbero: Number(formData.id_barbero),
+      dias_semana: formData.dias_semana || [],
+      hora_inicio: formData.hora_inicio.length === 5 ? `${formData.hora_inicio}:00` : formData.hora_inicio,
+      hora_fin: formData.hora_fin.length === 5 ? `${formData.hora_fin}:00` : formData.hora_fin,
+      fecha_inicio: formData.fecha_inicio || null,
+      fecha_fin: formData.fecha_fin || null
+    };
+
+    try {
+      await updateSchedule(selectedSchedule.id_horario, payload);
+      setSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.id_horario === selectedSchedule.id_horario
+            ? { ...schedule, ...payload }
+            : schedule
+        )
+      );
+      setShowEditModal(false);
+      setSelectedSchedule(null);
+      resetForm();
+      toast.success("Horario modificado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el horario.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedSchedule) return;
-    setSchedules(schedules.filter((schedule) => schedule.id_horario !== selectedSchedule.id_horario));
-    setShowDeleteModal(false);
-    setSelectedSchedule(null);
+    try {
+      await deleteSchedule(selectedSchedule.id_horario);
+      setSchedules((prev) => prev.filter((schedule) => schedule.id_horario !== selectedSchedule.id_horario));
+      setShowDeleteModal(false);
+      setSelectedSchedule(null);
+      toast.success("Horario eliminado con éxito.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el horario.");
+    }
   };
 
-  const toggleStatus = (scheduleId) => {
-    setSchedules(
-      schedules.map((schedule) =>
-        schedule.id_horario === scheduleId ? { ...schedule, estado: schedule.estado === 1 ? 0 : 1 } : schedule
-      )
-    );
+  const toggleStatus = async (scheduleId) => {
+    try {
+      await toggleScheduleStatus(scheduleId);
+      setSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.id_horario === scheduleId ? { ...schedule, estado: schedule.estado === 1 ? 0 : 1 } : schedule
+        )
+      );
+      toast.success("Estado de horario actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al cambiar estado del horario.");
+    }
   };
 
   const handleExport = () => {

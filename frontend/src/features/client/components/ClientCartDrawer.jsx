@@ -168,6 +168,12 @@ export default function ClientCartDrawer({
 
                 <div className="p-4 rounded-2xl bg-muted/40 border border-border text-left space-y-2 text-xs">
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Comprador:</span>
+                    <span className="font-bold text-foreground">
+                      {completedSale.cliente_nombre || (clientProfile ? `${clientProfile.nombre} ${clientProfile.apellido || ""}`.trim() : "Cliente")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Método de Entrega:</span>
                     <span className="font-bold text-foreground">{completedSale.metodo_entrega}</span>
                   </div>

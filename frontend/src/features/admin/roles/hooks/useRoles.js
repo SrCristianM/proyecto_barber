@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { ROLES } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import {
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole
+} from "../services/rolesService";
 
 const emptyForm = {
   nombre_rol: "",
@@ -26,6 +33,24 @@ export function useRoles() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+
+  useEffect(() => {
+    getRoles()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setRoles(
+            data.map((r) => ({
+              ...r,
+              permisos: r.permisos || [],
+              alcancePorPermiso: r.alcancePorPermiso || {}
+            }))
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn("[Roles] Usando roles locales por fallback:", err.message);
+      });
+  }, []);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -68,53 +93,86 @@ export function useRoles() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const newRole = {
-      id_rol: Math.max(...roles.map((r) => r.id_rol), 0) + 1,
+  const handleCreate = async () => {
+    const payload = {
       nombre_rol: formData.nombre_rol.trim(),
       descripcion: formData.descripcion.trim(),
       estado: 1,
-      fecha_creacion: new Date().toISOString().replace("T", " ").substring(0, 19),
-      permisos: formData.permisos || [],
-      alcancePorPermiso: {}
+      permisos: formData.permisos || []
     };
-    setRoles([...roles, newRole]);
-    setShowCreateModal(false);
-    resetForm();
+
+    try {
+      const res = await createRole(payload);
+      const newRole = {
+        ...payload,
+        id_rol: res?.id_rol || Math.max(...roles.map((r) => r.id_rol), 0) + 1,
+        fecha_creacion: new Date().toISOString().replace("T", " ").substring(0, 19),
+        alcancePorPermiso: {}
+      };
+      setRoles((prev) => [newRole, ...prev]);
+      setShowCreateModal(false);
+      resetForm();
+      toast.success("Rol creado con éxito.");
+    } catch (err) {
+      toast.error(err.message || "Error al crear el rol.");
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!selectedRole) return;
-    setRoles(
-      roles.map((role) =>
-        role.id_rol === selectedRole.id_rol
-          ? {
-              ...role,
-              nombre_rol: formData.nombre_rol.trim(),
-              descripcion: formData.descripcion.trim(),
-              permisos: formData.permisos || role.permisos
-            }
-          : role
-      )
-    );
-    setShowEditModal(false);
-    setSelectedRole(null);
-    resetForm();
+    const payload = {
+      nombre_rol: formData.nombre_rol.trim(),
+      descripcion: formData.descripcion.trim(),
+      permisos: formData.permisos || selectedRole.permisos
+    };
+
+    try {
+      await updateRole(selectedRole.id_rol, payload);
+      setRoles((prev) =>
+        prev.map((role) =>
+          role.id_rol === selectedRole.id_rol
+            ? { ...role, ...payload }
+            : role
+        )
+      );
+      setShowEditModal(false);
+      setSelectedRole(null);
+      resetForm();
+      toast.success("Rol actualizado con éxito.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar el rol.");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedRole) return;
-    setRoles(roles.filter((role) => role.id_rol !== selectedRole.id_rol));
-    setShowDeleteModal(false);
-    setSelectedRole(null);
+    try {
+      await deleteRole(selectedRole.id_rol);
+      setRoles((prev) => prev.filter((role) => role.id_rol !== selectedRole.id_rol));
+      setShowDeleteModal(false);
+      setSelectedRole(null);
+      toast.success("Rol eliminado.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el rol.");
+    }
   };
 
-  const toggleStatus = (roleId) => {
-    setRoles(
-      roles.map((role) =>
-        role.id_rol === roleId ? { ...role, estado: role.estado === 1 ? 0 : 1 } : role
-      )
-    );
+  const toggleStatus = async (roleId) => {
+    const target = roles.find((r) => r.id_rol === roleId);
+    if (!target) return;
+    const nextEstado = target.estado === 1 ? 0 : 1;
+
+    try {
+      await updateRole(roleId, { estado: nextEstado });
+      setRoles((prev) =>
+        prev.map((role) =>
+          role.id_rol === roleId ? { ...role, estado: nextEstado } : role
+        )
+      );
+      toast.success("Estado del rol actualizado.");
+    } catch (err) {
+      toast.error(err.message || "Error al actualizar estado del rol.");
+    }
   };
 
   const handleExport = () => {

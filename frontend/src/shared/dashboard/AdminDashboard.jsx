@@ -97,12 +97,6 @@ const criticalInventory = [
 
 const COLORS = ["#C9A24A", "#10b981", "#f59e0b", "#8b5cf6"];
 
-const todayAppointments = [
-  { time: "09:00", client: "Juan Pérez", barber: "Carlos", service: "Corte Clásico", status: "Completada" },
-  { time: "10:00", client: "María García", barber: "Miguel", service: "Corte + Barba", status: "En Curso" },
-  { time: "11:00", client: "Pedro López", barber: "Javier", service: "Afeitado", status: "Programada" },
-  { time: "12:00", client: "Ana Torres", barber: "Luis", service: "Diseño", status: "Programada" }
-];
 
 function AnimatedCounter({ value }) {
   const isCurrency = typeof value === "string" && value.startsWith("$");
@@ -136,6 +130,68 @@ function AnimatedCounter({ value }) {
 }
 
 export default function AdminDashboard() {
+  const [todayAppointments, setTodayAppointments] = useState([]);
+
+  useEffect(() => {
+    try {
+      const todayStr = new Date().toISOString().split("T")[0];
+      const rawApts = localStorage.getItem("barber_appointments_db");
+      const rawClients = localStorage.getItem("barber_clients_db");
+      const rawUsers = localStorage.getItem("barber_users_db");
+
+      const apts = rawApts ? JSON.parse(rawApts) : [];
+      const clients = rawClients ? JSON.parse(rawClients) : [];
+      const users = rawUsers ? JSON.parse(rawUsers) : [];
+
+      const getBarberName = (id_barbero) => {
+        const barbers = [
+          { id: 1, name: "Carlos" },
+          { id: 2, name: "Miguel" },
+          { id: 3, name: "Javier" },
+          { id: 4, name: "Luis" }
+        ];
+        return barbers.find((b) => b.id === Number(id_barbero))?.name || "Carlos";
+      };
+
+      const todayList = apts.filter((a) => a.fecha === todayStr);
+
+      if (todayList.length > 0) {
+        const formatted = todayList.map((a) => {
+          let clientName = a.cliente_nombre || "";
+          if (!clientName || clientName === "Cliente") {
+            const foundClient = clients.find(
+              (c) =>
+                Number(c.id_cliente) === Number(a.id_cliente) ||
+                (a.id_usuario && Number(c.id_usuario) === Number(a.id_usuario))
+            );
+            if (foundClient) {
+              clientName = `${foundClient.nombre} ${foundClient.apellido || ""}`.trim();
+            } else if (a.id_usuario) {
+              const foundUser = users.find((u) => Number(u.id_usuario) === Number(a.id_usuario));
+              if (foundUser) clientName = `${foundUser.nombre} ${foundUser.apellido || ""}`.trim();
+            }
+          }
+          if (!clientName) clientName = "Cliente Registrado";
+
+          return {
+            time: (a.hora || "09:00").substring(0, 5),
+            client: clientName,
+            barber: a.barbero_nombre || getBarberName(a.id_barbero),
+            service: a.nombre_item || a.servicio_nombre || "Corte Clásico",
+            status: a.estado || "Programada"
+          };
+        });
+        setTodayAppointments(formatted);
+      } else {
+        setTodayAppointments([
+          { time: "09:00", client: "Pedro López", barber: "Carlos", service: "Corte Clásico", status: "Completada" },
+          { time: "10:30", client: "Ana Martínez", barber: "Miguel", service: "Corte + Barba", status: "En Curso" }
+        ]);
+      }
+    } catch {
+      // fallback
+    }
+  }, []);
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
