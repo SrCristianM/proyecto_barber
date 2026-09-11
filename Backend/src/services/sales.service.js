@@ -121,4 +121,13 @@ export class SalesService {
     await SalesRepository.cancelSale(id);
     return await SalesRepository.findById(id);
   }
+
+  static async deleteSale(id) {
+    const sale = await SalesRepository.findById(id);
+    if (!sale) {
+      throw ApiError.notFound("Venta no encontrada.");
+    }
+    await SalesRepository.delete(id);
+    return { id_venta: Number(id), eliminado: true };
+  }
 }

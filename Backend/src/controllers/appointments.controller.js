@@ -88,4 +88,13 @@ export class AppointmentsController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      const result = await AppointmentsService.deleteAppointment(req.params.id);
+      return ApiResponse.success(res, result, "Cita eliminada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -115,6 +115,7 @@ export class ProductsRepository {
       estado: productData.estado !== undefined ? productData.estado : 1
     };
     mockStore.productos.push(newProduct);
+    mockStore.saveToFile();
     return nextId;
   }
 
@@ -148,6 +149,7 @@ export class ProductsRepository {
     if (productData.stock !== undefined) p.stock = Number(productData.stock);
     if (productData.imagen_url !== undefined) p.imagen_url = productData.imagen_url;
     if (productData.estado !== undefined) p.estado = productData.estado;
+    mockStore.saveToFile();
 
     return true;
   }
@@ -165,6 +167,7 @@ export class ProductsRepository {
     const p = mockStore.productos.find((prod) => prod.id_producto === productId);
     if (p) {
       p.stock += Number(deltaQuantity);
+      mockStore.saveToFile();
       return true;
     }
     return false;
@@ -184,20 +187,18 @@ export class ProductsRepository {
 
     const target = mockStore.productos.find((prod) => prod.id_producto === productId);
     if (target) target.estado = newStatus;
+    mockStore.saveToFile();
     return newStatus;
   }
 
   static async delete(id) {
     const productId = Number(id);
     if (isDatabaseConnected()) {
-      try {
-        await executeQuery(`DELETE FROM producto WHERE id_producto = ?`, [productId]);
-      } catch (err) {
-        await executeQuery(`UPDATE producto SET estado = 0 WHERE id_producto = ?`, [productId]);
-      }
+      await executeQuery(`DELETE FROM producto WHERE id_producto = ?`, [productId]);
       return true;
     }
     mockStore.productos = mockStore.productos.filter((p) => p.id_producto !== productId);
+    mockStore.saveToFile();
     return true;
   }
 

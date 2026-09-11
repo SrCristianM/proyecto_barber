@@ -86,4 +86,13 @@ export class PurchasesService {
     await PurchasesRepository.cancelPurchase(id);
     return await PurchasesRepository.findById(id);
   }
+
+  static async deletePurchase(id) {
+    const purchase = await PurchasesRepository.findById(id);
+    if (!purchase) {
+      throw ApiError.notFound("Compra no encontrada.");
+    }
+    await PurchasesRepository.delete(id);
+    return { id_compra: Number(id), eliminado: true };
+  }
 }

@@ -43,4 +43,13 @@ export class PurchasesController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      const result = await PurchasesService.deletePurchase(req.params.id);
+      return ApiResponse.success(res, result, "Compra eliminada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

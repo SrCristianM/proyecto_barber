@@ -266,6 +266,7 @@ export class AppointmentsRepository {
           precio: Number(s.precio)
         });
       });
+      mockStore.saveToFile();
 
       return nextId;
     });
@@ -326,6 +327,7 @@ export class AppointmentsRepository {
           });
         });
       }
+      mockStore.saveToFile();
 
       return true;
     });
@@ -342,9 +344,25 @@ export class AppointmentsRepository {
     const c = mockStore.citas.find((app) => app.id_cita === appointmentId);
     if (c) {
       c.estado = newStatus;
+      mockStore.saveToFile();
       return true;
     }
     return false;
+  }
+
+  static async delete(id) {
+    const appointmentId = Number(id);
+
+    if (isDatabaseConnected()) {
+      await executeQuery(`DELETE FROM cita_detalle WHERE id_cita = ?`, [appointmentId]);
+      await executeQuery(`DELETE FROM cita WHERE id_cita = ?`, [appointmentId]);
+      return true;
+    }
+
+    mockStore.cita_detalles = mockStore.cita_detalles.filter((d) => d.id_cita !== appointmentId);
+    mockStore.citas = mockStore.citas.filter((c) => c.id_cita !== appointmentId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 

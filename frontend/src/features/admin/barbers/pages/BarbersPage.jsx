@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, LayoutGrid, Table } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useBarbers } from "../hooks/useBarbers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -57,24 +56,19 @@ export default function BarbersPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Barbero registrado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Barbero actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Barbero eliminado correctamente");
   };
 
   const onToggleStatus = () => {
     if (!selectedBarber) return;
-    const newState = selectedBarber.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedBarber.id_barbero);
-    toast.success(`Barbero ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedBarber(null);
   };

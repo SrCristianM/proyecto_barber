@@ -86,7 +86,7 @@ export function useUsers() {
   useEffect(() => {
     getUsers()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setUsers(data);
           saveStoredUsers(data);
         }

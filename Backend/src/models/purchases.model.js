@@ -193,6 +193,7 @@ export class PurchasesRepository {
         const p = mockStore.productos.find((prod) => prod.id_producto === Number(item.id_producto));
         if (p) p.stock += Number(item.cantidad);
       });
+      mockStore.saveToFile();
 
       return nextCompraId;
     });
@@ -229,8 +230,22 @@ export class PurchasesRepository {
       });
 
       c.estado = "Anulada";
+      mockStore.saveToFile();
       return true;
     });
+  }
+
+  static async delete(id) {
+    const purchaseId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`DELETE FROM detalle_compra WHERE id_compra = ?`, [purchaseId]);
+      await executeQuery(`DELETE FROM compra WHERE id_compra = ?`, [purchaseId]);
+      return true;
+    }
+    mockStore.detalle_compras = mockStore.detalle_compras.filter((d) => d.id_compra !== purchaseId);
+    mockStore.compras = mockStore.compras.filter((c) => c.id_compra !== purchaseId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 

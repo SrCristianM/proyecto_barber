@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Edit, Power, Package, Check } from "lucide-react";
-import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
@@ -47,7 +46,6 @@ export default function ServicePackagesView() {
     }
     setFormErrors({});
     handleCreate();
-    toast.success("Paquete creado correctamente");
   };
 
   const onHandleEdit = () => {
@@ -58,13 +56,10 @@ export default function ServicePackagesView() {
     }
     setFormErrors({});
     handleEdit();
-    toast.success("Paquete actualizado correctamente");
   };
 
   const onToggleStatus = () => {
-    const newState = selectedPackage?.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedPackage?.id_paquete);
-    toast.success(`Paquete ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedPackage(null);
   };

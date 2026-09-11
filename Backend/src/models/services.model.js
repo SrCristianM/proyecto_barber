@@ -110,6 +110,7 @@ export class ServicesRepository {
       estado: serviceData.estado !== undefined ? serviceData.estado : 1
     };
     mockStore.servicios.push(newService);
+    mockStore.saveToFile();
     return nextId;
   }
 
@@ -143,6 +144,7 @@ export class ServicesRepository {
     if (serviceData.duracion_minutos !== undefined) s.duracion_minutos = Number(serviceData.duracion_minutos);
     if (serviceData.imagen_url !== undefined) s.imagen_url = serviceData.imagen_url;
     if (serviceData.estado !== undefined) s.estado = serviceData.estado;
+    mockStore.saveToFile();
 
     return true;
   }
@@ -161,20 +163,18 @@ export class ServicesRepository {
 
     const target = mockStore.servicios.find((serv) => serv.id_servicio === serviceId);
     if (target) target.estado = newStatus;
+    mockStore.saveToFile();
     return newStatus;
   }
 
   static async delete(id) {
     const serviceId = Number(id);
     if (isDatabaseConnected()) {
-      try {
-        await executeQuery(`DELETE FROM servicio WHERE id_servicio = ?`, [serviceId]);
-      } catch (err) {
-        await executeQuery(`UPDATE servicio SET estado = 0 WHERE id_servicio = ?`, [serviceId]);
-      }
+      await executeQuery(`DELETE FROM servicio WHERE id_servicio = ?`, [serviceId]);
       return true;
     }
     mockStore.servicios = mockStore.servicios.filter((s) => s.id_servicio !== serviceId);
+    mockStore.saveToFile();
     return true;
   }
 

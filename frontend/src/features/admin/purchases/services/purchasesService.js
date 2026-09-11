@@ -28,3 +28,9 @@ export async function cancelPurchase(id) {
     method: "PATCH"
   });
 }
+
+export async function deletePurchase(id) {
+  return await apiRequest(`${API_URL}/${id}`, {
+    method: "DELETE"
+  });
+}

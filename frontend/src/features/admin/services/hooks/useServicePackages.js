@@ -154,6 +154,16 @@ export function useServicePackages() {
       .filter(Boolean);
   };
 
+  const handleDelete = async (pkgId) => {
+    try {
+      await deletePackage(pkgId);
+      setPackages((prev) => prev.filter((p) => p.id_paquete !== pkgId));
+      toast.success("Paquete eliminado correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar el paquete.");
+    }
+  };
+
   return {
     packages,
     filteredPackages,
@@ -172,6 +182,7 @@ export function useServicePackages() {
     resetForm,
     handleCreate,
     handleEdit,
+    handleDelete,
     toggleStatus,
     openEditModal,
     openDeactivateModal,

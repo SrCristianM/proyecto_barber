@@ -134,6 +134,7 @@ export class UsersRepository {
       fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
     mockStore.usuarios.push(newUser);
+    mockStore.saveToFile();
     return nextId;
   }
 
@@ -171,6 +172,7 @@ export class UsersRepository {
     if (userData.estado !== undefined) user.estado = Number(userData.estado);
     if (userData.contrasena) user.contrasena = userData.contrasena;
 
+    mockStore.saveToFile();
     return true;
   }
 
@@ -190,13 +192,30 @@ export class UsersRepository {
     const user = mockStore.usuarios.find((u) => u.id_usuario === userId);
     if (user) {
       user.estado = newStatus;
+      mockStore.saveToFile();
     }
     return newStatus;
   }
 
   static async delete(id) {
-    // Desactivación lógica estándar de seguridad
-    return await this.toggleStatus(id, 0);
+    const userId = Number(id);
+
+    if (isDatabaseConnected()) {
+      try {
+        await executeQuery(`DELETE FROM barbero WHERE id_usuario = ?`, [userId]);
+        await executeQuery(`DELETE FROM cliente WHERE id_usuario = ?`, [userId]);
+        await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [userId]);
+      } catch (err) {
+        await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [userId]);
+      }
+      return true;
+    }
+
+    mockStore.usuarios = mockStore.usuarios.filter((u) => u.id_usuario !== userId);
+    mockStore.barberos = mockStore.barberos.filter((b) => b.id_usuario !== userId);
+    mockStore.clientes = mockStore.clientes.filter((c) => c.id_usuario !== userId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 

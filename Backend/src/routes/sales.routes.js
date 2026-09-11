@@ -34,7 +34,7 @@ router.delete(
   "/:id",
   authenticate,
   authorizeRoles(ROLES.ADMIN),
-  SalesController.cancel
+  SalesController.delete
 );
 
 export default router;

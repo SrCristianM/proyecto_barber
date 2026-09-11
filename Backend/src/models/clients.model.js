@@ -181,6 +181,7 @@ export class ClientsRepository {
         estado: 1
       };
       mockStore.clientes.push(newClient);
+      mockStore.saveToFile();
 
       return nextClientId;
     });
@@ -228,6 +229,7 @@ export class ClientsRepository {
         if (clientData.nivel_fidelidad !== undefined) cObj.nivel_fidelidad = clientData.nivel_fidelidad;
         if (clientData.direccion !== undefined) cObj.direccion = clientData.direccion;
         if (clientData.estado !== undefined) cObj.estado = clientData.estado;
+        mockStore.saveToFile();
       }
       return true;
     });
@@ -250,6 +252,7 @@ export class ClientsRepository {
     if (c) c.estado = newStatus;
     const u = mockStore.usuarios.find((user) => user.id_usuario === client.id_usuario);
     if (u) u.estado = newStatus;
+    mockStore.saveToFile();
 
     return newStatus;
   }
@@ -266,10 +269,7 @@ export class ClientsRepository {
           await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [client.id_usuario]);
         }
       } catch (err) {
-        await executeQuery(`UPDATE cliente SET estado = 0 WHERE id_cliente = ?`, [clientId]);
-        if (client.id_usuario) {
-          await executeQuery(`UPDATE usuario SET estado = 0 WHERE id_usuario = ?`, [client.id_usuario]);
-        }
+        await executeQuery(`DELETE FROM cliente WHERE id_cliente = ?`, [clientId]);
       }
       return true;
     }
@@ -278,6 +278,7 @@ export class ClientsRepository {
     if (client.id_usuario) {
       mockStore.usuarios = mockStore.usuarios.filter((u) => u.id_usuario !== client.id_usuario);
     }
+    mockStore.saveToFile();
     return true;
   }
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, AlertCircle, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useProducts, categories } from "../hooks/useProducts";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -65,13 +64,11 @@ export default function ProductsPage() {
   const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [activeTab, setActiveTab] = useState("products");
 
-  const onHandleCreate = () => { handleCreate(); toast.success("Producto creado correctamente"); };
-  const onHandleEdit = () => { handleEdit(); toast.success("Producto actualizado correctamente"); };
-  const onHandleDelete = () => { handleDelete(); toast.success("Producto eliminado correctamente"); };
+  const onHandleCreate = () => { handleCreate(); };
+  const onHandleEdit = () => { handleEdit(); };
+  const onHandleDelete = () => { handleDelete(); };
   const onToggleStatus = () => {
-    const newState = deactivateTarget?.estado === 1 ? "desactivado" : "activado";
     toggleStatus(deactivateTarget?.id_producto);
-    toast.success(`Producto ${newState} correctamente`);
     setShowDeactivateModal(false);
     setDeactivateTarget(null);
   };

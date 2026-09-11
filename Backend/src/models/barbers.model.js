@@ -150,6 +150,7 @@ export class BarbersRepository {
         estado: 1
       };
       mockStore.barberos.push(newBarber);
+      mockStore.saveToFile();
 
       return nextBarberId;
     });
@@ -199,6 +200,7 @@ export class BarbersRepository {
         if (barberData.especialidad !== undefined) bObj.especialidad = barberData.especialidad;
         if (barberData.imagen_url !== undefined) bObj.imagen_url = barberData.imagen_url;
         if (barberData.estado !== undefined) bObj.estado = barberData.estado;
+        mockStore.saveToFile();
       }
       return true;
     });
@@ -221,6 +223,7 @@ export class BarbersRepository {
     if (b) b.estado = newStatus;
     const u = mockStore.usuarios.find((user) => user.id_usuario === barber.id_usuario);
     if (u) u.estado = newStatus;
+    mockStore.saveToFile();
 
     return newStatus;
   }
@@ -237,10 +240,7 @@ export class BarbersRepository {
           await executeQuery(`DELETE FROM usuario WHERE id_usuario = ?`, [barber.id_usuario]);
         }
       } catch (err) {
-        await executeQuery(`UPDATE barbero SET estado = 0 WHERE id_barbero = ?`, [barberId]);
-        if (barber.id_usuario) {
-          await executeQuery(`UPDATE usuario SET estado = 0 WHERE id_usuario = ?`, [barber.id_usuario]);
-        }
+        await executeQuery(`DELETE FROM barbero WHERE id_barbero = ?`, [barberId]);
       }
       return true;
     }
@@ -249,6 +249,7 @@ export class BarbersRepository {
     if (barber.id_usuario) {
       mockStore.usuarios = mockStore.usuarios.filter((u) => u.id_usuario !== barber.id_usuario);
     }
+    mockStore.saveToFile();
     return true;
   }
 }

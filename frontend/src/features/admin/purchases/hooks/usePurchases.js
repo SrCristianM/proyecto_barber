@@ -5,7 +5,8 @@ import { ESTADOS_COMPRA } from "../../../../shared/types/database";
 import {
   getPurchases,
   createPurchase,
-  cancelPurchase
+  cancelPurchase,
+  deletePurchase
 } from "../services/purchasesService";
 
 export const availableSuppliers = [
@@ -292,7 +293,7 @@ export function usePurchases() {
   useEffect(() => {
     getPurchases()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setPurchases(data);
         }
       })
@@ -380,13 +381,20 @@ export function usePurchases() {
     setShowEditModal(false);
     setSelectedPurchase(null);
     resetForm();
+    toast.success("Compra actualizada correctamente.");
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedPurchase) return;
-    setPurchases(purchases.filter((p) => p.id_compra !== selectedPurchase.id_compra));
-    setShowDeleteModal(false);
-    setSelectedPurchase(null);
+    try {
+      await deletePurchase(selectedPurchase.id_compra);
+      setPurchases(purchases.filter((p) => p.id_compra !== selectedPurchase.id_compra));
+      setShowDeleteModal(false);
+      setSelectedPurchase(null);
+      toast.success("Compra eliminada correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar la compra.");
+    }
   };
 
   const toggleStatus = async (compraId) => {

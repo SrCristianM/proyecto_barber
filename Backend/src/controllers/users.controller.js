@@ -57,7 +57,7 @@ export class UsersController {
   static async delete(req, res, next) {
     try {
       await UsersService.deleteUser(req.params.id);
-      return ApiResponse.success(res, null, "Usuario desactivado exitosamente");
+      return ApiResponse.success(res, null, "Usuario eliminado exitosamente");
     } catch (error) {
       next(error);
     }

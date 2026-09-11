@@ -132,8 +132,11 @@ export function useClients() {
   useEffect(() => {
     getClients()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setClients(data);
+          try {
+            localStorage.setItem("barber_clients_db", JSON.stringify(data));
+          } catch {}
         } else {
           loadLocalClients();
         }
@@ -210,7 +213,21 @@ export function useClients() {
     if (!selectedClient) return;
     try {
       await deleteClient(selectedClient.id_cliente);
-      setClients((prev) => prev.filter((client) => client.id_cliente !== selectedClient.id_cliente));
+      const updated = clients.filter((client) => client.id_cliente !== selectedClient.id_cliente);
+      setClients(updated);
+      try {
+        localStorage.setItem("barber_clients_db", JSON.stringify(updated));
+        const rawUsers = localStorage.getItem("barber_users_db");
+        if (rawUsers) {
+          const parsed = JSON.parse(rawUsers);
+          const filteredUsers = parsed.filter(
+            (u) =>
+              (!selectedClient.id_usuario || Number(u.id_usuario) !== Number(selectedClient.id_usuario)) &&
+              (!selectedClient.correo || u.correo?.toLowerCase() !== selectedClient.correo.toLowerCase())
+          );
+          localStorage.setItem("barber_users_db", JSON.stringify(filteredUsers));
+        }
+      } catch {}
       setShowDeleteModal(false);
       setSelectedClient(null);
       toast.success("Cliente eliminado.");

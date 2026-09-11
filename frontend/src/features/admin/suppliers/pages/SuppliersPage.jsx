@@ -1,5 +1,4 @@
 import { Plus, Download, LayoutGrid, List, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useSuppliers } from "../hooks/useSuppliers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -58,24 +57,19 @@ export default function SuppliersPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Proveedor registrado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Proveedor actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Proveedor eliminado correctamente");
   };
 
   const onToggleStatus = () => {
     if (!selectedSupplier) return;
-    const newState = selectedSupplier.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedSupplier.id_proveedor);
-    toast.success(`Proveedor ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedSupplier(null);
   };

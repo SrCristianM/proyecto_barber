@@ -5,7 +5,8 @@ import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import {
   getSales,
   createSale,
-  cancelSale
+  cancelSale,
+  deleteSale
 } from "../services/salesService";
 
 import { getRealClients } from "../../appointments/hooks/useAppointments";
@@ -258,8 +259,11 @@ export function useSales() {
   useEffect(() => {
     getSales()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setSales(data);
+          try {
+            localStorage.setItem("barber_sales_db", JSON.stringify(data));
+          } catch {}
         } else {
           loadLocalSales();
         }
@@ -279,7 +283,7 @@ export function useSales() {
       id_cliente: Number(formData.id_cliente),
       id_cita: formData.id_cita ? Number(formData.id_cita) : null,
       detalles: formData.detalles.map((d) => ({
-        tipo_item: d.tipo_item,
+        tipo_item: (d.tipo_item && d.tipo_item.toLowerCase() === "producto") ? "Producto" : "Servicio",
         id_producto: d.id_producto ? Number(d.id_producto) : null,
         id_servicio: d.id_servicio ? Number(d.id_servicio) : null,
         cantidad: Number(d.cantidad || 1),
@@ -354,13 +358,24 @@ export function useSales() {
     setShowEditModal(false);
     setSelectedSale(null);
     resetForm();
+    toast.success("Venta actualizada correctamente.");
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedSale) return;
-    setSales(sales.filter((sale) => sale.id_venta !== selectedSale.id_venta));
-    setShowDeleteModal(false);
-    setSelectedSale(null);
+    try {
+      await deleteSale(selectedSale.id_venta);
+      const updated = sales.filter((sale) => sale.id_venta !== selectedSale.id_venta);
+      setSales(updated);
+      try {
+        localStorage.setItem("barber_sales_db", JSON.stringify(updated));
+      } catch {}
+      setShowDeleteModal(false);
+      setSelectedSale(null);
+      toast.success("Venta eliminada correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar la venta.");
+    }
   };
 
   const toggleStatus = async (saleId) => {

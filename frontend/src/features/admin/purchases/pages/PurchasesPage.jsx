@@ -1,5 +1,4 @@
 import { Plus, Download, LayoutGrid, Table, RotateCcw, Building2 } from "lucide-react";
-import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { usePurchases, availableSuppliers } from "../hooks/usePurchases";
@@ -91,23 +90,19 @@ export default function PurchasesPage() {
   const onHandleCreate = () => {
     handleCreate();
     triggerGoldenConfetti();
-    toast.success("Compra registrada correctamente y agregada al inventario");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Compra actualizada correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Compra eliminada correctamente");
   };
 
   const onAnularCompra = () => {
     if (!selectedPurchase) return;
     toggleStatus(selectedPurchase.id_compra);
-    toast.success(`Compra #${selectedPurchase.id_compra} anulada correctamente`);
     setShowCancelModal(false);
     setSelectedPurchase(null);
   };

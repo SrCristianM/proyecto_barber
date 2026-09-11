@@ -1,5 +1,4 @@
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, RotateCcw, Download } from "lucide-react";
-import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppointments } from "../hooks/useAppointments";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -56,12 +55,10 @@ export default function AppointmentsPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Cita agendada correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Cita actualizada correctamente");
   };
 
   const handleExportAppointments = () => {

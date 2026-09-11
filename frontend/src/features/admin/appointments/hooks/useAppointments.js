@@ -229,8 +229,11 @@ export function useAppointments() {
 
     getAppointments()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setAppointments(data);
+          try {
+            localStorage.setItem("barber_appointments_db", JSON.stringify(data));
+          } catch {}
         } else {
           loadLocalAppointments();
         }
@@ -339,6 +342,20 @@ export function useAppointments() {
     setShowFormModal(true);
   };
 
+  const handleDelete = async (id) => {
+    try {
+      await deleteAppointment(id);
+      const updated = appointments.filter((apt) => apt.id_cita !== id);
+      setAppointments(updated);
+      try {
+        localStorage.setItem("barber_appointments_db", JSON.stringify(updated));
+      } catch {}
+      toast.success("Cita eliminada correctamente.");
+    } catch (err) {
+      toast.error(err.message || "Error al eliminar la cita.");
+    }
+  };
+
   return {
     appointments,
     appointmentsForDate,
@@ -378,6 +395,7 @@ export function useAppointments() {
     resetForm,
     handleCreate,
     handleEdit,
+    handleDelete,
     openCreateModal,
     openCreateFromSlot,
     openEditModal

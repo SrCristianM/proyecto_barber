@@ -1,5 +1,4 @@
 import { Plus, Download, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useRoles } from "../hooks/useRoles";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -54,24 +53,19 @@ export default function RolesPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Rol creado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Rol actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Rol eliminado correctamente");
   };
 
   const onToggleStatus = () => {
     if (!selectedRole) return;
-    const newState = selectedRole.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedRole.id_rol);
-    toast.success(`Rol ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedRole(null);
   };

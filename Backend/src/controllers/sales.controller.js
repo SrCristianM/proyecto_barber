@@ -52,4 +52,13 @@ export class SalesController {
       next(error);
     }
   }
+
+  static async delete(req, res, next) {
+    try {
+      const result = await SalesService.deleteSale(req.params.id);
+      return ApiResponse.success(res, result, "Venta eliminada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
 }

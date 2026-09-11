@@ -42,11 +42,18 @@ router.patch(
   AppointmentsController.updateStatus
 );
 
+router.patch(
+  "/:id/cancel",
+  authenticate,
+  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE),
+  AppointmentsController.cancel
+);
+
 router.delete(
   "/:id",
   authenticate,
   authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE),
-  AppointmentsController.cancel
+  AppointmentsController.delete
 );
 
 export default router;

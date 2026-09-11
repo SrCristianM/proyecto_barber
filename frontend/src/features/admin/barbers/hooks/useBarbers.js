@@ -96,7 +96,7 @@ export function useBarbers() {
   useEffect(() => {
     getBarbers()
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setBarbers(data);
         }
       })
@@ -173,6 +173,18 @@ export function useBarbers() {
     try {
       await deleteBarber(selectedBarber.id_barbero);
       setBarbers((prev) => prev.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero));
+      try {
+        const rawUsers = localStorage.getItem("barber_users_db");
+        if (rawUsers) {
+          const parsed = JSON.parse(rawUsers);
+          const filteredUsers = parsed.filter(
+            (u) =>
+              (!selectedBarber.id_usuario || Number(u.id_usuario) !== Number(selectedBarber.id_usuario)) &&
+              (!selectedBarber.correo || u.correo?.toLowerCase() !== selectedBarber.correo.toLowerCase())
+          );
+          localStorage.setItem("barber_users_db", JSON.stringify(filteredUsers));
+        }
+      } catch {}
       setShowDeleteModal(false);
       setSelectedBarber(null);
       toast.success("Barbero eliminado.");

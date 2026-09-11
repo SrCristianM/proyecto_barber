@@ -127,6 +127,7 @@ export class SchedulesRepository {
           });
         }
       });
+      mockStore.saveToFile();
       return true;
     });
   }
@@ -165,6 +166,7 @@ export class SchedulesRepository {
     if (scheduleData.hora_inicio) h.hora_inicio = scheduleData.hora_inicio.length === 5 ? `${scheduleData.hora_inicio}:00` : scheduleData.hora_inicio;
     if (scheduleData.hora_fin) h.hora_fin = scheduleData.hora_fin.length === 5 ? `${scheduleData.hora_fin}:00` : scheduleData.hora_fin;
     if (scheduleData.estado !== undefined) h.estado = scheduleData.estado;
+    mockStore.saveToFile();
     return true;
   }
 
@@ -177,6 +179,7 @@ export class SchedulesRepository {
     }
 
     mockStore.horarios = mockStore.horarios.filter((h) => h.id_horario !== scheduleId);
+    mockStore.saveToFile();
     return true;
   }
 
@@ -253,6 +256,7 @@ export class SchedulesRepository {
       estado: "Pendiente",
       fecha_registro: now
     });
+    mockStore.saveToFile();
     return nextId;
   }
 
@@ -267,6 +271,7 @@ export class SchedulesRepository {
     const n = mockStore.novedades.find((nov) => nov.id_novedad === noveltyId);
     if (n) {
       n.estado = newStatus;
+      mockStore.saveToFile();
       return true;
     }
     return false;

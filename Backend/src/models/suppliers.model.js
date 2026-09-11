@@ -97,6 +97,7 @@ export class SuppliersRepository {
       estado: supplierData.estado !== undefined ? supplierData.estado : 1
     };
     mockStore.proveedores.push(newSupplier);
+    mockStore.saveToFile();
     return nextId;
   }
 
@@ -130,6 +131,7 @@ export class SuppliersRepository {
     if (supplierData.correo !== undefined) p.correo = supplierData.correo;
     if (supplierData.direccion !== undefined) p.direccion = supplierData.direccion;
     if (supplierData.estado !== undefined) p.estado = supplierData.estado;
+    mockStore.saveToFile();
     return true;
   }
 
@@ -147,20 +149,18 @@ export class SuppliersRepository {
 
     const target = mockStore.proveedores.find((prov) => prov.id_proveedor === supplierId);
     if (target) target.estado = newStatus;
+    mockStore.saveToFile();
     return newStatus;
   }
 
   static async delete(id) {
     const supplierId = Number(id);
     if (isDatabaseConnected()) {
-      try {
-        await executeQuery(`DELETE FROM proveedor WHERE id_proveedor = ?`, [supplierId]);
-      } catch (err) {
-        await executeQuery(`UPDATE proveedor SET estado = 0 WHERE id_proveedor = ?`, [supplierId]);
-      }
+      await executeQuery(`DELETE FROM proveedor WHERE id_proveedor = ?`, [supplierId]);
       return true;
     }
     mockStore.proveedores = mockStore.proveedores.filter((prov) => prov.id_proveedor !== supplierId);
+    mockStore.saveToFile();
     return true;
   }
 }

@@ -152,6 +152,7 @@ export class RolesRepository {
           mockStore.rol_permisos.push({ id_rol: nextId, id_permiso: permObj.id_permiso });
         });
       }
+      mockStore.saveToFile();
 
       return nextId;
     });
@@ -211,6 +212,7 @@ export class RolesRepository {
           }
         });
       }
+      mockStore.saveToFile();
 
       return true;
     });
@@ -230,22 +232,20 @@ export class RolesRepository {
 
     const target = mockStore.roles.find((r) => r.id_rol === roleId);
     if (target) target.estado = newStatus;
+    mockStore.saveToFile();
     return newStatus;
   }
 
   static async delete(id) {
     const roleId = Number(id);
     if (isDatabaseConnected()) {
-      try {
-        await executeQuery(`DELETE FROM rol_permiso WHERE id_rol = ?`, [roleId]);
-        await executeQuery(`DELETE FROM rol WHERE id_rol = ?`, [roleId]);
-      } catch (err) {
-        await executeQuery(`UPDATE rol SET estado = 0 WHERE id_rol = ?`, [roleId]);
-      }
+      await executeQuery(`DELETE FROM rol_permiso WHERE id_rol = ?`, [roleId]);
+      await executeQuery(`DELETE FROM rol WHERE id_rol = ?`, [roleId]);
       return true;
     }
     mockStore.rol_permisos = mockStore.rol_permisos.filter((rp) => rp.id_rol !== roleId);
     mockStore.roles = mockStore.roles.filter((r) => r.id_rol !== roleId);
+    mockStore.saveToFile();
     return true;
   }
 

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, Award, LayoutGrid, Table } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useClients, availableLoyalties } from "../hooks/useClients";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -61,24 +60,19 @@ export default function ClientsPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Cliente registrado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Cliente actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Cliente eliminado correctamente");
   };
 
   const onToggleStatus = () => {
     if (!selectedClient) return;
-    const newState = selectedClient.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedClient.id_cliente);
-    toast.success(`Cliente ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedClient(null);
   };

@@ -148,4 +148,13 @@ export class AppointmentsService {
   static async cancelAppointment(id) {
     return await this.updateAppointmentStatus(id, "Cancelada");
   }
+
+  static async deleteAppointment(id) {
+    const appointment = await AppointmentsRepository.findById(id);
+    if (!appointment) {
+      throw ApiError.notFound("Cita no encontrada.");
+    }
+    await AppointmentsRepository.delete(id);
+    return { id_cita: Number(id), eliminado: true };
+  }
 }

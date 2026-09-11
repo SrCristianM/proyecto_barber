@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useServices, availableCategories } from "../hooks/useServices";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -68,14 +67,12 @@ export default function ServicesPage() {
     openDeactivateModal
   } = useServices();
 
-  const onHandleCreate = () => { handleCreate(); toast.success("Servicio creado correctamente"); };
-  const onHandleEdit = () => { handleEdit(); toast.success("Servicio actualizado correctamente"); };
-  const onHandleDelete = () => { handleDelete(); toast.success("Servicio eliminado correctamente"); };
+  const onHandleCreate = () => { handleCreate(); };
+  const onHandleEdit = () => { handleEdit(); };
+  const onHandleDelete = () => { handleDelete(); };
   const onToggleStatus = () => {
     if (!selectedService) return;
-    const newState = selectedService.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedService.id_servicio);
-    toast.success(`Servicio ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedService(null);
   };

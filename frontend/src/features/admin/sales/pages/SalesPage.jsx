@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, User } from "lucide-react";
-import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { useSales, clients } from "../hooks/useSales";
@@ -85,13 +84,11 @@ export default function SalesPage() {
   const onHandleCreate = () => {
     handleCreate();
     triggerGoldenConfetti();
-    toast.success("Venta registrada correctamente");
   };
-  const onHandleEdit = () => { handleEdit(); toast.success("Venta actualizada correctamente"); };
-  const onHandleDelete = () => { handleDelete(); toast.success("Venta eliminada correctamente"); };
+  const onHandleEdit = () => { handleEdit(); };
+  const onHandleDelete = () => { handleDelete(); };
   const onAnularVenta = () => {
     toggleStatus(deactivateTarget?.id_venta);
-    toast.success(`Venta #${deactivateTarget?.id_venta} anulada correctamente`);
     setShowDeactivateModal(false);
     setDeactivateTarget(null);
   };

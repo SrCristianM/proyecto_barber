@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, Shield, LayoutGrid, Table } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useUsers, availableRoles } from "../hooks/useUsers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -60,24 +59,19 @@ export default function UsersPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Usuario creado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Usuario actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Usuario eliminado correctamente");
   };
 
   const onToggleStatus = () => {
     if (!selectedUser) return;
-    const newState = selectedUser.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedUser.id_usuario);
-    toast.success(`Usuario ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedUser(null);
   };

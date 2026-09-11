@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, User, Calendar } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "motion/react";
 import { useSchedules, barbers, daysOfWeek } from "../hooks/useSchedules";
 import SchedulesTable from "../components/SchedulesTable";
@@ -67,23 +66,18 @@ export default function SchedulesPage() {
 
   const onHandleCreate = () => {
     handleCreate();
-    toast.success("Horario creado correctamente");
   };
 
   const onHandleEdit = () => {
     handleEdit();
-    toast.success("Horario actualizado correctamente");
   };
 
   const onHandleDelete = () => {
     handleDelete();
-    toast.success("Horario eliminado correctamente");
   };
 
   const onToggleStatus = () => {
-    const newState = selectedSchedule?.estado === 1 ? "desactivado" : "activado";
     toggleStatus(selectedSchedule?.id_horario);
-    toast.success(`Horario ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedSchedule(null);
   };

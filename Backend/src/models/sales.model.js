@@ -249,6 +249,7 @@ export class SalesRepository {
         if (c) c.estado = "Completada";
       }
 
+      mockStore.saveToFile();
       return nextVentaId;
     });
   }
@@ -287,8 +288,22 @@ export class SalesRepository {
       });
 
       v.estado = "Anulada";
+      mockStore.saveToFile();
       return true;
     });
+  }
+
+  static async delete(id) {
+    const saleId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`DELETE FROM venta_detalle WHERE id_venta = ?`, [saleId]);
+      await executeQuery(`DELETE FROM venta WHERE id_venta = ?`, [saleId]);
+      return true;
+    }
+    mockStore.venta_detalles = mockStore.venta_detalles.filter((d) => d.id_venta !== saleId);
+    mockStore.ventas = mockStore.ventas.filter((v) => v.id_venta !== saleId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 
