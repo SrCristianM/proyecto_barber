@@ -220,38 +220,62 @@ export default function ClientBookingPage() {
         </p>
       </div>
 
-      {/* STEPPER INDICATOR */}
-      <div className="p-4 rounded-3xl bg-card border border-border shadow-sm">
-        <div className="flex items-center justify-between">
+      {/* STEPPER INDICATOR CON TIJERA CORTADORA */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-card border border-border shadow-sm relative overflow-hidden">
+        <div className="flex items-center justify-between relative z-10">
           {steps.map((s, idx) => {
             const isCompleted = currentStep > s.num;
             const isCurrent = currentStep === s.num;
 
             return (
               <div key={s.num} className="flex-1 flex items-center">
-                <div className="flex flex-col items-center mx-auto text-center">
+                <div className="flex flex-col items-center mx-auto text-center relative">
+                  {/* Tijera cortadora animada sobre el paso actual */}
+                  {isCurrent && (
+                    <motion.div
+                      layoutId="bookingScissorsIndicator"
+                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                      className="absolute -top-7 text-[#DFB755] flex flex-col items-center z-30 pointer-events-none"
+                    >
+                      <motion.div
+                        animate={{ rotate: [-20, 20, -10, 10, 0] }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                      >
+                        <Scissors className="w-5 h-5 text-[#DFB755] filter drop-shadow-[0_2px_4px_rgba(223,183,85,0.4)]" />
+                      </motion.div>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#DFB755] mt-0.5" />
+                    </motion.div>
+                  )}
+
                   <div
                     className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-black text-xs sm:text-sm transition-all ${
                       isCompleted
                         ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-md shadow-[#DDAE41]/25"
                         : isCurrent
-                        ? "bg-foreground text-background ring-4 ring-[#DFB755]/30"
+                        ? "bg-foreground text-background ring-4 ring-[#DFB755]/30 font-black"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <span className={`text-[10px] sm:text-xs font-bold mt-1.5 hidden sm:block ${
-                    isCurrent ? "text-[#DDAE41] dark:text-[#E8C466]" : "text-muted-foreground"
+                    isCurrent ? "text-[#DDAE41] dark:text-[#E8C466] font-black" : "text-muted-foreground"
                   }`}>
                     {s.title}
                   </span>
                 </div>
 
                 {idx < steps.length - 1 && (
-                  <div className={`flex-1 h-0.5 mx-2 transition-all ${
-                    currentStep > s.num ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" : "bg-border"
-                  }`} />
+                  <div className="flex-1 h-1 mx-1.5 sm:mx-3 rounded-full bg-muted/70 overflow-hidden relative">
+                    <motion.div
+                      initial={false}
+                      animate={{
+                        width: currentStep > s.num ? "100%" : "0%"
+                      }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                      className="h-full bg-gradient-to-r from-[#E8C466] to-[#DDAE41]"
+                    />
+                  </div>
                 )}
               </div>
             );
@@ -636,24 +660,38 @@ export default function ClientBookingPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
                   {availableSlots.map((slot) => {
                     const isSelected = selectedTimeSlot === slot.hora;
+                    const isPopular = ["10:00", "11:00", "15:00", "16:00", "17:00"].includes(slot.hora);
                     return (
-                      <button
+                      <motion.button
                         key={slot.hora}
                         type="button"
                         disabled={!slot.disponible}
+                        whileHover={slot.disponible ? { scale: 1.05 } : {}}
+                        whileTap={slot.disponible ? { scale: 0.95 } : {}}
                         onClick={() => setSelectedTimeSlot(slot.hora)}
-                        className={`py-3 px-2 rounded-xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+                        className={`py-3.5 px-2 rounded-2xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 relative cursor-pointer ${
                           !slot.disponible
                             ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
                             : isSelected
-                            ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/25 scale-105"
+                            ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/30 ring-2 ring-[#DFB755] scale-105 font-black"
                             : "bg-card border border-border hover:border-[#DFB755] text-foreground hover:bg-accent"
                         }`}
                       >
+                        {isPopular && slot.disponible && !isSelected && (
+                          <span className="absolute -top-2 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-[#DFB755] text-black shadow-xs">
+                            Popular
+                          </span>
+                        )}
                         <Clock className="w-3.5 h-3.5" />
-                        <span>{slot.hora}</span>
-                        {!slot.disponible && <span className="text-[9px] font-normal">Ocupado</span>}
-                      </button>
+                        <span className="font-mono font-bold">{slot.hora}</span>
+                        {!slot.disponible ? (
+                          <span className="text-[9px] font-normal">Ocupado</span>
+                        ) : (
+                          <span className={`text-[8px] font-bold ${isSelected ? "text-black/80" : "text-emerald-500"}`}>
+                            {isSelected ? "Elegido" : "Libre"}
+                          </span>
+                        )}
+                      </motion.button>
                     );
                   })}
                 </div>

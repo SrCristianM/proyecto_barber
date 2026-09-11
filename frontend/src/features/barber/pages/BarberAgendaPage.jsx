@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
+import confetti from "canvas-confetti";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 import Modal from "../../admin/shared/components/Modal";
+import BarberPoleIndicator from "../components/BarberPoleIndicator";
 import {
   getCurrentBarberProfile,
   getBarberAgendaForDate,
@@ -30,11 +32,11 @@ import {
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
     case "Oro":
-      return "bg-amber-500/15 text-amber-500 border-amber-500/30";
+      return "bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 text-amber-400 border-amber-500/40 animate-metallic-shimmer shadow-xs";
     case "Plata":
-      return "bg-slate-300/15 text-slate-300 border-slate-400/30";
+      return "bg-gradient-to-r from-slate-400/20 via-slate-200/30 to-slate-400/20 text-slate-300 border-slate-400/40 animate-metallic-shimmer shadow-xs";
     case "Bronce":
-      return "bg-amber-700/15 text-amber-600 border-amber-700/30";
+      return "bg-gradient-to-r from-amber-700/20 via-amber-600/30 to-amber-700/20 text-amber-600 border-amber-700/40 animate-metallic-shimmer shadow-xs";
     default:
       return "bg-primary/15 text-primary border-primary/30";
   }
@@ -46,7 +48,20 @@ export default function BarberAgendaPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentTimeStr, setCurrentTimeStr] = useState(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  });
   const navigate = useNavigate();
+
+  // Actualizar hora en vivo cada minuto para la línea de escaneo temporal
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const d = new Date();
+      setCurrentTimeStr(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadAgenda(selectedDate);
@@ -62,7 +77,16 @@ export default function BarberAgendaPage() {
   const handleCompleteAppointment = (id_cita) => {
     const res = completeBarberAppointment(id_cita);
     if (res.success) {
-      toast.success(`¡Cita #${id_cita} marcada como Completada!`);
+      // Celebración con confeti dorado y esmeralda
+      confetti({
+        particleCount: 85,
+        spread: 70,
+        origin: { y: 0.62 },
+        colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
+      });
+      toast.success(`¡Cita #${id_cita} completada y registrada!`, {
+        description: "El cliente ha sido atendido correctamente."
+      });
       loadAgenda(selectedDate);
       setSelectedAppointment(null);
     } else {
@@ -155,16 +179,18 @@ export default function BarberAgendaPage() {
       {/* HEADER DE MÓDULO */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
               Mi Agenda de Citas
             </h1>
+            <BarberPoleIndicator variant="gold" label="En Turno" showPulse={true} />
             <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-[#DFB755]/15 text-[#DFB755] border border-[#DFB755]/30">
               Consulta
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 capitalize">
-            {formattedDateHeader}
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 capitalize flex items-center gap-1.5">
+            <CalendarIcon className="w-3.5 h-3.5 text-[#DFB755]" />
+            <span>{formattedDateHeader}</span>
           </p>
         </div>
 
@@ -203,8 +229,8 @@ export default function BarberAgendaPage() {
         </div>
       </div>
 
-      {/* SELECTOR RÁPIDO DE DÍAS (PÍLDORAS SEMANALES INTERACTIVAS) */}
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 p-2 rounded-2xl bg-card border border-border/80 shadow-xs">
+      {/* SELECTOR RÁPIDO DE DÍAS CON PÍLDORA ELÁSTICA (LAYOUTID) */}
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 p-2 rounded-2xl bg-card border border-border/80 shadow-xs relative">
         {getDaysRow().map((item) => {
           const isSelected = item.iso === selectedDate;
           const isToday = item.iso === new Date().toISOString().split("T")[0];
@@ -214,18 +240,30 @@ export default function BarberAgendaPage() {
               key={item.iso}
               type="button"
               onClick={() => setSelectedDate(item.iso)}
-              className={`flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl transition-all cursor-pointer ${
-                isSelected
-                  ? "bg-gradient-to-b from-[#E8C466] to-[#DDAE41] text-black font-black shadow-md shadow-[#DDAE41]/30 scale-[1.02]"
-                  : isToday
-                  ? "border border-[#DFB755]/40 bg-[#DFB755]/10 text-foreground hover:bg-[#DFB755]/20 font-bold"
-                  : "hover:bg-accent/60 text-muted-foreground hover:text-foreground font-medium"
-              }`}
+              className="relative flex flex-col items-center justify-center py-2.5 sm:py-3 px-1 rounded-xl cursor-pointer select-none transition-colors z-10 group"
             >
-              <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${isSelected ? "text-black" : ""}`}>
+              {isSelected && (
+                <motion.div
+                  layoutId="activeBarberAgendaDay"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                  className="absolute inset-0 bg-gradient-to-b from-[#E8C466] to-[#DDAE41] rounded-xl shadow-md shadow-[#DDAE41]/30 -z-10"
+                />
+              )}
+              {isToday && !isSelected && (
+                <div className="absolute inset-0 border border-[#DFB755]/40 bg-[#DFB755]/10 rounded-xl -z-10" />
+              )}
+              <span
+                className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors ${
+                  isSelected ? "text-black" : "text-muted-foreground group-hover:text-foreground"
+                }`}
+              >
                 {item.dayName}
               </span>
-              <span className="text-base sm:text-lg font-black mt-0.5">
+              <span
+                className={`text-base sm:text-lg font-black mt-0.5 transition-colors ${
+                  isSelected ? "text-black font-black" : "text-foreground"
+                }`}
+              >
                 {item.dayNumber}
               </span>
               {isToday && !isSelected && (
@@ -313,114 +351,152 @@ export default function BarberAgendaPage() {
               </p>
             </div>
           ) : (
-            filteredSlots.map((slot) => {
-              const isOccupied = slot.estadoSlot === "Ocupado" && slot.cita;
-              const apt = slot.cita;
+            <AnimatePresence mode="popLayout">
+              {filteredSlots.map((slot) => {
+                const isOccupied = slot.estadoSlot === "Ocupado" && slot.cita;
+                const apt = slot.cita;
 
-              return (
-                <div
-                  key={slot.hora}
-                  className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                    isOccupied
-                      ? "bg-[#DFB755]/5 hover:bg-[#DFB755]/10 border-l-4 border-l-[#DFB755]"
-                      : "hover:bg-accent/40 border-l-4 border-l-transparent"
-                  }`}
-                >
-                  {/* Hora */}
-                  <div className="flex items-center gap-3 w-32 shrink-0">
-                    <div className={`p-2 rounded-xl ${isOccupied ? "bg-[#DFB755]/15 text-[#DFB755]" : "bg-muted text-muted-foreground"}`}>
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-sm font-black text-foreground font-mono">
-                        {slot.hora}
-                      </span>
-                      <span className="block text-[10px] text-muted-foreground uppercase font-bold">
-                        {isOccupied ? "Ocupado" : "Disponible"}
-                      </span>
-                    </div>
-                  </div>
+                // Detectar si este slot corresponde a la hora actual en la jornada de hoy
+                const isToday = selectedDate === new Date().toISOString().split("T")[0];
+                const [currentHour] = currentTimeStr.split(":").map(Number);
+                const [slotHour] = slot.hora.split(":").map(Number);
+                const isCurrentSlot = isToday && slotHour === currentHour;
 
-                  {/* Contenido / Cliente */}
-                  <div className="flex-1 min-w-0">
-                    {isOccupied ? (
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-[#DFB755]" />
-                            {apt.cliente_nombre}
+                return (
+                  <div key={slot.hora}>
+                    {/* Línea de escáner en tiempo real (Live Timeline Indicator) */}
+                    {isCurrentSlot && (
+                      <div className="relative z-10 px-4 py-1.5 bg-gradient-to-r from-[#DFB755]/25 via-amber-400/15 to-transparent border-y border-[#DFB755]/50 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[11px] font-black text-[#DFB755] uppercase tracking-wider">
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DFB755] opacity-80" />
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#DFB755]" />
                           </span>
-                          {apt.cliente_fidelidad && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1 ${getLoyaltyBadge(apt.cliente_fidelidad)}`}>
-                              <Sparkles className="w-2.5 h-2.5" />
-                              {apt.cliente_fidelidad}
-                            </span>
-                          )}
-                          <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${getStatusBadge(apt.estado)}`}>
-                            {apt.estado}
-                          </span>
-                          {apt.paquete_nombre && (
-                            <span className="px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/30">
-                              Paquete
-                            </span>
-                          )}
+                          <span>Hora Actual en Barbería · {currentTimeStr}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <Scissors className="w-3 h-3 text-[#DFB755]" />
-                          <span>{apt.paquete_nombre || apt.servicio_nombre}</span>
-                          <span className="text-muted-foreground/60">•</span>
-                          <span>{apt.servicio_duracion || 30} min</span>
-                          {apt.cliente_telefono && (
-                            <>
-                              <span className="text-muted-foreground/60">•</span>
-                              <span className="hidden md:inline">{apt.cliente_telefono}</span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-muted-foreground/70">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500/60" />
-                        <span className="text-xs font-semibold italic">
-                          Espacio libre — No hay cita programada para esta hora
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline">
+                          Franja en Curso
                         </span>
                       </div>
                     )}
-                  </div>
 
-                  {/* Botón de acción */}
-                  <div className="shrink-0 flex items-center justify-end gap-2">
-                    {isOccupied ? (
-                      <>
-                        {apt.estado === "Programada" && (
-                          <button
-                            type="button"
-                            onClick={() => handleCompleteAppointment(apt.id_cita)}
-                            className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                            title="Marcar como atendida"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Atendida</span>
-                          </button>
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                      whileHover={{ x: 3 }}
+                      className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                        isCurrentSlot
+                          ? "bg-[#DFB755]/10 border-l-4 border-l-[#DFB755] shadow-xs"
+                          : isOccupied
+                          ? "bg-[#DFB755]/5 hover:bg-[#DFB755]/10 border-l-4 border-l-[#DFB755]/60"
+                          : "hover:bg-accent/40 border-l-4 border-l-transparent"
+                      }`}
+                    >
+                      {/* Hora */}
+                      <div className="flex items-center gap-3 w-32 shrink-0">
+                        <div className={`p-2 rounded-xl transition-colors ${
+                          isCurrentSlot
+                            ? "bg-[#DFB755] text-black shadow-md shadow-[#DFB755]/30 font-black"
+                            : isOccupied
+                            ? "bg-[#DFB755]/15 text-[#DFB755]"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-black text-foreground font-mono">
+                            {slot.hora}
+                          </span>
+                          <span className="block text-[10px] text-muted-foreground uppercase font-bold">
+                            {isCurrentSlot ? "Ahora" : isOccupied ? "Ocupado" : "Disponible"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Contenido / Cliente */}
+                      <div className="flex-1 min-w-0">
+                        {isOccupied ? (
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5 text-[#DFB755]" />
+                                {apt.cliente_nombre}
+                              </span>
+                              {apt.cliente_fidelidad && (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border flex items-center gap-1 ${getLoyaltyBadge(apt.cliente_fidelidad)}`}>
+                                  <Sparkles className="w-2.5 h-2.5" />
+                                  {apt.cliente_fidelidad}
+                                </span>
+                              )}
+                              <span className={`px-2 py-0.2 rounded-full text-[10px] font-bold border ${getStatusBadge(apt.estado)}`}>
+                                {apt.estado}
+                              </span>
+                              {apt.paquete_nombre && (
+                                <span className="px-2 py-0.2 rounded-full text-[10px] font-extrabold bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/30">
+                                  Paquete
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <Scissors className="w-3 h-3 text-[#DFB755]" />
+                              <span>{apt.paquete_nombre || apt.servicio_nombre}</span>
+                              <span className="text-muted-foreground/60">•</span>
+                              <span>{apt.servicio_duracion || 30} min</span>
+                              {apt.cliente_telefono && (
+                                <>
+                                  <span className="text-muted-foreground/60">•</span>
+                                  <span className="hidden md:inline">{apt.cliente_telefono}</span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-muted-foreground/70">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500/60" />
+                            <span className="text-xs font-semibold italic">
+                              Espacio libre — No hay cita programada para esta hora
+                            </span>
+                          </div>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedAppointment(apt)}
-                          className="px-3.5 py-2 rounded-xl bg-accent hover:bg-[#DFB755]/20 hover:text-[#DFB755] border border-border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ver Detalle</span>
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-[11px] font-bold text-muted-foreground/60 bg-muted/40 px-3 py-1.5 rounded-lg">
-                        Libre para asignación
-                      </span>
-                    )}
+                      </div>
+
+                      {/* Botón de acción */}
+                      <div className="shrink-0 flex items-center justify-end gap-2">
+                        {isOccupied ? (
+                          <>
+                            {apt.estado === "Programada" && (
+                              <button
+                                type="button"
+                                onClick={() => handleCompleteAppointment(apt.id_cita)}
+                                className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer hover:scale-105 active:scale-95"
+                                title="Marcar como atendida"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Atendida</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppointment(apt)}
+                              className="px-3.5 py-2 rounded-xl bg-accent hover:bg-[#DFB755]/20 hover:text-[#DFB755] border border-border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Ver Detalle</span>
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[11px] font-bold text-muted-foreground/60 bg-muted/40 px-3 py-1.5 rounded-lg">
+                            Libre para asignación
+                          </span>
+                        )}
+                      </div>
+                    </motion.div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
       </div>

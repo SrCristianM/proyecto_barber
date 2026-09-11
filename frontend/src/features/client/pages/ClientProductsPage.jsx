@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
-import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import confetti from "canvas-confetti";
 import ClientImage from "../components/ClientImage";
 import ClientCartDrawer from "../components/ClientCartDrawer";
 import { getClientProducts } from "../services/clientStorageService";
@@ -11,6 +13,17 @@ export default function ClientProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalQuantity, setModalQuantity] = useState(1);
+
+  // Referencia para animación Fly-to-Cart hacia el header
+  const cartBtnRef = useRef(null);
+  const [flyingItems, setFlyingItems] = useState([]);
+  const [isCartBouncing, setIsCartBouncing] = useState(false);
+
+  // Estado de Productos dinámico
+  const [products, setProducts] = useState(() => getClientProducts());
+  const loadProducts = () => {
+    setProducts(getClientProducts());
+  };
 
   // Estado del Carrito de Compras
   const [cart, setCart] = useState(() => {
@@ -37,8 +50,6 @@ export default function ClientProductsPage() {
     setModalQuantity(1);
   }, [selectedProduct]);
 
-  const products = useMemo(() => getClientProducts(), []);
-
   const categories = useMemo(() => {
     const cats = ["all"];
     products.forEach((p) => {
@@ -62,22 +73,78 @@ export default function ClientProductsPage() {
     });
   }, [products, searchTerm, selectedCategory]);
 
-  const handleAddToCart = (product, quantity = 1) => {
+  const handleAddToCart = (product, quantity = 1, e = null) => {
     if (Number(product.stock || 0) <= 0) {
       toast.error("Este producto está agotado temporalmente.");
       return;
+    }
+
+    // Efecto Fly-to-Cart hacia el botón del header
+    if (e && cartBtnRef.current) {
+      const targetRect = cartBtnRef.current.getBoundingClientRect();
+      const startX = e.clientX || window.innerWidth / 2;
+      const startY = e.clientY || window.innerHeight / 2;
+      const endX = Math.max(30, Math.min(window.innerWidth - 30, targetRect.left + targetRect.width / 2));
+      const endY = Math.max(20, targetRect.top + targetRect.height / 2);
+
+      const flyId = Date.now() + Math.random();
+      setFlyingItems((prev) => [
+        ...prev,
+        {
+          id: flyId,
+          startX,
+          startY,
+          endX,
+          endY,
+          image: product.imagen_url,
+          name: product.nombre,
+        },
+      ]);
+
+      // Animación de impacto en carrito (bounce + micro-confetti) tras 600ms
+      setTimeout(() => {
+        setIsCartBouncing(true);
+        setTimeout(() => setIsCartBouncing(false), 500);
+
+        if (targetRect.top >= -20 && targetRect.bottom <= window.innerHeight + 100) {
+          try {
+            const xRatio = Math.max(0.1, Math.min(0.9, (targetRect.left + targetRect.width / 2) / window.innerWidth));
+            const yRatio = Math.max(0.05, Math.min(0.9, (targetRect.top + targetRect.height / 2) / window.innerHeight));
+            confetti({
+              particleCount: 18,
+              spread: 50,
+              origin: { x: xRatio, y: yRatio },
+              colors: ["#DFB755", "#E8C466", "#FFFFFF", "#DDAE41"],
+              disableForReducedMotion: true,
+              scalar: 0.65,
+            });
+          } catch {
+            // Si confetti no puede ejecutarse, continuar normalmente
+          }
+        }
+      }, 600);
     }
 
     setCart((prevCart) => {
       const existing = prevCart.find((it) => it.id_producto === product.id_producto);
       if (existing) {
         const newQty = Math.min(Number(product.stock || 99), existing.cantidad + quantity);
-        toast.success(`Se actualizó la cantidad de "${product.nombre}" en tu carrito.`);
+        toast.success(`Se actualizó la cantidad de "${product.nombre}" en tu carrito.`, {
+          action: {
+            label: "Ver Carrito",
+            onClick: () => setIsCartOpen(true),
+          },
+        });
         return prevCart.map((it) =>
           it.id_producto === product.id_producto ? { ...it, cantidad: newQty } : it
         );
       }
-      toast.success(`¡"${product.nombre}" añadido al carrito!`);
+      toast.success(`¡"${product.nombre}" añadido al carrito!`, {
+        action: {
+          label: "Ver Carrito",
+          onClick: () => setIsCartOpen(true),
+        },
+      });
       return [
         ...prevCart,
         {
@@ -87,8 +154,8 @@ export default function ClientProductsPage() {
           imagen_url: product.imagen_url,
           categoria: product.categoria,
           stock: Number(product.stock || 99),
-          cantidad: quantity
-        }
+          cantidad: quantity,
+        },
       ];
     });
   };
@@ -115,7 +182,47 @@ export default function ClientProductsPage() {
   const totalCartCount = cart.reduce((sum, it) => sum + it.cantidad, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* ORBS VOLADORES (FLY-TO-CART) */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+        <AnimatePresence>
+          {flyingItems.map((item) => (
+            <motion.div
+              key={item.id}
+              initial={{
+                x: item.startX - 24,
+                y: item.startY - 24,
+                scale: 1,
+                opacity: 1,
+                rotate: 0,
+              }}
+              animate={{
+                x: item.endX - 20,
+                y: item.endY - 20,
+                scale: 0.2,
+                opacity: 0.85,
+                rotate: 360,
+              }}
+              exit={{ opacity: 0, scale: 0 }}
+              transition={{
+                duration: 0.6,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              onAnimationComplete={() => {
+                setFlyingItems((prev) => prev.filter((it) => it.id !== item.id));
+              }}
+              className="absolute w-12 h-12 rounded-2xl overflow-hidden border-2 border-[#E8C466] shadow-2xl bg-black/90 flex items-center justify-center backdrop-blur-md"
+            >
+              {item.image ? (
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+              ) : (
+                <ShoppingBag className="w-6 h-6 text-[#E8C466]" />
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
       {/* CABECERA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
@@ -126,20 +233,32 @@ export default function ClientProductsPage() {
           </p>
         </div>
 
-        {/* Botón Abrir Carrito */}
-        <button
+        {/* Botón Abrir Carrito con Rebote */}
+        <motion.button
+          ref={cartBtnRef}
           type="button"
           onClick={() => setIsCartOpen(true)}
+          animate={
+            isCartBouncing
+              ? { scale: [1, 1.25, 0.92, 1.15, 1], rotate: [0, -5, 5, -2, 0] }
+              : { scale: 1, rotate: 0 }
+          }
+          transition={{ duration: 0.45 }}
           className="relative px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
         >
           <ShoppingBag className="w-4 h-4 text-black" />
           <span>VER CARRITO</span>
           {totalCartCount > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-black text-white ml-1 animate-pulse">
+            <motion.span
+              key={totalCartCount}
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+              className="px-2 py-0.5 rounded-full text-[10px] font-black bg-black text-white ml-1 shadow-xs"
+            >
               {totalCartCount}
-            </span>
+            </motion.span>
           )}
-        </button>
+        </motion.button>
       </div>
 
       {/* FILTROS Y BÚSQUEDA */}
@@ -256,7 +375,7 @@ export default function ClientProductsPage() {
                     <button
                       type="button"
                       disabled={!isAvailable}
-                      onClick={() => handleAddToCart(prod, 1)}
+                      onClick={(e) => handleAddToCart(prod, 1, e)}
                       className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] active:scale-95 text-black text-xs font-black shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
@@ -362,8 +481,8 @@ export default function ClientProductsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      handleAddToCart(selectedProduct, modalQuantity);
+                    onClick={(e) => {
+                      handleAddToCart(selectedProduct, modalQuantity, e);
                       setSelectedProduct(null);
                     }}
                     className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black text-xs font-black shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
@@ -387,6 +506,8 @@ export default function ClientProductsPage() {
           </div>
         </Modal>
       )}
+
+
 
       {/* DRAWER DEL CARRITO DE COMPRAS */}
       <ClientCartDrawer

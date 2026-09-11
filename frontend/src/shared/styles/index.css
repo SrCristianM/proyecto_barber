@@ -77,3 +77,59 @@
   animation: snipP4 0.6s ease-out forwards;
 }
 
+@keyframes barberPoleScroll {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 34px 0;
+  }
+}
+
+.barber-pole-cylinder {
+  background: repeating-linear-gradient(
+    -45deg,
+    #E8C466,
+    #E8C466 5px,
+    #13161B 5px,
+    #13161B 10px,
+    #DFB755 10px,
+    #DFB755 15px,
+    #27272A 15px,
+    #27272A 20px
+  );
+  background-size: 28px 28px;
+  animation: barberPoleScroll 1.5s linear infinite;
+}
+
+.barber-pole-classic {
+  background: repeating-linear-gradient(
+    -45deg,
+    #EF4444,
+    #EF4444 5px,
+    #FFFFFF 5px,
+    #FFFFFF 10px,
+    #3B82F6 10px,
+    #3B82F6 15px,
+    #FFFFFF 15px,
+    #FFFFFF 20px
+  );
+  background-size: 28px 28px;
+  animation: barberPoleScroll 1.5s linear infinite;
+}
+
+@keyframes metallicShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-metallic-shimmer {
+  background-size: 250% 100%;
+  animation: metallicShimmer 2.8s infinite linear;
+}
+
+

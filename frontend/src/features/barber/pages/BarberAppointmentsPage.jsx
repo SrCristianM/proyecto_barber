@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 import {
   Scissors,
   Search,
@@ -28,11 +29,11 @@ import {
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
     case "Oro":
-      return "bg-amber-500/15 text-amber-500 border-amber-500/30";
+      return "bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 text-amber-400 border-amber-500/40 animate-metallic-shimmer shadow-xs";
     case "Plata":
-      return "bg-slate-300/15 text-slate-300 border-slate-400/30";
+      return "bg-gradient-to-r from-slate-400/20 via-slate-200/30 to-slate-400/20 text-slate-300 border-slate-400/40 animate-metallic-shimmer shadow-xs";
     case "Bronce":
-      return "bg-amber-700/15 text-amber-600 border-amber-700/30";
+      return "bg-gradient-to-r from-amber-700/20 via-amber-600/30 to-amber-700/20 text-amber-600 border-amber-700/40 animate-metallic-shimmer shadow-xs";
     default:
       return "bg-primary/15 text-primary border-primary/30";
   }
@@ -63,7 +64,15 @@ export default function BarberAppointmentsPage() {
   const handleCompleteAppointment = (id_cita) => {
     const res = completeBarberAppointment(id_cita);
     if (res.success) {
-      toast.success(`¡Cita #${id_cita} marcada como Completada!`);
+      confetti({
+        particleCount: 85,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
+      });
+      toast.success(`¡Cita #${id_cita} marcada como Completada!`, {
+        description: "Servicio registrado correctamente."
+      });
       loadAppointments();
       setSelectedAppointment(null);
     } else {

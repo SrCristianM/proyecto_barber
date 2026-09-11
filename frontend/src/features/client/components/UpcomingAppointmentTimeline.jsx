@@ -11,10 +11,15 @@ import {
   AlertCircle,
   ExternalLink,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  MapPin,
+  Navigation,
+  Send,
+  Ticket
 } from "lucide-react";
 import { createGoogleCalendarUrl, downloadIcsFile, createWhatsAppShareUrl } from "../utils/calendarUtils";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
+import { toast } from "sonner";
 
 export default function UpcomingAppointmentTimeline({
   appointment,
@@ -22,6 +27,7 @@ export default function UpcomingAppointmentTimeline({
   onCancel
 }) {
   const [countdown, setCountdown] = useState("");
+  const [isToday, setIsToday] = useState(false);
 
   useEffect(() => {
     if (!appointment) return;
@@ -30,6 +36,8 @@ export default function UpcomingAppointmentTimeline({
       const aptDate = new Date(`${appointment.fecha}T${appointment.hora.substring(0, 5)}:00`);
       const now = new Date();
       const diffMs = aptDate - now;
+      const todayStr = now.toISOString().split("T")[0];
+      setIsToday(appointment.fecha === todayStr);
 
       if (diffMs <= 0) {
         setCountdown("¡Es momento de tu cita!");
@@ -41,9 +49,9 @@ export default function UpcomingAppointmentTimeline({
       const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
       if (diffDays > 0) {
-        setCountdown(`Faltan ${diffDays}d ${diffHours}h para tu cita`);
+        setCountdown(`Faltan ${diffDays}d ${diffHours}h para tu turno`);
       } else if (diffHours > 0) {
-        setCountdown(`Faltan ${diffHours}h ${diffMinutes}m para tu cita`);
+        setCountdown(`Faltan ${diffHours}h ${diffMinutes}m para tu turno`);
       } else {
         setCountdown(`¡Tu cita es hoy en ${diffMinutes} minutos!`);
       }
@@ -84,25 +92,45 @@ export default function UpcomingAppointmentTimeline({
     { title: "Completada", desc: "Listo para lucir", done: false }
   ];
 
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card/95 to-background border border-[#DFB755]/30 p-6 sm:p-7 shadow-xl space-y-6">
-      {/* Decoración dorada */}
-      <div className="absolute top-0 right-0 w-60 h-60 bg-[#DFB755]/10 rounded-bl-full pointer-events-none blur-2xl" />
+  const handleNotifyOnMyWay = () => {
+    const text = encodeURIComponent(
+      `¡Hola! Confirmo que voy en camino a mi turno de hoy a las ${appointment.hora.substring(0, 5)} con ${appointment.barberoNombre} en Tu Turno Barber.`
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+    toast.success("Abriendo WhatsApp para avisar que vas en camino...");
+  };
 
-      {/* Header con Contador */}
-      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+  const handleOpenMaps = () => {
+    window.open("https://maps.google.com/?q=Barberia+Tu+Turno+Barber", "_blank");
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card/95 to-background border-2 border-[#DFB755]/40 p-6 sm:p-7 shadow-2xl shadow-[#DFB755]/10 space-y-6">
+      {/* Troquelados circulares laterales estilo Boarding Pass */}
+      <div className="hidden sm:block absolute top-[45%] -left-4 -translate-y-1/2 w-8 h-8 rounded-full bg-background border-r-2 border-[#DFB755]/40 z-20 shadow-inner" />
+      <div className="hidden sm:block absolute top-[45%] -right-4 -translate-y-1/2 w-8 h-8 rounded-full bg-background border-l-2 border-[#DFB755]/40 z-20 shadow-inner" />
+
+      {/* Decoración dorada superior */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-[#DFB755]/10 rounded-bl-full pointer-events-none blur-3xl" />
+
+      {/* HEADER DE PASE DE ABORDAJE */}
+      <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-              Próxima Cita Activa
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 dark:bg-card border border-[#DFB755]/50 text-[#DFB755] shadow-xs">
+              <Ticket className="w-3 h-3 text-[#DFB755]" />
+              PASE DE SERVICIO · BOARDING PASS
             </span>
-            <span className="text-xs font-bold text-[#DDAE41] dark:text-[#E8C466] flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
+            <span className="text-xs font-black text-[#DDAE41] dark:text-[#E8C466] flex items-center gap-1.5 bg-[#DFB755]/10 px-2.5 py-0.5 rounded-full border border-[#DFB755]/20">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DFB755] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#DFB755]" />
+              </span>
               {countdown}
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-black text-foreground mt-1">
-            {appointment.servicioNombre || "Servicio de Barbería"}
+          <h3 className="text-xl sm:text-2xl font-black text-foreground mt-1.5 flex items-center gap-2">
+            <span>{appointment.servicioNombre || "Servicio de Barbería"}</span>
           </h3>
         </div>
 
@@ -112,7 +140,7 @@ export default function UpcomingAppointmentTimeline({
             href={createGoogleCalendarUrl(appointment)}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-2 rounded-xl bg-muted/60 hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1.5 border border-border"
+            className="px-3 py-2 rounded-xl bg-muted/60 hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1.5 border border-border hover:border-[#DFB755]/40"
             title="Agregar a Google Calendar"
           >
             <CalendarCheck className="w-3.5 h-3.5 text-[#DFB755]" />
@@ -122,7 +150,7 @@ export default function UpcomingAppointmentTimeline({
           <button
             type="button"
             onClick={() => downloadIcsFile(appointment)}
-            className="px-3 py-2 rounded-xl bg-muted/60 hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1.5 border border-border cursor-pointer"
+            className="px-3 py-2 rounded-xl bg-muted/60 hover:bg-accent text-foreground text-xs font-bold transition-colors flex items-center gap-1.5 border border-border hover:border-[#DFB755]/40 cursor-pointer"
             title="Descargar para Apple Calendar / Outlook (.ics)"
           >
             <Download className="w-3.5 h-3.5 text-[#DFB755]" />
@@ -141,32 +169,75 @@ export default function UpcomingAppointmentTimeline({
         </div>
       </div>
 
-      {/* Detalles de la cita */}
+      {/* DETALLES DE VUELO/TURNO (ESTILO TICKET) */}
       <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div className="p-3 rounded-2xl bg-muted/30 border border-border">
-          <span className="text-[10px] text-muted-foreground font-bold uppercase block">Fecha</span>
-          <p className="font-extrabold text-foreground mt-0.5">{appointment.fecha}</p>
+        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs">
+          <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Fecha de Cita</span>
+          <p className="text-sm font-black text-foreground mt-0.5">{appointment.fecha}</p>
+          <span className="text-[10px] text-emerald-500 font-bold block mt-0.5">
+            {isToday ? "¡Es el día de hoy!" : "Turno agendado"}
+          </span>
         </div>
-        <div className="p-3 rounded-2xl bg-muted/30 border border-border">
-          <span className="text-[10px] text-muted-foreground font-bold uppercase block">Hora</span>
-          <p className="font-extrabold text-foreground mt-0.5">{appointment.hora.substring(0, 5)}</p>
+        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs">
+          <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Hora Exacta</span>
+          <p className="text-base font-black text-[#DFB755] font-mono mt-0.5">{appointment.hora.substring(0, 5)}</p>
+          <span className="text-[10px] text-muted-foreground block mt-0.5">Puntualidad sugerida</span>
         </div>
-        <div className="p-3 rounded-2xl bg-muted/30 border border-border">
-          <span className="text-[10px] text-muted-foreground font-bold uppercase block">Barbero</span>
-          <p className="font-extrabold text-foreground mt-0.5 truncate">{appointment.barberoNombre}</p>
+        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs">
+          <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Barbero Asignado</span>
+          <p className="text-sm font-black text-foreground mt-0.5 truncate flex items-center gap-1">
+            <User className="w-3.5 h-3.5 text-[#DFB755]" />
+            {appointment.barberoNombre}
+          </p>
+          <span className="text-[10px] text-[#FFE082] font-semibold block mt-0.5">Estación VIP</span>
         </div>
-        <div className="p-3 rounded-2xl bg-muted/30 border border-border">
-          <span className="text-[10px] text-muted-foreground font-bold uppercase block">Precio</span>
-          <p className="font-black text-[#DDAE41] dark:text-[#E8C466] mt-0.5">
+        <div className="p-3.5 rounded-2xl bg-card border border-border shadow-xs">
+          <span className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider block">Total a Pagar</span>
+          <p className="text-base font-black text-[#DDAE41] dark:text-[#E8C466] mt-0.5">
             ${Number(appointment.precio || 0).toLocaleString("es-CO")}
           </p>
+          <span className="text-[10px] text-muted-foreground block mt-0.5">Pago en recepción</span>
         </div>
       </div>
 
-      {/* Stepper visual animado */}
-      <div className="relative z-10 pt-2">
+      {/* LÍNEA DE TROQUELADO / TEAR LINE */}
+      <div className="relative my-2">
+        <div className="border-t-2 border-dashed border-[#DFB755]/30 -mx-6 sm:-mx-7" />
+      </div>
+
+      {/* BOTONES DE ACCIÓN RÁPIDA: "VOY EN CAMINO" & "CÓMO LLEGAR" */}
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 bg-[#DFB755]/5 border border-[#DFB755]/20 p-3.5 rounded-2xl">
+        <div className="flex items-center gap-2 text-xs">
+          <MapPin className="w-4 h-4 text-[#DFB755]" />
+          <span className="font-bold text-foreground">Tu Turno Barber Club</span>
+          <span className="text-muted-foreground hidden sm:inline">· Calle 10 # 43-20</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleOpenMaps}
+            className="px-3.5 py-1.5 rounded-xl bg-card hover:bg-accent border border-border text-foreground text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:border-[#DFB755]/50"
+          >
+            <Navigation className="w-3.5 h-3.5 text-[#DFB755]" />
+            <span>Cómo llegar</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNotifyOnMyWay}
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/20 active:scale-95"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Voy en camino</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stepper visual animado del servicio */}
+      <div className="relative z-10 pt-1">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground block mb-3">
-          Progreso del Servicio
+          Estado del Protocolo en Barbería
         </span>
         <div className="grid grid-cols-4 gap-2 relative">
           {steps.map((step, idx) => (
@@ -174,7 +245,7 @@ export default function UpcomingAppointmentTimeline({
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs transition-all shadow-sm ${
                   step.done
-                    ? "bg-gradient-to-r from-[#DFB755] to-[#DDAE41] text-black shadow-[#DFB755]/30 ring-2 ring-[#DFB755]/50"
+                    ? "bg-gradient-to-r from-[#DFB755] to-[#DDAE41] text-black shadow-[#DFB755]/30 ring-2 ring-[#DFB755]/50 font-black"
                     : "bg-muted text-muted-foreground border border-border"
                 }`}
               >
@@ -211,3 +282,4 @@ export default function UpcomingAppointmentTimeline({
     </div>
   );
 }
+

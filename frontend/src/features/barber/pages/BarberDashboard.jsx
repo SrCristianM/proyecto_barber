@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
+import confetti from "canvas-confetti";
 import {
   Calendar,
   Clock,
@@ -19,6 +20,8 @@ import {
 } from "lucide-react";
 import Modal from "../../admin/shared/components/Modal";
 import SalonAmbienceWidget from "../../client/components/SalonAmbienceWidget";
+import BarberPoleIndicator from "../components/BarberPoleIndicator";
+import AnimatedCounter from "../components/AnimatedCounter";
 import { toast } from "sonner";
 import {
   getCurrentBarberProfile,
@@ -45,11 +48,11 @@ const calculateEndTime = (startTimeStr, durationMinutes = 30) => {
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
     case "Oro":
-      return "bg-amber-500/15 text-amber-500 border-amber-500/30";
+      return "bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 text-amber-400 border-amber-500/40 animate-metallic-shimmer shadow-xs";
     case "Plata":
-      return "bg-slate-300/15 text-slate-300 border-slate-400/30";
+      return "bg-gradient-to-r from-slate-400/20 via-slate-200/30 to-slate-400/20 text-slate-300 border-slate-400/40 animate-metallic-shimmer shadow-xs";
     case "Bronce":
-      return "bg-amber-700/15 text-amber-600 border-amber-700/30";
+      return "bg-gradient-to-r from-amber-700/20 via-amber-600/30 to-amber-700/20 text-amber-600 border-amber-700/40 animate-metallic-shimmer shadow-xs";
     default:
       return "bg-primary/15 text-primary border-primary/30";
   }
@@ -101,7 +104,16 @@ export default function BarberDashboard() {
   const handleCompleteAppointment = (id_cita) => {
     const res = completeBarberAppointment(id_cita);
     if (res.success) {
-      toast.success(`¡Cita #${id_cita} marcada como Completada con éxito!`);
+      // Celebración con confeti dorado al completar cita
+      confetti({
+        particleCount: 85,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
+      });
+      toast.success(`¡Cita #${id_cita} completada con éxito!`, {
+        description: "Cliente registrado como atendido en la jornada de hoy."
+      });
       loadDashboardData();
       if (selectedAppointment && selectedAppointment.id_cita === id_cita) {
         setSelectedAppointment(null);
@@ -132,9 +144,8 @@ export default function BarberDashboard() {
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-[#DFB755]/15 text-[#DFB755] border border-[#DFB755]/30">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Jornada Laboral Activa</span>
+            <div className="flex items-center gap-2">
+              <BarberPoleIndicator variant="gold" label="Jornada Laboral Activa" showPulse={true} />
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
               ¡Hola, {barber?.nombre || "Barbero"}!
@@ -164,10 +175,13 @@ export default function BarberDashboard() {
         </div>
       </div>
 
-      {/* 2. TARJETAS DE RESUMEN CLAVE DEL BARBERO */}
+      {/* 2. TARJETAS DE RESUMEN CLAVE CON CONTEO ANIMADO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Citas de Hoy */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-[#DFB755]/40 transition-all">
+        <motion.div
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-[#DFB755]/50 hover:shadow-md hover:shadow-[#DFB755]/10 transition-all cursor-default"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Citas de Hoy</span>
             <div className="p-2 rounded-xl bg-[#DFB755]/15 text-[#DFB755]">
@@ -175,18 +189,22 @@ export default function BarberDashboard() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-foreground">
-              {todayAppointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada").length}
-            </span>
+            <AnimatedCounter
+              value={todayAppointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada").length}
+              className="text-3xl font-black text-foreground"
+            />
             <span className="text-xs text-muted-foreground font-medium">programada(s)</span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
             Total agendadas para hoy: {todayAppointments.length}
           </p>
-        </div>
+        </motion.div>
 
         {/* Citas Completadas */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-emerald-500/40 transition-all">
+        <motion.div
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-emerald-500/50 hover:shadow-md hover:shadow-emerald-500/10 transition-all cursor-default"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Completadas Hoy</span>
             <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-500">
@@ -194,18 +212,22 @@ export default function BarberDashboard() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-emerald-500">
-              {todayAppointments.filter((a) => a.estado === "Completada").length}
-            </span>
+            <AnimatedCounter
+              value={todayAppointments.filter((a) => a.estado === "Completada").length}
+              className="text-3xl font-black text-emerald-500"
+            />
             <span className="text-xs text-muted-foreground font-medium">atendida(s)</span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
             Clientes atendidos hoy
           </p>
-        </div>
+        </motion.div>
 
         {/* Novedades Pendientes */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-amber-500/40 transition-all">
+        <motion.div
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-amber-500/50 hover:shadow-md hover:shadow-amber-500/10 transition-all cursor-default"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Novedades</span>
             <div className="p-2 rounded-xl bg-amber-500/15 text-amber-500">
@@ -213,18 +235,22 @@ export default function BarberDashboard() {
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-amber-500">
-              {pendingNovelties.length}
-            </span>
+            <AnimatedCounter
+              value={pendingNovelties.length}
+              className="text-3xl font-black text-amber-500"
+            />
             <span className="text-xs text-muted-foreground font-medium">en revisión</span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
             Solicitudes pendientes por admin
           </p>
-        </div>
+        </motion.div>
 
         {/* Turno Actual */}
-        <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-primary/40 transition-all">
+        <motion.div
+          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          className="p-5 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 transition-all cursor-default"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Horario Actual</span>
             <div className="p-2 rounded-xl bg-primary/15 text-primary">
@@ -236,16 +262,16 @@ export default function BarberDashboard() {
               08:00 AM - 06:00 PM
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+          <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
             Jornada diurna asignada
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* 3. SECCIÓN PRINCIPAL: PRÓXIMA CITA & AGENDA DEL DÍA */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* COLUMNA IZQUIERDA (1/3): PRÓXIMA CITA DESTACADA */}
+        {/* COLUMNA IZQUIERDA (1/3): PRÓXIMA CITA DESTACADA (MODO SILLA) */}
         <div className="lg:col-span-1 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base sm:text-lg font-black tracking-tight text-foreground flex items-center gap-2">
@@ -253,21 +279,33 @@ export default function BarberDashboard() {
               <span>Próxima Cita</span>
             </h2>
             {nextAppointment && (
-              <span className="text-xs font-bold text-[#DFB755] bg-[#DFB755]/10 px-2 py-0.5 rounded-md border border-[#DFB755]/20">
+              <span className="text-xs font-bold text-[#DFB755] bg-[#DFB755]/10 px-2 py-0.5 rounded-md border border-[#DFB755]/20 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DFB755] animate-ping" />
                 Inmediata
               </span>
             )}
           </div>
 
           {nextAppointment ? (
-            <div className="p-6 rounded-3xl bg-gradient-to-b from-card via-card to-card/70 border border-[#DFB755]/40 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mr-12 -mt-12 w-32 h-32 rounded-full bg-[#DFB755]/15 blur-2xl pointer-events-none" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="p-6 rounded-3xl bg-gradient-to-b from-card via-card to-card/70 border-2 border-[#DFB755]/50 shadow-xl shadow-[#DFB755]/10 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 -mr-12 -mt-12 w-32 h-32 rounded-full bg-[#DFB755]/20 blur-2xl pointer-events-none" />
 
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-border/80">
-                  <span className="text-xs font-extrabold uppercase tracking-widest text-[#DFB755]">
-                    Cita #{nextAppointment.id_cita}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-[#DFB755]">
+                      Cita #{nextAppointment.id_cita} · Silla Activa
+                    </span>
+                  </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadge(nextAppointment.estado)}`}>
                     {nextAppointment.estado}
                   </span>
@@ -282,7 +320,8 @@ export default function BarberDashboard() {
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold">Cliente</p>
                         {nextAppointment.cliente_fidelidad && (
-                          <span className={`px-2 py-0.2 rounded-full text-[9px] font-black border ${getLoyaltyBadge(nextAppointment.cliente_fidelidad)}`}>
+                          <span className={`px-2 py-0.2 rounded-full text-[9px] font-black border flex items-center gap-1 ${getLoyaltyBadge(nextAppointment.cliente_fidelidad)}`}>
+                            <Sparkles className="w-2.5 h-2.5" />
                             {nextAppointment.cliente_fidelidad}
                           </span>
                         )}
@@ -335,15 +374,19 @@ export default function BarberDashboard() {
 
                 <div className="pt-2 flex flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       type="button"
                       onClick={() => setSelectedAppointment(nextAppointment)}
                       className="py-2.5 px-3 rounded-xl bg-accent hover:bg-[#DFB755]/20 text-foreground hover:text-[#DFB755] border border-border font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Detalle</span>
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                       type="button"
                       onClick={() => handleCompleteAppointment(nextAppointment.id_cita)}
                       className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
@@ -351,7 +394,7 @@ export default function BarberDashboard() {
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Completar</span>
-                    </button>
+                    </motion.button>
                   </div>
                   <Link
                     to="/barbero/citas"
@@ -361,7 +404,7 @@ export default function BarberDashboard() {
                   </Link>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ) : (
             <div className="p-8 rounded-3xl bg-card border border-dashed border-border text-center space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-muted/40 text-muted-foreground mx-auto flex items-center justify-center">
@@ -413,8 +456,9 @@ export default function BarberDashboard() {
                 const apt = slot.cita;
 
                 return (
-                  <div
+                  <motion.div
                     key={slot.hora}
+                    whileHover={{ x: 3, transition: { duration: 0.15 } }}
                     className={`p-3.5 sm:p-4 flex items-center justify-between transition-colors ${
                       isOccupied
                         ? "bg-[#DFB755]/5 hover:bg-[#DFB755]/10"
@@ -460,7 +504,7 @@ export default function BarberDashboard() {
                           <button
                             type="button"
                             onClick={() => setSelectedAppointment(apt)}
-                            className="p-1.5 sm:px-3 sm:py-1 rounded-xl bg-accent hover:bg-[#DFB755]/20 text-foreground hover:text-[#DFB755] border border-border text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                            className="p-1.5 sm:px-3 sm:py-1 rounded-xl bg-accent hover:bg-[#DFB755]/20 text-foreground hover:text-[#DFB755] border border-border text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer hover:scale-105 active:scale-95"
                             title="Ver detalle de cita"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -473,7 +517,7 @@ export default function BarberDashboard() {
                         </span>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
