@@ -260,6 +260,17 @@
       "id_rol": 4,
       "estado": 1,
       "fecha_registro": "2026-09-11 17:25:45"
+    },
+    {
+      "id_usuario": 14,
+      "nombre": "Mateo",
+      "apellido": "Henao",
+      "correo": "mateo.henao.test@example.com",
+      "contrasena": "$2a$10$2ozCf96VlMlrp95OYTZqMeXkVW4XUCRCuijLnur57S7nLboI2qKea",
+      "telefono": "3017778899",
+      "id_rol": 4,
+      "estado": 1,
+      "fecha_registro": "2026-09-17 00:36:09"
     }
   ],
   "barberos": [
@@ -277,6 +288,13 @@
       "id_usuario": 12,
       "nivel_fidelidad": "Nuevo",
       "direccion": "",
+      "estado": 1
+    },
+    {
+      "id_cliente": 3,
+      "id_usuario": 14,
+      "nivel_fidelidad": "Bronce",
+      "direccion": "Circular 4ta # 70-15",
       "estado": 1
     }
   ],
@@ -906,6 +924,55 @@
       "accion": "Inicio de sesión",
       "ip_origen": "127.0.0.1",
       "fecha_hora": "2026-09-11 17:57:32"
+    },
+    {
+      "id_log": 52,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-16 23:57:49"
+    },
+    {
+      "id_log": 53,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:00:59"
+    },
+    {
+      "id_log": 54,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:02:14"
+    },
+    {
+      "id_log": 55,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:02:25"
+    },
+    {
+      "id_log": 56,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:24:06"
+    },
+    {
+      "id_log": 57,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:28:43"
+    },
+    {
+      "id_log": 58,
+      "id_usuario": 1,
+      "accion": "Inicio de sesión",
+      "ip_origen": "127.0.0.1",
+      "fecha_hora": "2026-09-17 00:32:15"
     }
   ]
 }
