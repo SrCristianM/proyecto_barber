@@ -1,5 +1,6 @@
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, User, RotateCcw, Download } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useAppointments } from "../hooks/useAppointments";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import AppointmentsCalendarView from "../components/AppointmentsCalendarView";
@@ -52,6 +53,10 @@ export default function AppointmentsPage() {
     openCreateFromSlot,
     openEditModal
   } = useAppointments();
+
+  const { hasPermission } = usePermissions();
+  const canCreateAppointment = hasPermission("citas", "crear");
+  const canEditAppointment = hasPermission("citas", "editar");
 
   const onHandleCreate = () => {
     handleCreate();
@@ -115,15 +120,17 @@ export default function AppointmentsPage() {
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Exportar Excel</span>
           </button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            {appointments.length === 0 ? "Crear primera cita" : "Agendar Cita"}
-          </motion.button>
+          {canCreateAppointment && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={openCreateModal}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              {appointments.length === 0 ? "Crear primera cita" : "Agendar Cita"}
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -266,8 +273,8 @@ export default function AppointmentsPage() {
               getAppointmentForSlot={getAppointmentForSlot}
               getClientName={getClientName}
               getServiceInfo={getServiceInfo}
-              onSlotClick={(barber, time) => openCreateFromSlot(barber, time)}
-              onAppointmentClick={(apt) => openEditModal(apt)}
+              onSlotClick={canCreateAppointment ? (barber, time) => openCreateFromSlot(barber, time) : undefined}
+              onAppointmentClick={canEditAppointment ? (apt) => openEditModal(apt) : undefined}
             />
           ) : (
             <AppointmentsListView
@@ -275,7 +282,7 @@ export default function AppointmentsPage() {
               getClientName={getClientName}
               getBarberName={getBarberName}
               getServiceInfo={getServiceInfo}
-              onEdit={openEditModal}
+              onEdit={canEditAppointment ? openEditModal : undefined}
             />
           )}
         </motion.div>

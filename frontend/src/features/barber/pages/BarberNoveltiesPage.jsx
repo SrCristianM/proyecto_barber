@@ -27,6 +27,7 @@ import {
   cancelBarberNovelty,
   getBarberAppointments
 } from "../services/barberStorageService";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 const NOVELTY_TYPES = [
   "Solicitud de cancelación de cita",
@@ -45,6 +46,11 @@ const emptyFormData = {
 };
 
 export default function BarberNoveltiesPage() {
+  const { hasPermission } = usePermissions();
+  const canCreateNovelty = hasPermission("horarios", "crear");
+  const canEditNovelty = hasPermission("horarios", "editar");
+  const canCancelNovelty = hasPermission("horarios", "eliminar") || hasPermission("horarios", "activar");
+
   const [novelties, setNovelties] = useState([]);
   const [barber, setBarber] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -94,10 +100,10 @@ export default function BarberNoveltiesPage() {
   // Opciones de citas para el select de "Cita Relacionada"
   const appointmentOptions = [
     { value: "Ninguna", label: "Ninguna / No aplica a cita específica" },
-    ...appointments.map((a) => ({
-      value: `Cita #${a.id_cita} - ${a.cliente_nombre} (${a.fecha} ${a.hora})`,
-      label: `Cita #${a.id_cita} — ${a.cliente_nombre} (${a.fecha} ${a.hora})`,
-      subtitle: `${a.paquete_nombre || a.servicio_nombre} • ${a.estado}`
+    ...(appointments || []).map((a) => ({
+      value: `Cita #${a.id_cita || ""} - ${a.cliente_nombre || "Cliente"} (${a.fecha || ""} ${a.hora || ""})`,
+      label: `Cita #${a.id_cita || ""} — ${a.cliente_nombre || "Cliente"} (${a.fecha || ""} ${a.hora || ""})`,
+      subtitle: `${a.paquete_nombre || a.servicio_nombre || "Servicio"} • ${a.estado || "Programada"}`
     }))
   ];
 
@@ -259,14 +265,16 @@ export default function BarberNoveltiesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreate}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nueva Solicitud</span>
-        </button>
+        {canCreateNovelty && (
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nueva Solicitud</span>
+          </button>
+        )}
       </div>
 
       {/* FILTROS CON SEARCHABLE SELECT */}
@@ -396,8 +404,8 @@ export default function BarberNoveltiesPage() {
                       <span>Detalle</span>
                     </button>
 
-                    {/* Botón Editar Solicitud (Solo si está Pendiente) */}
-                    {isPending && (
+                    {/* Botón Editar Solicitud (Solo si está Pendiente y tiene permiso) */}
+                    {isPending && canEditNovelty && (
                       <button
                         type="button"
                         onClick={() => handleOpenEdit(nov)}
@@ -409,8 +417,8 @@ export default function BarberNoveltiesPage() {
                       </button>
                     )}
 
-                    {/* Botón Cancelar Solicitud (Solo si está Pendiente) */}
-                    {isPending && (
+                    {/* Botón Cancelar Solicitud (Solo si está Pendiente y tiene permiso) */}
+                    {isPending && canCancelNovelty && (
                       <button
                         type="button"
                         onClick={() => handleOpenCancel(nov)}

@@ -130,19 +130,21 @@ export default function PurchasesTable({
                       >
                         <FileDown className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => !isAnulada && onCancel(purchase)}
-                        disabled={isAnulada}
-                        className={`p-1.5 rounded-md transition-colors ${
-                          isAnulada
-                            ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
-                            : "hover:bg-warning/10 text-warning cursor-pointer"
-                        }`}
-                        title={isAnulada ? "Factura ya anulada (acción no disponible)" : "Anular Compra"}
-                      >
-                        <Ban className="h-4 w-4" />
-                      </button>
-                      {!isAnulada && (
+                      {onCancel && (
+                        <button
+                          onClick={() => !isAnulada && onCancel(purchase)}
+                          disabled={isAnulada}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            isAnulada
+                              ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
+                              : "hover:bg-warning/10 text-warning cursor-pointer"
+                          }`}
+                          title={isAnulada ? "Factura ya anulada (acción no disponible)" : "Anular Compra"}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </button>
+                      )}
+                      {!isAnulada && onEdit && (
                         <button
                           onClick={() => onEdit(purchase)}
                           className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors cursor-pointer"
@@ -151,13 +153,15 @@ export default function PurchasesTable({
                           <Edit className="h-4 w-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => onDelete(purchase)}
-                        className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(purchase)}
+                          className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

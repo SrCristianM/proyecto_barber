@@ -1374,17 +1374,11 @@ const environment = {
 const collectionJson = JSON.stringify(collection, null, 2);
 const environmentJson = JSON.stringify(environment, null, 2);
 
-// 1. Guardar en la raíz
-fs.writeFileSync(path.resolve(rootDir, "Tu_Turno_Barber_API.postman_collection.json"), collectionJson, "utf8");
-fs.writeFileSync(path.resolve(rootDir, "Tu_Turno_Barber_Environment.postman_environment.json"), environmentJson, "utf8");
-
-// 2. Guardar en carpeta /postman
+// Guardar en carpeta /postman
 fs.writeFileSync(path.resolve(postmanDir, "Tu_Turno_Barber_API.postman_collection.json"), collectionJson, "utf8");
 fs.writeFileSync(path.resolve(postmanDir, "Tu_Turno_Barber_Environment.postman_environment.json"), environmentJson, "utf8");
 
-console.log("✅ Colección y Entorno de Postman generados exitosamente:");
-console.log("   📁 Raíz: Tu_Turno_Barber_API.postman_collection.json");
-console.log("   📁 Raíz: Tu_Turno_Barber_Environment.postman_environment.json");
+console.log("✅ Colección y Entorno de Postman generados exitosamente en carpeta /postman:");
 console.log("   📁 postman/Tu_Turno_Barber_API.postman_collection.json");
 console.log("   📁 postman/Tu_Turno_Barber_Environment.postman_environment.json");
 console.log(`   📊 Total de Carpetas: ${collection.item.length}`);

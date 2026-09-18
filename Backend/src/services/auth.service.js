@@ -37,9 +37,6 @@ export class AuthService {
 
     const token = signToken(tokenPayload);
 
-    // Registrar en bitácora
-    await AuthRepository.logAccess(user.id_usuario, "Inicio de sesión", ipAddress);
-
     // Omitir contraseña en respuesta
     const { contrasena, ...safeUser } = user;
     const clientProfile = await AuthRepository.findClientByUserId(user.id_usuario);
@@ -81,7 +78,6 @@ export class AuthService {
     };
 
     const token = signToken(tokenPayload);
-    await AuthRepository.logAccess(userId, "Registro de usuario", ipAddress);
 
     return {
       token,
@@ -130,9 +126,6 @@ export class AuthService {
   }
 
   static async logout(userId, ipAddress) {
-    if (userId) {
-      await AuthRepository.logAccess(userId, "Cierre de sesión", ipAddress);
-    }
     return true;
   }
 }

@@ -38,13 +38,23 @@ export function useRoles() {
     getRoles()
       .then((data) => {
         if (Array.isArray(data)) {
-          setRoles(
-            data.map((r) => ({
+          const mapped = data.map((r) => {
+            let perms = r.permisos || [];
+            if (Number(r.id_rol) === 1 || (r.nombre_rol && r.nombre_rol.toLowerCase().trim() === "administrador")) {
+              perms = Array.from(new Set([...perms, "roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar"]));
+            }
+            return {
               ...r,
-              permisos: r.permisos || [],
+              permisos: perms,
               alcancePorPermiso: r.alcancePorPermiso || {}
-            }))
-          );
+            };
+          });
+          setRoles(mapped);
+          try {
+            localStorage.setItem("barber_roles_db", JSON.stringify(mapped));
+          } catch (e) {
+            console.warn("Error guardando roles en localStorage:", e);
+          }
         }
       })
       .catch((err) => {
@@ -109,7 +119,18 @@ export function useRoles() {
         fecha_creacion: new Date().toISOString().replace("T", " ").substring(0, 19),
         alcancePorPermiso: {}
       };
-      setRoles((prev) => [newRole, ...prev]);
+      const updatedRoles = [newRole, ...roles];
+      setRoles(updatedRoles);
+      try {
+        localStorage.setItem("barber_roles_db", JSON.stringify(updatedRoles));
+      } catch (e) {
+        console.warn("Error guardando roles:", e);
+      }
+      window.dispatchEvent(
+        new CustomEvent("barber_permissions_updated", {
+          detail: { roleId: newRole.id_rol, permisos: newRole.permisos }
+        })
+      );
       setShowCreateModal(false);
       resetForm();
       toast.success("Rol creado con éxito.");
@@ -120,21 +141,47 @@ export function useRoles() {
 
   const handleEdit = async () => {
     if (!selectedRole) return;
+    const isTargetAdmin = Number(selectedRole.id_rol) === 1 || (selectedRole.nombre_rol && selectedRole.nombre_rol.toLowerCase().trim() === "administrador");
+    let safePerms = formData.permisos || selectedRole.permisos || [];
+    if (isTargetAdmin) {
+      safePerms = Array.from(new Set([...safePerms, "roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar"]));
+    }
+
     const payload = {
       nombre_rol: formData.nombre_rol.trim(),
       descripcion: formData.descripcion.trim(),
-      permisos: formData.permisos || selectedRole.permisos
+      permisos: safePerms
     };
 
     try {
       await updateRole(selectedRole.id_rol, payload);
-      setRoles((prev) =>
-        prev.map((role) =>
-          role.id_rol === selectedRole.id_rol
-            ? { ...role, ...payload }
-            : role
-        )
+      const updatedRoles = roles.map((role) =>
+        role.id_rol === selectedRole.id_rol
+          ? { ...role, ...payload }
+          : role
       );
+      setRoles(updatedRoles);
+
+      try {
+        localStorage.setItem("barber_roles_db", JSON.stringify(updatedRoles));
+        const rawUser = localStorage.getItem("barber_current_user");
+        if (rawUser) {
+          const currentUser = JSON.parse(rawUser);
+          if (Number(currentUser.id_rol) === Number(selectedRole.id_rol)) {
+            currentUser.permisos = payload.permisos;
+            localStorage.setItem("barber_current_user", JSON.stringify(currentUser));
+          }
+        }
+      } catch (e) {
+        console.warn("Error guardando roles o usuario:", e);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("barber_permissions_updated", {
+          detail: { roleId: selectedRole.id_rol, permisos: payload.permisos }
+        })
+      );
+
       setShowEditModal(false);
       setSelectedRole(null);
       resetForm();
@@ -148,7 +195,18 @@ export function useRoles() {
     if (!selectedRole) return;
     try {
       await deleteRole(selectedRole.id_rol);
-      setRoles((prev) => prev.filter((role) => role.id_rol !== selectedRole.id_rol));
+      const updatedRoles = roles.filter((role) => role.id_rol !== selectedRole.id_rol);
+      setRoles(updatedRoles);
+      try {
+        localStorage.setItem("barber_roles_db", JSON.stringify(updatedRoles));
+      } catch (e) {
+        console.warn("Error guardando roles:", e);
+      }
+      window.dispatchEvent(
+        new CustomEvent("barber_permissions_updated", {
+          detail: { roleId: selectedRole.id_rol, permisos: [] }
+        })
+      );
       setShowDeleteModal(false);
       setSelectedRole(null);
       toast.success("Rol eliminado.");
@@ -164,11 +222,15 @@ export function useRoles() {
 
     try {
       await updateRole(roleId, { estado: nextEstado });
-      setRoles((prev) =>
-        prev.map((role) =>
-          role.id_rol === roleId ? { ...role, estado: nextEstado } : role
-        )
+      const updatedRoles = roles.map((role) =>
+        role.id_rol === roleId ? { ...role, estado: nextEstado } : role
       );
+      setRoles(updatedRoles);
+      try {
+        localStorage.setItem("barber_roles_db", JSON.stringify(updatedRoles));
+      } catch (e) {
+        console.warn("Error guardando roles:", e);
+      }
       toast.success("Estado del rol actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar estado del rol.");

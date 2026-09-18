@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import {
   Store,
   Bell,
@@ -94,7 +95,8 @@ const DEFAULT_SYSTEM = {
 };
 
 export default function SettingsPage({ isDark, setIsDark }) {
-  const [activeSection, setActiveSection] = useState("business");
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => searchParams.get("section") || "business");
   const [hasUnsaved, setHasUnsaved] = useState(false);
 
   const saved = loadSettings();

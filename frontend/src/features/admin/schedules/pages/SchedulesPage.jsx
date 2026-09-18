@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, User, Calendar } from "lucide-react";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useSchedules, barbers, daysOfWeek } from "../hooks/useSchedules";
 import SchedulesTable from "../components/SchedulesTable";
 import SchedulesStats from "../components/SchedulesStats";
@@ -64,6 +65,12 @@ export default function SchedulesPage() {
     getBarberName
   } = useSchedules();
 
+  const { hasPermission } = usePermissions();
+  const canCreateSchedule = hasPermission("horarios", "crear");
+  const canEditSchedule = hasPermission("horarios", "editar");
+  const canToggleSchedule = hasPermission("horarios", "activar");
+  const canDeleteSchedule = hasPermission("horarios", "eliminar");
+
   const onHandleCreate = () => {
     handleCreate();
   };
@@ -100,7 +107,7 @@ export default function SchedulesPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Horarios</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona los turnos, horarios y novedades de disponibilidad</p>
         </div>
-        {activeTab === "schedules" && (
+        {activeTab === "schedules" && canCreateSchedule && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -221,6 +228,9 @@ export default function SchedulesPage() {
               onEdit={openEditModal}
               onDelete={openDeleteModal}
               getBarberName={getBarberName}
+              canEdit={canEditSchedule}
+              canToggle={canToggleSchedule}
+              canDelete={canDeleteSchedule}
             />
           </div>
         </>
@@ -256,7 +266,7 @@ export default function SchedulesPage() {
       {showDetailModal && selectedSchedule && (
         <ScheduleDetailModal
           schedule={selectedSchedule}
-          onEdit={() => { setShowDetailModal(false); openEditModal(selectedSchedule); }}
+          onEdit={canEditSchedule ? () => { setShowDetailModal(false); openEditModal(selectedSchedule); } : undefined}
           onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
         />
       )}

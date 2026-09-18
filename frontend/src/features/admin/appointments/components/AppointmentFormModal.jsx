@@ -7,6 +7,7 @@ import SearchableSelect from "../../shared/components/SearchableSelect";
 import MultiSelectSearchable from "../../shared/components/MultiSelectSearchable";
 import { ESTADOS_CITA } from "../../../../shared/types/database";
 import { validateAppointmentForm } from "../validations/appointmentValidation";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 const QUICK_TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -26,6 +27,8 @@ export default function AppointmentFormModal({
 }) {
   const isCreate = mode === "create";
   const [errors, setErrors] = useState({});
+  const { hasPermission } = usePermissions();
+  const canCancelAppointment = hasPermission("citas", "cancelar");
 
   const serviceOptions = (services || []).map((s) => ({
     value: `svc-${s.id_servicio}`,
@@ -281,7 +284,7 @@ export default function AppointmentFormModal({
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Estado de la Cita</label>
             <div className="flex flex-wrap gap-2">
-              {ESTADOS_CITA.map((estado) => (
+              {ESTADOS_CITA.filter((estado) => estado !== "Cancelada" || canCancelAppointment || formData.estado === "Cancelada").map((estado) => (
                 <label
                   key={estado}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border cursor-pointer transition-all text-xs font-medium ${

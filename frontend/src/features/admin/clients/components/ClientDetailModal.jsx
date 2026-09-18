@@ -39,16 +39,52 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone.startsWith("57") ? cleanPhone : `57${cleanPhone}`}` : null;
   const phoneUrl = client.telefono ? `tel:${client.telefono}` : null;
 
-  // Métricas calculadas o estimadas
-  const estimatedVisits = client.nivel_fidelidad === "Oro" ? 24 : client.nivel_fidelidad === "Plata" ? 12 : client.nivel_fidelidad === "Bronce" ? 5 : 1;
-  const estimatedSpent = client.nivel_fidelidad === "Oro" ? 850000 : client.nivel_fidelidad === "Plata" ? 420000 : client.nivel_fidelidad === "Bronce" ? 175000 : 35000;
-  const preferredBarber = client.id_cliente % 2 === 0 ? "Carlos Ruiz" : "Miguel Ángel";
+  // Cálculo real de visitas, consumo acumulado y barbero habitual desde la BD
+  let realVisits = 0;
+  let realSpent = 0;
+  let preferredBarber = "Sin citas registradas";
+
+  try {
+    const rawApts = localStorage.getItem("barber_appointments_db");
+    const rawSales = localStorage.getItem("barber_sales_db");
+    const rawBarbers = localStorage.getItem("barber_barbers_db");
+
+    const apts = rawApts ? JSON.parse(rawApts) : [];
+    const sales = rawSales ? JSON.parse(rawSales) : [];
+    const barbers = rawBarbers ? JSON.parse(rawBarbers) : [];
+
+    const clientApts = apts.filter((a) => Number(a.id_cliente) === Number(client.id_cliente));
+    const completedApts = clientApts.filter((a) => a.estado === "Completada");
+    realVisits = completedApts.length;
+
+    const clientSales = sales.filter((s) => Number(s.id_cliente) === Number(client.id_cliente) && s.estado !== "Anulada");
+    realSpent = clientSales.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+
+    if (clientApts.length > 0) {
+      const barberFreq = {};
+      clientApts.forEach((a) => {
+        barberFreq[a.id_barbero] = (barberFreq[a.id_barbero] || 0) + 1;
+      });
+      const topBarberId = Object.keys(barberFreq).sort((a, b) => barberFreq[b] - barberFreq[a])[0];
+      const barberMatch = barbers.find((b) => Number(b.id_barbero) === Number(topBarberId));
+      if (barberMatch) {
+        preferredBarber = `${barberMatch.nombre || "Barbero"} ${barberMatch.apellido || ""}`.trim();
+      }
+    }
+  } catch (err) {
+    console.error("Error calculando métricas reales de fidelidad:", err);
+  }
+
+  // Progreso hacia el siguiente nivel de fidelidad
+  const nextTierTarget = realVisits < 4 ? 4 : realVisits < 10 ? 10 : realVisits < 20 ? 20 : 20;
+  const nextTierName = realVisits < 4 ? "Bronce" : realVisits < 10 ? "Plata" : realVisits < 20 ? "Oro VIP" : "Máximo";
+  const progressPercent = Math.min(100, Math.round((realVisits / nextTierTarget) * 100));
 
   return (
     <Modal title="Detalle del Cliente" onClose={onClose} maxWidthClass="max-w-2xl">
       <div className="space-y-5">
         {/* Banner Superior Unificado */}
-        <div className={`p-4 sm:p-5 rounded-2xl border border-border/80 bg-gradient-to-r ${loyalty.gradient} flex items-center justify-between flex-wrap gap-3`}>
+        <div className={`p-4 sm:p-5 rounded-2xl border border-border/80 bg-gradient-to-r ${loyalty.gradient} flex items-center justify-between flex-wrap gap-3 shadow-xs`}>
           <div className="flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-card/80 border border-border flex items-center justify-center shadow-xs">
               <LoyaltyIcon className="h-6 w-6 text-primary" />
@@ -77,22 +113,41 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
           </div>
         </div>
 
-        {/* Tarjetas de Métricas Rápidas del Cliente */}
+        {/* Barra de Progreso de Fidelidad Real */}
+        <div className="p-4 bg-secondary/30 border border-border/70 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-primary" />
+              Progreso de Fidelidad: {realVisits} / {nextTierTarget} citas completadas
+            </span>
+            <span className="text-muted-foreground font-bold">
+              {nextTierName === "Máximo" ? "Nivel Máximo Alcanzado" : `Próximo: ${nextTierName}`}
+            </span>
+          </div>
+          <div className="w-full h-2.5 bg-background rounded-full overflow-hidden border border-border">
+            <div
+              className="h-full bg-gradient-to-r from-amber-500 via-primary to-amber-300 transition-all duration-500 rounded-full"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Tarjetas de Métricas Verídicas del Cliente */}
         <div className="grid grid-cols-3 gap-3">
           <div className="p-3.5 bg-card border border-border rounded-xl text-center shadow-2xs">
             <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs mb-1">
               <Calendar className="h-3.5 w-3.5 text-primary" />
-              <span>Visitas / Citas</span>
+              <span>Citas Completadas</span>
             </div>
-            <span className="text-lg font-bold text-foreground">{estimatedVisits}</span>
+            <span className="text-lg font-bold text-foreground">{realVisits}</span>
           </div>
 
           <div className="p-3.5 bg-card border border-border rounded-xl text-center shadow-2xs">
             <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs mb-1">
-              <DollarSign className="h-3.5 w-3.5 text-success" />
-              <span>Total Consumido</span>
+              <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Gasto Total Real</span>
             </div>
-            <span className="text-lg font-bold text-foreground">${estimatedSpent.toLocaleString("es-CO")}</span>
+            <span className="text-lg font-bold text-foreground">${realSpent.toLocaleString("es-CO")}</span>
           </div>
 
           <div className="p-3.5 bg-card border border-border rounded-xl text-center shadow-2xs">
@@ -100,7 +155,9 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
               <UserCheck className="h-3.5 w-3.5 text-amber-500" />
               <span>Barbero Habitual</span>
             </div>
-            <span className="text-xs font-bold text-foreground truncate block">{preferredBarber}</span>
+            <span className="text-xs font-bold text-foreground truncate block" title={preferredBarber}>
+              {preferredBarber}
+            </span>
           </div>
         </div>
 
@@ -174,12 +231,14 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
 
         {/* Botones de acción */}
         <div className="flex gap-3 pt-2">
-          <button
-            onClick={onEdit}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer"
-          >
-            Editar Cliente
-          </button>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer"
+            >
+              Editar Cliente
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex-1 py-3 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground text-sm font-medium cursor-pointer"

@@ -13,6 +13,7 @@ import ProductsStats from "../components/ProductsStats";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 const TABS = [
   { key: "products", label: "Productos" },
@@ -21,6 +22,12 @@ const TABS = [
 
 export default function ProductsPage() {
   useSearchHighlight();
+  const { hasPermission } = usePermissions();
+  const canCreateProduct = hasPermission("productos", "crear");
+  const canEditProduct = hasPermission("productos", "editar");
+  const canDeleteProduct = hasPermission("productos", "eliminar");
+  const canToggleProduct = hasPermission("productos", "activar");
+
   const [viewMode, setViewMode] = useState("table");
   const {
     products,
@@ -91,7 +98,7 @@ export default function ProductsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Productos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu inventario de productos y categorías</p>
         </div>
-        {activeTab === "products" && (
+        {activeTab === "products" && canCreateProduct && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -230,9 +237,9 @@ export default function ProductsPage() {
                 sortDir={sortDir}
                 onSort={handleSort}
                 onDetail={openDetailModal}
-                onToggleStatus={openDeactivateModal}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                onToggleStatus={canToggleProduct ? openDeactivateModal : null}
+                onEdit={canEditProduct ? openEditModal : null}
+                onDelete={canDeleteProduct ? openDeleteModal : null}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -241,9 +248,9 @@ export default function ProductsPage() {
                     key={product.id_producto}
                     product={product}
                     onDetail={openDetailModal}
-                    onToggleStatus={openDeactivateModal}
-                    onEdit={openEditModal}
-                    onDelete={openDeleteModal}
+                    onToggleStatus={canToggleProduct ? openDeactivateModal : null}
+                    onEdit={canEditProduct ? openEditModal : null}
+                    onDelete={canDeleteProduct ? openDeleteModal : null}
                   />
                 ))}
               </div>

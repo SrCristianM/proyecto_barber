@@ -12,8 +12,10 @@ import {
   Sparkles
 } from "lucide-react";
 import { getBarberWeeklySchedule } from "../services/barberStorageService";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 export default function BarberSchedulesPage() {
+  const { canAccess, hasPermission } = usePermissions();
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,13 +68,15 @@ export default function BarberSchedulesPage() {
         </div>
 
         {/* CTA para solicitar novedades */}
-        <Link
-          to="/barbero/novedades"
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <FileText className="w-4 h-4" />
-          <span>Solicitar Cambio de Turno</span>
-        </Link>
+        {canAccess("/barbero/novedades") && (
+          <Link
+            to="/barbero/novedades"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Solicitar Cambio de Turno</span>
+          </Link>
+        )}
       </div>
 
       {/* TARJETAS DE VIGENCIA Y RESUMEN SEMANAL */}
@@ -208,13 +212,15 @@ export default function BarberSchedulesPage() {
           </div>
         </div>
 
-        <Link
-          to="/barbero/novedades"
-          className="px-4 py-2.5 rounded-xl border border-[#DFB755]/40 hover:bg-[#DFB755]/10 text-[#DFB755] font-bold text-xs transition-all shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          <span>Ir a Novedades</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
+        {canAccess("/barbero/novedades") && (
+          <Link
+            to="/barbero/novedades"
+            className="px-4 py-2.5 rounded-xl border border-[#DFB755]/40 hover:bg-[#DFB755]/10 text-[#DFB755] font-bold text-xs transition-all shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>Ir a Novedades</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        )}
       </div>
     </div>
   );

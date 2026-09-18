@@ -85,8 +85,8 @@ export default function BarberDashboard() {
 
     // Encontrar próxima cita (aquella programada para hoy en orden horario)
     const upcomingToday = todayApts
-      .filter((a) => a.estado === "Programada" || a.estado === "Reprogramada")
-      .sort((a, b) => a.hora.localeCompare(b.hora));
+      .filter((a) => a && (a.estado === "Programada" || a.estado === "Reprogramada"))
+      .sort((a, b) => String(a?.hora || "").localeCompare(String(b?.hora || "")));
 
     setNextAppointment(upcomingToday[0] || null);
 
@@ -190,7 +190,7 @@ export default function BarberDashboard() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <AnimatedCounter
-              value={todayAppointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada").length}
+              value={todayAppointments.filter((a) => a && (a.estado === "Programada" || a.estado === "Reprogramada")).length}
               className="text-3xl font-black text-foreground"
             />
             <span className="text-xs text-muted-foreground font-medium">programada(s)</span>
@@ -213,7 +213,7 @@ export default function BarberDashboard() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <AnimatedCounter
-              value={todayAppointments.filter((a) => a.estado === "Completada").length}
+              value={todayAppointments.filter((a) => a && a.estado === "Completada").length}
               className="text-3xl font-black text-emerald-500"
             />
             <span className="text-xs text-muted-foreground font-medium">atendida(s)</span>

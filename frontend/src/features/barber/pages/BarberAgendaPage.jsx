@@ -28,6 +28,7 @@ import {
   getBarberAppointments,
   completeBarberAppointment
 } from "../services/barberStorageService";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
@@ -53,6 +54,7 @@ export default function BarberAgendaPage() {
     return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   });
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
 
   // Actualizar hora en vivo cada minuto para la línea de escaneo temporal
   useEffect(() => {
@@ -75,6 +77,12 @@ export default function BarberAgendaPage() {
   };
 
   const handleCompleteAppointment = (id_cita) => {
+    if (!hasPermission("citas", "editar")) {
+      toast.error("Acción denegada por el Administrador", {
+        description: "No tienes permiso para marcar citas como atendidas."
+      });
+      return;
+    }
     const res = completeBarberAppointment(id_cita);
     if (res.success) {
       // Celebración con confeti dorado y esmeralda
@@ -95,6 +103,12 @@ export default function BarberAgendaPage() {
   };
 
   const handleRequestCancellation = (apt) => {
+    if (!hasPermission("citas", "cancelar") && !hasPermission("horarios", "crear")) {
+      toast.error("Acción denegada por el Administrador", {
+        description: "No tienes permiso para solicitar novedades o cancelaciones de citas."
+      });
+      return;
+    }
     navigate("/barbero/novedades", {
       state: {
         fromAppointment: {
@@ -142,7 +156,7 @@ export default function BarberAgendaPage() {
     if (statusFilter === "all") return true;
     if (statusFilter === "libres") return slot.estadoSlot === "Libre";
     if (statusFilter === "ocupados") return slot.estadoSlot === "Ocupado";
-    if (slot.cita && slot.cita.estado.toLowerCase() === statusFilter.toLowerCase()) return true;
+    if (slot.cita && String(slot.cita.estado || "").toLowerCase() === statusFilter.toLowerCase()) return true;
     return false;
   });
 
@@ -356,12 +370,13 @@ export default function BarberAgendaPage() {
 
                 // Detectar si este slot corresponde a la hora actual en la jornada de hoy
                 const isToday = selectedDate === new Date().toISOString().split("T")[0];
-                const [currentHour] = currentTimeStr.split(":").map(Number);
-                const [slotHour] = slot.hora.split(":").map(Number);
+                const [currentHour] = (currentTimeStr || "00:00").split(":").map(Number);
+                const safeSlotHora = String(slot.hora || "08:00");
+                const [slotHour] = safeSlotHora.split(":").map(Number);
                 const isCurrentSlot = isToday && slotHour === currentHour;
 
                 return (
-                  <div key={slot.hora}>
+                  <div key={safeSlotHora}>
                     {/* Línea de escáner en tiempo real (Live Timeline Indicator) */}
                     {isCurrentSlot && (
                       <div className="relative z-10 px-4 py-1.5 bg-gradient-to-r from-[#DFB755]/25 via-amber-400/15 to-transparent border-y border-[#DFB755]/50 flex items-center justify-between">
@@ -588,22 +603,26 @@ export default function BarberAgendaPage() {
               <div className="flex items-center gap-2">
                 {selectedAppointment.estado === "Programada" && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => handleCompleteAppointment(selectedAppointment.id_cita)}
-                      className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Marcar como Atendida</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRequestCancellation(selectedAppointment)}
-                      className="px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Solicitar Cancelación</span>
-                    </button>
+                    {hasPermission("citas", "editar") && (
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteAppointment(selectedAppointment.id_cita)}
+                        className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Marcar como Atendida</span>
+                      </button>
+                    )}
+                    {(hasPermission("citas", "cancelar") || hasPermission("horarios", "crear")) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRequestCancellation(selectedAppointment)}
+                        className="px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Solicitar Cancelación</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>

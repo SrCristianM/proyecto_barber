@@ -1,22 +1,35 @@
 import { useState, useEffect } from "react";
-import { Bell, User, Sun, Moon, LogOut } from "lucide-react";
+import { Bell, User, Sun, Moon, LogOut, Search, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useNotifications } from "../shared/hooks/useNotifications";
 import NotificationPanel from "../shared/components/NotificationPanel";
 import AllNotificationsModal from "../shared/components/AllNotificationsModal";
-import GlobalSearchBar from "../shared/components/GlobalSearchBar";
+import CommandPaletteModal from "../shared/components/CommandPaletteModal";
 import { getCurrentUser, logoutUser } from "../../auth/services/authService";
 import { ROLES } from "../../../shared/types/database";
 
 const TopBar = ({ isDark, setIsDark }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAllNotificationsModal, setShowAllNotificationsModal] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
   const navigate = useNavigate();
 
   useEffect(() => {
     setCurrentUser(getCurrentUser());
+  }, []);
+
+  // Atajo global Ctrl + K / Cmd + K
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const getRoleName = (id_rol) => {
@@ -41,8 +54,27 @@ const TopBar = ({ isDark, setIsDark }) => {
 
   return (
     <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between sticky top-0 z-30 gap-4">
-      {/* Buscador Global Interactivo Multimódulo */}
-      <GlobalSearchBar />
+      {/* Disparador de Command Palette Global (Ctrl + K) */}
+      <div className="flex-1 max-w-md">
+        <button
+          type="button"
+          onClick={() => setShowCommandPalette(true)}
+          className="w-full flex items-center justify-between px-3.5 py-2 bg-secondary/60 hover:bg-secondary border border-border/80 hover:border-primary/50 rounded-xl transition-all text-xs text-muted-foreground group cursor-pointer shadow-2xs"
+        >
+          <div className="flex items-center gap-2.5 truncate">
+            <Search className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+            <span className="truncate">Buscar clientes, productos o acciones...</span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold bg-background border border-border rounded text-muted-foreground shadow-2xs">
+              Ctrl K
+            </kbd>
+          </div>
+        </button>
+      </div>
+
+      {/* Modal de Command Palette */}
+      <CommandPaletteModal open={showCommandPalette} onOpenChange={setShowCommandPalette} />
 
       <div className="flex items-center gap-4 shrink-0">
         {/* Campanita con panel de notificaciones */}
@@ -51,9 +83,8 @@ const TopBar = ({ isDark, setIsDark }) => {
             id="notification-bell"
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowNotifications((v) => !v)}
-            className={`p-2 hover:bg-accent rounded-xl text-foreground relative transition-colors cursor-pointer ${
-              showNotifications ? "bg-accent" : ""
-            }`}
+            className={`p-2 hover:bg-accent rounded-xl text-foreground relative transition-colors cursor-pointer ${showNotifications ? "bg-accent" : ""
+              }`}
             title="Notificaciones"
           >
             <Bell className="h-5 w-5" />

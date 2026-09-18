@@ -118,19 +118,25 @@ export default function ProductsTable({
                     <button onClick={() => onDetail(product)} className="p-2 hover:bg-background rounded-lg text-foreground" title="Ver detalle">
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => onToggleStatus(product)}
-                      className={`p-2 hover:bg-background rounded-lg transition-colors ${product.estado === 1 ? "text-success" : "text-muted-foreground"}`}
-                      title={product.estado === 1 ? "Desactivar" : "Activar"}
-                    >
-                      <Power className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => onEdit(product)} className="p-2 hover:bg-background rounded-lg text-primary" title="Editar">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => onDelete(product)} className="p-2 hover:bg-background rounded-lg text-destructive" title="Eliminar">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {onToggleStatus && (
+                      <button
+                        onClick={() => onToggleStatus(product)}
+                        className={`p-2 hover:bg-background rounded-lg transition-colors ${product.estado === 1 ? "text-success" : "text-muted-foreground"}`}
+                        title={product.estado === 1 ? "Desactivar" : "Activar"}
+                      >
+                        <Power className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onEdit && (
+                      <button onClick={() => onEdit(product)} className="p-2 hover:bg-background rounded-lg text-primary" title="Editar">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button onClick={() => onDelete(product)} className="p-2 hover:bg-background rounded-lg text-destructive" title="Eliminar">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

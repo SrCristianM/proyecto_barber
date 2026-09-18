@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Download, RotateCcw, User } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useSales, clients } from "../hooks/useSales";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import SalesStats from "../components/SalesStats";
@@ -68,6 +69,11 @@ export default function SalesPage() {
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
+  const { hasPermission } = usePermissions();
+  const canCreateSale = hasPermission("ventas", "crear");
+  const canEditSale = hasPermission("ventas", "editar");
+  const canAnularSale = hasPermission("ventas", "anular");
+
   const triggerGoldenConfetti = () => {
     try {
       confetti({
@@ -111,15 +117,17 @@ export default function SalesPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Ventas</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación de la barbería</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {sales?.length === 0 ? "Crear primera venta" : "Nueva Venta"}
-        </motion.button>
+        {canCreateSale && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {sales?.length === 0 ? "Crear primera venta" : "Nueva Venta"}
+          </motion.button>
+        )}
       </div>
 
       <SalesStats totalToday={totalToday} totalMonth={totalMonth} averageTicket={averageTicket} />
@@ -201,6 +209,8 @@ export default function SalesPage() {
           onEdit={openEditModal}
           onDelete={openDeleteModal}
           onDeactivate={openDeactivateModal}
+          canEdit={canEditSale}
+          canAnular={canAnularSale}
         />
       </div>
 
@@ -233,7 +243,7 @@ export default function SalesPage() {
       {showDetailModal && selectedSale && (
         <SaleDetailModal
           sale={selectedSale}
-          onEdit={() => { setShowDetailModal(false); openEditModal(selectedSale); }}
+          onEdit={canEditSale ? () => { setShowDetailModal(false); openEditModal(selectedSale); } : undefined}
           onClose={() => { setShowDetailModal(false); setSelectedSale(null); }}
         />
       )}

@@ -77,13 +77,13 @@ export default function AppointmentsCalendarView({
                   const svcInfo = appointment ? getServiceInfo(appointment.id_servicio) : null;
 
                   return appointment ? (
-                    /* Slot ocupado — clickable para editar */
+                    /* Slot ocupado — clickable para editar si hay permiso */
                     <div
                       key={barber.id_barbero}
-                      onClick={() => onAppointmentClick?.(appointment)}
-                      className={`h-18 rounded-xl border-2 cursor-pointer transition-all p-2.5 flex flex-col justify-between ${getStatusClass(
-                        appointment.estado
-                      )}`}
+                      onClick={() => onAppointmentClick && onAppointmentClick(appointment)}
+                      className={`h-18 rounded-xl border-2 transition-all p-2.5 flex flex-col justify-between ${
+                        onAppointmentClick ? "cursor-pointer" : "cursor-default"
+                      } ${getStatusClass(appointment.estado)}`}
                     >
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-xs font-bold leading-tight truncate">
@@ -106,17 +106,24 @@ export default function AppointmentsCalendarView({
                       </div>
                     </div>
                   ) : (
-                    /* Slot vacío — clickable para crear */
+                    /* Slot vacío — clickable para crear si hay permiso */
                     <button
                       key={barber.id_barbero}
-                      onClick={() => onSlotClick?.(barber, time)}
-                      className="h-18 rounded-xl border-2 border-dashed border-border/80 bg-background hover:border-primary hover:bg-primary/5 transition-all group flex items-center justify-center cursor-pointer shadow-2xs"
-                      title={`Agendar cita a las ${time} con ${barber.nombre}`}
+                      onClick={() => onSlotClick && onSlotClick(barber, time)}
+                      disabled={!onSlotClick}
+                      className={`h-18 rounded-xl border-2 border-dashed border-border/80 bg-background transition-all group flex items-center justify-center shadow-2xs ${
+                        onSlotClick
+                          ? "hover:border-primary hover:bg-primary/5 cursor-pointer"
+                          : "opacity-40 cursor-not-allowed"
+                      }`}
+                      title={onSlotClick ? `Agendar cita a las ${time} con ${barber.nombre}` : "Sin permisos para agendar"}
                     >
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Plus className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-[10px] text-primary font-bold">Libre</span>
-                      </div>
+                      {onSlotClick && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-[10px] text-primary font-bold">Libre</span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}

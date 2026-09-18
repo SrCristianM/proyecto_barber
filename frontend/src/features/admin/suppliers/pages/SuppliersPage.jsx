@@ -10,9 +10,15 @@ import SupplierDetailModal from "../components/SupplierDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 export default function SuppliersPage() {
   useSearchHighlight();
+  const { hasPermission } = usePermissions();
+  const canCreateSupplier = hasPermission("suppliers", "crear");
+  const canEditSupplier = hasPermission("suppliers", "editar");
+  const canDeleteSupplier = hasPermission("suppliers", "eliminar");
+  const canToggleSupplier = hasPermission("suppliers", "activar");
   const {
     suppliers,
     searchTerm,
@@ -82,15 +88,17 @@ export default function SuppliersPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Proveedores</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona los proveedores de tu negocio</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {suppliers.length === 0 ? "Crear primer proveedor" : "Nuevo Proveedor"}
-        </motion.button>
+        {canCreateSupplier && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {suppliers.length === 0 ? "Crear primer proveedor" : "Nuevo Proveedor"}
+          </motion.button>
+        )}
       </div>
 
       {/* Tarjetas de estadísticas */}
@@ -182,9 +190,9 @@ export default function SuppliersPage() {
                 key={supplier.id_proveedor}
                 supplier={supplier}
                 onDetail={openDetailModal}
-                onToggleStatus={openDeactivateModal}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                onToggleStatus={canToggleSupplier ? openDeactivateModal : null}
+                onEdit={canEditSupplier ? openEditModal : null}
+                onDelete={canDeleteSupplier ? openDeleteModal : null}
               />
             ))}
           </div>
@@ -196,15 +204,15 @@ export default function SuppliersPage() {
             sortDir={sortDir}
             onSort={handleSort}
             onDetail={openDetailModal}
-            onToggleStatus={openDeactivateModal}
-            onEdit={openEditModal}
-            onDelete={openDeleteModal}
+            onToggleStatus={canToggleSupplier ? openDeactivateModal : null}
+            onEdit={canEditSupplier ? openEditModal : null}
+            onDelete={canDeleteSupplier ? openDeleteModal : null}
           />
         )}
       </div>
 
       {/* Modal Crear */}
-      {showCreateModal && (
+      {showCreateModal && canCreateSupplier && (
         <SupplierFormModal
           mode="create"
           formData={formData}
@@ -218,7 +226,7 @@ export default function SuppliersPage() {
       )}
 
       {/* Modal Editar */}
-      {showEditModal && selectedSupplier && (
+      {showEditModal && selectedSupplier && canEditSupplier && (
         <SupplierFormModal
           mode="edit"
           formData={formData}
@@ -236,10 +244,10 @@ export default function SuppliersPage() {
       {showDetailModal && selectedSupplier && (
         <SupplierDetailModal
           supplier={selectedSupplier}
-          onEdit={() => {
+          onEdit={canEditSupplier ? () => {
             setShowDetailModal(false);
             openEditModal(selectedSupplier);
-          }}
+          } : null}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedSupplier(null);

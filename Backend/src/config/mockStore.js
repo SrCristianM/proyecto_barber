@@ -38,7 +38,9 @@ export class MockDataStore {
       { id_modulo: 7, nombre_modulo: "horarios" },
       { id_modulo: 8, nombre_modulo: "clientes" },
       { id_modulo: 9, nombre_modulo: "proveedores" },
-      { id_modulo: 10, nombre_modulo: "compras" }
+      { id_modulo: 10, nombre_modulo: "compras" },
+      { id_modulo: 11, nombre_modulo: "barberos" },
+      { id_modulo: 12, nombre_modulo: "paquetes" }
     ];
 
     this.permisos = [
@@ -53,15 +55,70 @@ export class MockDataStore {
       { id_permiso: 9, id_modulo: 3, accion: "ver" },
       { id_permiso: 10, id_modulo: 3, accion: "crear" },
       { id_permiso: 11, id_modulo: 3, accion: "editar" },
-      { id_permiso: 12, id_modulo: 3, accion: "cancelar" }
+      { id_permiso: 12, id_modulo: 3, accion: "cancelar" },
+      { id_permiso: 13, id_modulo: 4, accion: "ver" },
+      { id_permiso: 14, id_modulo: 4, accion: "crear" },
+      { id_permiso: 15, id_modulo: 4, accion: "editar" },
+      { id_permiso: 16, id_modulo: 4, accion: "eliminar" },
+      { id_permiso: 17, id_modulo: 5, accion: "ver" },
+      { id_permiso: 18, id_modulo: 5, accion: "crear" },
+      { id_permiso: 19, id_modulo: 5, accion: "editar" },
+      { id_permiso: 20, id_modulo: 5, accion: "eliminar" },
+      { id_permiso: 21, id_modulo: 6, accion: "ver" },
+      { id_permiso: 22, id_modulo: 6, accion: "crear" },
+      { id_permiso: 23, id_modulo: 6, accion: "editar" },
+      { id_permiso: 24, id_modulo: 6, accion: "anular" },
+      { id_permiso: 25, id_modulo: 7, accion: "ver" },
+      { id_permiso: 26, id_modulo: 7, accion: "crear" },
+      { id_permiso: 27, id_modulo: 7, accion: "editar" },
+      { id_permiso: 28, id_modulo: 7, accion: "eliminar" },
+      { id_permiso: 29, id_modulo: 8, accion: "ver" },
+      { id_permiso: 30, id_modulo: 8, accion: "crear" },
+      { id_permiso: 31, id_modulo: 8, accion: "editar" },
+      { id_permiso: 32, id_modulo: 8, accion: "eliminar" },
+      { id_permiso: 33, id_modulo: 9, accion: "ver" },
+      { id_permiso: 34, id_modulo: 9, accion: "crear" },
+      { id_permiso: 35, id_modulo: 9, accion: "editar" },
+      { id_permiso: 36, id_modulo: 9, accion: "eliminar" },
+      { id_permiso: 37, id_modulo: 10, accion: "ver" },
+      { id_permiso: 38, id_modulo: 10, accion: "crear" },
+      { id_permiso: 39, id_modulo: 10, accion: "editar" },
+      { id_permiso: 40, id_modulo: 10, accion: "anular" },
+      { id_permiso: 41, id_modulo: 10, accion: "eliminar" },
+      { id_permiso: 42, id_modulo: 11, accion: "ver" },
+      { id_permiso: 43, id_modulo: 11, accion: "crear" },
+      { id_permiso: 44, id_modulo: 11, accion: "editar" },
+      { id_permiso: 45, id_modulo: 11, accion: "eliminar" },
+      { id_permiso: 46, id_modulo: 12, accion: "ver" },
+      { id_permiso: 47, id_modulo: 12, accion: "crear" },
+      { id_permiso: 48, id_modulo: 12, accion: "editar" },
+      { id_permiso: 49, id_modulo: 12, accion: "eliminar" },
+      { id_permiso: 50, id_modulo: 1, accion: "activar" },
+      { id_permiso: 51, id_modulo: 4, accion: "activar" },
+      { id_permiso: 52, id_modulo: 5, accion: "activar" },
+      { id_permiso: 53, id_modulo: 7, accion: "activar" },
+      { id_permiso: 54, id_modulo: 8, accion: "activar" },
+      { id_permiso: 55, id_modulo: 9, accion: "activar" },
+      { id_permiso: 56, id_modulo: 11, accion: "activar" }
     ];
 
     this.rol_permisos = [
-      { id_rol: 1, id_permiso: 1 }, { id_rol: 1, id_permiso: 2 }, { id_rol: 1, id_permiso: 3 }, { id_rol: 1, id_permiso: 4 },
-      { id_rol: 1, id_permiso: 5 }, { id_rol: 1, id_permiso: 6 }, { id_rol: 1, id_permiso: 7 }, { id_rol: 1, id_permiso: 8 },
-      { id_rol: 1, id_permiso: 9 }, { id_rol: 1, id_permiso: 10 }, { id_rol: 1, id_permiso: 11 }, { id_rol: 1, id_permiso: 12 },
-      { id_rol: 2, id_permiso: 1 }, { id_rol: 2, id_permiso: 9 }, { id_rol: 2, id_permiso: 10 }, { id_rol: 2, id_permiso: 11 },
-      { id_rol: 3, id_permiso: 9 }, { id_rol: 3, id_permiso: 11 },
+      // Admin (rol 1): todos los permisos del sistema
+      ...this.permisos.map((p) => ({ id_rol: 1, id_permiso: p.id_permiso })),
+      // Recepcionista (rol 2): Citas, Servicios, Productos, Ventas, Horarios, Clientes, Compras, Barberos, Paquetes + Proveedores (ver y eliminar SOLAMENTE)
+      { id_rol: 2, id_permiso: 9 }, { id_rol: 2, id_permiso: 10 }, { id_rol: 2, id_permiso: 11 }, { id_rol: 2, id_permiso: 12 },
+      { id_rol: 2, id_permiso: 13 }, { id_rol: 2, id_permiso: 14 }, { id_rol: 2, id_permiso: 15 }, { id_rol: 2, id_permiso: 16 }, { id_rol: 2, id_permiso: 51 },
+      { id_rol: 2, id_permiso: 17 }, { id_rol: 2, id_permiso: 18 }, { id_rol: 2, id_permiso: 19 }, { id_rol: 2, id_permiso: 20 }, { id_rol: 2, id_permiso: 52 },
+      { id_rol: 2, id_permiso: 21 }, { id_rol: 2, id_permiso: 22 }, { id_rol: 2, id_permiso: 23 }, { id_rol: 2, id_permiso: 24 },
+      { id_rol: 2, id_permiso: 25 }, { id_rol: 2, id_permiso: 26 }, { id_rol: 2, id_permiso: 27 }, { id_rol: 2, id_permiso: 28 }, { id_rol: 2, id_permiso: 53 },
+      { id_rol: 2, id_permiso: 29 }, { id_rol: 2, id_permiso: 30 }, { id_rol: 2, id_permiso: 31 }, { id_rol: 2, id_permiso: 32 }, { id_rol: 2, id_permiso: 54 },
+      { id_rol: 2, id_permiso: 33 }, { id_rol: 2, id_permiso: 36 }, // Proveedores: SOLO ver (33) y eliminar (36). NO crear (34) ni editar (35)
+      { id_rol: 2, id_permiso: 37 }, { id_rol: 2, id_permiso: 38 }, { id_rol: 2, id_permiso: 39 }, { id_rol: 2, id_permiso: 40 }, { id_rol: 2, id_permiso: 41 },
+      { id_rol: 2, id_permiso: 42 }, { id_rol: 2, id_permiso: 43 }, { id_rol: 2, id_permiso: 44 }, { id_rol: 2, id_permiso: 45 }, { id_rol: 2, id_permiso: 56 },
+      { id_rol: 2, id_permiso: 46 }, { id_rol: 2, id_permiso: 47 }, { id_rol: 2, id_permiso: 48 }, { id_rol: 2, id_permiso: 49 },
+      // Barbero (rol 3): Citas (ver, editar), Horarios (ver, crear), Servicios (ver), Ventas (ver)
+      { id_rol: 3, id_permiso: 9 }, { id_rol: 3, id_permiso: 11 }, { id_rol: 3, id_permiso: 25 }, { id_rol: 3, id_permiso: 26 }, { id_rol: 3, id_permiso: 13 }, { id_rol: 3, id_permiso: 21 },
+      // Cliente (rol 4)
       { id_rol: 4, id_permiso: 9 }, { id_rol: 4, id_permiso: 10 }
     ];
 
@@ -112,7 +169,6 @@ export class MockDataStore {
     this.detalle_compras = [];
     this.ventas = [];
     this.venta_detalles = [];
-    this.bitacora = [];
 
     // 2. Cargar datos persistidos en disco si existen
     this.loadFromFile();
@@ -165,8 +221,7 @@ export class MockDataStore {
         compras: this.compras,
         detalle_compras: this.detalle_compras,
         ventas: this.ventas,
-        venta_detalles: this.venta_detalles,
-        bitacora: this.bitacora
+        venta_detalles: this.venta_detalles
       };
 
       fs.writeFileSync(this.storageFile, JSON.stringify(snapshot, null, 2), "utf8");

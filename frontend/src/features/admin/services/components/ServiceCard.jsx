@@ -120,14 +120,16 @@ export default function ServiceCard({ service, onDetail, onToggleStatus, onEdit,
           >
             <Power className="h-3.5 w-3.5" />
           </button>
-          <button
-            type="button"
-            onClick={() => onDelete && onDelete(service)}
-            className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
-            title="Eliminar"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(service)}
+              className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
+              title="Eliminar"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </TiltCard>

@@ -2,7 +2,7 @@ import { NavLink } from "react-router";
 import { Home, Calendar, Clock, AlertCircle, Scissors } from "lucide-react";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
-export default function BarberMobileDock({ pendingNoveltiesCount = 0, todayAppointmentsCount = 0 }) {
+export default function BarberMobileDock({ pendingNoveltiesCount = 0, todayAppointmentsCount = 0, canAccess }) {
   const links = [
     { to: "/barbero", label: "Inicio", icon: Home, end: true },
     { to: "/barbero/agenda", label: "Mi Agenda", icon: Calendar },
@@ -11,10 +11,12 @@ export default function BarberMobileDock({ pendingNoveltiesCount = 0, todayAppoi
     { to: "/barbero/horarios", label: "Horarios", icon: Clock }
   ];
 
+  const visibleLinks = canAccess ? links.filter((link) => canAccess(link.to)) : links;
+
   return (
     <nav aria-label="Navegación Móvil Barbero" className="md:hidden fixed bottom-3 left-3 right-3 z-40">
       <div className="flex items-center justify-around px-2 py-2 rounded-2xl bg-card/90 backdrop-blur-2xl border border-white/15 dark:border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
-        {links.map((link) => {
+        {visibleLinks.map((link) => {
           const Icon = link.icon;
 
           if (link.highlight) {

@@ -41,7 +41,10 @@ export default function ClientsTable({
   onDetail,
   onToggleStatus,
   onEdit,
-  onDelete
+  onDelete,
+  canEdit = true,
+  canToggle = true,
+  canDelete = true
 }) {
   return (
     <>
@@ -126,32 +129,38 @@ export default function ClientsTable({
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onToggleStatus(client)}
-                        className={`p-1.5 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
-                          isActive ? "text-emerald-500 hover:text-amber-500" : "text-muted-foreground hover:text-emerald-500"
-                        }`}
-                        title={isActive ? "Desactivar" : "Activar"}
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEdit(client)}
-                        className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(client)}
-                        className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canToggle && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleStatus(client)}
+                          className={`p-1.5 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
+                            isActive ? "text-emerald-500 hover:text-amber-500" : "text-muted-foreground hover:text-emerald-500"
+                          }`}
+                          title={isActive ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(client)}
+                          className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(client)}
+                          className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

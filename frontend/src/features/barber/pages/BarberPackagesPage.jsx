@@ -15,12 +15,13 @@ export default function BarberPackagesPage() {
     setLoading(false);
   }, []);
 
-  const filteredPackages = packages.filter((pkg) => {
+  const filteredPackages = (packages || []).filter((pkg) => {
+    if (!pkg) return false;
     const q = searchTerm.toLowerCase().trim();
     if (!q) return true;
-    const matchName = pkg.nombre.toLowerCase().includes(q);
-    const matchDesc = (pkg.descripcion || "").toLowerCase().includes(q);
-    const matchServices = (pkg.servicios || []).some((s) => s.nombre.toLowerCase().includes(q));
+    const matchName = String(pkg.nombre || "").toLowerCase().includes(q);
+    const matchDesc = String(pkg.descripcion || "").toLowerCase().includes(q);
+    const matchServices = (pkg.servicios || []).some((s) => String(s?.nombre || "").toLowerCase().includes(q));
     return matchName || matchDesc || matchServices;
   });
 
@@ -140,10 +141,10 @@ export default function BarberPackagesPage() {
                 <div className="pt-3 border-t border-border/60 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-muted-foreground line-through block">
-                      ${pkg.precioBase.toLocaleString("es-CO")}
+                      ${Number(pkg.precioBase || 0).toLocaleString("es-CO")}
                     </span>
                     <span className="text-lg font-black text-[#DFB755]">
-                      ${pkg.precioFinal.toLocaleString("es-CO")}
+                      ${Number(pkg.precioFinal || 0).toLocaleString("es-CO")}
                     </span>
                   </div>
 
@@ -221,19 +222,19 @@ export default function BarberPackagesPage() {
               <div>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Precio Base</span>
                 <p className="text-xs line-through text-muted-foreground mt-0.5">
-                  ${selectedPackage.precioBase.toLocaleString("es-CO")}
+                  ${Number(selectedPackage.precioBase || 0).toLocaleString("es-CO")}
                 </p>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Descuento</span>
                 <p className="text-xs font-bold text-emerald-500 mt-0.5">
-                  {selectedPackage.descuento_porcentaje}%
+                  {selectedPackage.descuento_porcentaje || 0}%
                 </p>
               </div>
               <div>
                 <span className="text-[10px] font-bold text-[#DFB755] uppercase">Precio Final</span>
                 <p className="text-base font-black text-[#DFB755]">
-                  ${selectedPackage.precioFinal.toLocaleString("es-CO")}
+                  ${Number(selectedPackage.precioFinal || 0).toLocaleString("es-CO")}
                 </p>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, LayoutGrid, Table } from "lucide-react";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useBarbers } from "../hooks/useBarbers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import BarbersStats from "../components/BarbersStats";
@@ -54,6 +55,12 @@ export default function BarbersPage() {
     openDeactivateModal
   } = useBarbers();
 
+  const { hasPermission } = usePermissions();
+  const canCreateBarber = hasPermission("barberos", "crear");
+  const canEditBarber = hasPermission("barberos", "editar");
+  const canToggleBarber = hasPermission("barberos", "activar");
+  const canDeleteBarber = hasPermission("barberos", "eliminar");
+
   const onHandleCreate = () => {
     handleCreate();
   };
@@ -81,15 +88,17 @@ export default function BarbersPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Barberos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu equipo de barberos y especialistas</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {barbers.length === 0 ? "Crear primer barbero" : "Nuevo Barbero"}
-        </motion.button>
+        {canCreateBarber && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {barbers.length === 0 ? "Crear primer barbero" : "Nuevo Barbero"}
+          </motion.button>
+        )}
       </div>
 
       <BarbersStats barbers={barbers} />
@@ -180,6 +189,9 @@ export default function BarbersPage() {
             onToggleStatus={openDeactivateModal}
             onEdit={openEditModal}
             onDelete={openDeleteModal}
+            canEdit={canEditBarber}
+            canToggle={canToggleBarber}
+            canDelete={canDeleteBarber}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -189,6 +201,8 @@ export default function BarbersPage() {
                 barber={barber}
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
+                canEdit={canEditBarber}
+                canDelete={canDeleteBarber}
               />
             ))}
           </div>
@@ -225,10 +239,10 @@ export default function BarbersPage() {
       {showDetailModal && selectedBarber && (
         <BarberDetailModal
           barber={selectedBarber}
-          onEdit={() => {
+          onEdit={canEditBarber ? () => {
             setShowDetailModal(false);
             openEditModal(selectedBarber);
-          }}
+          } : undefined}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedBarber(null);

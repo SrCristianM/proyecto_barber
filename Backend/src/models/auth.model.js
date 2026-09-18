@@ -149,25 +149,6 @@ export class AuthRepository {
     return mockStore.clientes.find((c) => c.id_usuario === id) || null;
   }
 
-  static async logAccess(id_usuario, accion, ip_origen) {
-    const id = Number(id_usuario);
-    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
-
-    if (isDatabaseConnected()) {
-      const sql = `INSERT INTO bitacora_acceso (id_usuario, accion, ip_origen, fecha_hora) VALUES (?, ?, ?, ?)`;
-      await executeQuery(sql, [id, accion, ip_origen || null, now]);
-      return;
-    }
-
-    mockStore.bitacora.push({
-      id_log: mockStore.bitacora.length + 1,
-      id_usuario: id,
-      accion,
-      ip_origen,
-      fecha_hora: now
-    });
-  }
-
   static async getUserPermissions(id_rol) {
     const roleId = Number(id_rol);
 
@@ -180,7 +161,7 @@ export class AuthRepository {
         WHERE rp.id_rol = ?
       `;
       const rows = await executeQuery(sql, [roleId]);
-      return rows ? rows.map((r) => `${r.nombre_modulo}_${r.accion}`) : [];
+      return rows ? rows.map((r) => `${r.nombre_modulo}_${r.accion}`.toLowerCase()) : [];
     }
 
     const assigned = mockStore.rol_permisos.filter((rp) => rp.id_rol === roleId);
@@ -188,7 +169,7 @@ export class AuthRepository {
       const p = mockStore.permisos.find((perm) => perm.id_permiso === rp.id_permiso);
       if (!p) return "";
       const m = mockStore.modulos.find((mod) => mod.id_modulo === p.id_modulo);
-      return m ? `${m.nombre_modulo}_${p.accion}` : p.accion;
+      return m ? `${m.nombre_modulo}_${p.accion}`.toLowerCase() : p.accion.toLowerCase();
     }).filter(Boolean);
   }
 }

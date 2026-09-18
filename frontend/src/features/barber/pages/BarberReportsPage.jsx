@@ -82,15 +82,15 @@ export default function BarberReportsPage() {
     ];
 
     const rows = listToExport.map((apt) => [
-      `#${apt.id_cita}`,
-      `"${(apt.cliente_nombre || "").replace(/"/g, '""')}"`,
-      `"${(apt.cliente_telefono || "").replace(/"/g, '""')}"`,
-      apt.fecha,
-      apt.hora,
-      `"${(apt.servicio_nombre || "").replace(/"/g, '""')}"`,
-      `"${(apt.paquete_nombre || "N/A").replace(/"/g, '""')}"`,
+      `#${apt.id_cita || ""}`,
+      `"${String(apt.cliente_nombre || "Cliente").replace(/"/g, '""')}"`,
+      `"${String(apt.cliente_telefono || "N/A").replace(/"/g, '""')}"`,
+      apt.fecha || "",
+      apt.hora || "",
+      `"${String(apt.servicio_nombre || "Servicio").replace(/"/g, '""')}"`,
+      `"${String(apt.paquete_nombre || "N/A").replace(/"/g, '""')}"`,
       Number(apt.precio || apt.servicio_precio || 0),
-      apt.estado
+      apt.estado || "Programada"
     ]);
 
     const csvContent =

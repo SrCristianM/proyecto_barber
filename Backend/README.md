@@ -31,7 +31,6 @@ Desarrollado bajo principios de **Clean Architecture**, **SOLID**, separación d
   - JWT firmado con algoritmo HS256.
   - Hashing seguro de contraseñas con `bcryptjs` (10 rounds).
   - Control de acceso por roles (`Administrador: 1`, `Recepcionista: 2`, `Barbero: 3`, `Cliente: 4`) y matriz de permisos por módulo.
-  - Bitácora de accesos y auditoría en tabla `bitacora_acceso`.
 - **Resiliencia y Alta Disponibilidad**:
   - Conexión MySQL 8 con connection pooling (`mysql2/promise`).
   - Modo Fallback transparente con `MockDataStore` en memoria para pruebas y desarrollo continuo.

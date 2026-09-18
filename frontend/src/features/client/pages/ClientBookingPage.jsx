@@ -643,61 +643,82 @@ export default function ClientBookingPage() {
             </div>
 
             {availableSlots.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-md bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" />
-                    <span className="text-muted-foreground">Seleccionado</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-md bg-card border border-border" />
-                    <span className="text-muted-foreground">Disponible</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-md bg-muted opacity-50" />
-                    <span className="text-muted-foreground">Ocupado</span>
-                  </span>
+              availableSlots.every((s) => s.bloqueadoPorNovedad) ? (
+                <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+                  <AlertCircle className="w-8 h-8 text-amber-500 mx-auto animate-bounce" />
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Agenda No Disponible por Novedad Autorizada</h3>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto mt-1">
+                      <strong>{selectedBarber?.nombre}</strong> tiene una novedad aprobada (<strong>{availableSlots[0]?.novedadMotivo}</strong>) para la fecha seleccionada ({selectedDate}).
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(3)}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                  >
+                    Elegir Otra Fecha
+                  </button>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" />
+                      <span className="text-muted-foreground">Seleccionado</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-card border border-border" />
+                      <span className="text-muted-foreground">Disponible</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-md bg-muted opacity-50" />
+                      <span className="text-muted-foreground">Ocupado / Novedad</span>
+                    </span>
+                  </div>
 
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                  {availableSlots.map((slot) => {
-                    const isSelected = selectedTimeSlot === slot.hora;
-                    const isPopular = ["10:00", "11:00", "15:00", "16:00", "17:00"].includes(slot.hora);
-                    return (
-                      <motion.button
-                        key={slot.hora}
-                        type="button"
-                        disabled={!slot.disponible}
-                        whileHover={slot.disponible ? { scale: 1.05 } : {}}
-                        whileTap={slot.disponible ? { scale: 0.95 } : {}}
-                        onClick={() => setSelectedTimeSlot(slot.hora)}
-                        className={`py-3.5 px-2 rounded-2xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 relative cursor-pointer ${
-                          !slot.disponible
-                            ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
-                            : isSelected
-                            ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/30 ring-2 ring-[#DFB755] scale-105 font-black"
-                            : "bg-card border border-border hover:border-[#DFB755] text-foreground hover:bg-accent"
-                        }`}
-                      >
-                        {isPopular && slot.disponible && !isSelected && (
-                          <span className="absolute -top-2 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-[#DFB755] text-black shadow-xs">
-                            Popular
-                          </span>
-                        )}
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="font-mono font-bold">{slot.hora}</span>
-                        {!slot.disponible ? (
-                          <span className="text-[9px] font-normal">Ocupado</span>
-                        ) : (
-                          <span className={`text-[8px] font-bold ${isSelected ? "text-black/80" : "text-emerald-500"}`}>
-                            {isSelected ? "Elegido" : "Libre"}
-                          </span>
-                        )}
-                      </motion.button>
-                    );
-                  })}
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                    {availableSlots.map((slot) => {
+                      const isSelected = selectedTimeSlot === slot.hora;
+                      const isPopular = ["10:00", "11:00", "15:00", "16:00", "17:00"].includes(slot.hora);
+                      return (
+                        <motion.button
+                          key={slot.hora}
+                          type="button"
+                          disabled={!slot.disponible}
+                          whileHover={slot.disponible ? { scale: 1.05 } : {}}
+                          whileTap={slot.disponible ? { scale: 0.95 } : {}}
+                          onClick={() => setSelectedTimeSlot(slot.hora)}
+                          className={`py-3.5 px-2 rounded-2xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 relative cursor-pointer ${
+                            !slot.disponible
+                              ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
+                              : isSelected
+                              ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/30 ring-2 ring-[#DFB755] scale-105 font-black"
+                              : "bg-card border border-border hover:border-[#DFB755] text-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {isPopular && slot.disponible && !isSelected && (
+                            <span className="absolute -top-2 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-[#DFB755] text-black shadow-xs">
+                              Popular
+                            </span>
+                          )}
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="font-mono font-bold">{slot.hora}</span>
+                          {!slot.disponible ? (
+                            <span className="text-[9px] font-normal">
+                              {slot.bloqueadoPorNovedad ? "Permiso" : "Ocupado"}
+                            </span>
+                          ) : (
+                            <span className={`text-[8px] font-bold ${isSelected ? "text-black/80" : "text-emerald-500"}`}>
+                              {isSelected ? "Elegido" : "Libre"}
+                            </span>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <div className="p-6 rounded-2xl bg-destructive/10 border border-destructive/20 text-center space-y-2">
                 <AlertCircle className="w-8 h-8 text-destructive mx-auto" />

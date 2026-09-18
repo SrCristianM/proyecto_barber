@@ -2,6 +2,7 @@ import { BrowserRouter } from "react-router";
 import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes.jsx";
+import { SalonAudioProvider } from "./client/context/SalonAudioContext.jsx";
 
 // Purga integral de datos registrados para entrega limpia al cliente (v2)
 try {
@@ -137,13 +138,15 @@ export default function App() {
   return (
     <div className={isDark ? "dark" : ""}>
       <BrowserRouter>
-        <AppRoutes
-          isDark={isDark}
-          setIsDark={setIsDark}
-          isAuthenticated={isAuthenticated}
-          onLogin={() => setIsAuthenticated(true)}
-          onLogout={() => setIsAuthenticated(false)}
-        />
+        <SalonAudioProvider>
+          <AppRoutes
+            isDark={isDark}
+            setIsDark={setIsDark}
+            isAuthenticated={isAuthenticated}
+            onLogin={() => setIsAuthenticated(true)}
+            onLogout={() => setIsAuthenticated(false)}
+          />
+        </SalonAudioProvider>
       </BrowserRouter>
       <Toaster
         position="top-right"

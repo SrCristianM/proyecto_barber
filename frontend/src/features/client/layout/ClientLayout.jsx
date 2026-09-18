@@ -26,16 +26,19 @@ import ClientRouteProgressBar from "../components/ClientRouteProgressBar";
 import ClientSnipEffect from "../components/ClientSnipEffect";
 import SalonLiveRadar from "../components/SalonLiveRadar";
 import ClientMobileDock from "../components/ClientMobileDock";
-import { SalonAudioProvider, useSalonAudio } from "../context/SalonAudioContext";
+import { useSalonAudio } from "../context/SalonAudioContext";
 import { logoutUser, getCurrentUser } from "../../auth/services/authService";
 import { getCurrentClientProfile, getClientAppointments } from "../services/clientStorageService";
+import {
+  getNotifications,
+  markAsRead as serviceMarkAsRead,
+  markAllAsRead as serviceMarkAllAsRead,
+  subscribeNotifications
+} from "../../../shared/services/notificationService";
+import { timeAgo } from "../../admin/shared/hooks/useNotifications";
 
 export default function ClientLayout({ isDark, setIsDark, onLogout }) {
-  return (
-    <SalonAudioProvider>
-      <ClientLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />
-    </SalonAudioProvider>
-  );
+  return <ClientLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />;
 }
 
 function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
@@ -51,8 +54,17 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [clientProfile, setClientProfile] = useState(null);
   const [upcomingCount, setUpcomingCount] = useState(0);
+  const [realNotifications, setRealNotifications] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const loadNotificationsData = async () => {
+    try {
+      const u = getCurrentUser();
+      const notifs = await getNotifications(u);
+      setRealNotifications(notifs);
+    } catch {}
+  };
 
   useEffect(() => {
     const profile = getCurrentClientProfile();
@@ -61,6 +73,12 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
     const appointments = getClientAppointments();
     const upcoming = appointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada");
     setUpcomingCount(upcoming.length);
+
+    loadNotificationsData();
+    const unsubscribe = subscribeNotifications(() => {
+      loadNotificationsData();
+    });
+    return () => unsubscribe();
   }, [location.pathname]);
 
   // Cerrar menú móvil al cambiar de ruta
@@ -220,61 +238,126 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
 
                 {/* Notificaciones */}
                 <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    title="Notificaciones"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {upcomingCount > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#DFB755] ring-2 ring-background" />
-                    )}
-                  </button>
+                  {(() => {
+                    const unreadCount = realNotifications.filter((n) => !n.read).length;
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setShowNotifications(!showNotifications)}
+                          className="relative p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                          title="Notificaciones"
+                        >
+                          <Bell className="w-4 h-4" />
+                          {unreadCount > 0 ? (
+                            <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#DFB755] text-black text-[10px] font-black px-1 ring-2 ring-background">
+                              {unreadCount > 9 ? "9+" : unreadCount}
+                            </span>
+                          ) : upcomingCount > 0 ? (
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#DFB755] ring-2 ring-background" />
+                          ) : null}
+                        </button>
 
-                  <AnimatePresence>
-                    {showNotifications && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-2 w-80 rounded-2xl bg-card border border-border shadow-xl p-4 z-50"
-                      >
-                        <div className="flex items-center justify-between pb-2 border-b border-border mb-3">
-                          <span className="text-xs font-bold uppercase tracking-wider text-foreground">Notificaciones</span>
-                          <span className="text-[11px] text-muted-foreground font-medium">{upcomingCount} activa(s)</span>
-                        </div>
-                        {upcomingCount > 0 ? (
-                          <div className="space-y-2">
-                            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs">
-                              <p className="font-semibold text-foreground flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                                Tienes {upcomingCount} cita(s) programada(s)
-                              </p>
-                              <p className="text-muted-foreground text-[11px] mt-1">
-                                Revisa los detalles en tu sección de Mis Citas para estar al tanto de tu turno.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowNotifications(false);
-                                  navigate("/portal/mis-citas");
-                                }}
-                                className="mt-2 text-[11px] font-bold text-[#DFB755] hover:underline flex items-center gap-1 cursor-pointer"
-                              >
-                                Ver mis citas <ChevronRight className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground text-center py-4">
-                            No tienes notificaciones pendientes por el momento.
-                          </p>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <AnimatePresence>
+                          {showNotifications && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-2 w-84 rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 max-h-[85vh] flex flex-col"
+                            >
+                              <div className="flex items-center justify-between pb-2.5 border-b border-border mb-3 shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black uppercase tracking-wider text-foreground">
+                                    Mis Notificaciones
+                                  </span>
+                                  {unreadCount > 0 && (
+                                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/30">
+                                      {unreadCount} nueva(s)
+                                    </span>
+                                  )}
+                                </div>
+                                {unreadCount > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      serviceMarkAllAsRead(realNotifications);
+                                      setRealNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+                                    }}
+                                    className="text-[11px] text-[#DFB755] hover:underline font-bold cursor-pointer"
+                                  >
+                                    Marcar leídas
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="overflow-y-auto space-y-2.5 pr-1 max-h-[60vh] custom-scrollbar">
+                                {upcomingCount > 0 && (
+                                  <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs">
+                                    <p className="font-semibold text-foreground flex items-center gap-1.5">
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-[#DFB755]" />
+                                      Tienes {upcomingCount} cita(s) programada(s)
+                                    </p>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowNotifications(false);
+                                        navigate("/portal/mis-citas");
+                                      }}
+                                      className="mt-1 text-[11px] font-bold text-[#DFB755] hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                      Ver mis citas <ChevronRight className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                )}
+
+                                {realNotifications.length > 0 ? (
+                                  realNotifications.map((notif) => (
+                                    <div
+                                      key={notif.id}
+                                      onClick={() => {
+                                        serviceMarkAsRead(notif.id);
+                                        setRealNotifications((prev) =>
+                                          prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
+                                        );
+                                        setShowNotifications(false);
+                                        navigate(notif.route || "/portal/mis-citas");
+                                      }}
+                                      className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all text-left ${
+                                        notif.read
+                                          ? "bg-card/60 border-border/70 opacity-75 hover:opacity-100"
+                                          : "bg-[#DFB755]/10 border-[#DFB755]/40 hover:border-[#DFB755]"
+                                      }`}
+                                    >
+                                      <div className="flex items-start justify-between gap-1.5">
+                                        <p className="font-bold text-foreground text-[11px] flex items-center gap-1.5">
+                                          {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-[#DFB755] shrink-0" />}
+                                          {notif.title}
+                                        </p>
+                                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                          {timeAgo(notif.timestamp)}
+                                        </span>
+                                      </div>
+                                      <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                        {notif.description}
+                                      </p>
+                                    </div>
+                                  ))
+                                ) : (
+                                  upcomingCount === 0 && (
+                                    <p className="text-xs text-muted-foreground text-center py-6">
+                                      No tienes notificaciones pendientes por el momento.
+                                    </p>
+                                  )
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Usuario Avatar y Dropdown Rápido */}

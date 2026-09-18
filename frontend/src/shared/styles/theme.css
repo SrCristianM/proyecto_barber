@@ -450,6 +450,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -489,15 +490,13 @@
   position: absolute;
   width: 250%;
   height: 250%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 260deg,
-    rgba(212, 175, 55, 0.5) 290deg,
-    #D4AF37 325deg,
-    #FFFCE6 345deg,
-    #D4AF37 360deg
-  );
+  background: conic-gradient(from 0deg,
+      transparent 0deg,
+      transparent 260deg,
+      rgba(212, 175, 55, 0.5) 290deg,
+      #D4AF37 325deg,
+      #FFFCE6 345deg,
+      #D4AF37 360deg);
   animation: borderGlowSpin 3.5s linear infinite;
   z-index: 1;
 }
@@ -592,16 +591,19 @@
     background-color: rgba(212, 175, 55, 0.35) !important;
     transform: scale(1.015);
   }
+
   20% {
     box-shadow: 0 0 0 5px rgba(212, 175, 55, 0.75), 0 0 22px rgba(212, 175, 55, 0.5);
     background-color: rgba(212, 175, 55, 0.25) !important;
     transform: scale(1.01);
   }
+
   50% {
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.4), 0 0 15px rgba(212, 175, 55, 0.3);
     background-color: rgba(212, 175, 55, 0.15) !important;
     transform: scale(1);
   }
+
   100% {
     box-shadow: none;
     background-color: transparent;
@@ -624,9 +626,11 @@
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -641,18 +645,24 @@
 }
 
 @keyframes floatSlow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(-10px) rotate(1deg);
   }
 }
 
 @keyframes floatReverse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   50% {
     transform: translateY(8px) rotate(-1deg);
   }
@@ -667,10 +677,13 @@
 }
 
 @keyframes ambientPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.7;
     transform: scale(1.08);
@@ -692,4 +705,4 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(212, 175, 55, 0.28);
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 20px -5px rgba(212, 175, 55, 0.15);
-}
+}

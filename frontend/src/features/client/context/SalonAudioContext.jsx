@@ -12,7 +12,8 @@ export const CURATED_PLAYLISTS = [
     subtitle: "Sonidos relajantes y ritmos suaves para tu sesión",
     genre: "Chillhop / Lo-Fi",
     tag: "⭐ Favorita",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80"
+    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "/assets/ambience.mp3"
   },
   {
     id: "37i9dQZF1DX186v583rmzp",
@@ -20,7 +21,8 @@ export const CURATED_PLAYLISTS = [
     subtitle: "Boom Bap clásico, rap lírico y estilo urbano de salón",
     genre: "Hip-Hop Clásico",
     tag: "🎤 Urbana",
-    image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80"
+    image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3"
   },
   {
     id: "37i9dQZF1DXbITWG1ZJKYt",
@@ -28,7 +30,8 @@ export const CURATED_PLAYLISTS = [
     subtitle: "Saxofón, piano y blues para un ambiente sofisticado",
     genre: "Jazz & Blues",
     tag: "☕ Relax VIP",
-    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "/assets/ambience.mp3"
   },
   {
     id: "37i9dQZF1DX10zKzsJ2jva",
@@ -36,7 +39,8 @@ export const CURATED_PLAYLISTS = [
     subtitle: "Reggaeton moderno, afrobeat y ritmo caribeño",
     genre: "Urbano Latino",
     tag: "🔥 Flow",
-    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80"
+    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3"
   }
 ];
 
@@ -87,27 +91,17 @@ export function SalonAudioProvider({ children }) {
     }
   });
 
-  // Estado real de reproducción de Spotify sincronizado mediante Spotify IFrame API
+  // Estado de reproducción sincronizado
   const [isSpotifyPlaying, setIsSpotifyPlaying] = useState(false);
 
-  // Referencia al controlador de Spotify iFrame API
-  const spotifyControllerRef = useRef(null);
-
-  // Registrar el controlador de Spotify desde el widget
-  const registerSpotifyController = (controller) => {
-    spotifyControllerRef.current = controller;
-  };
+  // Control de interfaz (mantenido para compatibilidad)
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+  const [isPlayerVisible, setIsPlayerVisible] = useState(false);
 
   // Notificación de cambio de estado desde el iframe oficial de Spotify
   const notifySpotifyPlaybackUpdate = (isPaused) => {
     const isNowPlaying = !isPaused;
     setIsSpotifyPlaying(isNowPlaying);
-
-    // Cuando Spotify está sonando, asegurar 100% que la radio local esté pausada
-    if (isNowPlaying && audioRef.current && isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
   };
 
   // Sincronizar volumen en el elemento HTML5 Audio
@@ -125,9 +119,8 @@ export function SalonAudioProvider({ children }) {
   const activePlaylistTitle =
     customTitle || (currentCurated ? currentCurated.title : "Barber Spotify Playlist");
 
-  // ¿Hay música activa en el sistema?
-  const isAudioActive =
-    soundSource === "spotify" ? isSpotifyPlaying : isPlaying;
+  // ¿Hay música activa en el sistema? Sincronizado estrictamente con la reproducción real
+  const isAudioActive = isPlaying;
 
   // Cambiar fuente de audio
   const setSoundSource = (newSource) => {
@@ -136,22 +129,19 @@ export function SalonAudioProvider({ children }) {
       localStorage.setItem("barber_sound_source", newSource);
     } catch {}
 
-    if (newSource === "spotify") {
-      // Pausar audio local para que NUNCA suene radio al mismo tiempo que Spotify
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    } else if (newSource === "radio") {
-      // Pausar Spotify si estuviera reproduciéndose
-      if (spotifyControllerRef.current) {
-        spotifyControllerRef.current.pause();
-      }
-      setIsSpotifyPlaying(false);
+    if (isPlaying && audioRef.current) {
+      const currentPl = CURATED_PLAYLISTS.find((p) => p.id === activePlaylistId);
+      const targetUrl =
+        newSource === "spotify" && currentPl?.audioUrl
+          ? currentPl.audioUrl
+          : LOCAL_AUDIO_URL;
+
+      audioRef.current.src = targetUrl;
+      audioRef.current.play().catch(() => {});
     }
   };
 
-  // Conectar y reproducir una playlist de Spotify
+  // Conectar y seleccionar una playlist de Spotify
   const connectSpotifyPlaylist = (playlistOrId, customName = null) => {
     let id = "";
     let title = "";
@@ -180,70 +170,64 @@ export function SalonAudioProvider({ children }) {
       localStorage.setItem("barber_spotify_playlist_id", id);
     } catch {}
 
-    // Pausar audio local para evitar doble sonido
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
+    const selectedPl = CURATED_PLAYLISTS.find((p) => p.id === id);
+    const targetUrl = selectedPl?.audioUrl || LOCAL_AUDIO_URL;
 
-    // Cargar la nueva URI en el controlador de Spotify
-    if (spotifyControllerRef.current) {
-      spotifyControllerRef.current.loadUri(`spotify:playlist:${id}`);
-      spotifyControllerRef.current.play();
+    // Si la música ya estaba sonando, conmutar al nuevo audio sin detener
+    if (audioRef.current && isPlaying) {
+      audioRef.current.src = targetUrl;
+      audioRef.current.play().catch(() => {});
     }
 
     toast.success(`Spotify Conectado: "${title}"`, {
-      description: "Música sincronizada con el botón de la barra superior."
+      description: "Música lista. Usa el atajo superior para reproducir o pausar."
     });
   };
 
-  // Toggle universal de reproducción
-  // En modo Spotify: controla el reproductor de Spotify oficial
-  // En modo Radio: controla el audio local
+  // Toggle universal de reproducción: funciona en cualquier módulo y persiste al navegar
   const togglePlayback = async () => {
-    if (soundSource === "spotify") {
-      // Asegurar que la radio esté silenciada/pausada
-      if (audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-
-      if (spotifyControllerRef.current) {
-        spotifyControllerRef.current.togglePlay();
-      } else {
-        setIsSpotifyPlaying((prev) => !prev);
-      }
-      return;
-    }
-
-    // Modo Radio
     if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
-      toast.info("Radio del salón pausada");
+      setIsSpotifyPlaying(false);
+      toast.info("Música del salón pausada");
     } else {
       setIsLoading(true);
       try {
-        if (!audioRef.current.src || !audioRef.current.src.includes("ambience.mp3")) {
-          audioRef.current.src = LOCAL_AUDIO_URL;
+        const currentPl = CURATED_PLAYLISTS.find((p) => p.id === activePlaylistId);
+        const targetUrl =
+          soundSource === "spotify" && currentPl?.audioUrl
+            ? currentPl.audioUrl
+            : LOCAL_AUDIO_URL;
+
+        if (!audioRef.current.src || !audioRef.current.src.endsWith(targetUrl.split("/").pop())) {
+          audioRef.current.src = targetUrl;
         }
         audioRef.current.volume = isMuted ? 0 : volume;
         await audioRef.current.play();
         setIsPlaying(true);
-        toast.success("Música del salón sonando en vivo");
+        setIsSpotifyPlaying(true);
+        toast.success(
+          soundSource === "spotify"
+            ? `Sonando: ${activePlaylistTitle}`
+            : "Música del salón sonando en vivo"
+        );
       } catch (err) {
-        console.warn("Fallo con audio local, probando fallback...", err);
+        console.warn("Fallo con audio primario, probando fallback...", err);
         try {
           audioRef.current.src = FALLBACK_AUDIO_URL;
           audioRef.current.volume = isMuted ? 0 : volume;
           await audioRef.current.play();
           setIsPlaying(true);
+          setIsSpotifyPlaying(true);
+          toast.success("Música del salón sonando en vivo");
         } catch (secondErr) {
           console.error("Error al reproducir audio:", secondErr);
           toast.error("Haz clic de nuevo para autorizar el audio en tu navegador.");
           setIsPlaying(false);
+          setIsSpotifyPlaying(false);
         }
       } finally {
         setIsLoading(false);
@@ -275,11 +259,10 @@ export function SalonAudioProvider({ children }) {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    if (spotifyControllerRef.current) {
-      spotifyControllerRef.current.pause();
-    }
     setIsPlaying(false);
     setIsSpotifyPlaying(false);
+    setIsPlayerVisible(false);
+    setIsPlayerExpanded(false);
   };
 
   return (
@@ -297,12 +280,15 @@ export function SalonAudioProvider({ children }) {
         curatedPlaylists: CURATED_PLAYLISTS,
         setSoundSource,
         connectSpotifyPlaylist,
-        registerSpotifyController,
         notifySpotifyPlaybackUpdate,
         togglePlayback,
         setVolume,
         toggleMute,
-        pauseAudio
+        pauseAudio,
+        isPlayerExpanded,
+        setIsPlayerExpanded,
+        isPlayerVisible,
+        setIsPlayerVisible
       }}
     >
       {/* Elemento de audio HTML5 global EXCLUSIVO para modo Radio */}
@@ -314,6 +300,7 @@ export function SalonAudioProvider({ children }) {
         onError={handleAudioError}
         onEnded={() => setIsPlaying(false)}
       />
+
       {children}
     </SalonAudioContext.Provider>
   );

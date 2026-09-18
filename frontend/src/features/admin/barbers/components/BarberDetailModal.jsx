@@ -148,12 +148,14 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
 
         {/* Acciones */}
         <div className="flex gap-3 pt-2">
-          <button
-            onClick={onEdit}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
-          >
-            Editar Barbero
-          </button>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer"
+            >
+              Editar Barbero
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex-1 py-3 bg-background border border-border rounded-xl hover:bg-accent transition-colors text-foreground font-medium text-sm cursor-pointer"

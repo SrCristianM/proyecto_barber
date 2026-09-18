@@ -6,8 +6,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 
-const collectionPath = path.resolve(rootDir, "Tu_Turno_Barber_API.postman_collection.json");
-const envPath = path.resolve(rootDir, "Tu_Turno_Barber_Environment.postman_environment.json");
+const postmanDir = path.resolve(rootDir, "postman");
+const collectionPath = path.resolve(postmanDir, "Tu_Turno_Barber_API.postman_collection.json");
+const envPath = path.resolve(postmanDir, "Tu_Turno_Barber_Environment.postman_environment.json");
 
 console.log("============================================================");
 console.log("🧪 INICIANDO VERIFICACIÓN DE LA SUITE POSTMAN CRUD");

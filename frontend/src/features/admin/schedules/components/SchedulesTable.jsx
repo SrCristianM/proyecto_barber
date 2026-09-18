@@ -11,7 +11,10 @@ export default function SchedulesTable({
   onToggleStatus,
   onEdit,
   onDelete,
-  getBarberName
+  getBarberName,
+  canEdit = true,
+  canToggle = true,
+  canDelete = true
 }) {
   return (
     <>
@@ -95,29 +98,35 @@ export default function SchedulesTable({
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => onToggleStatus(schedule)}
-                        className={`p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
-                          schedule.estado === 1 ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground"
-                        }`}
-                        title={schedule.estado === 1 ? "Desactivar" : "Activar"}
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(schedule)}
-                        className="p-2 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(schedule)}
-                        className="p-2 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canToggle && (
+                        <button
+                          onClick={() => onToggleStatus(schedule)}
+                          className={`p-2 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
+                            schedule.estado === 1 ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                          title={schedule.estado === 1 ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button
+                          onClick={() => onEdit(schedule)}
+                          className="p-2 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => onDelete(schedule)}
+                          className="p-2 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

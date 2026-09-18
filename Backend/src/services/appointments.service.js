@@ -3,6 +3,8 @@ import { BarbersRepository } from "../models/barbers.model.js";
 import { ClientsRepository } from "../models/clients.model.js";
 import { ServicesRepository } from "../models/services.model.js";
 import { SchedulesService } from "./schedules.service.js";
+import { NotificationsService } from "./notifications.service.js";
+import { ROLES } from "../config/constants.js";
 import { ApiError } from "../errors/apiError.js";
 
 export class AppointmentsService {
@@ -95,7 +97,47 @@ export class AppointmentsService {
       servicesWithPrice
     );
 
-    return await AppointmentsRepository.findById(newAppointmentId);
+    const createdApt = await AppointmentsRepository.findById(newAppointmentId);
+
+    // Disparo automático de notificaciones operativas
+    try {
+      NotificationsService.createCustomNotification({
+        type: "appointment",
+        title: "Nueva cita agendada",
+        description: `Nueva cita agendada para el ${fecha} a las ${requestedTime} con ${barber.nombre}.`,
+        id_rol: ROLES.ADMIN,
+        route: "/admin/citas"
+      });
+      NotificationsService.createCustomNotification({
+        type: "appointment",
+        title: "Nueva cita agendada",
+        description: `Nueva cita agendada para el ${fecha} a las ${requestedTime} con ${barber.nombre}.`,
+        id_rol: ROLES.RECEPCIONISTA,
+        route: "/admin/citas"
+      });
+      if (barber.id_usuario) {
+        NotificationsService.createCustomNotification({
+          type: "appointment",
+          title: "Nueva cita asignada",
+          description: `Tienes una nueva cita para el ${fecha} a las ${requestedTime} (${appointmentData.cliente_nombre || client.nombre || "Cliente"}).`,
+          id_usuario: barber.id_usuario,
+          route: "/barbero/agenda"
+        });
+      }
+      if (client.id_usuario) {
+        NotificationsService.createCustomNotification({
+          type: "appointment",
+          title: "¡Cita agendada con éxito!",
+          description: `Tu cita para el ${fecha} a las ${requestedTime} con ${barber.nombre} ha sido confirmada.`,
+          id_usuario: client.id_usuario,
+          route: "/portal/mis-citas"
+        });
+      }
+    } catch (err) {
+      console.warn("[AppointmentsService] No se pudo despachar notificación:", err.message);
+    }
+
+    return createdApt;
   }
 
   static async updateAppointment(id, appointmentData) {
@@ -146,7 +188,34 @@ export class AppointmentsService {
   }
 
   static async cancelAppointment(id) {
-    return await this.updateAppointmentStatus(id, "Cancelada");
+    const apt = await AppointmentsRepository.findById(id);
+    const result = await this.updateAppointmentStatus(id, "Cancelada");
+    if (apt) {
+      try {
+        NotificationsService.createCustomNotification({
+          type: "appointment",
+          title: "Cita cancelada",
+          description: `La cita del ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelada.`,
+          id_rol: ROLES.ADMIN,
+          route: "/admin/citas"
+        });
+        if (apt.id_barbero) {
+          const barber = await BarbersRepository.findById(apt.id_barbero);
+          if (barber?.id_usuario) {
+            NotificationsService.createCustomNotification({
+              type: "appointment",
+              title: "Cita cancelada",
+              description: `Tu cita del ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelada.`,
+              id_usuario: barber.id_usuario,
+              route: "/barbero/agenda"
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[AppointmentsService] No se pudo despachar notificación de cancelación:", err.message);
+      }
+    }
+    return result;
   }
 
   static async deleteAppointment(id) {

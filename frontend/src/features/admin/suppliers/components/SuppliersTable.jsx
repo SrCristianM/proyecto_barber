@@ -100,31 +100,37 @@ export default function SuppliersTable({
                     >
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => onToggleStatus(supplier)}
-                      className={`p-1.5 hover:bg-secondary rounded-md transition-colors ${
-                        supplier.estado === 1
-                          ? "text-warning hover:text-warning/80"
-                          : "text-success hover:text-success/80"
-                      }`}
-                      title={supplier.estado === 1 ? "Desactivar" : "Activar"}
-                    >
-                      <Power className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onEdit(supplier)}
-                      className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors"
-                      title="Editar"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(supplier)}
-                      className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {onToggleStatus && (
+                      <button
+                        onClick={() => onToggleStatus(supplier)}
+                        className={`p-1.5 hover:bg-secondary rounded-md transition-colors ${
+                          supplier.estado === 1
+                            ? "text-warning hover:text-warning/80"
+                            : "text-success hover:text-success/80"
+                        }`}
+                        title={supplier.estado === 1 ? "Desactivar" : "Activar"}
+                      >
+                        <Power className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(supplier)}
+                        className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors"
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(supplier)}
+                        className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

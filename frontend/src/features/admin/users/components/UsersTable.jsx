@@ -11,7 +11,10 @@ export default function UsersTable({
   onDetail,
   onToggleStatus,
   onEdit,
-  onDelete
+  onDelete,
+  canEdit = true,
+  canToggle = true,
+  canDelete = true
 }) {
   const getRoleName = (id_rol) => {
     const r = ROLES.find((role) => role.id_rol === Number(id_rol));
@@ -69,24 +72,30 @@ export default function UsersTable({
                   </span>
                 </td>
                 <td className="py-4 px-4">
-                  <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => onDetail(user)} className="p-2 hover:bg-background rounded-lg text-foreground" title="Ver detalle">
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onToggleStatus(user)}
-                      className={`p-2 hover:bg-background rounded-lg ${user.estado === 1 ? "text-success hover:text-warning" : "text-muted-foreground hover:text-success"}`}
-                      title={user.estado === 1 ? "Desactivar" : "Activar"}
-                    >
-                      <Power className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => onEdit(user)} className="p-2 hover:bg-background rounded-lg text-primary" title="Editar">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button onClick={() => onDelete(user)} className="p-2 hover:bg-background rounded-lg text-destructive" title="Eliminar">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => onDetail(user)} className="p-2 hover:bg-background rounded-lg text-foreground cursor-pointer" title="Ver detalle">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      {canToggle && (
+                        <button
+                          onClick={() => onToggleStatus(user)}
+                          className={`p-2 hover:bg-background rounded-lg cursor-pointer ${user.estado === 1 ? "text-success hover:text-warning" : "text-muted-foreground hover:text-success"}`}
+                          title={user.estado === 1 ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button onClick={() => onEdit(user)} className="p-2 hover:bg-background rounded-lg text-primary cursor-pointer" title="Editar">
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button onClick={() => onDelete(user)} className="p-2 hover:bg-background rounded-lg text-destructive cursor-pointer" title="Eliminar">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                 </td>
               </tr>
             ))}

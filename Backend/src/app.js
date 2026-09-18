@@ -29,6 +29,7 @@ import purchasesRoutes from "./routes/purchases.routes.js";
 import salesRoutes from "./routes/sales.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import uploadsRoutes from "./routes/uploads.routes.js";
+import notificationsRoutes from "./routes/notifications.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,14 @@ app.use(
 if (env.NODE_ENV !== "test") {
   app.use(morgan("dev"));
 }
+
+// Normalizar charset en cabeceras Content-Type para prevenir 'unsupported charset "UTF-8"'
+app.use((req, res, next) => {
+  if (req.headers["content-type"]) {
+    req.headers["content-type"] = req.headers["content-type"].replace(/charset=["']?([^"';]+)["']?/i, "charset=$1");
+  }
+  next();
+});
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -121,6 +130,7 @@ app.use("/api/purchases", purchasesRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadsRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 // Ruta no encontrada (404)
 app.use((req, res, next) => {

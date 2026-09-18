@@ -9,6 +9,7 @@
 import { getCurrentUser, getStoredUsers, saveStoredUsers } from "../../auth/services/authService.js";
 import { createAppointment as apiCreateAppointment, updateAppointmentStatus as apiUpdateAppointmentStatus } from "../../admin/appointments/services/appointmentsService.js";
 import { createSale as apiCreateSale } from "../../admin/sales/services/salesService.js";
+import { createNotification } from "../../../shared/services/notificationService.js";
 
 // Claves de almacenamiento
 const STORAGE_KEYS = {
@@ -398,6 +399,31 @@ export function getAvailableSlots(id_barbero, isoDate) {
     }
   }
 
+  // Verificar novedades aprobadas del barbero (Ausencia, Permiso, Cambio de turno) en la fecha
+  let approvedNovelty = null;
+  try {
+    const rawNov = localStorage.getItem("barber_novelties_db");
+    const novelties = rawNov ? JSON.parse(rawNov) : [];
+    approvedNovelty = novelties.find(
+      (n) =>
+        Number(n.id_barbero) === Number(id_barbero) &&
+        n.fecha === isoDate &&
+        (n.estado === "Aprobado" || n.estado === "Aprobada")
+    );
+  } catch (err) {
+    approvedNovelty = null;
+  }
+
+  if (approvedNovelty) {
+    // Novedad aprobada: inhabilita la agenda completa para este barbero en este día
+    return possibleSlots.map((slot) => ({
+      hora: slot,
+      disponible: false,
+      bloqueadoPorNovedad: true,
+      novedadMotivo: approvedNovelty.motivo || approvedNovelty.tipo || "Permiso o Ausencia Concedida"
+    }));
+  }
+
   // Filtrar citas ya agendadas de ese barbero en esa fecha (excluyendo canceladas)
   const busyTimes = allAppointments
     .filter(
@@ -410,8 +436,28 @@ export function getAvailableSlots(id_barbero, isoDate) {
 
   return possibleSlots.map((slot) => ({
     hora: slot,
-    disponible: !busyTimes.includes(slot)
+    disponible: !busyTimes.includes(slot),
+    bloqueadoPorNovedad: false
   }));
+}
+
+/**
+ * Consulta si un barbero tiene alguna novedad aprobada para una fecha específica.
+ */
+export function checkBarberApprovedNovelty(id_barbero, isoDate) {
+  if (!id_barbero || !isoDate) return null;
+  try {
+    const rawNov = localStorage.getItem("barber_novelties_db");
+    const novelties = rawNov ? JSON.parse(rawNov) : [];
+    return novelties.find(
+      (n) =>
+        Number(n.id_barbero) === Number(id_barbero) &&
+        n.fecha === isoDate &&
+        (n.estado === "Aprobado" || n.estado === "Aprobada")
+    ) || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -462,6 +508,38 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
 
   const updatedAppointments = [newAppointment, ...allAppointments];
   save(STORAGE_KEYS.APPOINTMENTS, updatedAppointments);
+
+  // Despachar notificaciones en tiempo real para todos los roles involucrados
+  try {
+    // 1. A Administración y Recepción
+    createNotification({
+      type: "appointment",
+      title: "Nueva cita agendada",
+      description: `El cliente ${clientFullName} agendó cita para el ${fecha} a las ${hora.substring(0, 5)} con ${newAppointment.nombre_item}.`,
+      targetRole: [1, 2],
+      route: "/admin/citas"
+    });
+    // 2. Al Barbero
+    createNotification({
+      type: "appointment",
+      title: "Nueva cita asignada",
+      description: `Tienes una nueva cita agendada con ${clientFullName} para el ${fecha} a las ${hora.substring(0, 5)}.`,
+      targetRole: 3,
+      route: "/barbero/agenda"
+    });
+    // 3. Al Cliente
+    if (client.id_usuario) {
+      createNotification({
+        type: "appointment",
+        title: "¡Cita agendada con éxito!",
+        description: `Tu turno para ${newAppointment.nombre_item} ha sido programado para el ${fecha} a las ${hora.substring(0, 5)}.`,
+        targetUserId: client.id_usuario,
+        route: "/portal/mis-citas"
+      });
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error al despachar notificación de cita:", err);
+  }
 
   apiCreateAppointment({
     id_cliente: client.id_cliente,
@@ -516,6 +594,35 @@ export function rescheduleAppointment(id_cita, { nuevaFecha, nuevaHora }) {
   };
 
   save(STORAGE_KEYS.APPOINTMENTS, allAppointments);
+
+  try {
+    createNotification({
+      type: "appointment",
+      title: "Cita reprogramada",
+      description: `La cita de ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${nuevaFecha} a las ${nuevaHora.substring(0, 5)}.`,
+      targetRole: [1, 2],
+      route: "/admin/citas"
+    });
+    createNotification({
+      type: "appointment",
+      title: "Cita reprogramada",
+      description: `Tu cita con ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${nuevaFecha} a las ${nuevaHora.substring(0, 5)}.`,
+      targetRole: 3,
+      route: "/barbero/agenda"
+    });
+    if (apt.id_usuario) {
+      createNotification({
+        type: "appointment",
+        title: "Cita reprogramada con éxito",
+        description: `Tu turno ha sido reprogramado para el ${nuevaFecha} a las ${nuevaHora.substring(0, 5)}.`,
+        targetUserId: apt.id_usuario,
+        route: "/portal/mis-citas"
+      });
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error al despachar notificación de reprogramación:", err);
+  }
+
   return { success: true, appointment: allAppointments[aptIndex] };
 }
 
@@ -537,6 +644,35 @@ export function cancelAppointment(id_cita, motivo = "Cancelada por el cliente") 
   };
 
   save(STORAGE_KEYS.APPOINTMENTS, allAppointments);
+
+  try {
+    const apt = allAppointments[aptIndex];
+    createNotification({
+      type: "appointment",
+      title: "Cita cancelada",
+      description: `La cita de ${apt.cliente_nombre || "Cliente"} para el ${apt.fecha} ha sido cancelada.`,
+      targetRole: [1, 2],
+      route: "/admin/citas"
+    });
+    createNotification({
+      type: "appointment",
+      title: "Cita cancelada",
+      description: `Tu cita con ${apt.cliente_nombre || "Cliente"} para el ${apt.fecha} fue cancelada.`,
+      targetRole: 3,
+      route: "/barbero/agenda"
+    });
+    if (apt.id_usuario) {
+      createNotification({
+        type: "appointment",
+        title: "Cita cancelada",
+        description: `Has cancelado tu cita del ${apt.fecha}. Puedes agendar un nuevo turno cuando desees.`,
+        targetUserId: apt.id_usuario,
+        route: "/portal/mis-citas"
+      });
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error despachando cancelación:", err);
+  }
 
   apiUpdateAppointmentStatus(id_cita, "Cancelada").catch((err) => {
     console.warn("[ClientStorage] Cita cancelada localmente (API fallback):", err.message);

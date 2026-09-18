@@ -14,6 +14,7 @@ import ServicesStats from "../components/ServicesStats";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 const TABS = [
   { key: "services", label: "Servicios" },
@@ -23,6 +24,12 @@ const TABS = [
 
 export default function ServicesPage() {
   useSearchHighlight();
+  const { hasPermission } = usePermissions();
+  const canCreateService = hasPermission("servicios", "crear");
+  const canEditService = hasPermission("servicios", "editar");
+  const canDeleteService = hasPermission("servicios", "eliminar");
+  const canToggleService = hasPermission("servicios", "activar");
+
   const [activeTab, setActiveTab] = useState("services");
   const [viewMode, setViewMode] = useState("table");
 
@@ -90,7 +97,7 @@ export default function ServicesPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Servicios</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona los servicios, categorías y paquetes</p>
         </div>
-        {activeTab === "services" && (
+        {activeTab === "services" && canCreateService && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
@@ -225,9 +232,9 @@ export default function ServicesPage() {
                 sortDir={sortDir}
                 onSort={handleSort}
                 onDetail={openDetailModal}
-                onToggleStatus={openDeactivateModal}
-                onEdit={openEditModal}
-                onDelete={openDeleteModal}
+                onToggleStatus={canToggleService ? openDeactivateModal : null}
+                onEdit={canEditService ? openEditModal : null}
+                onDelete={canDeleteService ? openDeleteModal : null}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -236,9 +243,9 @@ export default function ServicesPage() {
                     key={service.id_servicio}
                     service={service}
                     onDetail={openDetailModal}
-                    onToggleStatus={openDeactivateModal}
-                    onEdit={openEditModal}
-                    onDelete={openDeleteModal}
+                    onToggleStatus={canToggleService ? openDeactivateModal : null}
+                    onEdit={canEditService ? openEditModal : null}
+                    onDelete={canDeleteService ? openDeleteModal : null}
                   />
                 ))}
               </div>

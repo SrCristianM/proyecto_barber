@@ -11,10 +11,10 @@ const DashboardLayout = ({ isDark, setIsDark }) => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      
+
       <div className={`transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"}`}>
         <TopBar isDark={isDark} setIsDark={setIsDark} />
-        
+
         <main className="p-6">
           <motion.div
             key={location.pathname}

@@ -115,6 +115,17 @@ const SYSTEM_MODULES = [
       { key: "compras_anular", label: "Anular" },
       { key: "compras_eliminar", label: "Eliminar" }
     ]
+  },
+  {
+    id: "barberos",
+    label: "Barberos",
+    acciones: [
+      { key: "barberos_ver", label: "Ver" },
+      { key: "barberos_crear", label: "Crear" },
+      { key: "barberos_editar", label: "Editar" },
+      { key: "barberos_eliminar", label: "Eliminar" },
+      { key: "barberos_activar", label: "Activar / Desactivar" }
+    ]
   }
 ];
 
@@ -129,10 +140,19 @@ export default function RoleFormModal({
   const isCreate = mode === "create";
   const permisos = formData.permisos || [];
 
+  const isTargetAdmin =
+    (formData.nombre_rol || "").toLowerCase().trim() === "administrador" ||
+    Number(formData.id_rol) === 1;
+
+  const SYSTEM_ROLES_KEYS = ["roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar"];
   const allKeys = SYSTEM_MODULES.flatMap((m) => m.acciones.map((a) => a.key));
   const allSelected = allKeys.every((k) => permisos.includes(k));
 
   const togglePermission = (key) => {
+    // Si es Administrador, no permitir desmarcar los permisos del módulo roles
+    if (isTargetAdmin && key.startsWith("roles_")) {
+      return;
+    }
     const next = permisos.includes(key)
       ? permisos.filter((p) => p !== key)
       : [...permisos, key];
@@ -141,6 +161,10 @@ export default function RoleFormModal({
   };
 
   const toggleModule = (module) => {
+    // Si es Administrador, no permitir desmarcar el módulo roles
+    if (isTargetAdmin && module.id === "roles") {
+      return;
+    }
     const moduleKeys = module.acciones.map((a) => a.key);
     const allModuleSelected = moduleKeys.every((k) => permisos.includes(k));
     let next;
@@ -155,7 +179,9 @@ export default function RoleFormModal({
 
   const toggleAll = () => {
     if (allSelected) {
-      setFormData({ ...formData, permisos: [] });
+      // Si es Administrador, preservar siempre los permisos del módulo roles
+      const next = isTargetAdmin ? [...SYSTEM_ROLES_KEYS] : [];
+      setFormData({ ...formData, permisos: next });
     } else {
       setFormData({ ...formData, permisos: [...allKeys] });
       if (errors.permisos) setErrors((prev) => ({ ...prev, permisos: null }));
@@ -164,6 +190,9 @@ export default function RoleFormModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isTargetAdmin) {
+      formData.permisos = Array.from(new Set([...(formData.permisos || []), ...SYSTEM_ROLES_KEYS]));
+    }
     const result = validateRoleForm(formData);
     if (!result.isValid) {
       setErrors(result.errors);
@@ -257,6 +286,7 @@ export default function RoleFormModal({
               const selectedCount = moduleKeys.filter((k) => permisos.includes(k)).length;
               const allModuleSelected = selectedCount === moduleKeys.length;
               const someSelected = selectedCount > 0 && !allModuleSelected;
+              const isModuleProtected = isTargetAdmin && module.id === "roles";
 
               return (
                 <div
@@ -265,41 +295,57 @@ export default function RoleFormModal({
                 >
                   {/* Header del módulo */}
                   <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
-                    <span className="text-sm font-semibold text-foreground">{module.label}</span>
-                    <label className="flex items-center gap-1.5 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={allModuleSelected}
-                        ref={(el) => {
-                          if (el) el.indeterminate = someSelected;
-                        }}
-                        onChange={() => toggleModule(module)}
-                        className="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
-                      />
-                      <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                        Seleccionar todo
-                      </span>
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-foreground">{module.label}</span>
+                      {isModuleProtected && (
+                        <span className="text-[10px] bg-primary/20 text-primary border border-primary/30 font-bold px-2 py-0.5 rounded-full">
+                          Protegido para Administrador
+                        </span>
+                      )}
+                    </div>
+                    {!isModuleProtected && (
+                      <label className="flex items-center gap-1.5 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={allModuleSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someSelected;
+                          }}
+                          onChange={() => toggleModule(module)}
+                          className="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                          Seleccionar todo
+                        </span>
+                      </label>
+                    )}
                   </div>
 
                   {/* Acciones del módulo */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1.5 px-3 py-2.5">
-                    {module.acciones.map((accion) => (
-                      <label
-                        key={accion.key}
-                        className="flex items-center gap-2 cursor-pointer group"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={permisos.includes(accion.key)}
-                          onChange={() => togglePermission(accion.key)}
-                          className="w-3.5 h-3.5 rounded border-input text-primary focus:ring-primary cursor-pointer"
-                        />
-                        <span className="text-xs text-foreground group-hover:text-primary transition-colors">
-                          {accion.label}
-                        </span>
-                      </label>
-                    ))}
+                    {module.acciones.map((accion) => {
+                      const isActionProtected = isTargetAdmin && accion.key.startsWith("roles_");
+                      const isChecked = isActionProtected ? true : permisos.includes(accion.key);
+
+                      return (
+                        <label
+                          key={accion.key}
+                          className={`flex items-center gap-2 ${isActionProtected ? "opacity-80 cursor-not-allowed" : "cursor-pointer group"}`}
+                          title={isActionProtected ? "El rol Administrador siempre debe conservar permisos de roles y permisos" : undefined}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={isActionProtected}
+                            onChange={() => togglePermission(accion.key)}
+                            className={`w-3.5 h-3.5 rounded border-input text-primary focus:ring-primary ${isActionProtected ? "cursor-not-allowed" : "cursor-pointer"}`}
+                          />
+                          <span className={`text-xs ${isActionProtected ? "text-primary font-semibold" : "text-foreground group-hover:text-primary transition-colors"}`}>
+                            {accion.label}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               );

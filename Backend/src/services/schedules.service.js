@@ -2,6 +2,8 @@ import { SchedulesRepository } from "../models/schedules.model.js";
 import { BarbersRepository } from "../models/barbers.model.js";
 import { executeQuery, isDatabaseConnected } from "../config/db.js";
 import { mockStore } from "../config/mockStore.js";
+import { NotificationsService } from "./notifications.service.js";
+import { ROLES } from "../config/constants.js";
 import { ApiError } from "../errors/apiError.js";
 
 const DAYS_OF_WEEK_ES = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
@@ -153,6 +155,26 @@ export class SchedulesService {
       throw ApiError.notFound("Barbero no encontrado");
     }
     const newId = await SchedulesRepository.createNovelty(noveltyData);
+
+    try {
+      NotificationsService.createCustomNotification({
+        type: "schedule",
+        title: "Nueva novedad de horario solicitada",
+        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${noveltyData.fecha}.`,
+        id_rol: ROLES.ADMIN,
+        route: "/admin/horarios"
+      });
+      NotificationsService.createCustomNotification({
+        type: "schedule",
+        title: "Nueva novedad de horario solicitada",
+        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${noveltyData.fecha}.`,
+        id_rol: ROLES.RECEPCIONISTA,
+        route: "/admin/horarios"
+      });
+    } catch (err) {
+      console.warn("[SchedulesService] Error despachando notificación de novedad:", err.message);
+    }
+
     return { id_novedad: newId, ...noveltyData, estado: "Pendiente" };
   }
 
@@ -161,6 +183,26 @@ export class SchedulesService {
     if (!updated) {
       throw ApiError.notFound("Novedad no encontrada");
     }
+
+    try {
+      const allNovelties = await SchedulesRepository.findAllNovelties();
+      const nov = allNovelties.find((n) => Number(n.id_novedad) === Number(id));
+      if (nov && nov.id_barbero) {
+        const barber = await BarbersRepository.findById(nov.id_barbero);
+        if (barber?.id_usuario) {
+          NotificationsService.createCustomNotification({
+            type: "schedule",
+            title: `Novedad de horario ${newStatus}`,
+            description: `Tu solicitud de ${nov.tipo} para el día ${nov.fecha} ha sido ${newStatus} por la administración.`,
+            id_usuario: barber.id_usuario,
+            route: "/barbero/novedades"
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[SchedulesService] Error despachando notificación de respuesta de novedad:", err.message);
+    }
+
     return { id_novedad: Number(id), estado: newStatus };
   }
 }

@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route, Navigate, Link } from "react-router";
+import { AlertCircle } from "lucide-react";
 import AdminDashboard from "../shared/dashboard/AdminDashboard";
 import RolesPage from "./admin/roles/pages/RolesPage";
 import UsersPage from "./admin/users/pages/UsersPage";
@@ -18,6 +19,9 @@ import Login from "./auth/pages/Login";
 import Register from "./auth/pages/Register";
 import ForgotPassword from "./auth/pages/ForgotPassword";
 import DashboardLayout from "./admin/layout/DashboardLayout";
+import AccessDenied from "./admin/shared/components/AccessDenied";
+import ErrorBoundary from "../shared/components/ErrorBoundary";
+import { usePermissions } from "./auth/hooks/usePermissions";
 
 // Portal del Cliente
 import ClientLayout from "./client/layout/ClientLayout";
@@ -53,7 +57,47 @@ function hasActiveSession(isAuthenticated) {
 }
 
 /**
- * Componente Guardián para el rol ADMINISTRADOR.
+ * Guardián de seguridad a nivel de módulo administrativo.
+ * Bloquea el acceso a cualquier módulo para el cual el rol del usuario no tenga permisos asignados.
+ */
+function ModuleGuard({ moduleName, children }) {
+  const { canAccess } = usePermissions();
+
+  if (!canAccess(moduleName)) {
+    const labels = {
+      roles: "Roles y Permisos",
+      users: "Usuarios del Sistema",
+      usuarios: "Usuarios del Sistema",
+      settings: "Configuración del Sistema",
+      configuracion: "Configuración del Sistema",
+      barbers: "Barberos",
+      barberos: "Barberos",
+      schedules: "Horarios",
+      horarios: "Horarios",
+      services: "Servicios",
+      servicios: "Servicios",
+      products: "Productos",
+      productos: "Productos",
+      clients: "Clientes",
+      clientes: "Clientes",
+      suppliers: "Proveedores",
+      proveedores: "Proveedores",
+      purchases: "Compras",
+      compras: "Compras",
+      appointments: "Citas",
+      citas: "Citas",
+      sales: "Ventas",
+      ventas: "Ventas"
+    };
+    return <AccessDenied moduleName={labels[moduleName.toLowerCase()] || moduleName} />;
+  }
+
+  return children;
+}
+
+/**
+ * Componente Guardián para el panel administrativo/operativo.
+ * Permite acceso a Administrador (id_rol === 1) y Recepcionista (id_rol === 2).
  * Si el usuario no está autenticado, va a /login.
  * Si el usuario es rol CLIENTE (id_rol === 4), se redirige a /portal.
  * Si el usuario es rol BARBERO (id_rol === 3), se redirige a /barbero.
@@ -86,7 +130,7 @@ function ClientRoute({ isAuthenticated, isDark, setIsDark, onLogout }) {
   }
 
   const user = getCurrentUser();
-  if (user && Number(user.id_rol) === 1) {
+  if (user && (Number(user.id_rol) === 1 || Number(user.id_rol) === 2)) {
     return <Navigate to="/dashboard" replace />;
   }
   if (user && Number(user.id_rol) === 3) {
@@ -108,7 +152,7 @@ function BarberRoute({ isAuthenticated, isDark, setIsDark, onLogout }) {
   }
 
   const user = getCurrentUser();
-  if (user && Number(user.id_rol) === 1) {
+  if (user && (Number(user.id_rol) === 1 || Number(user.id_rol) === 2)) {
     return <Navigate to="/dashboard" replace />;
   }
   if (user && Number(user.id_rol) === 4) {
@@ -116,6 +160,39 @@ function BarberRoute({ isAuthenticated, isDark, setIsDark, onLogout }) {
   }
 
   return <BarberLayout isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />;
+}
+
+/**
+ * Componente Guardián de permisos para rutas del Barbero.
+ * Si el Administrador retira el permiso de un módulo al Barbero,
+ * bloquea la pantalla con mensaje explicativo y botón de regreso.
+ */
+function BarberPermissionGuard({ moduleName, moduleLabel, children }) {
+  const { canAccess } = usePermissions();
+
+  if (!canAccess(moduleName)) {
+    return (
+      <div className="min-h-[55vh] flex items-center justify-center p-6">
+        <div className="max-w-md w-full p-6 sm:p-8 rounded-3xl bg-card border border-border text-center shadow-xl">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8" />
+          </div>
+          <h2 className="text-lg sm:text-xl font-black text-foreground mb-2">Módulo no autorizado</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-6 leading-relaxed">
+            Tu rol de Barbero no tiene permiso para acceder al módulo de <span className="font-bold text-foreground">{moduleLabel}</span>. Si requieres acceso, solicita al Administrador que active este permiso en el módulo de Roles.
+          </p>
+          <Link
+            to="/barbero"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+          >
+            Volver al Inicio del Barbero
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return children;
 }
 
 /**
@@ -139,91 +216,135 @@ function AdminManualRedirect({ targetAdminPath }) {
  */
 export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin, onLogout }) {
   return (
-    <Routes>
-      {/* Rutas Públicas */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login onLogin={onLogin} />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+    <ErrorBoundary>
+      <Routes>
+        {/* Rutas Públicas */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login onLogin={onLogin} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      {/* RUTA ADMINISTRATIVA (ROL: ADMINISTRADOR) */}
-      <Route
-        path="/dashboard"
-        element={<AdminRoute isAuthenticated={isAuthenticated} isDark={isDark} setIsDark={setIsDark} />}
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="roles" element={<RolesPage />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="barbers" element={<BarbersPage />} />
-        <Route path="schedules" element={<SchedulesPage />} />
-        <Route path="services" element={<ServicesPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="clients" element={<ClientsPage />} />
-        <Route path="suppliers" element={<SuppliersPage />} />
-        <Route path="proveedores" element={<SuppliersPage />} />
-        <Route path="purchases" element={<PurchasesPage />} />
-        <Route path="compras" element={<PurchasesPage />} />
-        <Route path="appointments" element={<AppointmentsPage />} />
-        <Route path="sales" element={<SalesPage />} />
-        <Route path="settings" element={<SettingsPage isDark={isDark} setIsDark={setIsDark} />} />
-      </Route>
+        {/* RUTA ADMINISTRATIVA (ROL: ADMINISTRADOR Y RECEPCIONISTA SEGÚN PERMISOS) */}
+        <Route
+          path="/dashboard"
+          element={<AdminRoute isAuthenticated={isAuthenticated} isDark={isDark} setIsDark={setIsDark} />}
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="roles" element={<ModuleGuard moduleName="roles"><RolesPage /></ModuleGuard>} />
+          <Route path="users" element={<ModuleGuard moduleName="users"><UsersPage /></ModuleGuard>} />
+          <Route path="barbers" element={<ModuleGuard moduleName="barbers"><BarbersPage /></ModuleGuard>} />
+          <Route path="schedules" element={<ModuleGuard moduleName="schedules"><SchedulesPage /></ModuleGuard>} />
+          <Route path="services" element={<ModuleGuard moduleName="services"><ServicesPage /></ModuleGuard>} />
+          <Route path="products" element={<ModuleGuard moduleName="products"><ProductsPage /></ModuleGuard>} />
+          <Route path="clients" element={<ModuleGuard moduleName="clients"><ClientsPage /></ModuleGuard>} />
+          <Route path="suppliers" element={<ModuleGuard moduleName="suppliers"><SuppliersPage /></ModuleGuard>} />
+          <Route path="proveedores" element={<ModuleGuard moduleName="proveedores"><SuppliersPage /></ModuleGuard>} />
+          <Route path="purchases" element={<ModuleGuard moduleName="purchases"><PurchasesPage /></ModuleGuard>} />
+          <Route path="compras" element={<ModuleGuard moduleName="compras"><PurchasesPage /></ModuleGuard>} />
+          <Route path="appointments" element={<ModuleGuard moduleName="appointments"><AppointmentsPage /></ModuleGuard>} />
+          <Route path="sales" element={<ModuleGuard moduleName="sales"><SalesPage /></ModuleGuard>} />
+          <Route path="settings" element={<ModuleGuard moduleName="settings"><SettingsPage isDark={isDark} setIsDark={setIsDark} /></ModuleGuard>} />
+        </Route>
 
-      {/* RUTA PORTAL CLIENTE (ROL: CLIENTE) */}
-      <Route
-        path="/portal"
-        element={
-          <ClientRoute
-            isAuthenticated={isAuthenticated}
-            isDark={isDark}
-            setIsDark={setIsDark}
-            onLogout={onLogout}
+        {/* RUTA PORTAL CLIENTE (ROL: CLIENTE) */}
+        <Route
+          path="/portal"
+          element={
+            <ClientRoute
+              isAuthenticated={isAuthenticated}
+              isDark={isDark}
+              setIsDark={setIsDark}
+              onLogout={onLogout}
+            />
+          }
+        >
+          <Route index element={<ClientDashboard />} />
+          <Route path="agendar" element={<ClientBookingPage />} />
+          <Route path="mis-citas" element={<ClientMyAppointmentsPage />} />
+          <Route path="servicios" element={<ClientServicesPage />} />
+          <Route path="paquetes" element={<ClientPackagesPage />} />
+          <Route path="productos" element={<ClientProductsPage />} />
+          <Route path="mis-compras" element={<ClientMyPurchasesPage />} />
+          <Route path="perfil" element={<ClientProfilePage />} />
+        </Route>
+
+        {/* RUTA PORTAL BARBERO (ROL: BARBERO) */}
+        <Route
+          path="/barbero"
+          element={
+            <BarberRoute
+              isAuthenticated={isAuthenticated}
+              isDark={isDark}
+              setIsDark={setIsDark}
+              onLogout={onLogout}
+            />
+          }
+        >
+          <Route index element={<BarberDashboard />} />
+          <Route
+            path="agenda"
+            element={
+              <BarberPermissionGuard moduleName="citas" moduleLabel="Agenda de Citas">
+                <BarberAgendaPage />
+              </BarberPermissionGuard>
+            }
           />
-        }
-      >
-        <Route index element={<ClientDashboard />} />
-        <Route path="agendar" element={<ClientBookingPage />} />
-        <Route path="mis-citas" element={<ClientMyAppointmentsPage />} />
-        <Route path="servicios" element={<ClientServicesPage />} />
-        <Route path="paquetes" element={<ClientPackagesPage />} />
-        <Route path="productos" element={<ClientProductsPage />} />
-        <Route path="mis-compras" element={<ClientMyPurchasesPage />} />
-        <Route path="perfil" element={<ClientProfilePage />} />
-      </Route>
-
-      {/* RUTA PORTAL BARBERO (ROL: BARBERO) */}
-      <Route
-        path="/barbero"
-        element={
-          <BarberRoute
-            isAuthenticated={isAuthenticated}
-            isDark={isDark}
-            setIsDark={setIsDark}
-            onLogout={onLogout}
+          <Route
+            path="horarios"
+            element={
+              <BarberPermissionGuard moduleName="horarios" moduleLabel="Horarios de Trabajo">
+                <BarberSchedulesPage />
+              </BarberPermissionGuard>
+            }
           />
-        }
-      >
-        <Route index element={<BarberDashboard />} />
-        <Route path="agenda" element={<BarberAgendaPage />} />
-        <Route path="horarios" element={<BarberSchedulesPage />} />
-        <Route path="novedades" element={<BarberNoveltiesPage />} />
-        <Route path="paquetes" element={<BarberPackagesPage />} />
-        <Route path="citas" element={<BarberAppointmentsPage />} />
-        <Route path="reportes" element={<BarberReportsPage />} />
-        <Route path="perfil" element={<BarberProfilePage />} />
-      </Route>
+          <Route
+            path="novedades"
+            element={
+              <BarberPermissionGuard moduleName="horarios" moduleLabel="Novedades de Horario">
+                <BarberNoveltiesPage />
+              </BarberPermissionGuard>
+            }
+          />
+          <Route
+            path="paquetes"
+            element={
+              <BarberPermissionGuard moduleName="servicios" moduleLabel="Catálogo de Paquetes">
+                <BarberPackagesPage />
+              </BarberPermissionGuard>
+            }
+          />
+          <Route
+            path="citas"
+            element={
+              <BarberPermissionGuard moduleName="citas" moduleLabel="Gestión de Citas">
+                <BarberAppointmentsPage />
+              </BarberPermissionGuard>
+            }
+          />
+          <Route
+            path="reportes"
+            element={
+              <BarberPermissionGuard moduleName="ventas" moduleLabel="Reportes">
+                <BarberReportsPage />
+              </BarberPermissionGuard>
+            }
+          />
+          <Route path="perfil" element={<BarberProfilePage />} />
+        </Route>
 
-      {/* Redirecciones de conveniencia y compatibilidad */}
-      <Route path="/cliente/*" element={<Navigate to="/portal" replace />} />
+        {/* Redirecciones de conveniencia y compatibilidad */}
+        <Route path="/cliente/*" element={<Navigate to="/portal" replace />} />
 
-      {/* Bloqueo y redirección de rutas administrativas manuales */}
-      <Route path="/usuarios" element={<AdminManualRedirect targetAdminPath="/dashboard/users" />} />
-      <Route path="/roles" element={<AdminManualRedirect targetAdminPath="/dashboard/roles" />} />
-      <Route path="/proveedores" element={<AdminManualRedirect targetAdminPath="/dashboard/suppliers" />} />
-      <Route path="/compras" element={<AdminManualRedirect targetAdminPath="/dashboard/purchases" />} />
-      <Route path="/productos" element={<AdminManualRedirect targetAdminPath="/dashboard/products" />} />
-      <Route path="/clientes" element={<AdminManualRedirect targetAdminPath="/dashboard/clients" />} />
-      <Route path="/ventas" element={<AdminManualRedirect targetAdminPath="/dashboard/sales" />} />
-      <Route path="/configuracion" element={<AdminManualRedirect targetAdminPath="/dashboard/settings" />} />
-    </Routes>
+        {/* Bloqueo y redirección de rutas administrativas manuales */}
+        <Route path="/usuarios" element={<AdminManualRedirect targetAdminPath="/dashboard/users" />} />
+        <Route path="/roles" element={<AdminManualRedirect targetAdminPath="/dashboard/roles" />} />
+        <Route path="/proveedores" element={<AdminManualRedirect targetAdminPath="/dashboard/suppliers" />} />
+        <Route path="/compras" element={<AdminManualRedirect targetAdminPath="/dashboard/purchases" />} />
+        <Route path="/productos" element={<AdminManualRedirect targetAdminPath="/dashboard/products" />} />
+        <Route path="/clientes" element={<AdminManualRedirect targetAdminPath="/dashboard/clients" />} />
+        <Route path="/ventas" element={<AdminManualRedirect targetAdminPath="/dashboard/sales" />} />
+        <Route path="/configuracion" element={<AdminManualRedirect targetAdminPath="/dashboard/settings" />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }

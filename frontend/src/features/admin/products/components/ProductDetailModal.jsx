@@ -1,16 +1,47 @@
+import { useNavigate } from "react-router";
+import { AlertTriangle, ShoppingCart } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { CATEGORIAS_PRODUCTO } from "../../../../shared/types/database";
 
 export default function ProductDetailModal({ product, onEdit, onClose }) {
+  const navigate = useNavigate();
   if (!product) return null;
 
   const categoryName =
     CATEGORIAS_PRODUCTO.find((c) => c.id_categoria_producto === Number(product.id_categoria_producto))?.nombre ||
     "Sin Categoría";
 
+  const isLowStock = Number(product.stock) <= 5;
+
+  const handleReorder = () => {
+    onClose();
+    navigate(`/dashboard/purchases?reorderProductId=${product.id_producto}`);
+  };
+
   return (
     <Modal title="Detalle del Producto" onClose={onClose} maxWidthClass="max-w-2xl">
       <div className="space-y-5">
+        {/* Alerta de Stock Crítico y Acción de Reabastecimiento */}
+        {isLowStock && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 animate-pulse" />
+              <div>
+                <p className="text-xs font-bold text-foreground">Stock Crítico ({product.stock} unidades restantes)</p>
+                <p className="text-[11px] text-muted-foreground">Este producto está próximo a agotarse en el inventario.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleReorder}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold cursor-pointer shadow-xs transition-colors shrink-0"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span>Pedir Reabastecimiento</span>
+            </button>
+          </div>
+        )}
+
         {/* Cabecera con ID y Estado */}
         <div className="flex items-center justify-between p-4 sm:p-5 bg-secondary/30 rounded-2xl border border-border/60">
           <div>
@@ -57,7 +88,7 @@ export default function ProductDetailModal({ product, onEdit, onClose }) {
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Stock Disponible
             </span>
-            <p className={`text-base font-bold ${product.stock <= 5 ? "text-warning" : "text-foreground"}`}>
+            <p className={`text-base font-bold ${isLowStock ? "text-warning" : "text-foreground"}`}>
               {product.stock} unidades
             </p>
           </div>
@@ -91,3 +122,4 @@ export default function ProductDetailModal({ product, onEdit, onClose }) {
     </Modal>
   );
 }
+

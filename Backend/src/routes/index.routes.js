@@ -15,6 +15,7 @@ import purchasesRoutes from "./purchases.routes.js";
 import salesRoutes from "./sales.routes.js";
 import dashboardRoutes from "./dashboard.routes.js";
 import uploadsRoutes from "./uploads.routes.js";
+import notificationsRoutes from "./notifications.routes.js";
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use("/purchases", purchasesRoutes);
 router.use("/sales", salesRoutes);
 router.use("/dashboard", dashboardRoutes);
 router.use("/uploads", uploadsRoutes);
+router.use("/notifications", notificationsRoutes);
 
 export default router;
 export {
@@ -50,5 +52,6 @@ export {
   purchasesRoutes,
   salesRoutes,
   dashboardRoutes,
-  uploadsRoutes
+  uploadsRoutes,
+  notificationsRoutes
 };

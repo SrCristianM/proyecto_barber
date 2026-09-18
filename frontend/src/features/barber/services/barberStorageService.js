@@ -6,6 +6,7 @@
  */
 
 import { getCurrentUser } from "../../auth/services/authService.js";
+import { createNotification } from "../../../shared/services/notificationService.js";
 
 const STORAGE_KEYS = {
   APPOINTMENTS: "barber_appointments_db",
@@ -35,9 +36,39 @@ const INITIAL_BARBERS = [
 
 const INITIAL_SERVICES = [];
 
-const INITIAL_PACKAGES = [];
+const INITIAL_PACKAGES = [
+  {
+    id_paquete: 1,
+    nombre: "Combo Real Ejecutivo",
+    descripcion: "Corte premium degradado, perfilado de barba con toalla caliente y lavado capilar.",
+    servicios_ids: [1, 2],
+    descuento_porcentaje: 15,
+    precio: 45000,
+    estado: 1
+  },
+  {
+    id_paquete: 2,
+    nombre: "Experiencia Barba & Spa",
+    descripcion: "Ritual completo de afeitado tradicional con navaja clásica, hidratación con aceites y mascarilla facial.",
+    servicios_ids: [2, 3],
+    descuento_porcentaje: 10,
+    precio: 40000,
+    estado: 1
+  }
+];
 
-const INITIAL_SCHEDULES = [];
+const INITIAL_SCHEDULES = [
+  {
+    id_horario: 1,
+    id_barbero: 1,
+    dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
+    hora_inicio: "08:00:00",
+    hora_fin: "18:00:00",
+    fecha_inicio_vigencia: "2026-01-01",
+    fecha_fin_vigencia: "2026-12-31",
+    estado: 1
+  }
+];
 
 const INITIAL_CLIENTS = [];
 
@@ -181,24 +212,35 @@ export function getBarberAppointments() {
         ? packages.find((p) => Number(p.id_paquete) === Number(apt.id_paquete))
         : null;
 
+      const safeHora = typeof apt.hora === "string" ? apt.hora : "08:00";
+      const safeFecha = apt.fecha || TODAY;
+
       return {
         ...apt,
         cliente_nombre: clientName,
         cliente_telefono: clientPhone,
         cliente_correo: clientEmail,
         cliente_fidelidad: clientFidelity,
-        servicio_nombre: service ? service.nombre : apt.nombre_item || "Servicio General",
-        servicio_precio: service ? service.precio : apt.precio,
-        servicio_duracion: service ? service.duracion_minutos : 30,
-        paquete_nombre: pkg ? pkg.nombre : null,
-        es_paquete: Boolean(pkg || apt.id_paquete)
+        servicio_nombre: service ? service.nombre : apt.nombre_item || apt.servicio_nombre || "Servicio General",
+        servicio_precio: service ? service.precio : (apt.precio || 0),
+        servicio_duracion: service ? service.duracion_minutos : (apt.duracion_minutos || 30),
+        paquete_nombre: pkg ? pkg.nombre : (apt.paquete_nombre || null),
+        es_paquete: Boolean(pkg || apt.id_paquete),
+        estado: apt.estado || "Programada",
+        hora: safeHora,
+        fecha: safeFecha
       };
     })
     .sort((a, b) => {
-      // Ordenar por fecha y hora descendente
-      const dateA = new Date(`${a.fecha}T${a.hora.length === 5 ? a.hora + ":00" : a.hora}`);
-      const dateB = new Date(`${b.fecha}T${b.hora.length === 5 ? b.hora + ":00" : b.hora}`);
-      return dateB - dateA;
+      const horaA = typeof a.hora === "string" ? (a.hora.length === 5 ? a.hora + ":00" : a.hora) : "00:00:00";
+      const horaB = typeof b.hora === "string" ? (b.hora.length === 5 ? b.hora + ":00" : b.hora) : "00:00:00";
+      const fechaA = a.fecha || "1970-01-01";
+      const fechaB = b.fecha || "1970-01-01";
+      const dateA = new Date(`${fechaA}T${horaA}`);
+      const dateB = new Date(`${fechaB}T${horaB}`);
+      const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+      const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+      return timeB - timeA;
     });
 }
 
@@ -251,14 +293,15 @@ export function getBarberAgendaForDate(targetDate = TODAY) {
   const slots = standardHours.map((hour) => {
     // Buscar cita cuya hora coincida (ej: "10:00" o "10:30" entra en el bloque)
     const matchingAppt = appointments.find((apt) => {
-      const aptHour = apt.hora.substring(0, 2);
+      if (!apt || !apt.hora) return false;
+      const aptHour = String(apt.hora).substring(0, 2);
       const slotHour = hour.substring(0, 2);
       return aptHour === slotHour;
     });
 
     if (matchingAppt) {
       return {
-        hora: matchingAppt.hora,
+        hora: matchingAppt.hora || hour,
         slotBase: hour,
         estadoSlot: "Ocupado",
         cita: matchingAppt
@@ -275,7 +318,7 @@ export function getBarberAgendaForDate(targetDate = TODAY) {
 
   // Cálculo de ocupación de la jornada diaria
   const activeApts = appointments.filter(
-    (a) => a.estado === "Programada" || a.estado === "Reprogramada" || a.estado === "Completada"
+    (a) => a && (a.estado === "Programada" || a.estado === "Reprogramada" || a.estado === "Completada")
   );
   const totalDurationMinutes = activeApts.reduce((acc, a) => acc + (a.servicio_duracion || 30), 0);
   const totalShiftMinutes = 10 * 60; // 08:00 a 18:00 = 600 min (10h)
@@ -287,7 +330,7 @@ export function getBarberAgendaForDate(targetDate = TODAY) {
     fecha: targetDate,
     slots,
     totalCitas: appointments.length,
-    citasProgramadas: appointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada").length,
+    citasProgramadas: appointments.filter((a) => a && (a.estado === "Programada" || a.estado === "Reprogramada")).length,
     occupancyPercentage,
     occupiedHours,
     freeHours,
@@ -303,7 +346,20 @@ export function getBarberWeeklySchedule() {
   const barber = getCurrentBarberProfile();
   const allSchedules = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
   
-  const schedule = allSchedules.find((s) => Number(s.id_barbero) === Number(barber.id_barbero)) || INITIAL_SCHEDULES[0];
+  // Buscar horario por id_barbero o recurrir al primer horario configurado / inicial
+  const schedule = allSchedules.find((s) => Number(s.id_barbero) === Number(barber?.id_barbero)) ||
+                   allSchedules[0] ||
+                   INITIAL_SCHEDULES[0] ||
+                   {
+                     id_horario: 1,
+                     id_barbero: barber?.id_barbero || 1,
+                     dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
+                     hora_inicio: "08:00:00",
+                     hora_fin: "18:00:00",
+                     fecha_inicio_vigencia: "2026-01-01",
+                     fecha_fin_vigencia: "2026-12-31",
+                     estado: 1
+                   };
 
   const daysOfWeek = [
     { key: "Lunes", label: "Lunes" },
@@ -315,11 +371,13 @@ export function getBarberWeeklySchedule() {
     { key: "Domingo", label: "Domingo" }
   ];
 
-  const diasConfigurados = schedule.dias_semana || [];
+  const diasConfigurados = Array.isArray(schedule.dias_semana)
+    ? schedule.dias_semana
+    : ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
 
   const weeklySchedule = daysOfWeek.map((day) => {
     const isWorking = diasConfigurados.some(
-      (d) => d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") ===
+      (d) => String(d).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") ===
              day.key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     );
 
@@ -328,8 +386,8 @@ export function getBarberWeeklySchedule() {
         dia: day.label,
         key: day.key,
         tipo: "Turno Asignado",
-        horaInicio: schedule.hora_inicio ? schedule.hora_inicio.substring(0, 5) : "08:00",
-        horaFin: schedule.hora_fin ? schedule.hora_fin.substring(0, 5) : "18:00",
+        horaInicio: schedule.hora_inicio ? String(schedule.hora_inicio).substring(0, 5) : "08:00",
+        horaFin: schedule.hora_fin ? String(schedule.hora_fin).substring(0, 5) : "18:00",
         descanso: false
       };
     }
@@ -345,7 +403,7 @@ export function getBarberWeeklySchedule() {
   });
 
   return {
-    barberoNombre: `${barber.nombre} ${barber.apellido || ""}`.trim(),
+    barberoNombre: barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero",
     vigenciaInicio: schedule.fecha_inicio_vigencia || "01/01/2026",
     vigenciaFin: schedule.fecha_fin_vigencia || "31/12/2026",
     dias: weeklySchedule,
@@ -358,7 +416,8 @@ export function getBarberWeeklySchedule() {
 // ==========================================
 
 export function getBarberPackages() {
-  const packages = getOrInit(STORAGE_KEYS.PACKAGES, INITIAL_PACKAGES);
+  const rawPackages = getOrInit(STORAGE_KEYS.PACKAGES, INITIAL_PACKAGES);
+  const packages = (Array.isArray(rawPackages) && rawPackages.length > 0) ? rawPackages : INITIAL_PACKAGES;
   const services = getOrInit(STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
 
   const packageImages = {
@@ -367,26 +426,30 @@ export function getBarberPackages() {
     3: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80"
   };
 
-  return packages
-    .filter((pkg) => pkg.estado === 1)
+  return (packages || [])
+    .filter((pkg) => pkg && (pkg.estado === 1 || pkg.estado === undefined))
     .map((pkg) => {
       const serviciosIncluidos = (pkg.servicios_ids || []).map((sId) =>
-        services.find((s) => s.id_servicio === sId)
+        services.find((s) => s && s.id_servicio === sId)
       ).filter(Boolean);
 
-      const precioBase = serviciosIncluidos.reduce((acc, s) => acc + (s.precio || 0), 0);
+      const precioBase = serviciosIncluidos.length > 0
+        ? serviciosIncluidos.reduce((acc, s) => acc + (s.precio || 0), 0)
+        : (pkg.precio || 45000);
       const descuento = pkg.descuento_porcentaje || 0;
       const precioFinal = Math.round(precioBase * (1 - descuento / 100));
-      const duracionTotal = serviciosIncluidos.reduce((acc, s) => acc + (s.duracion_minutos || 0), 0);
+      const duracionTotal = serviciosIncluidos.reduce((acc, s) => acc + (s.duracion_minutos || 0), 0) || 45;
 
       return {
         ...pkg,
+        nombre: pkg.nombre || "Paquete Especial",
+        descripcion: pkg.descripcion || "Paquete de servicios para clientes de la barbería.",
         servicios: serviciosIncluidos,
-        precioBase,
+        precioBase: pkg.precioBase || precioBase,
         descuento_porcentaje: descuento,
-        precioFinal,
+        precioFinal: pkg.precioFinal || precioFinal,
         duracion_minutos: duracionTotal,
-        imagen_url: packageImages[pkg.id_paquete] || packageImages[1]
+        imagen_url: pkg.imagen_url || packageImages[pkg.id_paquete] || packageImages[1]
       };
     });
 }
@@ -425,6 +488,18 @@ export function createBarberNovelty(noveltyData) {
 
   const updated = [newNovelty, ...novelties];
   save(STORAGE_KEYS.NOVELTIES, updated);
+
+  try {
+    createNotification({
+      type: "schedule",
+      title: "Nueva novedad de horario solicitada",
+      description: `El barbero ${barber.nombre} ${barber.apellido || ""} solicitó ${newNovelty.tipo} para el ${newNovelty.fecha}.`,
+      targetRole: [1, 2],
+      route: "/admin/horarios"
+    });
+  } catch (err) {
+    console.warn("[BarberStorage] Error al despachar notificación de novedad:", err);
+  }
 
   return { success: true, novelty: newNovelty };
 }

@@ -69,132 +69,211 @@ export default function ServicePackagesView() {
     (formData.servicios_ids || []).includes(s.id_servicio)
   );
   const basePrice = selectedServices.reduce((sum, s) => sum + Number(s.precio), 0);
+  const totalDurationMin = selectedServices.reduce((sum, s) => sum + Number(s.duracion_minutos || 0), 0);
   const discountRate = Number(formData.descuento_porcentaje) || 0;
   const finalPrice = Math.max(0, basePrice * (1 - discountRate / 100));
+  const savedAmount = Math.max(0, basePrice - finalPrice);
 
   const PackageForm = ({ onSubmit, onCancel, isEdit = false }) => (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-5" noValidate>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Nombre del Paquete */}
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Nombre del Paquete <span className="text-destructive">*</span>
-          </label>
-          <input
-            type="text"
-            name="nombre"
-            id="nombre"
-            maxLength={120}
-            value={formData.nombre}
-            onChange={(e) => {
-              setFormData({ ...formData, nombre: e.target.value });
-              if (formErrors.nombre) setFormErrors((prev) => ({ ...prev, nombre: null }));
-            }}
-            className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              formErrors.nombre
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="Ej: Paquete Completo Ejecutivo"
-            autoFocus
-          />
-          <FormFieldError error={formErrors.nombre} />
-        </div>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-6" noValidate>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Columna Izquierda: Formulario de Configuración (7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Nombre del Paquete */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Nombre del Paquete <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="text"
+              name="nombre"
+              id="nombre"
+              maxLength={120}
+              value={formData.nombre}
+              onChange={(e) => {
+                setFormData({ ...formData, nombre: e.target.value });
+                if (formErrors.nombre) setFormErrors((prev) => ({ ...prev, nombre: null }));
+              }}
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                formErrors.nombre
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: Combo Ejecutivo Premium"
+              autoFocus
+            />
+            <FormFieldError error={formErrors.nombre} />
+          </div>
 
-        {/* Descuento Porcentaje */}
-        <div>
-          <NumericInput
-            label="Descuento Promocional (%)"
-            name="descuento_porcentaje"
-            id="descuento_porcentaje"
-            min={0}
-            max={100}
-            allowDecimal={true}
-            value={formData.descuento_porcentaje}
-            onChange={(val) => {
-              setFormData({ ...formData, descuento_porcentaje: val });
-              if (formErrors.descuento_porcentaje) setFormErrors((prev) => ({ ...prev, descuento_porcentaje: null }));
-            }}
-            error={formErrors.descuento_porcentaje}
-            placeholder="0"
-          />
-          <span className="text-[11px] text-muted-foreground mt-1 block">
-            Aplica sobre la sumatoria de servicios incluidos.
-          </span>
-        </div>
-
-        {/* Resumen Financiero Calculado */}
-        <div className="p-4 bg-secondary/30 rounded-xl border border-border/60 flex flex-col justify-center">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-            Precio Estimado del Combo
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold text-primary">
-              ${Math.round(finalPrice).toLocaleString("es-CO")}
+          {/* Descuento Porcentaje */}
+          <div>
+            <NumericInput
+              label="Descuento Promocional (%)"
+              name="descuento_porcentaje"
+              id="descuento_porcentaje"
+              min={0}
+              max={100}
+              allowDecimal={true}
+              value={formData.descuento_porcentaje}
+              onChange={(val) => {
+                setFormData({ ...formData, descuento_porcentaje: val });
+                if (formErrors.descuento_porcentaje) setFormErrors((prev) => ({ ...prev, descuento_porcentaje: null }));
+              }}
+              error={formErrors.descuento_porcentaje}
+              placeholder="0"
+            />
+            <span className="text-[11px] text-muted-foreground mt-1 block">
+              Se aplica automáticamente sobre el total de servicios seleccionados.
             </span>
-            {discountRate > 0 && basePrice > 0 && (
-              <span className="text-xs text-muted-foreground line-through">
-                ${basePrice.toLocaleString("es-CO")}
+          </div>
+
+          {/* Servicios que componen el paquete */}
+          <div className="border-t border-border/80 pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-foreground">
+                Servicios del Combo <span className="text-destructive">*</span>
+              </label>
+              <span className="text-xs text-muted-foreground">
+                {selectedServices.length} seleccionado(s)
               </span>
-            )}
+            </div>
+            <div className={`grid grid-cols-1 gap-2 max-h-56 overflow-y-auto p-2.5 bg-secondary/20 border rounded-xl transition-all ${
+              formErrors.servicios_ids ? "border-destructive ring-1 ring-destructive/30" : "border-border/70"
+            }`}>
+              {availableServicesList.map((svc) => {
+                const isChecked = (formData.servicios_ids || []).includes(svc.id_servicio);
+                return (
+                  <label
+                    key={svc.id_servicio}
+                    className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${
+                      isChecked
+                        ? "bg-primary/10 border-primary/40 text-foreground"
+                        : "bg-input-background border-input text-muted-foreground hover:bg-accent/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          toggleServiceInForm(svc.id_servicio);
+                          if (formErrors.servicios_ids) setFormErrors((prev) => ({ ...prev, servicios_ids: null }));
+                        }}
+                        className="w-4 h-4 rounded text-primary border-input focus:ring-primary"
+                      />
+                      <div>
+                        <span className="text-xs font-semibold text-foreground block">{svc.nombre}</span>
+                        <span className="text-[10px] text-muted-foreground">⏱️ {svc.duracion_minutos} min</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-foreground">
+                      ${Number(svc.precio).toLocaleString("es-CO")}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <FormFieldError error={formErrors.servicios_ids} />
+          </div>
+        </div>
+
+        {/* Columna Derecha: Live Preview Card (5 cols) */}
+        <div className="lg:col-span-5 bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 sticky top-4">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Vista Previa en Vivo
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Preview
+            </span>
+          </div>
+
+          {/* Tarjeta Visual del Paquete Simulada */}
+          <div className="relative rounded-2xl p-5 bg-gradient-to-br from-secondary/40 via-secondary/20 to-card border border-primary/30 shadow-md space-y-4 overflow-hidden">
+            {/* Badge de Descuento si aplica */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="px-2.5 py-1 text-[11px] font-extrabold uppercase rounded-lg bg-primary text-primary-foreground shadow-xs">
+                {discountRate > 0 ? `-${discountRate}% OFF` : "Combo Especial"}
+              </span>
+              <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                ⏱️ {totalDurationMin > 0 ? `${totalDurationMin} min totales` : "Duración variable"}
+              </span>
+            </div>
+
+            {/* Nombre del Paquete */}
+            <div>
+              <h4 className="text-base sm:text-lg font-black text-foreground tracking-tight line-clamp-2">
+                {formData.nombre?.trim() || "Nombre del Paquete..."}
+              </h4>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {selectedServices.length > 0
+                  ? `${selectedServices.length} servicios incluidos en un solo turno`
+                  : "Selecciona al menos 2 servicios para armar el paquete"}
+              </p>
+            </div>
+
+            {/* Chips de Servicios Seleccionados */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                Servicios Incluidos:
+              </span>
+              {selectedServices.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic bg-background/50 p-2 rounded-lg border border-dashed border-border">
+                  Ningún servicio marcado todavía...
+                </p>
+              ) : (
+                <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                  {selectedServices.map((s) => (
+                    <div
+                      key={s.id_servicio}
+                      className="flex items-center justify-between text-xs py-1 px-2 rounded-md bg-background/80 border border-border/50 text-foreground"
+                    >
+                      <span className="truncate pr-2 font-medium flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-primary shrink-0" />
+                        {s.nombre}
+                      </span>
+                      <span className="text-muted-foreground text-[11px] shrink-0">
+                        ${Number(s.precio).toLocaleString("es-CO")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Resumen de Precios y Ahorro */}
+            <div className="border-t border-border/80 pt-3 flex items-end justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Precio Final
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-primary">
+                    ${Math.round(finalPrice).toLocaleString("es-CO")}
+                  </span>
+                  {discountRate > 0 && basePrice > 0 && (
+                    <span className="text-xs text-muted-foreground line-through font-semibold">
+                      ${basePrice.toLocaleString("es-CO")}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {discountRate > 0 && savedAmount > 0 && (
+                <div className="text-right">
+                  <span className="inline-block px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                    ¡Ahorras ${Math.round(savedAmount).toLocaleString("es-CO")}!
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Servicios que componen el paquete (paquete_servicio_detalle - Tabla Puente N:M) */}
-      <div className="border-t border-border pt-4">
-        <label className="block text-sm font-medium text-foreground mb-1.5">
-          Servicios Incluidos en el Paquete <span className="text-destructive">*</span>
-          <span className="text-xs text-muted-foreground font-normal ml-1">
-            (Selecciona al menos 2 servicios)
-          </span>
-        </label>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-3 bg-secondary/20 border rounded-xl transition-all ${
-          formErrors.servicios_ids ? "border-destructive ring-1 ring-destructive/30" : "border-border/70"
-        }`}>
-          {availableServicesList.map((svc) => {
-            const isChecked = (formData.servicios_ids || []).includes(svc.id_servicio);
-            return (
-              <label
-                key={svc.id_servicio}
-                className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${
-                  isChecked
-                    ? "bg-primary/10 border-primary/40 text-foreground"
-                    : "bg-input-background border-input text-muted-foreground hover:bg-accent/40"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => {
-                      toggleServiceInForm(svc.id_servicio);
-                      if (formErrors.servicios_ids) setFormErrors((prev) => ({ ...prev, servicios_ids: null }));
-                    }}
-                    className="w-4 h-4 rounded text-primary border-input focus:ring-primary"
-                  />
-                  <div>
-                    <span className="text-xs font-medium text-foreground block">{svc.nombre}</span>
-                    <span className="text-[10px] text-muted-foreground">{svc.duracion_minutos} min</span>
-                  </div>
-                </div>
-                <span className="text-xs font-semibold text-foreground">
-                  ${Number(svc.precio).toLocaleString("es-CO")}
-                </span>
-              </label>
-            );
-          })}
-        </div>
-        <FormFieldError error={formErrors.servicios_ids} />
-      </div>
-
-      <div className="flex gap-3 pt-3 border-t border-border">
-        <button
-          type="submit"
-          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer"
-        >
-          {isEdit ? "Guardar Cambios del Paquete" : "Crear Paquete"}
-        </button>
+      {/* Botones de acción del formulario */}
+      <div className="flex justify-end gap-3 pt-4 border-t border-border">
         <button
           type="button"
           onClick={onCancel}
@@ -301,14 +380,14 @@ export default function ServicePackagesView() {
 
       {/* Modal Crear */}
       {showCreateModal && (
-        <Modal title="Crear Nuevo Paquete de Servicios" onClose={() => setShowCreateModal(false)}>
+        <Modal title="Crear Nuevo Paquete de Servicios" onClose={() => setShowCreateModal(false)} maxWidthClass="max-w-4xl">
           <PackageForm onSubmit={onHandleCreate} onCancel={() => setShowCreateModal(false)} />
         </Modal>
       )}
 
       {/* Modal Editar */}
       {showEditModal && selectedPackage && (
-        <Modal title="Editar Paquete de Servicios" onClose={() => setShowEditModal(false)}>
+        <Modal title="Editar Paquete de Servicios" onClose={() => setShowEditModal(false)} maxWidthClass="max-w-4xl">
           <PackageForm onSubmit={onHandleEdit} onCancel={() => setShowEditModal(false)} isEdit />
         </Modal>
       )}

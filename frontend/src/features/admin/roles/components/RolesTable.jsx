@@ -10,7 +10,10 @@ export default function RolesTable({
   onDetail,
   onToggleStatus,
   onEdit,
-  onDelete
+  onDelete,
+  canEdit = true,
+  canToggle = true,
+  canDelete = true
 }) {
   return (
     <>
@@ -100,28 +103,34 @@ export default function RolesTable({
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => onToggleStatus(role)}
-                        className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        title={role.estado === 1 ? "Desactivar" : "Activar"}
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(role)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(role)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {canToggle && (
+                        <button
+                          onClick={() => onToggleStatus(role)}
+                          className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          title={role.estado === 1 ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button
+                          onClick={() => onEdit(role)}
+                          className="p-1.5 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          onClick={() => onDelete(role)}
+                          className="p-1.5 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, Shield, LayoutGrid, Table } from "lucide-react";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useUsers, availableRoles } from "../hooks/useUsers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import UsersStats from "../components/UsersStats";
@@ -57,6 +58,12 @@ export default function UsersPage() {
     openDeactivateModal
   } = useUsers();
 
+  const { hasPermission } = usePermissions();
+  const canCreateUser = hasPermission("usuarios", "crear");
+  const canEditUser = hasPermission("usuarios", "editar");
+  const canToggleUser = hasPermission("usuarios", "activar");
+  const canDeleteUser = hasPermission("usuarios", "eliminar");
+
   const onHandleCreate = () => {
     handleCreate();
   };
@@ -89,15 +96,17 @@ export default function UsersPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Usuarios</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona los usuarios y accesos del sistema</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {users.length === 0 ? "Crear primer usuario" : "Nuevo Usuario"}
-        </motion.button>
+        {canCreateUser && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {users.length === 0 ? "Crear primer usuario" : "Nuevo Usuario"}
+          </motion.button>
+        )}
       </div>
 
       <UsersStats users={users} />
@@ -204,6 +213,9 @@ export default function UsersPage() {
             onToggleStatus={openDeactivateModal}
             onEdit={openEditModal}
             onDelete={openDeleteModal}
+            canEdit={canEditUser}
+            canToggle={canToggleUser}
+            canDelete={canDeleteUser}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -215,6 +227,9 @@ export default function UsersPage() {
                 onToggleStatus={openDeactivateModal}
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
+                canEdit={canEditUser}
+                canToggle={canToggleUser}
+                canDelete={canDeleteUser}
               />
             ))}
           </div>
@@ -254,10 +269,10 @@ export default function UsersPage() {
       {showDetailModal && selectedUser && (
         <UserDetailModal
           user={selectedUser}
-          onEdit={() => {
+          onEdit={canEditUser ? () => {
             setShowDetailModal(false);
             openEditModal(selectedUser);
-          }}
+          } : undefined}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedUser(null);

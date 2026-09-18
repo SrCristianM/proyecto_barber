@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { Plus, Download, LayoutGrid, Table, RotateCcw, Building2 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
-import { usePurchases, availableSuppliers } from "../hooks/usePurchases";
+import { usePurchases, availableSuppliers, availableProducts } from "../hooks/usePurchases";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import PurchasesStats from "../components/PurchasesStats";
 import PurchaseCard from "../components/PurchaseCard";
@@ -13,9 +15,15 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 export default function PurchasesPage() {
   useSearchHighlight();
+  const { hasPermission } = usePermissions();
+  const canCreatePurchase = hasPermission("compras", "crear");
+  const canCancelPurchase = hasPermission("compras", "anular");
+  const canDeletePurchase = hasPermission("compras", "eliminar");
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     purchases,
     searchTerm,
@@ -74,6 +82,37 @@ export default function PurchasesPage() {
     getUserName
   } = usePurchases();
 
+  // Detección de reabastecimiento directo desde inventario de productos
+  useEffect(() => {
+    const reorderId = searchParams.get("reorderProductId");
+    if (reorderId) {
+      const pId = Number(reorderId);
+      openCreateModal();
+      const prod = availableProducts.find((p) => p.id_producto === pId) || {
+        id_producto: pId,
+        nombre: `Producto #${pId}`,
+        precio_sugerido: 12000
+      };
+      const suggestedQty = 10;
+      const unitPrice = prod.precio_sugerido || 10000;
+      setFormData((prev) => ({
+        ...prev,
+        detalles: [
+          {
+            id_producto: prod.id_producto,
+            cantidad: suggestedQty,
+            precio_unitario: unitPrice,
+            subtotal: suggestedQty * unitPrice,
+            nombre_producto: prod.nombre
+          }
+        ],
+        total: suggestedQty * unitPrice
+      }));
+      searchParams.delete("reorderProductId");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
+
   const triggerGoldenConfetti = () => {
     try {
       confetti({
@@ -122,15 +161,17 @@ export default function PurchasesPage() {
             Gestiona las compras y abastecimiento de productos
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {purchases.length === 0 ? "Crear primera compra" : "Nueva Compra"}
-        </motion.button>
+        {canCreatePurchase && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {purchases.length === 0 ? "Crear primera compra" : "Nueva Compra"}
+          </motion.button>
+        )}
       </div>
 
       {/* Tarjetas de estadísticas */}
@@ -244,8 +285,8 @@ export default function PurchasesPage() {
             getUserName={getUserName}
             onDetail={openDetailModal}
             onEdit={openEditModal}
-            onCancel={openCancelModal}
-            onDelete={openDeleteModal}
+            onCancel={canCancelPurchase ? openCancelModal : null}
+            onDelete={canDeletePurchase ? openDeleteModal : null}
           />
         )}
       </div>

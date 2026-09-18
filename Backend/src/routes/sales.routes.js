@@ -1,31 +1,30 @@
 import { Router } from "express";
 import { SalesController } from "../controllers/sales.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/rbac.middleware.js";
+import { authorizePermission } from "../middlewares/rbac.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { createSaleValidation, cancelSaleValidation } from "../validators/sales.validator.js";
-import { ROLES } from "../config/constants.js";
 
 const router = Router();
 
 // Consulta de ventas (Admin, Recepcionista y Cliente para ver 'mis-compras')
-router.get("/", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE), SalesController.getAll);
-router.get("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE), SalesController.getById);
+router.get("/", authenticate, authorizePermission("ventas", "ver"), SalesController.getAll);
+router.get("/:id", authenticate, authorizePermission("ventas", "ver"), SalesController.getById);
 
-// Registrar venta (Admin y Recepcionista)
+// Registrar venta
 router.post(
   "/",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA),
+  authorizePermission("ventas", "crear"),
   validate(createSaleValidation),
   SalesController.create
 );
 
-// Anular venta y restituir inventario (Administrador)
+// Anular venta y restituir inventario
 router.patch(
   ["/:id/anular", "/:id/cancel"],
   authenticate,
-  authorizeRoles(ROLES.ADMIN),
+  authorizePermission("ventas", "anular"),
   validate(cancelSaleValidation),
   SalesController.cancel
 );
@@ -33,7 +32,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorizeRoles(ROLES.ADMIN),
+  authorizePermission("ventas", "anular"),
   SalesController.delete
 );
 

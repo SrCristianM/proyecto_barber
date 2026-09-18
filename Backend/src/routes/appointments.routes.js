@@ -1,26 +1,25 @@
 import { Router } from "express";
 import { AppointmentsController } from "../controllers/appointments.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/rbac.middleware.js";
+import { authorizePermission } from "../middlewares/rbac.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
   createAppointmentValidation,
   updateAppointmentValidation,
   updateStatusValidation
 } from "../validators/appointments.validator.js";
-import { ROLES } from "../config/constants.js";
 
 const router = Router();
 
 // Todas las operaciones de citas requieren autenticación
-router.get("/", authenticate, AppointmentsController.getAll);
-router.get("/:id", authenticate, AppointmentsController.getById);
+router.get("/", authenticate, authorizePermission("citas", "ver"), AppointmentsController.getAll);
+router.get("/:id", authenticate, authorizePermission("citas", "ver"), AppointmentsController.getById);
 
-// Creación de citas (Admin, Recepcionista, Barbero y Cliente)
+// Creación de citas
 router.post(
   "/",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.BARBERO, ROLES.CLIENTE),
+  authorizePermission("citas", "crear"),
   validate(createAppointmentValidation),
   AppointmentsController.create
 );
@@ -29,7 +28,7 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.BARBERO),
+  authorizePermission("citas", "editar"),
   validate(updateAppointmentValidation),
   AppointmentsController.update
 );
@@ -37,7 +36,7 @@ router.put(
 router.patch(
   "/:id/status",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.BARBERO, ROLES.CLIENTE),
+  authorizePermission("citas", "editar"),
   validate(updateStatusValidation),
   AppointmentsController.updateStatus
 );
@@ -45,14 +44,14 @@ router.patch(
 router.patch(
   "/:id/cancel",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE),
+  authorizePermission("citas", "cancelar"),
   AppointmentsController.cancel
 );
 
 router.delete(
   "/:id",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.CLIENTE),
+  authorizePermission("citas", "cancelar"),
   AppointmentsController.delete
 );
 

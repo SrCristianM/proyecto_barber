@@ -1,7 +1,13 @@
 import { Edit, Trash2, User, Phone, Mail, Scissors } from "lucide-react";
 import TiltCard from "../../shared/components/TiltCard";
 
-export default function BarberCard({ barber, onEdit, onDelete }) {
+export default function BarberCard({
+  barber,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  canDelete = true
+}) {
   const isActive = barber.estado === 1;
 
   return (
@@ -83,22 +89,26 @@ export default function BarberCard({ barber, onEdit, onDelete }) {
         </div>
 
         <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={() => onEdit && onEdit(barber)}
-            className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <Edit className="h-3.5 w-3.5" />
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete && onDelete(barber)}
-            className="p-2.5 border border-border rounded-xl hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-muted-foreground transition-colors cursor-pointer"
-            title="Eliminar barbero"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit && onEdit(barber)}
+              className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Editar
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete && onDelete(barber)}
+              className="p-2.5 border border-border rounded-xl hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive text-muted-foreground transition-colors cursor-pointer"
+              title="Eliminar barbero"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </TiltCard>

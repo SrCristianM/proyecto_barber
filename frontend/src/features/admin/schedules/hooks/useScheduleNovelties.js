@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ESTADOS_NOVEDAD } from "../../../../shared/types/database";
+import { createNotification, dispatchNotificationUpdate } from "../../../../shared/services/notificationService";
+
+const STORAGE_KEY = "barber_novelties_db";
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
@@ -10,8 +13,6 @@ const mockBarbersList = [
 
 export const NOVELTY_TYPES = ["Ausencia", "Cambio de turno", "Permiso", "Otro"];
 
-const mockNovelties = [];
-
 const emptyForm = {
   id_barbero: 1,
   tipo: "Permiso",
@@ -20,8 +21,26 @@ const emptyForm = {
   estado: "Pendiente"
 };
 
+function getStoredNovelties() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredNovelties(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    dispatchNotificationUpdate();
+  } catch (err) {
+    console.warn("Error guardando novedades:", err);
+  }
+}
+
 export function useScheduleNovelties() {
-  const [novelties, setNovelties] = useState([]);
+  const [novelties, setNovelties] = useState(getStoredNovelties);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -31,7 +50,25 @@ export function useScheduleNovelties() {
   const [selectedNovelty, setSelectedNovelty] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
+  useEffect(() => {
+    const handleSync = () => {
+      setNovelties(getStoredNovelties());
+    };
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("barber_notification_update", handleSync);
+    return () => {
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("barber_notification_update", handleSync);
+    };
+  }, []);
+
   const getBarberName = (id_barbero) => {
+    try {
+      const rawBarbers = localStorage.getItem("barber_barbers_db");
+      const storedBarbers = rawBarbers ? JSON.parse(rawBarbers) : mockBarbersList;
+      const b = storedBarbers.find((barber) => Number(barber.id_barbero) === Number(id_barbero));
+      if (b) return `${b.nombre} ${b.apellido || ""}`.trim();
+    } catch {}
     const b = mockBarbersList.find((barber) => barber.id_barbero === Number(id_barbero));
     return b ? b.nombre : "Sin Barbero";
   };
@@ -54,7 +91,7 @@ export function useScheduleNovelties() {
 
   const handleCreate = () => {
     const newNovelty = {
-      id_novedad: Math.max(...novelties.map((n) => n.id_novedad), 0) + 1,
+      id_novedad: Math.max(...novelties.map((n) => n.id_novedad || 0), 0) + 1,
       id_barbero: Number(formData.id_barbero),
       tipo: formData.tipo,
       fecha: formData.fecha,
@@ -62,27 +99,29 @@ export function useScheduleNovelties() {
       estado: formData.estado || "Pendiente",
       fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
-    setNovelties([newNovelty, ...novelties]);
+    const updated = [newNovelty, ...novelties];
+    setNovelties(updated);
+    saveStoredNovelties(updated);
     setShowCreateModal(false);
     resetForm();
   };
 
   const handleEdit = () => {
     if (!selectedNovelty) return;
-    setNovelties(
-      novelties.map((nov) =>
-        nov.id_novedad === selectedNovelty.id_novedad
-          ? {
-              ...nov,
-              id_barbero: Number(formData.id_barbero),
-              tipo: formData.tipo,
-              fecha: formData.fecha,
-              descripcion: formData.descripcion.trim(),
-              estado: formData.estado
-            }
-          : nov
-      )
+    const updated = novelties.map((nov) =>
+      nov.id_novedad === selectedNovelty.id_novedad
+        ? {
+            ...nov,
+            id_barbero: Number(formData.id_barbero),
+            tipo: formData.tipo,
+            fecha: formData.fecha,
+            descripcion: formData.descripcion.trim(),
+            estado: formData.estado
+          }
+        : nov
     );
+    setNovelties(updated);
+    saveStoredNovelties(updated);
     setShowEditModal(false);
     setSelectedNovelty(null);
     resetForm();
@@ -90,17 +129,36 @@ export function useScheduleNovelties() {
 
   const handleDelete = () => {
     if (!selectedNovelty) return;
-    setNovelties(novelties.filter((nov) => nov.id_novedad !== selectedNovelty.id_novedad));
+    const updated = novelties.filter((nov) => nov.id_novedad !== selectedNovelty.id_novedad);
+    setNovelties(updated);
+    saveStoredNovelties(updated);
     setShowDeleteModal(false);
     setSelectedNovelty(null);
   };
 
   const changeStatus = (id, newStatus) => {
-    setNovelties(
-      novelties.map((nov) =>
-        nov.id_novedad === id ? { ...nov, estado: newStatus } : nov
-      )
+    const targetNov = novelties.find((nov) => nov.id_novedad === id);
+    const updated = novelties.map((nov) =>
+      nov.id_novedad === id ? { ...nov, estado: newStatus } : nov
     );
+    setNovelties(updated);
+    saveStoredNovelties(updated);
+
+    // Despachar notificación al Barbero
+    if (targetNov) {
+      try {
+        createNotification({
+          type: "schedule",
+          title: `Novedad de horario ${newStatus}`,
+          description: `Tu solicitud de ${targetNov.tipo} para el ${targetNov.fecha} ha sido ${newStatus} por la administración.`,
+          targetRole: 3,
+          targetUserId: 4, // ID de usuario estándar del barbero
+          route: "/barbero/novedades"
+        });
+      } catch (err) {
+        console.warn("Error al notificar al barbero:", err);
+      }
+    }
   };
 
   const openCreateModal = () => {
@@ -128,8 +186,8 @@ export function useScheduleNovelties() {
   const stats = {
     total: novelties.length,
     pendientes: novelties.filter((n) => n.estado === "Pendiente").length,
-    aprobadas: novelties.filter((n) => n.estado === "Aprobado").length,
-    rechazadas: novelties.filter((n) => n.estado === "Rechazado").length
+    aprobadas: novelties.filter((n) => n.estado === "Aprobado" || n.estado === "Aprobada").length,
+    rechazadas: novelties.filter((n) => n.estado === "Rechazado" || n.estado === "Rechazada").length
   };
 
   return {

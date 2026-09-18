@@ -1,31 +1,30 @@
 import { Router } from "express";
 import { PurchasesController } from "../controllers/purchases.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/rbac.middleware.js";
+import { authorizePermission } from "../middlewares/rbac.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { createPurchaseValidation, cancelPurchaseValidation } from "../validators/purchases.validator.js";
-import { ROLES } from "../config/constants.js";
 
 const router = Router();
 
-// Lectura de compras (Admin y Recepcionista)
-router.get("/", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), PurchasesController.getAll);
-router.get("/:id", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), PurchasesController.getById);
+// Lectura de compras
+router.get("/", authenticate, authorizePermission("compras", "ver"), PurchasesController.getAll);
+router.get("/:id", authenticate, authorizePermission("compras", "ver"), PurchasesController.getById);
 
-// Registro de compras (Admin y Recepcionista)
+// Registro de compras
 router.post(
   "/",
   authenticate,
-  authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA),
+  authorizePermission("compras", "crear"),
   validate(createPurchaseValidation),
   PurchasesController.create
 );
 
-// Anulación de compra con ajuste atómico de stock (Exclusivo Administrador)
+// Anulación de compra con ajuste atómico de stock
 router.patch(
   ["/:id/anular", "/:id/cancel"],
   authenticate,
-  authorizeRoles(ROLES.ADMIN),
+  authorizePermission("compras", "anular"),
   validate(cancelPurchaseValidation),
   PurchasesController.cancel
 );
@@ -33,7 +32,7 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorizeRoles(ROLES.ADMIN),
+  authorizePermission("compras", "eliminar"),
   PurchasesController.delete
 );
 

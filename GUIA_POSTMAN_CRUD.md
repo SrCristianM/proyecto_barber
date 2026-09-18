@@ -8,15 +8,15 @@ Esta colección incluye **15 módulos formativos** y **96 peticiones HTTP** list
 
 ## 📁 Archivos Disponibles en el Repositorio
 
-Los archivos de la suite se encuentran tanto en la **raíz del proyecto** como en la carpeta [`postman/`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/postman/):
+Los archivos de la suite se encuentran organizados en la carpeta [`postman/`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/postman/):
 
-1. **[`Tu_Turno_Barber_API.postman_collection.json`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/Tu_Turno_Barber_API.postman_collection.json)**
+1. **[`postman/Tu_Turno_Barber_API.postman_collection.json`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/postman/Tu_Turno_Barber_API.postman_collection.json)**
    - Colección oficial en formato estándar **Postman v2.1.0**.
    - 15 carpetas organizadas por módulos formativos.
    - Herencia de autenticación `Bearer {{token}}` a nivel de colección.
    - Scripts de prueba para verificar códigos de estado HTTP (`200 OK`, `201 Created`), tiempo de respuesta y guardado dinámico de identificadores.
 
-2. **[`Tu_Turno_Barber_Environment.postman_environment.json`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/Tu_Turno_Barber_Environment.postman_environment.json)**
+2. **[`postman/Tu_Turno_Barber_Environment.postman_environment.json`](file:///c:/Users/crist/OneDrive/Escritorio/proyecto_barber/postman/Tu_Turno_Barber_Environment.postman_environment.json)**
    - Entorno con variables configuradas:
      - `baseUrl`: `http://localhost:3001/api` (Backend local de Tu Turno Barber).
      - `vercelUrl`: `https://proyecto-barber-three.vercel.app` (Frontend desplegado en producción).

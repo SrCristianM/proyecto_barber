@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Download, RotateCcw, Award, LayoutGrid, Table } from "lucide-react";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useClients, availableLoyalties } from "../hooks/useClients";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import ClientsStats from "../components/ClientsStats";
@@ -58,6 +59,12 @@ export default function ClientsPage() {
     stats
   } = useClients();
 
+  const { hasPermission } = usePermissions();
+  const canCreateClient = hasPermission("clientes", "crear");
+  const canEditClient = hasPermission("clientes", "editar");
+  const canToggleClient = hasPermission("clientes", "activar");
+  const canDeleteClient = hasPermission("clientes", "eliminar");
+
   const onHandleCreate = () => {
     handleCreate();
   };
@@ -90,15 +97,17 @@ export default function ClientsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Clientes</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu base de clientes y su nivel de fidelización</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {clients.length === 0 ? "Crear primer cliente" : "Nuevo Cliente"}
-        </motion.button>
+        {canCreateClient && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {clients.length === 0 ? "Crear primer cliente" : "Nuevo Cliente"}
+          </motion.button>
+        )}
       </div>
 
       <ClientsStats stats={stats} />
@@ -199,6 +208,9 @@ export default function ClientsPage() {
             onToggleStatus={openDeactivateModal}
             onEdit={openEditModal}
             onDelete={openDeleteModal}
+            canEdit={canEditClient}
+            canToggle={canToggleClient}
+            canDelete={canDeleteClient}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -210,6 +222,9 @@ export default function ClientsPage() {
                 onToggleStatus={openDeactivateModal}
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
+                canEdit={canEditClient}
+                canToggle={canToggleClient}
+                canDelete={canDeleteClient}
               />
             ))}
           </div>
@@ -249,10 +264,10 @@ export default function ClientsPage() {
       {showDetailModal && selectedClient && (
         <ClientDetailModal
           client={selectedClient}
-          onEdit={() => {
+          onEdit={canEditClient ? () => {
             setShowDetailModal(false);
             openEditModal(selectedClient);
-          }}
+          } : undefined}
           onClose={() => {
             setShowDetailModal(false);
             setSelectedClient(null);

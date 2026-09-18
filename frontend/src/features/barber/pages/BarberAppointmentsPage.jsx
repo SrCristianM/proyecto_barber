@@ -25,6 +25,7 @@ import {
   getCurrentBarberProfile,
   completeBarberAppointment
 } from "../services/barberStorageService";
+import { usePermissions } from "../../auth/hooks/usePermissions";
 
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
@@ -40,6 +41,10 @@ const getLoyaltyBadge = (tier) => {
 };
 
 export default function BarberAppointmentsPage() {
+  const { hasPermission } = usePermissions();
+  const canEditAppointment = hasPermission("citas", "editar");
+  const canCancelAppointment = hasPermission("citas", "cancelar") || hasPermission("horarios", "crear");
+
   const [appointments, setAppointments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -111,7 +116,7 @@ export default function BarberAppointmentsPage() {
 
     const matchesStatus =
       statusFilter === "all" ||
-      apt.estado.toLowerCase() === statusFilter.toLowerCase();
+      String(apt.estado || "").toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -239,7 +244,7 @@ export default function BarberAppointmentsPage() {
                     <td className="py-4 px-4 sm:px-6">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-[#DFB755]/15 text-[#DFB755] flex items-center justify-center font-bold text-xs shrink-0">
-                          {apt.cliente_nombre.charAt(0)}
+                          {String(apt.cliente_nombre || "C").charAt(0)}
                         </div>
                         <div>
                           <span className="font-extrabold text-foreground truncate max-w-[140px] block">
@@ -290,7 +295,7 @@ export default function BarberAppointmentsPage() {
                     {/* Acciones */}
                     <td className="py-4 px-4 sm:px-6 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {apt.estado === "Programada" && (
+                        {apt.estado === "Programada" && canEditAppointment && (
                           <button
                             type="button"
                             onClick={() => handleCompleteAppointment(apt.id_cita)}
@@ -416,22 +421,26 @@ export default function BarberAppointmentsPage() {
               <div className="flex items-center gap-2">
                 {selectedAppointment.estado === "Programada" && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => handleCompleteAppointment(selectedAppointment.id_cita)}
-                      className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Marcar Atendida</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRequestCancellation(selectedAppointment)}
-                      className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Solicitar Cancelación</span>
-                    </button>
+                    {canEditAppointment && (
+                      <button
+                        type="button"
+                        onClick={() => handleCompleteAppointment(selectedAppointment.id_cita)}
+                        className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-extrabold text-xs transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Marcar Atendida</span>
+                      </button>
+                    )}
+                    {canCancelAppointment && (
+                      <button
+                        type="button"
+                        onClick={() => handleRequestCancellation(selectedAppointment)}
+                        className="px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Solicitar Cancelación</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>

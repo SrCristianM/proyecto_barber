@@ -89,15 +89,6 @@ export const NIVELES_FIDELIDAD = ["Nuevo", "Bronce", "Plata", "Oro"];
  */
 
 /**
- * @typedef {Object} BitacoraAcceso
- * @property {number} id_log
- * @property {number} id_usuario - FK -> Usuario
- * @property {string} accion
- * @property {string} fecha_hora
- * @property {string|null} ip_origen
- */
-
-/**
  * @typedef {Object} Barbero
  * @property {number} id_barbero
  * @property {number} id_usuario - FK -> Usuario (UNIQUE)

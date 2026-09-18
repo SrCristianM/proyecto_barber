@@ -1,5 +1,6 @@
 import { Plus, Download, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
+import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import RolesTable from "../components/RolesTable";
@@ -51,6 +52,12 @@ export default function RolesPage() {
     openDeactivateModal
   } = useRoles();
 
+  const { hasPermission } = usePermissions();
+  const canCreateRole = hasPermission("roles", "crear");
+  const canEditRole = hasPermission("roles", "editar");
+  const canToggleRole = hasPermission("roles", "editar");
+  const canDeleteRole = hasPermission("roles", "eliminar");
+
   const onHandleCreate = () => {
     handleCreate();
   };
@@ -78,15 +85,17 @@ export default function RolesPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Roles y Permisos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona los roles, accesos y permisos del sistema</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {roles.length === 0 ? "Crear primer rol" : "Nuevo Rol"}
-        </motion.button>
+        {canCreateRole && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={openCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {roles.length === 0 ? "Crear primer rol" : "Nuevo Rol"}
+          </motion.button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -150,6 +159,9 @@ export default function RolesPage() {
           onToggleStatus={openDeactivateModal}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
+          canEdit={canEditRole}
+          canToggle={canToggleRole}
+          canDelete={canDeleteRole}
         />
       </div>
 

@@ -46,34 +46,6 @@ LOCK TABLES `barbero` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `bitacora_acceso`
---
-
-DROP TABLE IF EXISTS `bitacora_acceso`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `bitacora_acceso` (
-  `id_log` int NOT NULL AUTO_INCREMENT,
-  `id_usuario` int NOT NULL,
-  `accion` varchar(50) COLLATE utf8mb4_spanish_ci NOT NULL,
-  `fecha_hora` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `ip_origen` varchar(45) COLLATE utf8mb4_spanish_ci DEFAULT NULL,
-  PRIMARY KEY (`id_log`),
-  KEY `fk_bitacora_usuario` (`id_usuario`),
-  CONSTRAINT `fk_bitacora_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `bitacora_acceso`
---
-
-LOCK TABLES `bitacora_acceso` WRITE;
-/*!40000 ALTER TABLE `bitacora_acceso` DISABLE KEYS */;
-/*!40000 ALTER TABLE `bitacora_acceso` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `categoria_producto`
 --
 

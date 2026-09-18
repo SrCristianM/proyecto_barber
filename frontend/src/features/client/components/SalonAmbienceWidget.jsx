@@ -45,8 +45,6 @@ export default function SalonAmbienceWidget() {
     curatedPlaylists,
     setSoundSource,
     connectSpotifyPlaylist,
-    registerSpotifyController,
-    notifySpotifyPlaybackUpdate,
     togglePlayback,
     setVolume,
     toggleMute
@@ -54,74 +52,6 @@ export default function SalonAmbienceWidget() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customInputUrl, setCustomInputUrl] = useState("");
-
-  const embedContainerRef = useRef(null);
-  const controllerRef = useRef(null);
-
-  // Inicializar Spotify IFrame API Controller para sincronizar la tarjeta con el botón
-  useEffect(() => {
-    if (soundSource !== "spotify") return;
-
-    let isCancelled = false;
-
-    const setupSpotifyController = (IFrameAPI) => {
-      const container = embedContainerRef.current;
-      if (!container || isCancelled) return;
-
-      // Si ya tenemos un controller activo, solo cargar el nuevo URI si cambió
-      if (controllerRef.current) {
-        try {
-          controllerRef.current.loadUri(`spotify:playlist:${activePlaylistId}`);
-        } catch (e) {
-          console.warn("Error cargando nuevo URI en controller:", e);
-        }
-        return;
-      }
-
-      // Crear elemento host para Spotify Iframe
-      container.innerHTML = "";
-      const hostDiv = document.createElement("div");
-      container.appendChild(hostDiv);
-
-      const options = {
-        uri: `spotify:playlist:${activePlaylistId}`,
-        width: "100%",
-        height: 152
-      };
-
-      try {
-        IFrameAPI.createController(hostDiv, options, (EmbedController) => {
-          if (isCancelled) return;
-          controllerRef.current = EmbedController;
-          registerSpotifyController(EmbedController);
-
-          // Escuchar eventos de reproducción directamente del widget de Spotify
-          EmbedController.addListener("playback_update", (e) => {
-            if (isCancelled) return;
-            const isPaused = e.data.isPaused;
-            notifySpotifyPlaybackUpdate(isPaused);
-          });
-        });
-      } catch (err) {
-        console.warn("Fallo al inicializar Spotify Iframe API Controller:", err);
-      }
-    };
-
-    if (window.SpotifyIframeApi) {
-      setupSpotifyController(window.SpotifyIframeApi);
-    } else {
-      const previousReady = window.onSpotifyIframeApiReady;
-      window.onSpotifyIframeApiReady = (IFrameAPI) => {
-        window.SpotifyIframeApi = IFrameAPI;
-        if (previousReady) previousReady(IFrameAPI);
-        if (!isCancelled) setupSpotifyController(IFrameAPI);
-      };
-    }
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [soundSource, activePlaylistId]);
 
   const handleSelectPlaylist = (playlist) => {
     connectSpotifyPlaylist(playlist);
@@ -226,35 +156,29 @@ export default function SalonAmbienceWidget() {
 
       {/* CONTENIDO PRINCIPAL: CONDICIONAL SEGÚN LA FUENTE ACTIVA */}
       {soundSource === "spotify" ? (
-        /* VISTA SPOTIFY OFICIAL CONTROLADO */
+        /* VISTA SPOTIFY OFICIAL DIRECTAMENTE REPRODUCIBLE */
         <div className="space-y-3">
-          {/* Contenedor del Iframe Oficial Controlado de Spotify */}
-          <div className="rounded-2xl overflow-hidden border border-[#1DB954]/30 shadow-md bg-black/40 min-h-[152px] flex items-center justify-center relative">
-            <div ref={embedContainerRef} className="w-full">
-              {/* Fallback de iframe directo mientras la API inicializa */}
-              <iframe
-                style={{ borderRadius: "16px" }}
-                src={`https://open.spotify.com/embed/playlist/${activePlaylistId}?utm_source=generator&theme=0`}
-                width="100%"
-                height="152"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title="Spotify Barber Player"
-                className="w-full"
-              />
-            </div>
+          {/* Iframe oficial de Spotify visible para reproducción directa sin bloqueos */}
+          <div className="rounded-2xl overflow-hidden border border-[#1DB954]/30 shadow-md bg-black/60 relative">
+            <iframe
+              key={`widget-spotify-${activePlaylistId}`}
+              src={`https://open.spotify.com/embed/playlist/${activePlaylistId}?utm_source=generator&theme=0`}
+              width="100%"
+              height="152"
+              frameBorder="0"
+              allowFullScreen=""
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              className="w-full rounded-2xl block"
+              title="Reproductor Spotify Salón"
+            />
           </div>
 
-          {/* Barra de Estado y Botones Sincronizados de Reproducción */}
+          {/* Barra de Estado, Playlist y Acciones */}
           <div className="flex items-center justify-between text-xs pt-0.5 gap-2">
             <div className="flex items-center gap-2 truncate pr-2">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
-                <span
-                  className={`absolute inline-flex h-full w-full rounded-full bg-[#1DB954] ${
-                    isSpotifyPlaying ? "animate-ping opacity-75" : "opacity-0"
-                  }`}
-                />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#1DB954] animate-ping opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1DB954]" />
               </span>
               <span className="text-[11px] font-bold text-muted-foreground truncate">
@@ -263,18 +187,17 @@ export default function SalonAmbienceWidget() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {/* Botón sincronizado de Reproducir / Pausar (controla el mismo reproductor) */}
               <button
                 type="button"
                 onClick={togglePlayback}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                  isSpotifyPlaying
-                    ? "bg-[#1DB954]/20 border-[#1DB954]/50 text-[#1DB954] shadow-xs"
-                    : "bg-[#1DB954] hover:bg-[#1aa34a] text-white border-transparent shadow-xs"
+                className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                  isPlaying
+                    ? "bg-[#1DB954]/20 border-[#1DB954]/50 text-[#1DB954]"
+                    : "bg-[#1DB954] hover:bg-[#1aa34a] text-white border-transparent"
                 }`}
-                title={isSpotifyPlaying ? "Pausar música de Spotify" : "Reproducir música de Spotify"}
+                title={isPlaying ? "Pausar música del salón" : "Reproducir música del salón"}
               >
-                {isSpotifyPlaying ? (
+                {isPlaying ? (
                   <>
                     <Pause className="w-3.5 h-3.5 fill-current" />
                     <span>Pausar</span>
@@ -290,7 +213,7 @@ export default function SalonAmbienceWidget() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-muted/80 hover:bg-muted text-foreground border border-border/80 text-[11px] font-black transition-all flex items-center gap-1.5 cursor-pointer shrink-0 hover:border-[#1DB954]/50"
+                className="px-3 py-1.5 rounded-xl bg-muted/80 hover:bg-muted text-foreground border border-border/80 text-[11px] font-black transition-all flex items-center gap-1.5 cursor-pointer shrink-0 hover:border-[#1DB954]/50"
               >
                 <SlidersHorizontal className="w-3 h-3 text-[#1DB954]" />
                 <span>Cambiar</span>

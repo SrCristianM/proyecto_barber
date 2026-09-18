@@ -50,14 +50,16 @@ export default function AppointmentsListView({ appointments, getClientName, getB
                   <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${statusClass}`}>
                     {appointment.estado}
                   </span>
-                  <button
-                    onClick={() => onEdit?.(appointment)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-primary-foreground transition-all text-xs font-medium"
-                    title="Editar cita"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                    Editar
-                  </button>
+                  {onEdit && (
+                    <button
+                      onClick={() => onEdit(appointment)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-primary-foreground transition-all text-xs font-medium cursor-pointer"
+                      title="Editar cita"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                  )}
                 </div>
               </div>
             );

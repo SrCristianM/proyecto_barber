@@ -83,35 +83,41 @@ export default function SupplierCard({
             <Eye className="h-3.5 w-3.5" />
             Detalle
           </button>
-          <button
-            type="button"
-            onClick={() => onEdit && onEdit(supplier)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
-            title="Editar"
-          >
-            <Edit className="h-3.5 w-3.5" />
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleStatus && onToggleStatus(supplier)}
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${
-              isActive
-                ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
-                : "text-muted-foreground bg-muted hover:text-foreground"
-            }`}
-            title={isActive ? "Desactivar" : "Activar"}
-          >
-            <Power className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete && onDelete(supplier)}
-            className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
-            title="Eliminar"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(supplier)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
+              title="Editar"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Editar
+            </button>
+          )}
+          {onToggleStatus && (
+            <button
+              type="button"
+              onClick={() => onToggleStatus(supplier)}
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                isActive
+                  ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                  : "text-muted-foreground bg-muted hover:text-foreground"
+              }`}
+              title={isActive ? "Desactivar" : "Activar"}
+            >
+              <Power className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(supplier)}
+              className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
+              title="Eliminar"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </TiltCard>

@@ -32,7 +32,16 @@ const LOYALTY_CONFIG = {
   }
 };
 
-export default function ClientCard({ client, onDetail, onToggleStatus, onEdit, onDelete }) {
+export default function ClientCard({
+  client,
+  onDetail,
+  onToggleStatus,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  canToggle = true,
+  canDelete = true
+}) {
   const loyalty = LOYALTY_CONFIG[client.nivel_fidelidad] || LOYALTY_CONFIG.Nuevo;
   const LoyaltyIcon = loyalty.icon;
   const isActive = client.estado === 1;
@@ -121,35 +130,41 @@ export default function ClientCard({ client, onDetail, onToggleStatus, onEdit, o
             <Eye className="h-3.5 w-3.5" />
             Detalle
           </button>
-          <button
-            type="button"
-            onClick={() => onEdit && onEdit(client)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
-            title="Editar"
-          >
-            <Edit className="h-3.5 w-3.5" />
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={() => onToggleStatus && onToggleStatus(client)}
-            className={`p-2 rounded-xl transition-colors cursor-pointer ${
-              isActive
-                ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
-                : "text-muted-foreground bg-muted hover:text-foreground"
-            }`}
-            title={isActive ? "Desactivar" : "Activar"}
-          >
-            <Power className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete && onDelete(client)}
-            className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
-            title="Eliminar"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit && onEdit(client)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
+              title="Editar"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Editar
+            </button>
+          )}
+          {canToggle && (
+            <button
+              type="button"
+              onClick={() => onToggleStatus && onToggleStatus(client)}
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                isActive
+                  ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                  : "text-muted-foreground bg-muted hover:text-foreground"
+              }`}
+              title={isActive ? "Desactivar" : "Activar"}
+            >
+              <Power className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete && onDelete(client)}
+              className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors cursor-pointer"
+              title="Eliminar"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </TiltCard>

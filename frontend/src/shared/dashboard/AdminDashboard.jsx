@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import { motion } from "motion/react";
 import SpotlightCard from "../../features/admin/shared/components/SpotlightCard";
+import { usePermissions } from "../../features/auth/hooks/usePermissions";
 
 const COLORS = ["#C9A24A", "#10b981", "#f59e0b", "#8b5cf6"];
 
@@ -70,6 +71,7 @@ function AnimatedCounter({ value }) {
 }
 
 export default function AdminDashboard() {
+  const { isRecepcionista } = usePermissions();
   const [todayAppointments, setTodayAppointments] = useState([]);
   const [kpis, setKpis] = useState({
     citasHoy: 0,
@@ -236,12 +238,18 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Dashboard Ejecutivo</h1>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
+              {isRecepcionista ? "Dashboard de Recepción" : "Dashboard Ejecutivo"}
+            </h1>
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
               Sistema en Línea
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">Control financiero, agenda, podio de barberos e inventario</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isRecepcionista
+              ? "Control operativo de agenda, citas del día, clientes e inventario"
+              : "Control financiero, agenda, podio de barberos e inventario"}
+          </p>
         </div>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-card border border-border px-3 py-1.5 rounded-xl shadow-2xs">
           <Clock className="h-3.5 w-3.5 text-primary" />

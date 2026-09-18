@@ -11,7 +11,9 @@ export default function SalesTable({
   onDetail,
   onEdit,
   onDelete,
-  onDeactivate
+  onDeactivate,
+  canEdit = true,
+  canAnular = true
 }) {
   const getClientName = (id_cliente, sale) => {
     if (sale?.cliente_nombre) return sale.cliente_nombre;
@@ -103,7 +105,7 @@ export default function SalesTable({
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      {!isAnulada && (
+                      {canEdit && !isAnulada && (
                         <button
                           onClick={() => onEdit(sale)}
                           className="p-2 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
@@ -112,18 +114,20 @@ export default function SalesTable({
                           <Edit className="h-4 w-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => !isAnulada && onDeactivate(sale)}
-                        disabled={isAnulada}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isAnulada
-                            ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
-                            : "hover:bg-accent text-destructive hover:text-destructive/80 cursor-pointer"
-                        }`}
-                        title={isAnulada ? "Venta ya anulada (acción no disponible)" : "Anular venta"}
-                      >
-                        <Ban className="h-4 w-4" />
-                      </button>
+                      {canAnular && (
+                        <button
+                          onClick={() => !isAnulada && onDeactivate(sale)}
+                          disabled={isAnulada}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isAnulada
+                              ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
+                              : "hover:bg-accent text-destructive hover:text-destructive/80 cursor-pointer"
+                          }`}
+                          title={isAnulada ? "Venta ya anulada (acción no disponible)" : "Anular venta"}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

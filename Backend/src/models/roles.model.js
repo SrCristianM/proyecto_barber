@@ -102,18 +102,27 @@ export class RolesRepository {
         // Asignar permisos si fueron provistos
         if (Array.isArray(roleData.permisos) && roleData.permisos.length > 0) {
           for (const permKey of roleData.permisos) {
-            // permKey tipo 'usuarios_ver' o id
-            const parts = permKey.split("_");
+            const delimiter = permKey.includes(":") ? ":" : "_";
+            const parts = permKey.split(delimiter);
             if (parts.length >= 2) {
               const mod = parts[0];
-              const acc = parts.slice(1).join("_");
+              const acc = parts.slice(1).join(delimiter);
               const [pRows] = await conn.execute(
-                `SELECT p.id_permiso FROM permiso p JOIN modulo m ON p.id_modulo = m.id_modulo WHERE m.nombre_modulo = ? AND p.accion = ? LIMIT 1`,
+                `SELECT p.id_permiso FROM permiso p JOIN modulo m ON p.id_modulo = m.id_modulo WHERE LOWER(m.nombre_modulo) = LOWER(?) AND LOWER(p.accion) = LOWER(?) LIMIT 1`,
                 [mod, acc]
               );
-              if (pRows.length > 0) {
-                await conn.execute(`INSERT IGNORE INTO rol_permiso (id_rol, id_permiso) VALUES (?, ?)`, [roleId, pRows[0].id_permiso]);
+              let idPermiso = pRows.length > 0 ? pRows[0].id_permiso : null;
+              if (!idPermiso) {
+                let [mRows] = await conn.execute(`SELECT id_modulo FROM modulo WHERE LOWER(nombre_modulo) = LOWER(?) LIMIT 1`, [mod]);
+                let idModulo = mRows.length > 0 ? mRows[0].id_modulo : null;
+                if (!idModulo) {
+                  const [mRes] = await conn.execute(`INSERT INTO modulo (nombre_modulo) VALUES (?)`, [mod]);
+                  idModulo = mRes.insertId;
+                }
+                const [pRes] = await conn.execute(`INSERT INTO permiso (id_modulo, accion) VALUES (?, ?)`, [idModulo, acc]);
+                idPermiso = pRes.insertId;
               }
+              await conn.execute(`INSERT IGNORE INTO rol_permiso (id_rol, id_permiso) VALUES (?, ?)`, [roleId, idPermiso]);
             }
           }
         }
@@ -132,16 +141,19 @@ export class RolesRepository {
 
       if (Array.isArray(roleData.permisos)) {
         roleData.permisos.forEach((permKey) => {
-          // Buscamos o creamos en mockStore
+          const delimiter = permKey.includes(":") ? ":" : "_";
+          const parts = permKey.split(delimiter);
+          const modName = parts[0] || "general";
+          const acc = parts.slice(1).join(delimiter) || permKey;
+
           let permObj = mockStore.permisos.find((p) => {
             const m = mockStore.modulos.find((mod) => mod.id_modulo === p.id_modulo);
-            return m && `${m.nombre_modulo}_${p.accion}` === permKey;
+            if (!m) return false;
+            return m.nombre_modulo.toLowerCase() === modName.toLowerCase() &&
+                   p.accion.toLowerCase() === acc.toLowerCase();
           });
           if (!permObj) {
-            const parts = permKey.split("_");
-            const modName = parts[0] || "general";
-            const acc = parts.slice(1).join("_") || permKey;
-            let mObj = mockStore.modulos.find((m) => m.nombre_modulo === modName);
+            let mObj = mockStore.modulos.find((m) => m.nombre_modulo.toLowerCase() === modName.toLowerCase());
             if (!mObj) {
               mObj = { id_modulo: mockStore.modulos.length + 1, nombre_modulo: modName };
               mockStore.modulos.push(mObj);
@@ -161,6 +173,12 @@ export class RolesRepository {
   static async update(id, roleData) {
     const roleId = Number(id);
 
+    // Regla de sistema anti-lockout: el rol 1 (Administrador) SIEMPRE debe retener los permisos de gestión de roles
+    if (roleId === 1 && Array.isArray(roleData.permisos)) {
+      const requiredRolesPerms = ["roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar"];
+      roleData.permisos = Array.from(new Set([...roleData.permisos, ...requiredRolesPerms]));
+    }
+
     return await executeTransaction(async (conn) => {
       if (isDatabaseConnected() && conn) {
         if (roleData.nombre_rol || roleData.descripcion !== undefined || roleData.estado !== undefined) {
@@ -176,18 +194,34 @@ export class RolesRepository {
         if (Array.isArray(roleData.permisos)) {
           // Reemplazar permisos
           await conn.execute(`DELETE FROM rol_permiso WHERE id_rol = ?`, [roleId]);
-          for (const permKey of roleData.permisos) {
-            const parts = permKey.split("_");
+          for (const rawPerm of roleData.permisos) {
+            if (rawPerm === null || rawPerm === undefined) continue;
+            if (typeof rawPerm === "number" || (!isNaN(Number(rawPerm)) && !String(rawPerm).includes(":") && !String(rawPerm).includes("_"))) {
+              await conn.execute(`INSERT IGNORE INTO rol_permiso (id_rol, id_permiso) VALUES (?, ?)`, [roleId, Number(rawPerm)]);
+              continue;
+            }
+            const permKey = String(rawPerm);
+            const delimiter = permKey.includes(":") ? ":" : "_";
+            const parts = permKey.split(delimiter);
             if (parts.length >= 2) {
               const mod = parts[0];
-              const acc = parts.slice(1).join("_");
+              const acc = parts.slice(1).join(delimiter);
               const [pRows] = await conn.execute(
-                `SELECT p.id_permiso FROM permiso p JOIN modulo m ON p.id_modulo = m.id_modulo WHERE m.nombre_modulo = ? AND p.accion = ? LIMIT 1`,
+                `SELECT p.id_permiso FROM permiso p JOIN modulo m ON p.id_modulo = m.id_modulo WHERE LOWER(m.nombre_modulo) = LOWER(?) AND LOWER(p.accion) = LOWER(?) LIMIT 1`,
                 [mod, acc]
               );
-              if (pRows.length > 0) {
-                await conn.execute(`INSERT IGNORE INTO rol_permiso (id_rol, id_permiso) VALUES (?, ?)`, [roleId, pRows[0].id_permiso]);
+              let idPermiso = pRows.length > 0 ? pRows[0].id_permiso : null;
+              if (!idPermiso) {
+                let [mRows] = await conn.execute(`SELECT id_modulo FROM modulo WHERE LOWER(nombre_modulo) = LOWER(?) LIMIT 1`, [mod]);
+                let idModulo = mRows.length > 0 ? mRows[0].id_modulo : null;
+                if (!idModulo) {
+                  const [mRes] = await conn.execute(`INSERT INTO modulo (nombre_modulo) VALUES (?)`, [mod]);
+                  idModulo = mRes.insertId;
+                }
+                const [pRes] = await conn.execute(`INSERT INTO permiso (id_modulo, accion) VALUES (?, ?)`, [idModulo, acc]);
+                idPermiso = pRes.insertId;
               }
+              await conn.execute(`INSERT IGNORE INTO rol_permiso (id_rol, id_permiso) VALUES (?, ?)`, [roleId, idPermiso]);
             }
           }
         }
@@ -202,14 +236,38 @@ export class RolesRepository {
 
       if (Array.isArray(roleData.permisos)) {
         mockStore.rol_permisos = mockStore.rol_permisos.filter((rp) => rp.id_rol !== roleId);
-        roleData.permisos.forEach((permKey) => {
+        roleData.permisos.forEach((rawPerm) => {
+          if (rawPerm === null || rawPerm === undefined) return;
+          if (typeof rawPerm === "number" || (!isNaN(Number(rawPerm)) && !String(rawPerm).includes(":") && !String(rawPerm).includes("_"))) {
+            const numId = Number(rawPerm);
+            const permObj = mockStore.permisos.find((p) => p.id_permiso === numId);
+            if (permObj) {
+              mockStore.rol_permisos.push({ id_rol: roleId, id_permiso: permObj.id_permiso });
+            }
+            return;
+          }
+          const permKey = String(rawPerm);
+          const delimiter = permKey.includes(":") ? ":" : "_";
+          const parts = permKey.split(delimiter);
+          const modName = parts[0] || "general";
+          const acc = parts.slice(1).join(delimiter) || permKey;
+
           let permObj = mockStore.permisos.find((p) => {
             const m = mockStore.modulos.find((mod) => mod.id_modulo === p.id_modulo);
-            return m && `${m.nombre_modulo}_${p.accion}` === permKey;
+            if (!m) return false;
+            return m.nombre_modulo.toLowerCase() === modName.toLowerCase() &&
+                   p.accion.toLowerCase() === acc.toLowerCase();
           });
-          if (permObj) {
-            mockStore.rol_permisos.push({ id_rol: roleId, id_permiso: permObj.id_permiso });
+          if (!permObj) {
+            let mObj = mockStore.modulos.find((m) => m.nombre_modulo.toLowerCase() === modName.toLowerCase());
+            if (!mObj) {
+              mObj = { id_modulo: mockStore.modulos.length + 1, nombre_modulo: modName };
+              mockStore.modulos.push(mObj);
+            }
+            permObj = { id_permiso: mockStore.permisos.length + 1, id_modulo: mObj.id_modulo, accion: acc };
+            mockStore.permisos.push(permObj);
           }
+          mockStore.rol_permisos.push({ id_rol: roleId, id_permiso: permObj.id_permiso });
         });
       }
       mockStore.saveToFile();
