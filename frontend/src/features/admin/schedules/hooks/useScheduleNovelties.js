@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ESTADOS_NOVEDAD } from "../../../../shared/types/database";
 import { createNotification, dispatchNotificationUpdate } from "../../../../shared/services/notificationService";
+import { getNovelties, createNovelty as createNoveltyApi, updateNoveltyStatus as updateNoveltyStatusApi } from "../services/schedulesService.js";
 
 const STORAGE_KEY = "barber_novelties_db";
 
@@ -11,7 +12,16 @@ const mockBarbersList = [
   { id_barbero: 4, nombre: "Luis Martínez" }
 ];
 
-export const NOVELTY_TYPES = ["Ausencia", "Cambio de turno", "Permiso", "Otro"];
+export const NOVELTY_TYPES = [
+  "Permiso",
+  "Ausencia",
+  "Cambio de turno",
+  "Incapacidad",
+  "Vacaciones",
+  "Calamidad",
+  "Solicitud de cancelación de cita",
+  "Otro"
+];
 
 const emptyForm = {
   id_barbero: 1,
@@ -50,19 +60,46 @@ export function useScheduleNovelties() {
   const [selectedNovelty, setSelectedNovelty] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
-  useEffect(() => {
-    const handleSync = () => {
+  const fetchFromApi = useCallback(async () => {
+    try {
+      const data = await getNovelties();
+      if (Array.isArray(data)) {
+        setNovelties(data);
+        saveStoredNovelties(data);
+      }
+    } catch (e) {
+      // Fallback a localStorage si el backend no responde
       setNovelties(getStoredNovelties());
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFromApi();
+
+    // Sondeo de tiempo real para que novedades enviadas desde la app móvil aparezcan de inmediato
+    const interval = setInterval(() => {
+      fetchFromApi();
+    }, 4000);
+
+    const handleSync = () => {
+      fetchFromApi();
     };
     window.addEventListener("storage", handleSync);
     window.addEventListener("barber_notification_update", handleSync);
+    window.addEventListener("focus", handleSync);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener("storage", handleSync);
       window.removeEventListener("barber_notification_update", handleSync);
+      window.removeEventListener("focus", handleSync);
     };
-  }, []);
+  }, [fetchFromApi]);
 
-  const getBarberName = (id_barbero) => {
+  const getBarberName = (id_barbero, novObj) => {
+    if (novObj && novObj.barbero_nombre) {
+      return novObj.barbero_nombre;
+    }
     try {
       const rawBarbers = localStorage.getItem("barber_barbers_db");
       const storedBarbers = rawBarbers ? JSON.parse(rawBarbers) : mockBarbersList;
@@ -74,12 +111,12 @@ export function useScheduleNovelties() {
   };
 
   const filteredNovelties = novelties.filter((nov) => {
-    const barberName = getBarberName(nov.id_barbero).toLowerCase();
+    const barberName = getBarberName(nov.id_barbero, nov).toLowerCase();
     const search = searchTerm.toLowerCase();
     const matchesSearch =
       barberName.includes(search) ||
       (nov.descripcion || "").toLowerCase().includes(search) ||
-      nov.tipo.toLowerCase().includes(search);
+      (nov.tipo || "").toLowerCase().includes(search);
 
     const matchesStatus = statusFilter === "all" || nov.estado === statusFilter;
     const matchesType = typeFilter === "all" || nov.tipo === typeFilter;
@@ -89,19 +126,33 @@ export function useScheduleNovelties() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  const handleCreate = () => {
-    const newNovelty = {
-      id_novedad: Math.max(...novelties.map((n) => n.id_novedad || 0), 0) + 1,
+  const handleCreate = async () => {
+    const payload = {
       id_barbero: Number(formData.id_barbero),
       tipo: formData.tipo,
       fecha: formData.fecha,
-      descripcion: formData.descripcion.trim(),
-      estado: formData.estado || "Pendiente",
-      fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      descripcion: formData.descripcion ? formData.descripcion.trim() : ""
     };
-    const updated = [newNovelty, ...novelties];
-    setNovelties(updated);
-    saveStoredNovelties(updated);
+
+    try {
+      await createNoveltyApi(payload);
+      await fetchFromApi();
+    } catch (e) {
+      console.warn("Fallo creando novedad vía API, usando local:", e);
+      const newNovelty = {
+        id_novedad: Math.max(...novelties.map((n) => n.id_novedad || 0), 0) + 1,
+        id_barbero: payload.id_barbero,
+        tipo: payload.tipo,
+        fecha: payload.fecha,
+        descripcion: payload.descripcion,
+        estado: "Pendiente",
+        fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+      };
+      const updated = [newNovelty, ...novelties];
+      setNovelties(updated);
+      saveStoredNovelties(updated);
+    }
+
     setShowCreateModal(false);
     resetForm();
   };
@@ -136,13 +187,20 @@ export function useScheduleNovelties() {
     setSelectedNovelty(null);
   };
 
-  const changeStatus = (id, newStatus) => {
+  const changeStatus = async (id, newStatus) => {
     const targetNov = novelties.find((nov) => nov.id_novedad === id);
     const updated = novelties.map((nov) =>
       nov.id_novedad === id ? { ...nov, estado: newStatus } : nov
     );
     setNovelties(updated);
     saveStoredNovelties(updated);
+
+    try {
+      await updateNoveltyStatusApi(id, newStatus);
+      await fetchFromApi();
+    } catch (err) {
+      console.warn("Error sincronizando cambio de estado con API:", err);
+    }
 
     // Despachar notificación al Barbero
     if (targetNov) {
@@ -152,7 +210,7 @@ export function useScheduleNovelties() {
           title: `Novedad de horario ${newStatus}`,
           description: `Tu solicitud de ${targetNov.tipo} para el ${targetNov.fecha} ha sido ${newStatus} por la administración.`,
           targetRole: 3,
-          targetUserId: 4, // ID de usuario estándar del barbero
+          targetUserId: 4,
           route: "/barbero/novedades"
         });
       } catch (err) {

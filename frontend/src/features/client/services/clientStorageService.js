@@ -6,7 +6,7 @@
  * entre el Cliente y el Administrador.
  */
 
-import { getCurrentUser, getStoredUsers, saveStoredUsers } from "../../auth/services/authService.js";
+import { getCurrentUser, getStoredUsers, saveStoredUsers, updateUserProfile as authUpdateUserProfile } from "../../auth/services/authService.js";
 import { createAppointment as apiCreateAppointment, updateAppointmentStatus as apiUpdateAppointmentStatus } from "../../admin/appointments/services/appointmentsService.js";
 import { createSale as apiCreateSale } from "../../admin/sales/services/salesService.js";
 import { createNotification } from "../../../shared/services/notificationService.js";
@@ -44,7 +44,26 @@ const INITIAL_BARBERS = [
   }
 ];
 
-const INITIAL_SCHEDULES = [];
+const INITIAL_SCHEDULES = [
+  {
+    id_horario: 1,
+    id_barbero: 1,
+    dia_semana: "Lunes",
+    hora_inicio: "09:00:00",
+    hora_fin: "18:00:00",
+    estado: 1,
+    barbero_nombre: "Carlos Rodríguez"
+  },
+  {
+    id_horario: 2,
+    id_barbero: 1,
+    dia_semana: "Martes",
+    hora_inicio: "09:00:00",
+    hora_fin: "18:00:00",
+    estado: 1,
+    barbero_nombre: "Carlos Rodríguez"
+  }
+];
 
 const INITIAL_CLIENTS = [];
 
@@ -234,6 +253,7 @@ export function getCurrentClientProfile() {
     client = {
       id_cliente: nextId,
       id_usuario: user.id_usuario,
+      documento: user.documento || "",
       nombre: (user.nombre || "").trim(),
       apellido: (user.apellido || "").trim(),
       correo: cleanEmail,
@@ -246,6 +266,10 @@ export function getCurrentClientProfile() {
   } else {
     // Sincronizar en caso de que los datos del usuario hayan sido actualizados
     let needsUpdate = false;
+    if (user.documento && client.documento !== user.documento.trim()) {
+      client.documento = user.documento.trim();
+      needsUpdate = true;
+    }
     if (user.nombre && client.nombre !== user.nombre.trim()) {
       client.nombre = user.nombre.trim();
       needsUpdate = true;
@@ -269,6 +293,7 @@ export function getCurrentClientProfile() {
 
   return {
     ...client,
+    documento: user.documento || client.documento || "",
     nombre: user.nombre || client.nombre,
     apellido: user.apellido || client.apellido,
     correo: user.correo || client.correo,
@@ -276,7 +301,7 @@ export function getCurrentClientProfile() {
   };
 }
 
-export function updateClientProfile(updatedData) {
+export async function updateClientProfile(updatedData) {
   const user = getCurrentUser();
   if (!user) return { success: false, error: "No hay sesión activa." };
 
@@ -286,9 +311,11 @@ export function updateClientProfile(updatedData) {
   if (userIdx >= 0) {
     users[userIdx] = {
       ...users[userIdx],
+      documento: updatedData.documento ? updatedData.documento.trim() : users[userIdx].documento,
       nombre: updatedData.nombre.trim(),
       apellido: updatedData.apellido.trim(),
-      telefono: updatedData.telefono ? updatedData.telefono.trim() : users[userIdx].telefono
+      telefono: updatedData.telefono ? updatedData.telefono.trim() : users[userIdx].telefono,
+      direccion: updatedData.direccion ? updatedData.direccion.trim() : users[userIdx].direccion
     };
     if (updatedData.nuevaContrasena) {
       users[userIdx].contrasena = updatedData.nuevaContrasena;
@@ -302,6 +329,7 @@ export function updateClientProfile(updatedData) {
   if (clientIdx >= 0) {
     clients[clientIdx] = {
       ...clients[clientIdx],
+      documento: updatedData.documento ? updatedData.documento.trim() : clients[clientIdx].documento,
       nombre: updatedData.nombre.trim(),
       apellido: updatedData.apellido.trim(),
       telefono: updatedData.telefono ? updatedData.telefono.trim() : clients[clientIdx].telefono,
@@ -313,6 +341,13 @@ export function updateClientProfile(updatedData) {
   // 3. Actualizar sesión actual
   const refreshedUser = users[userIdx] || { ...user, ...updatedData };
   localStorage.setItem("barber_current_user", JSON.stringify(refreshedUser));
+
+  // 4. Sincronizar con API backend
+  try {
+    await authUpdateUserProfile(updatedData);
+  } catch (e) {
+    console.warn("[ClientStorage] Error al sincronizar actualización con backend:", e);
+  }
 
   return { success: true, profile: getCurrentClientProfile() };
 }
@@ -378,10 +413,19 @@ export function getAvailableSlots(id_barbero, isoDate) {
   const daysMap = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
   const dayName = daysMap[dateObj.getDay()];
 
-  // Buscar turno del barbero para este día de la semana
-  const barberSchedule = schedules.find(
-    (s) => s.id_barbero === Number(id_barbero) && (s.dias_semana || []).includes(dayName)
-  );
+  // Buscar turno del barbero para este día de la semana (soporta dia_semana o dias_semana)
+  const norm = (str) =>
+    String(str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const barberSchedule = schedules.find((s) => {
+    if (Number(s.id_barbero) !== Number(id_barbero)) return false;
+    if (s.dia_semana && norm(s.dia_semana) === norm(dayName)) return true;
+    if (Array.isArray(s.dias_semana) && s.dias_semana.some((d) => norm(d) === norm(dayName))) return true;
+    return false;
+  });
 
   if (!barberSchedule) {
     return []; // No labora ese día

@@ -22,6 +22,13 @@ export class BarbersService {
       throw ApiError.conflict("Ya existe un usuario con este correo electrónico.");
     }
 
+    if (barberData.documento) {
+      const existingDoc = await UsersRepository.findByDocumento(barberData.documento);
+      if (existingDoc) {
+        throw ApiError.conflict("Ya existe un usuario registrado con este documento de identidad.");
+      }
+    }
+
     const defaultPass = barberData.contrasena || "Barbero123*";
     const hashedPassword = await hashPassword(defaultPass);
 
@@ -39,6 +46,13 @@ export class BarbersService {
       const existing = await UsersRepository.findByEmail(barberData.correo);
       if (existing) {
         throw ApiError.conflict("El correo electrónico ya se encuentra registrado por otro usuario.");
+      }
+    }
+
+    if (barberData.documento && barberData.documento !== barber.documento) {
+      const existingDoc = await UsersRepository.findByDocumento(barberData.documento);
+      if (existingDoc && existingDoc.id_usuario !== barber.id_usuario) {
+        throw ApiError.conflict("El documento de identidad ya se encuentra registrado por otro usuario.");
       }
     }
 

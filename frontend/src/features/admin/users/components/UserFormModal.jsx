@@ -96,34 +96,55 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
           <FormFieldError error={errors.correo} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
-          <input
-            type="tel"
-            inputMode="numeric"
-            name="telefono"
-            id="telefono"
-            maxLength={15}
-            value={formData.telefono || ""}
-            onKeyDown={(e) => {
-              const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
-              if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
-              if (!/^[0-9]$/.test(e.key)) {
-                e.preventDefault();
-              }
-            }}
-            onChange={(e) => {
-              const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
-              handleChange("telefono", onlyNums);
-            }}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.telefono
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="Ej: 3001234567"
-          />
-          <FormFieldError error={errors.telefono} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Documento de Identidad</label>
+            <input
+              type="text"
+              name="documento"
+              id="documento"
+              maxLength={20}
+              value={formData.documento || ""}
+              onChange={(e) => handleChange("documento", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.documento
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: 1020304050"
+            />
+            <FormFieldError error={errors.documento} />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              name="telefono"
+              id="telefono"
+              maxLength={15}
+              value={formData.telefono || ""}
+              onKeyDown={(e) => {
+                const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+                if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+                if (!/^[0-9]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+                handleChange("telefono", onlyNums);
+              }}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.telefono
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: 3001234567"
+            />
+            <FormFieldError error={errors.telefono} />
+          </div>
         </div>
 
         <div>

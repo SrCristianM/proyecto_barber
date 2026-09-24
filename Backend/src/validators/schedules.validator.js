@@ -27,7 +27,7 @@ export const availabilityValidation = [
 
 export const createNoveltyValidation = [
   body("id_barbero").isInt({ min: 1 }).withMessage("ID de barbero requerido."),
-  body("tipo").isIn(["Ausencia", "Cambio de turno", "Permiso", "Otro"]).withMessage("Tipo de novedad no válido."),
+  body("tipo").trim().isIn(["Ausencia", "Cambio de turno", "Permiso", "Incapacidad", "Vacaciones", "Calamidad", "Solicitud de cancelación de cita", "Otro"]).withMessage("Tipo de novedad no válido."),
   body("fecha").matches(/^\d{4}-\d{2}-\d{2}$/).withMessage("Fecha con formato YYYY-MM-DD requerida."),
   body("descripcion").optional().trim().isLength({ max: 255 })
 ];

@@ -13,7 +13,7 @@ import {
 
 export const availableRoles = ROLES;
 
-const emptyForm = { nombre: "", apellido: "", correo: "", telefono: "", id_rol: 3, contrasena: "", estado: 1 };
+const emptyForm = { nombre: "", apellido: "", documento: "", correo: "", telefono: "", id_rol: 3, contrasena: "", estado: 1 };
 
 export function useUsers() {
   const [users, setUsers] = useState(() => getStoredUsers());
@@ -53,7 +53,8 @@ export function useUsers() {
         search === "" ||
         fullName.includes(search) ||
         user.correo.toLowerCase().includes(search) ||
-        (user.telefono || "").includes(search);
+        (user.telefono || "").includes(search) ||
+        (user.documento && user.documento.toLowerCase().includes(search));
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -100,6 +101,7 @@ export function useUsers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       id_rol: Number(formData.id_rol),
@@ -131,6 +133,7 @@ export function useUsers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       id_rol: Number(formData.id_rol)
@@ -201,6 +204,7 @@ export function useUsers() {
         { header: "ID", key: "id_usuario", width: 10, type: "number" },
         { header: "Nombre", key: "nombre", width: 20 },
         { header: "Apellido", key: "apellido", width: 20 },
+        { header: "Documento", key: "documento", width: 18 },
         { header: "Correo Electrónico", key: "correo", width: 30 },
         { header: "Teléfono", key: "telefono", width: 18 },
         { header: "Rol", key: "rol", width: 18 },
@@ -209,6 +213,7 @@ export function useUsers() {
       ],
       data: filteredUsers.map((u) => ({
         ...u,
+        documento: u.documento || "—",
         telefono: u.telefono || "—",
         rol: getRoleName(u.id_rol),
         estado_nombre: u.estado === 1 ? "Activo" : "Inactivo"
@@ -226,6 +231,7 @@ export function useUsers() {
     setFormData({
       nombre: user.nombre,
       apellido: user.apellido,
+      documento: user.documento || "",
       correo: user.correo,
       telefono: user.telefono || "",
       id_rol: user.id_rol,

@@ -8,7 +8,7 @@ import FormInput from "../components/FormInput";
 import PasswordInput from "../components/PasswordInput";
 import AuthButton from "../components/AuthButton";
 import { validateLoginForm } from "../validations/authValidation";
-import { loginWithCredentials, setCurrentUser, getStoredUsers } from "../services/authService";
+import { loginWithCredentials, setCurrentUser, getStoredUsers, DEMO_CREDENTIALS } from "../services/authService";
 
 export default function Login({ onLogin }) {
   const [correo, setCorreo] = useState("");
@@ -17,7 +17,32 @@ export default function Login({ onLogin }) {
   const [errors, setErrors] = useState({});
   const [hasErrorShake, setHasErrorShake] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeRoleName, setActiveRoleName] = useState(null);
   const navigate = useNavigate();
+
+  const handleSelectDemo = async (demo, directLogin = false) => {
+    setCorreo(demo.email);
+    setContrasena(demo.password);
+    setActiveRoleName(demo.role);
+    setErrors({});
+
+    if (!directLogin) {
+      toast.info(`Credenciales de ${demo.role} cargadas: ${demo.email}`);
+      return;
+    }
+
+    setLoading(true);
+    const authResult = await loginWithCredentials(demo.email, demo.password);
+    setLoading(false);
+
+    if (authResult.success) {
+      toast.success(`¡Bienvenido, ${authResult.user.nombre} (${demo.role})!`);
+      if (onLogin) onLogin(authResult.user);
+      navigate(demo.path, { replace: true });
+    } else {
+      toast.error(authResult.error || "No se pudo iniciar sesión automática.");
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -85,6 +110,51 @@ export default function Login({ onLogin }) {
   return (
     <AuthCard>
       <AuthHeader subtitle="Ingresa tus credenciales para acceder a tu cuenta" />
+
+      {/* Selector de Acceso Rápido por Rol (Admin, Recepcionista, Barbero, Cliente) */}
+      <div className="mb-6 p-3 rounded-2xl bg-white/[0.03] border border-white/10 shadow-inner">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-[0.7rem] font-bold text-[#E8C466] uppercase tracking-wider flex items-center gap-1.5">
+            <span>✨</span> Cuentas de Acceso por Rol
+          </span>
+          <span className="text-[0.62rem] text-[#8E8E93] bg-white/5 px-2 py-0.5 rounded-full">
+            Web & Móvil
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {DEMO_CREDENTIALS.map((demo) => {
+            const isSelected = activeRoleName === demo.role || correo === demo.email;
+            return (
+              <button
+                key={demo.role}
+                type="button"
+                onClick={() => handleSelectDemo(demo, false)}
+                className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer group relative ${
+                  isSelected
+                    ? "bg-[#C9A24A]/15 border-[#C9A24A] shadow-md shadow-[#C9A24A]/10"
+                    : "bg-black/40 hover:bg-[#C9A24A]/10 border-white/5 hover:border-[#C9A24A]/40"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-white group-hover:text-[#E8C466] transition-colors flex items-center gap-1">
+                    {demo.role === "Administrador" && "👑"}
+                    {demo.role === "Recepcionista" && "📋"}
+                    {demo.role === "Barbero" && "✂️"}
+                    {demo.role === "Cliente" && "👤"}
+                    {demo.role}
+                  </span>
+                  <span className="text-[0.58rem] px-1.5 py-0.5 rounded bg-white/5 text-[#A0A0A0] font-semibold">
+                    Rol {demo.id_rol}
+                  </span>
+                </div>
+                <div className="text-[0.65rem] text-[#8E8E93] truncate mt-1">
+                  {demo.email}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Google Quick Access */}
       <motion.button

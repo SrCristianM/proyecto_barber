@@ -9,7 +9,9 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
 
   if (!sale) return null;
 
-  const clientName = sale.cliente_nombre || clients.find((c) => c.id_cliente === Number(sale.id_cliente))?.nombre || "Cliente Desconocido";
+  const clientMatch = clients.find((c) => c.id_cliente === Number(sale.id_cliente));
+  const clientName = sale.cliente_nombre || (clientMatch ? `${clientMatch.nombre} ${clientMatch.apellido || ""}`.trim() : "Cliente Desconocido");
+  const clientDoc = sale.cliente_documento || clientMatch?.documento;
   const userName = users.find((u) => u.id_usuario === Number(sale.id_usuario))?.nombre || "Usuario Desconocido";
 
   return (
@@ -52,6 +54,9 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
                 Cliente
               </span>
               <p className="text-base font-bold text-foreground">{clientName}</p>
+              {clientDoc && (
+                <p className="text-xs text-muted-foreground mt-0.5 font-medium">Doc: {clientDoc}</p>
+              )}
             </div>
 
             <div>
@@ -141,6 +146,7 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
           sale={sale}
           clientName={clientName}
           userName={userName}
+          clientDoc={clientDoc}
           onClose={() => setShowReceipt(false)}
         />
       )}

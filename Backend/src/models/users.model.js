@@ -5,7 +5,7 @@ export class UsersRepository {
   static async findAll({ search = "", status = "all", role = "all", sortField = "nombre", sortDir = "asc" } = {}) {
     if (isDatabaseConnected()) {
       let sql = `
-        SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
+        SELECT u.id_usuario, u.nombre, u.apellido, u.documento, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
         FROM usuario u
         JOIN rol r ON u.id_rol = r.id_rol
         WHERE 1=1
@@ -13,9 +13,9 @@ export class UsersRepository {
       const params = [];
 
       if (search) {
-        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ?)`;
+        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ? OR (u.documento IS NOT NULL AND u.documento LIKE ?))`;
         const s = `%${search.toLowerCase()}%`;
-        params.push(s, s, s);
+        params.push(s, s, s, s);
       }
 
       if (status !== "all") {
@@ -28,7 +28,7 @@ export class UsersRepository {
         params.push(Number(role));
       }
 
-      const validSort = ["nombre", "apellido", "correo", "fecha_registro", "id_usuario", "estado"].includes(sortField) ? sortField : "nombre";
+      const validSort = ["nombre", "apellido", "documento", "correo", "fecha_registro", "id_usuario", "estado"].includes(sortField) ? sortField : "nombre";
       const validDir = sortDir.toLowerCase() === "desc" ? "DESC" : "ASC";
       sql += ` ORDER BY u.${validSort} ${validDir}`;
 
@@ -44,7 +44,8 @@ export class UsersRepository {
           s === "" ||
           fullName.includes(s) ||
           user.correo.toLowerCase().includes(s) ||
-          (user.telefono || "").includes(s);
+          (user.telefono || "").includes(s) ||
+          (user.documento && user.documento.includes(s));
 
         const matchesStatus =
           status === "all" ||
@@ -74,7 +75,7 @@ export class UsersRepository {
 
     if (isDatabaseConnected()) {
       const sql = `
-        SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
+        SELECT u.id_usuario, u.nombre, u.apellido, u.documento, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
         FROM usuario u
         JOIN rol r ON u.id_rol = r.id_rol
         WHERE u.id_usuario = ?
@@ -103,15 +104,29 @@ export class UsersRepository {
     return mockStore.usuarios.find((u) => u.correo.toLowerCase() === clean) || null;
   }
 
+  static async findByDocumento(documento) {
+    if (!documento) return null;
+    const cleanDoc = String(documento).trim();
+
+    if (isDatabaseConnected()) {
+      const sql = `SELECT * FROM usuario WHERE documento = ? LIMIT 1`;
+      const rows = await executeQuery(sql, [cleanDoc]);
+      return rows && rows.length > 0 ? rows[0] : null;
+    }
+
+    return mockStore.usuarios.find((u) => u.documento && String(u.documento).trim() === cleanDoc) || null;
+  }
+
   static async create(userData) {
     if (isDatabaseConnected()) {
       const sql = `
-        INSERT INTO usuario (nombre, apellido, correo, contrasena, telefono, id_rol, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO usuario (nombre, apellido, documento, correo, contrasena, telefono, id_rol, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const result = await executeQuery(sql, [
         userData.nombre,
         userData.apellido,
+        userData.documento || null,
         userData.correo,
         userData.contrasena,
         userData.telefono || null,
@@ -126,6 +141,7 @@ export class UsersRepository {
       id_usuario: nextId,
       nombre: userData.nombre,
       apellido: userData.apellido,
+      documento: userData.documento || null,
       correo: userData.correo,
       contrasena: userData.contrasena,
       telefono: userData.telefono || null,
@@ -147,6 +163,7 @@ export class UsersRepository {
 
       if (userData.nombre !== undefined) { fields.push("nombre = ?"); values.push(userData.nombre); }
       if (userData.apellido !== undefined) { fields.push("apellido = ?"); values.push(userData.apellido); }
+      if (userData.documento !== undefined) { fields.push("documento = ?"); values.push(userData.documento || null); }
       if (userData.correo !== undefined) { fields.push("correo = ?"); values.push(userData.correo); }
       if (userData.telefono !== undefined) { fields.push("telefono = ?"); values.push(userData.telefono); }
       if (userData.id_rol !== undefined) { fields.push("id_rol = ?"); values.push(userData.id_rol); }

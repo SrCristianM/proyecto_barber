@@ -29,7 +29,7 @@ export class AuthRepository {
 
     if (isDatabaseConnected()) {
       const sql = `
-        SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
+        SELECT u.id_usuario, u.nombre, u.apellido, u.documento, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, r.nombre_rol as rol
         FROM usuario u
         JOIN rol r ON u.id_rol = r.id_rol
         WHERE u.id_usuario = ?
@@ -46,15 +46,40 @@ export class AuthRepository {
     return { ...safeUser, rol: role ? role.nombre_rol : "Cliente" };
   }
 
+  static async findByDocumento(documento) {
+    if (!documento) return null;
+    const cleanDoc = String(documento).trim();
+
+    if (isDatabaseConnected()) {
+      const sql = `
+        SELECT u.*, r.nombre_rol as rol
+        FROM usuario u
+        JOIN rol r ON u.id_rol = r.id_rol
+        WHERE u.documento = ?
+        LIMIT 1
+      `;
+      const rows = await executeQuery(sql, [cleanDoc]);
+      return rows && rows.length > 0 ? rows[0] : null;
+    }
+
+    const user = mockStore.usuarios.find(
+      (u) => u.documento && String(u.documento).trim() === cleanDoc
+    );
+    if (!user) return null;
+    const role = mockStore.roles.find((r) => r.id_rol === user.id_rol);
+    return { ...user, rol: role ? role.nombre_rol : "Cliente" };
+  }
+
   static async create(userData) {
     if (isDatabaseConnected()) {
       const sql = `
-        INSERT INTO usuario (nombre, apellido, correo, contrasena, telefono, id_rol, estado)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO usuario (nombre, apellido, documento, correo, contrasena, telefono, id_rol, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const result = await executeQuery(sql, [
         userData.nombre,
         userData.apellido,
+        userData.documento || null,
         userData.correo,
         userData.contrasena,
         userData.telefono || null,
@@ -79,6 +104,7 @@ export class AuthRepository {
       id_usuario: nextId,
       nombre: userData.nombre,
       apellido: userData.apellido,
+      documento: userData.documento || null,
       correo: userData.correo,
       contrasena: userData.contrasena,
       telefono: userData.telefono || null,
@@ -124,8 +150,14 @@ export class AuthRepository {
     const id = Number(id_usuario);
 
     if (isDatabaseConnected()) {
-      const sql = `UPDATE usuario SET nombre = ?, apellido = ?, telefono = ? WHERE id_usuario = ?`;
-      await executeQuery(sql, [profileData.nombre, profileData.apellido, profileData.telefono || null, id]);
+      const hasDoc = profileData.documento !== undefined;
+      const sql = hasDoc
+        ? `UPDATE usuario SET nombre = ?, apellido = ?, documento = ?, telefono = ? WHERE id_usuario = ?`
+        : `UPDATE usuario SET nombre = ?, apellido = ?, telefono = ? WHERE id_usuario = ?`;
+      const params = hasDoc
+        ? [profileData.nombre, profileData.apellido, profileData.documento || null, profileData.telefono || null, id]
+        : [profileData.nombre, profileData.apellido, profileData.telefono || null, id];
+      await executeQuery(sql, params);
       return true;
     }
 
@@ -133,7 +165,9 @@ export class AuthRepository {
     if (user) {
       user.nombre = profileData.nombre;
       user.apellido = profileData.apellido;
+      if (profileData.documento !== undefined) user.documento = profileData.documento || null;
       user.telefono = profileData.telefono || null;
+      if (profileData.avatar_url) user.avatar_url = profileData.avatar_url;
       return true;
     }
     return false;
@@ -147,6 +181,16 @@ export class AuthRepository {
       return rows && rows.length > 0 ? rows[0] : null;
     }
     return mockStore.clientes.find((c) => c.id_usuario === id) || null;
+  }
+
+  static async findBarberByUserId(id_usuario) {
+    const id = Number(id_usuario);
+    if (isDatabaseConnected()) {
+      const sql = `SELECT * FROM barbero WHERE id_usuario = ? LIMIT 1`;
+      const rows = await executeQuery(sql, [id]);
+      return rows && rows.length > 0 ? rows[0] : null;
+    }
+    return mockStore.barberos.find((b) => b.id_usuario === id) || null;
   }
 
   static async getUserPermissions(id_rol) {

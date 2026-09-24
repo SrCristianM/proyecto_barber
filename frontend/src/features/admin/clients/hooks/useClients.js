@@ -17,6 +17,7 @@ export const availableLoyalties = NIVELES_FIDELIDAD;
 const emptyForm = {
   nombre: "",
   apellido: "",
+  documento: "",
   correo: "",
   telefono: "",
   direccion: "",
@@ -55,6 +56,7 @@ export function useClients() {
       const matchesSearch =
         search === "" ||
         fullName.includes(search) ||
+        (client.documento || "").toLowerCase().includes(search) ||
         client.correo.toLowerCase().includes(search) ||
         (client.telefono || "").includes(search) ||
         (client.direccion || "").toLowerCase().includes(search);
@@ -112,6 +114,7 @@ export function useClients() {
               id_usuario: u.id_usuario,
               nombre: (u.nombre || "").trim(),
               apellido: (u.apellido || "").trim(),
+              documento: u.documento || "",
               correo: cleanEmail,
               telefono: u.telefono || "",
               direccion: u.direccion || "No especificada",
@@ -151,6 +154,7 @@ export function useClients() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       direccion: formData.direccion ? formData.direccion.trim() : null,
@@ -185,6 +189,7 @@ export function useClients() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       direccion: formData.direccion ? formData.direccion.trim() : null,
@@ -257,6 +262,7 @@ export function useClients() {
       filename: `clientes_${new Date().toISOString().split("T")[0]}.xls`,
       columns: [
         { header: "ID", key: "id_cliente", width: 10, type: "number" },
+        { header: "Documento", key: "documento", width: 16 },
         { header: "Nombre", key: "nombre", width: 20 },
         { header: "Apellido", key: "apellido", width: 20 },
         { header: "Correo Electrónico", key: "correo", width: 30 },
@@ -267,6 +273,7 @@ export function useClients() {
       ],
       data: filteredClients.map((c) => ({
         ...c,
+        documento: c.documento || "—",
         telefono: c.telefono || "—",
         direccion: c.direccion || "—",
         fidelidad: c.nivel_fidelidad || "Nuevo",
@@ -285,6 +292,7 @@ export function useClients() {
     setFormData({
       nombre: client.nombre,
       apellido: client.apellido,
+      documento: client.documento || "",
       correo: client.correo,
       telefono: client.telefono || "",
       direccion: client.direccion || "",

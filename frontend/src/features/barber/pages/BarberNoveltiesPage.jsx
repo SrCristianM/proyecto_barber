@@ -25,7 +25,9 @@ import {
   createBarberNovelty,
   updateBarberNovelty,
   cancelBarberNovelty,
-  getBarberAppointments
+  getBarberAppointments,
+  fetchBarberNovelties,
+  fetchBarberAppointments
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 
@@ -88,13 +90,24 @@ export default function BarberNoveltiesPage() {
     }
   }, [location.state]);
 
-  const loadData = () => {
+  const loadData = async () => {
     const profile = getCurrentBarberProfile();
     setBarber(profile);
     const data = getBarberNovelties();
     setNovelties(data);
     const apts = getBarberAppointments();
     setAppointments(apts);
+
+    try {
+      const [liveNov, liveApts] = await Promise.all([
+        fetchBarberNovelties(),
+        fetchBarberAppointments()
+      ]);
+      if (liveNov) setNovelties(liveNov);
+      if (liveApts) setAppointments(liveApts);
+    } catch {
+      // offline fallback ya asignado
+    }
   };
 
   // Opciones de citas para el select de "Cita Relacionada"

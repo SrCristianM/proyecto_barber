@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import Modal from "../../shared/components/Modal";
 import { toast } from "sonner";
 
-export default function SaleReceiptModal({ sale, clientName, userName, onClose }) {
+export default function SaleReceiptModal({ sale, clientName, userName, clientDoc, onClose }) {
   const printRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
@@ -70,7 +70,8 @@ export default function SaleReceiptModal({ sale, clientName, userName, onClose }
       .map((d) => `• ${d.cantidad}x ${d.nombre} - $${Number(d.subtotal).toLocaleString("es-CO")}`)
       .join("%0A");
     
-    const text = `💈 *TU TURNO BARBER* 💈%0A%0A*Factura:* ${ticketNumber}%0A*Cliente:* ${encodeURIComponent(clientName)}%0A*Fecha:* ${encodeURIComponent(sale.fecha || "")}%0A%0A*Detalle:*%0A${itemsSummary}%0A%0A*TOTAL:* $${Number(sale.total).toLocaleString("es-CO")}%0A%0A_¡Gracias por tu preferencia! Esperamos verte pronto._`;
+    const docText = (clientDoc || sale.cliente_documento) ? `%0A*Doc:* ${encodeURIComponent(clientDoc || sale.cliente_documento)}` : "";
+    const text = `💈 *TU TURNO BARBER* 💈%0A%0A*Factura:* ${ticketNumber}%0A*Cliente:* ${encodeURIComponent(clientName)}${docText}%0A*Fecha:* ${encodeURIComponent(sale.fecha || "")}%0A%0A*Detalle:*%0A${itemsSummary}%0A%0A*TOTAL:* $${Number(sale.total).toLocaleString("es-CO")}%0A%0A_¡Gracias por tu preferencia! Esperamos verte pronto._`;
     window.open(`https://wa.me/?text=${text}`, "_blank");
     toast.success("Abriendo WhatsApp para compartir ticket");
   };
@@ -121,6 +122,12 @@ export default function SaleReceiptModal({ sale, clientName, userName, onClose }
               <span>Cliente:</span>
               <span className="font-semibold truncate max-w-[140px] text-neutral-950">{clientName}</span>
             </div>
+            {(clientDoc || sale.cliente_documento) && (
+              <div className="flex justify-between text-neutral-700">
+                <span>Doc:</span>
+                <span className="font-semibold">{clientDoc || sale.cliente_documento}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Atendido por:</span>
               <span>{userName}</span>

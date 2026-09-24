@@ -4,9 +4,9 @@ import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes.jsx";
 import { SalonAudioProvider } from "./client/context/SalonAudioContext.jsx";
 
-// Purga integral de datos registrados para entrega limpia al cliente (v2)
+// Purga integral de datos registrados para entrega limpia y alineación con app móvil (v3)
 try {
-  const DELIVERY_CLEAN_FLAG = "barber_clean_delivery_v2";
+  const DELIVERY_CLEAN_FLAG = "barber_clean_delivery_v3";
   if (typeof window !== "undefined" && window.localStorage && localStorage.getItem(DELIVERY_CLEAN_FLAG) !== "true") {
     // 1. Módulos Transaccionales
     localStorage.setItem("barber_appointments_db", JSON.stringify([]));
@@ -19,10 +19,34 @@ try {
     // 2. Módulo de Proveedores: completamente vacío
     localStorage.setItem("barber_suppliers_db", JSON.stringify([]));
 
-    // 3. Módulo de Horarios: completamente vacío
-    localStorage.setItem("barber_schedules_db", JSON.stringify([]));
+    // 3. Módulo de Horarios: inicializado exclusivamente con los 2 días reales del backend/móvil (Lunes y Martes)
+    const initialRealSchedules = [
+      {
+        id_horario: 1,
+        id_barbero: 1,
+        dia_semana: "Lunes",
+        hora_inicio: "09:00:00",
+        hora_fin: "18:00:00",
+        fecha_inicio_vigencia: "2026-01-01",
+        fecha_fin_vigencia: "2026-12-31",
+        estado: 1,
+        barbero_nombre: "Carlos Rodríguez"
+      },
+      {
+        id_horario: 2,
+        id_barbero: 1,
+        dia_semana: "Martes",
+        hora_inicio: "09:00:00",
+        hora_fin: "18:00:00",
+        fecha_inicio_vigencia: "2026-01-01",
+        fecha_fin_vigencia: "2026-12-31",
+        estado: 1,
+        barbero_nombre: "Carlos Rodríguez"
+      }
+    ];
+    localStorage.setItem("barber_schedules_db", JSON.stringify(initialRealSchedules));
 
-    // 4. Módulo de Servicios, Categorías y Paquetes: completamente vacíos
+    // 4. Módulo de Servicios, Categorías y Paquetes: paquetes sin datos fantasma
     localStorage.setItem("barber_services_db", JSON.stringify([]));
     localStorage.setItem("barber_service_categories_db", JSON.stringify([]));
     localStorage.setItem("barber_packages_db", JSON.stringify([]));

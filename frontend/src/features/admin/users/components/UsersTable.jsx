@@ -57,7 +57,9 @@ export default function UsersTable({
                     </div>
                     <div>
                       <p className="font-bold text-foreground text-sm">{user.nombre} {user.apellido}</p>
-                      <p className="text-xs text-muted-foreground">{user.correo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.correo}{user.documento ? ` • Doc: ${user.documento}` : ""}
+                      </p>
                     </div>
                   </div>
                 </td>

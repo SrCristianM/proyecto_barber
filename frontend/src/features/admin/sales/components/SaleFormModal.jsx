@@ -71,7 +71,10 @@ export default function SaleFormModal({
             <SearchableSelect
               label="Cliente"
               required
-              options={clients.map((client) => ({ value: client.id_cliente, label: client.nombre }))}
+              options={clients.map((client) => ({
+                value: client.id_cliente,
+                label: `${client.nombre} ${client.apellido || ""}${client.documento ? ` (Doc: ${client.documento})` : ""}`.trim()
+              }))}
               value={formData.id_cliente}
               onChange={(val) => {
                 setFormData({ ...formData, id_cliente: Number(val) });

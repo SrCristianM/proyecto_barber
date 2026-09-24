@@ -51,6 +51,34 @@ export class AuthController {
     }
   }
 
+  static async forgotPassword(req, res, next) {
+    try {
+      const { correo } = req.body;
+      const result = await AuthService.forgotPassword(correo);
+      return ApiResponse.success(
+        res,
+        result,
+        "Se han enviado las instrucciones de recuperación a tu correo electrónico."
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resetPassword(req, res, next) {
+    try {
+      const { correo, codigo, nueva_contrasena } = req.body;
+      const result = await AuthService.resetPassword(correo, codigo, nueva_contrasena);
+      return ApiResponse.success(
+        res,
+        result,
+        "Contraseña restablecida exitosamente."
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async logout(req, res, next) {
     try {
       const ip = req.ip || req.connection.remoteAddress;

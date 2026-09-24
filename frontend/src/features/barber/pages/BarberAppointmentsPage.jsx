@@ -23,7 +23,8 @@ import Modal from "../../admin/shared/components/Modal";
 import {
   getBarberAppointments,
   getCurrentBarberProfile,
-  completeBarberAppointment
+  completeBarberAppointment,
+  fetchBarberAppointments
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 
@@ -57,13 +58,20 @@ export default function BarberAppointmentsPage() {
     loadAppointments();
   }, []);
 
-  const loadAppointments = () => {
+  const loadAppointments = async () => {
     setLoading(true);
     const profile = getCurrentBarberProfile();
     setBarber(profile);
     const data = getBarberAppointments();
     setAppointments(data);
     setLoading(false);
+
+    try {
+      const liveApts = await fetchBarberAppointments();
+      if (liveApts) setAppointments(liveApts);
+    } catch {
+      // offline fallback
+    }
   };
 
   const handleCompleteAppointment = (id_cita) => {

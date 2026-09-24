@@ -36,3 +36,25 @@ export async function deleteSchedule(id) {
     method: "DELETE"
   });
 }
+
+export async function getNovelties(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.barber && filters.barber !== "all") params.append("barber", filters.barber);
+  if (filters.status && filters.status !== "all") params.append("status", filters.status);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  return await apiRequest(`${API_URL}/novelties${qs}`);
+}
+
+export async function createNovelty(data) {
+  return await apiRequest(`${API_URL}/novelties`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateNoveltyStatus(id, estado) {
+  return await apiRequest(`${API_URL}/novelties/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado })
+  });
+}

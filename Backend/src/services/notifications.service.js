@@ -45,7 +45,7 @@ export class NotificationsService {
               type: "appointment",
               title: "Cita cancelada",
               description: `La cita de ${apt.cliente_nombre || "Cliente"} (${apt.fecha} ${apt.hora ? apt.hora.substring(0, 5) : ""}) fue cancelada.`,
-              timestamp: apt.fecha_registro || apt.fecha,
+              timestamp: apt.fecha_registro || (apt.fecha && apt.hora ? `${apt.fecha}T${apt.hora}` : new Date().toISOString()),
               route: "/admin/citas"
             });
           } else if (apt.estado === "Reprogramada") {
@@ -167,13 +167,18 @@ export class NotificationsService {
           const clientAppointments = await AppointmentsRepository.findAll({ client: clientId });
 
           for (const apt of clientAppointments || []) {
+            const timeStr = apt.hora ? (apt.hora.length === 5 ? `${apt.hora}:00` : apt.hora) : "09:00:00";
+            // Timestamp con fecha y hora combinadas para evitar desfase de zona horaria UTC
+            const aptTimestamp = apt.fecha_registro || (apt.fecha ? `${apt.fecha}T${timeStr}` : new Date().toISOString());
+            const displayTime = apt.hora ? apt.hora.substring(0, 5) : "";
+
             if (apt.estado === "Cancelada") {
               notifications.push({
                 id: `client-apt-canc-${apt.id_cita}`,
                 type: "appointment",
                 title: "Tu cita fue cancelada",
-                description: `Tu turno para el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelado.`,
-                timestamp: apt.fecha_registro || apt.fecha,
+                description: `Tu turno para el ${apt.fecha} a las ${displayTime} ha sido cancelado.`,
+                timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
             } else if (apt.estado === "Reprogramada") {
@@ -181,8 +186,8 @@ export class NotificationsService {
                 id: `client-apt-reprog-${apt.id_cita}`,
                 type: "appointment",
                 title: "Tu cita fue reprogramada",
-                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} ha sido reprogramado para el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""}.`,
-                timestamp: apt.fecha_registro || apt.fecha,
+                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} ha sido reprogramado para el ${apt.fecha} a las ${displayTime}.`,
+                timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
             } else {
@@ -190,11 +195,47 @@ export class NotificationsService {
                 id: `client-apt-conf-${apt.id_cita}`,
                 type: "appointment",
                 title: "Cita agendada con éxito",
-                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} está confirmado para el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""}.`,
-                timestamp: apt.fecha_registro || apt.fecha,
+                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} está confirmado para el ${apt.fecha} a las ${displayTime}.`,
+                timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
             }
+          }
+
+          // Alerta si el barbero asignado tiene una novedad aprobada en la fecha de la cita
+          try {
+            const allNovelties = await SchedulesRepository.findAllNovelties();
+            for (const apt of clientAppointments || []) {
+              if (apt.estado !== "Cancelada" && apt.estado !== "Finalizada") {
+                const affectedNov = (allNovelties || []).find(
+                  (nov) => Number(nov.id_barbero) === Number(apt.id_barbero) &&
+                           nov.fecha === apt.fecha &&
+                           (nov.estado === "Aprobado" || nov.estado === "Aprobada")
+                );
+                if (affectedNov) {
+                  notifications.push({
+                    id: `client-nov-alert-${apt.id_cita}-${affectedNov.id_novedad}`,
+                    type: "schedule",
+                    title: "Alerta de Disponibilidad",
+                    description: `Tu barbero reportó una ausencia por ${affectedNov.tipo} el ${affectedNov.fecha}. Te sugerimos reprogramar tu turno.`,
+                    timestamp: affectedNov.fecha_registro || `${apt.fecha}T07:00:00`,
+                    route: "/portal/mis-citas"
+                  });
+                }
+              }
+            }
+          } catch (_) {}
+
+          // Notificación de bienvenida si aún no tiene citas
+          if (!clientAppointments || clientAppointments.length === 0) {
+            notifications.push({
+              id: `client-welcome-${userId}`,
+              type: "system",
+              title: "¡Bienvenido a BarberBook!",
+              description: "Tu cuenta ha sido creada exitosamente. Explora nuestro catálogo y agenda tu primer turno.",
+              timestamp: currentClient.fecha_registro || new Date().toISOString(),
+              route: "/portal/agendar"
+            });
           }
         }
       }

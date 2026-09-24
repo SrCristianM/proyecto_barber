@@ -142,7 +142,10 @@ export default function AppointmentFormModal({
             <SearchableSelect
               label="Cliente"
               required
-              options={clients.map((c) => ({ value: c.id_cliente, label: c.nombre }))}
+              options={clients.map((c) => ({
+                value: c.id_cliente,
+                label: `${c.nombre} ${c.apellido || ""}${c.documento ? ` (Doc: ${c.documento})` : ""}`.trim()
+              }))}
               value={formData.id_cliente}
               onChange={(val) => handleChange("id_cliente", val)}
               placeholder="Buscar o seleccionar cliente..."
@@ -155,7 +158,10 @@ export default function AppointmentFormModal({
             <SearchableSelect
               label="Barbero / Profesional"
               required
-              options={barbers.map((b) => ({ value: b.id_barbero, label: b.nombre }))}
+              options={barbers.map((b) => ({
+                value: b.id_barbero,
+                label: `${b.nombre} ${b.apellido || ""}${b.documento ? ` (Doc: ${b.documento})` : ""}`.trim()
+              }))}
               value={formData.id_barbero}
               onChange={(val) => handleChange("id_barbero", val)}
               placeholder="Buscar o seleccionar barbero..."

@@ -7,7 +7,7 @@ export class ClientsRepository {
     if (isDatabaseConnected()) {
       let sql = `
         SELECT c.id_cliente, c.id_usuario, c.nivel_fidelidad, c.direccion, c.estado,
-               u.nombre, u.apellido, u.correo, u.telefono
+               u.nombre, u.apellido, u.documento, u.correo, u.telefono
         FROM cliente c
         JOIN usuario u ON c.id_usuario = u.id_usuario
         WHERE 1=1
@@ -15,9 +15,9 @@ export class ClientsRepository {
       const params = [];
 
       if (search) {
-        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ?)`;
+        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ? OR (u.documento IS NOT NULL AND u.documento LIKE ?))`;
         const s = `%${search.toLowerCase()}%`;
-        params.push(s, s, s);
+        params.push(s, s, s, s);
       }
 
       if (status !== "all") {
@@ -45,15 +45,21 @@ export class ClientsRepository {
           estado: c.estado,
           nombre: u ? u.nombre : "Sin Nombre",
           apellido: u ? u.apellido : "",
+          documento: u ? (u.documento || null) : null,
           correo: u ? u.correo : "",
-          telefono: u ? u.telefono : ""
+          telefono: u ? u.telefono : "",
+      avatar_url: u ? (u.avatar_url || null) : null
         };
       })
       .filter((c) => {
         const fullName = `${c.nombre} ${c.apellido}`.toLowerCase();
         const s = (search || "").toLowerCase().trim();
         const matchesSearch =
-          s === "" || fullName.includes(s) || c.correo.toLowerCase().includes(s) || c.telefono.includes(s);
+          s === "" ||
+          fullName.includes(s) ||
+          c.correo.toLowerCase().includes(s) ||
+          c.telefono.includes(s) ||
+          (c.documento && c.documento.includes(s));
 
         const matchesStatus =
           status === "all" ||
@@ -72,7 +78,7 @@ export class ClientsRepository {
     if (isDatabaseConnected()) {
       const sql = `
         SELECT c.id_cliente, c.id_usuario, c.nivel_fidelidad, c.direccion, c.estado,
-               u.nombre, u.apellido, u.correo, u.telefono
+               u.nombre, u.apellido, u.documento, u.correo, u.telefono
         FROM cliente c
         JOIN usuario u ON c.id_usuario = u.id_usuario
         WHERE c.id_cliente = ?
@@ -93,6 +99,7 @@ export class ClientsRepository {
       estado: c.estado,
       nombre: u ? u.nombre : "",
       apellido: u ? u.apellido : "",
+      documento: u ? (u.documento || null) : null,
       correo: u ? u.correo : "",
       telefono: u ? u.telefono : ""
     };
@@ -104,7 +111,7 @@ export class ClientsRepository {
     if (isDatabaseConnected()) {
       const sql = `
         SELECT c.id_cliente, c.id_usuario, c.nivel_fidelidad, c.direccion, c.estado,
-               u.nombre, u.apellido, u.correo, u.telefono
+               u.nombre, u.apellido, u.documento, u.correo, u.telefono
         FROM cliente c
         JOIN usuario u ON c.id_usuario = u.id_usuario
         WHERE c.id_usuario = ?
@@ -125,6 +132,7 @@ export class ClientsRepository {
       estado: c.estado,
       nombre: u ? u.nombre : "",
       apellido: u ? u.apellido : "",
+      documento: u ? (u.documento || null) : null,
       correo: u ? u.correo : "",
       telefono: u ? u.telefono : ""
     };
@@ -135,10 +143,11 @@ export class ClientsRepository {
       if (isDatabaseConnected() && conn) {
         // Crear usuario con rol Cliente (4)
         const [userResult] = await conn.execute(
-          `INSERT INTO usuario (nombre, apellido, correo, contrasena, telefono, id_rol, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO usuario (nombre, apellido, documento, correo, contrasena, telefono, id_rol, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             clientData.nombre,
             clientData.apellido,
+            clientData.documento || null,
             clientData.correo,
             hashedPassword,
             clientData.telefono || null,
@@ -163,6 +172,7 @@ export class ClientsRepository {
         id_usuario: nextUserId,
         nombre: clientData.nombre,
         apellido: clientData.apellido,
+        documento: clientData.documento || null,
         correo: clientData.correo,
         contrasena: hashedPassword,
         telefono: clientData.telefono || null,
@@ -196,10 +206,11 @@ export class ClientsRepository {
 
       if (isDatabaseConnected() && conn) {
         await conn.execute(
-          `UPDATE usuario SET nombre = ?, apellido = ?, correo = ?, telefono = ? WHERE id_usuario = ?`,
+          `UPDATE usuario SET nombre = ?, apellido = ?, documento = ?, correo = ?, telefono = ? WHERE id_usuario = ?`,
           [
             clientData.nombre !== undefined ? clientData.nombre : client.nombre,
             clientData.apellido !== undefined ? clientData.apellido : client.apellido,
+            clientData.documento !== undefined ? clientData.documento : (client.documento || null),
             clientData.correo !== undefined ? clientData.correo : client.correo,
             clientData.telefono !== undefined ? clientData.telefono : client.telefono,
             client.id_usuario
@@ -224,6 +235,7 @@ export class ClientsRepository {
       if (cObj && uObj) {
         if (clientData.nombre) uObj.nombre = clientData.nombre;
         if (clientData.apellido) uObj.apellido = clientData.apellido;
+        if (clientData.documento !== undefined) uObj.documento = clientData.documento;
         if (clientData.correo) uObj.correo = clientData.correo;
         if (clientData.telefono !== undefined) uObj.telefono = clientData.telefono;
         if (clientData.nivel_fidelidad !== undefined) cObj.nivel_fidelidad = clientData.nivel_fidelidad;

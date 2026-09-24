@@ -97,6 +97,13 @@ export default function UserDetailModal({ user, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              Documento de Identidad
+            </span>
+            <p className="text-sm font-semibold text-foreground">{user.documento || "No especificado"}</p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Teléfono
             </span>
             <p className="text-sm font-medium text-foreground">{user.telefono || "No especificado"}</p>

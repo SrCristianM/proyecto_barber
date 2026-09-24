@@ -10,6 +10,7 @@ export default function ClientProfilePage() {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
+    documento: "",
     correo: "",
     telefono: "",
     direccion: "",
@@ -27,6 +28,7 @@ export default function ClientProfilePage() {
       setFormData({
         nombre: current.nombre || "",
         apellido: current.apellido || "",
+        documento: current.documento || "",
         correo: current.correo || "",
         telefono: current.telefono || "",
         direccion: current.direccion || "",
@@ -49,10 +51,17 @@ export default function ClientProfilePage() {
     if (!formData.nombre.trim()) errs.nombre = "El nombre es obligatorio.";
     if (!formData.apellido.trim()) errs.apellido = "El apellido es obligatorio.";
 
+    if (formData.documento && formData.documento.trim() !== "") {
+      const docClean = formData.documento.trim();
+      if (docClean.length < 5 || docClean.length > 20) {
+        errs.documento = "El documento debe tener entre 5 y 20 caracteres.";
+      }
+    }
+
     if (formData.telefono) {
       const cleanPhone = formData.telefono.replace(/\D/g, "");
-      if (cleanPhone.length < 10) {
-        errs.telefono = "El teléfono debe contener al menos 10 dígitos numéricos.";
+      if (cleanPhone.length < 7) {
+        errs.telefono = "El teléfono debe contener al menos 7 dígitos numéricos.";
       }
     }
 
@@ -69,7 +78,7 @@ export default function ClientProfilePage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) {
       toast.error("Por favor revisa los campos señalados.");
@@ -77,8 +86,8 @@ export default function ClientProfilePage() {
     }
 
     setIsSaving(true);
-    setTimeout(() => {
-      const res = updateClientProfile(formData);
+    try {
+      const res = await updateClientProfile(formData);
       setIsSaving(false);
       if (res.success) {
         setProfile(res.profile);
@@ -92,7 +101,10 @@ export default function ClientProfilePage() {
       } else {
         toast.error(res.error || "No se pudo actualizar el perfil.");
       }
-    }, 400);
+    } catch (err) {
+      setIsSaving(false);
+      toast.error(err.message || "Error al actualizar el perfil.");
+    }
   };
 
   const loyaltyTier = profile?.nivel_fidelidad || "Nuevo";
@@ -171,18 +183,20 @@ export default function ClientProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Correo Electrónico (Registrado)
+              <label className="block text-xs font-bold uppercase tracking-wider text-foreground mb-1.5">
+                Documento de Identidad
               </label>
               <input
-                type="email"
-                disabled
-                value={formData.correo}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-input text-muted-foreground text-sm cursor-not-allowed"
+                type="text"
+                value={formData.documento || ""}
+                onChange={(e) => handleChange("documento", e.target.value.replace(/[^0-9a-zA-Z-]/g, ""))}
+                maxLength={20}
+                className={`w-full px-3.5 py-2.5 rounded-xl bg-input-background border text-foreground text-sm focus:outline-none ${
+                  errors.documento ? "border-destructive focus:ring-2 focus:ring-destructive/30" : "border-input focus:ring-2 focus:ring-[#DFB755]"
+                }`}
+                placeholder="1020304050"
               />
-              <span className="text-[11px] text-muted-foreground mt-1 block">
-                Para cambiar tu correo contacta con administración.
-              </span>
+              <FormFieldError error={errors.documento} />
             </div>
 
             <div>
@@ -192,9 +206,24 @@ export default function ClientProfilePage() {
                 onChange={(val) => handleChange("telefono", val)}
                 error={errors.telefono}
                 placeholder="3001234567"
-                maxLength={12}
+                maxLength={15}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Correo Electrónico (Registrado)
+            </label>
+            <input
+              type="email"
+              disabled
+              value={formData.correo}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-input text-muted-foreground text-sm cursor-not-allowed"
+            />
+            <span className="text-[11px] text-muted-foreground mt-1 block">
+              Para cambiar tu correo contacta con administración.
+            </span>
           </div>
 
           <div>

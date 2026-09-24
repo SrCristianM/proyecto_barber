@@ -3,6 +3,7 @@ import { body, query, param } from "express-validator";
 export const createUserValidation = [
   body("nombre").trim().notEmpty().withMessage("El nombre es requerido.").isLength({ max: 80 }),
   body("apellido").trim().notEmpty().withMessage("El apellido es requerido.").isLength({ max: 80 }),
+  body("documento").optional({ checkFalsy: true }).trim().isLength({ min: 5, max: 20 }).withMessage("El documento debe tener entre 5 y 20 caracteres."),
   body("correo").trim().isEmail().withMessage("Correo electrónico no válido.").isLength({ max: 120 }),
   body("contrasena").optional().isLength({ min: 8 }).withMessage("La contraseña debe tener al menos 8 caracteres."),
   body("id_rol").isInt({ min: 1, max: 4 }).withMessage("id_rol debe ser un valor válido entre 1 y 4."),
@@ -14,6 +15,7 @@ export const updateUserValidation = [
   param("id").isInt().withMessage("El ID de usuario debe ser un número entero."),
   body("nombre").optional().trim().notEmpty().withMessage("El nombre no puede estar vacío."),
   body("apellido").optional().trim().notEmpty().withMessage("El apellido no puede estar vacío."),
+  body("documento").optional({ checkFalsy: true }).trim().isLength({ min: 5, max: 20 }).withMessage("El documento debe tener entre 5 y 20 caracteres."),
   body("correo").optional().trim().isEmail().withMessage("Correo no válido."),
   body("telefono").optional().trim(),
   body("id_rol").optional().isInt({ min: 1, max: 4 }),

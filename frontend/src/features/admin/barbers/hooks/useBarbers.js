@@ -35,6 +35,7 @@ export const availableSpecialties = [
 const emptyForm = {
   nombre: "",
   apellido: "",
+  documento: "",
   correo: "",
   telefono: "",
   especialidad: "Corte Clásico",
@@ -72,6 +73,7 @@ export function useBarbers() {
       const matchesSearch =
         search === "" ||
         fullName.includes(search) ||
+        (barber.documento || "").toLowerCase().includes(search) ||
         barber.correo.toLowerCase().includes(search) ||
         (barber.telefono || "").includes(search) ||
         (barber.especialidad || "").toLowerCase().includes(search);
@@ -116,6 +118,7 @@ export function useBarbers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       especialidad: formData.especialidad,
@@ -144,6 +147,7 @@ export function useBarbers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       especialidad: formData.especialidad,
@@ -215,6 +219,7 @@ export function useBarbers() {
       subtitle: "Equipo técnico de estilistas y barbería",
       columns: [
         { header: "ID", key: "id_barbero", type: "number", width: 60, align: "center" },
+        { header: "Documento", key: "documento", width: 120 },
         { header: "Nombre", key: "nombre", width: 120 },
         { header: "Apellido", key: "apellido", width: 120 },
         { header: "Correo Electrónico", key: "correo", width: 180 },
@@ -224,6 +229,7 @@ export function useBarbers() {
       ],
       data: filteredBarbers.map((b) => ({
         ...b,
+        documento: b.documento || "—",
         especialidad: b.especialidades ? b.especialidades.join(", ") : b.especialidad || "General",
         estadoLabel: b.estado === 1 ? "Activo" : "Inactivo"
       }))
@@ -246,6 +252,7 @@ export function useBarbers() {
     setFormData({
       nombre: barber.nombre || "",
       apellido: barber.apellido || "",
+      documento: barber.documento || "",
       correo: barber.correo || "",
       telefono: barber.telefono || "",
       especialidad: espList.join(", "),

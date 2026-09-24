@@ -27,6 +27,16 @@ export function validateBarberForm(formData) {
   const emailErr = validateEmail(formData.correo, true);
   if (emailErr) errors.correo = emailErr;
 
+  // Documento de Identidad (Opcional, 5 a 20 caracteres alfanuméricos)
+  if (formData.documento && formData.documento.trim() !== "") {
+    const docClean = formData.documento.trim();
+    if (docClean.length < 5 || docClean.length > 20) {
+      errors.documento = "El documento debe tener entre 5 y 20 caracteres.";
+    } else if (!/^[a-zA-Z0-9-]+$/.test(docClean)) {
+      errors.documento = "El documento solo puede contener números, letras y guiones.";
+    }
+  }
+
   // Teléfono (Opcional, máx 20)
   if (formData.telefono && formData.telefono.trim() !== "") {
     const phoneErr = validatePhone(formData.telefono, false);

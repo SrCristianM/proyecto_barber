@@ -172,6 +172,13 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              Documento de Identidad
+            </span>
+            <p className="text-base font-bold text-foreground">{client.documento || "No registrado"}</p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Nombre Completo
             </span>
             <p className="text-base font-bold text-foreground">{client.nombre} {client.apellido}</p>

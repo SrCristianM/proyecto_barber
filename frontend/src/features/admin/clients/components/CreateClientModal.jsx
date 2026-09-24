@@ -7,6 +7,7 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
+    documento: "",
     correo: "",
     telefono: "",
     direccion: "",
@@ -24,7 +25,7 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ nombre: "", apellido: "", correo: "", telefono: "", direccion: "", nivel_fidelidad: "Nuevo" });
+    setFormData({ nombre: "", apellido: "", documento: "", correo: "", telefono: "", direccion: "", nivel_fidelidad: "Nuevo" });
   };
 
   if (!isOpen) return null;
@@ -72,28 +73,45 @@ export default function CreateClientModal({ isOpen, onClose, onSubmit }) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
-          <input
-            type="tel"
-            inputMode="numeric"
-            name="telefono"
-            maxLength={15}
-            value={formData.telefono}
-            onKeyDown={(e) => {
-              const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
-              if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
-              if (!/^[0-9]$/.test(e.key)) {
-                e.preventDefault();
-              }
-            }}
-            onChange={(e) => {
-              const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
-              setFormData((prev) => ({ ...prev, telefono: onlyNums }));
-            }}
-            placeholder="Ej: 3001234567"
-            className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Documento de Identidad</label>
+            <input
+              type="text"
+              name="documento"
+              maxLength={20}
+              value={formData.documento}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9a-zA-Z-]/g, "");
+                setFormData((prev) => ({ ...prev, documento: val }));
+              }}
+              placeholder="Ej: 1020304050"
+              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">Teléfono</label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              name="telefono"
+              maxLength={15}
+              value={formData.telefono}
+              onKeyDown={(e) => {
+                const allowed = ["Backspace", "Delete", "Tab", "Escape", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+                if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+                if (!/^[0-9]$/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(e) => {
+                const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 15);
+                setFormData((prev) => ({ ...prev, telefono: onlyNums }));
+              }}
+              placeholder="Ej: 3001234567"
+              className="w-full px-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder-muted-foreground"
+            />
+          </div>
         </div>
 
         <div>

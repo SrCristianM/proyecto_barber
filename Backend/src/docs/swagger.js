@@ -66,6 +66,7 @@ export const swaggerDocument = {
                 properties: {
                   nombre: { type: "string", example: "Carlos" },
                   apellido: { type: "string", example: "Gómez" },
+                  documento: { type: "string", example: "1098765432" },
                   correo: { type: "string", example: "carlos.g@example.com" },
                   contrasena: { type: "string", example: "Cliente123*" },
                   telefono: { type: "string", example: "3001234567" }
@@ -76,7 +77,33 @@ export const swaggerDocument = {
           }
         },
         responses: {
-          201: { description: "Cliente registrado con éxito" }
+          201: { description: "Cliente registrado con éxito" },
+          409: { description: "Correo o documento ya registrado" }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      post: {
+        summary: "Solicitud de recuperación de contraseña",
+        tags: ["Autenticación"],
+        security: [],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  correo: { type: "string", example: "cristianmazo957@gmail.com" }
+                },
+                required: ["correo"]
+              }
+            }
+          }
+        },
+        responses: {
+          200: { description: "Instrucciones de recuperación enviadas" },
+          404: { description: "No existe cuenta con ese correo" }
         }
       }
     },

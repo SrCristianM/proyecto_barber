@@ -1,4 +1,4 @@
-import { User, Eye, Power, Edit, Trash2, Mail, Phone, MapPin, Crown, UserCheck, Award } from "lucide-react";
+import { User, Eye, Power, Edit, Trash2, Mail, Phone, MapPin, Crown, UserCheck, Award, IdCard } from "lucide-react";
 import TiltCard from "../../shared/components/TiltCard";
 
 const LOYALTY_CONFIG = {
@@ -95,6 +95,13 @@ export default function ClientCard({
 
           {/* Datos de Contacto */}
           <div className="space-y-2 py-2 border-t border-border/60 text-xs">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <IdCard className="h-3.5 w-3.5 text-primary" />
+                Documento
+              </span>
+              <span className="font-medium text-foreground">{client.documento || "—"}</span>
+            </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-primary" />

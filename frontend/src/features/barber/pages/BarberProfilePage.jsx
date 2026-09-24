@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, Award, ShieldCheck, Clock, Scissors, CalendarCheck2 } from "lucide-react";
+import { User, Mail, Phone, Award, ShieldCheck, Clock, Scissors, CalendarCheck2, IdCard } from "lucide-react";
 import { getCurrentBarberProfile, getBarberAppointments, getBarberWeeklySchedule } from "../services/barberStorageService";
 
 export default function BarberProfilePage() {
@@ -51,7 +51,13 @@ export default function BarberProfilePage() {
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
               {displayName}
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-3">
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+              {profile?.documento && (
+                <span className="flex items-center gap-1">
+                  <IdCard className="w-3.5 h-3.5 text-[#DFB755]" />
+                  Doc: {profile.documento}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-[#DFB755]" />
                 {profile?.correo}
@@ -79,6 +85,13 @@ export default function BarberProfilePage() {
           </div>
 
           <div className="space-y-3 text-xs">
+            <div>
+              <span className="text-muted-foreground font-bold block">Documento de Identidad:</span>
+              <p className="text-sm font-bold text-foreground mt-0.5">
+                {profile?.documento || "No registrado"}
+              </p>
+            </div>
+
             <div>
               <span className="text-muted-foreground font-bold block">Especialidad Principal:</span>
               <p className="text-base font-extrabold text-foreground mt-0.5">

@@ -65,7 +65,11 @@ export default function BarbersTable({
                       )}
                       <div>
                         <p className="font-bold text-foreground text-sm">{barber.nombre} {barber.apellido}</p>
-                        <p className="text-xs text-muted-foreground">{barber.telefono || "Sin teléfono"}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {barber.documento && <span>Doc: {barber.documento}</span>}
+                          {barber.documento && barber.telefono && <span>•</span>}
+                          <span>{barber.telefono || "Sin teléfono"}</span>
+                        </div>
                       </div>
                     </div>
                   </td>

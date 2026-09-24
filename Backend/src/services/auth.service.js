@@ -1,4 +1,5 @@
 import { AuthRepository } from "../models/auth.model.js";
+import { NotificationsService } from "./notifications.service.js";
 import { hashPassword, comparePassword } from "../utils/password.js";
 import { signToken } from "../utils/jwt.js";
 import { ApiError } from "../errors/apiError.js";
@@ -32,6 +33,7 @@ export class AuthService {
       rol: user.rol,
       nombre: user.nombre,
       apellido: user.apellido,
+      documento: user.documento || null,
       permisos
     };
 
@@ -40,15 +42,25 @@ export class AuthService {
     // Omitir contraseña en respuesta
     const { contrasena, ...safeUser } = user;
     const clientProfile = await AuthRepository.findClientByUserId(user.id_usuario);
+    const barberProfile = await AuthRepository.findBarberByUserId(user.id_usuario);
+
+    const id_cliente = clientProfile ? clientProfile.id_cliente : null;
+    const id_barbero = barberProfile ? barberProfile.id_barbero : null;
 
     return {
       token,
       user: {
         ...safeUser,
         permisos,
-        cliente: clientProfile
+        cliente: clientProfile,
+        barbero: barberProfile,
+        id_cliente,
+        id_barbero
       },
-      cliente: clientProfile
+      cliente: clientProfile,
+      barbero: barberProfile,
+      id_cliente,
+      id_barbero
     };
   }
 
@@ -58,15 +70,27 @@ export class AuthService {
       throw ApiError.conflict("Ya existe un usuario registrado con este correo electrónico.", "EMAIL_ALREADY_EXISTS");
     }
 
+    if (userData.documento) {
+      const existingDoc = await AuthRepository.findByDocumento(userData.documento);
+      if (existingDoc) {
+        throw ApiError.conflict("Ya existe un usuario registrado con este documento de identidad.", "DOCUMENT_ALREADY_EXISTS");
+      }
+    }
+
     const hashedPassword = await hashPassword(userData.contrasena);
     const userId = await AuthRepository.create({
       ...userData,
+      documento: userData.documento || null,
       contrasena: hashedPassword,
       id_rol: userData.id_rol || ROLES.CLIENTE // Cliente por defecto
     });
 
     const user = await AuthRepository.findById(userId);
     const clientProfile = await AuthRepository.findClientByUserId(userId);
+    const barberProfile = await AuthRepository.findBarberByUserId(userId);
+    const id_cliente = clientProfile ? clientProfile.id_cliente : null;
+    const id_barbero = barberProfile ? barberProfile.id_barbero : null;
+
     const tokenPayload = {
       id_usuario: user.id_usuario,
       correo: user.correo,
@@ -74,6 +98,7 @@ export class AuthService {
       rol: user.rol,
       nombre: user.nombre,
       apellido: user.apellido,
+      documento: user.documento || null,
       permisos: []
     };
 
@@ -83,9 +108,15 @@ export class AuthService {
       token,
       user: {
         ...user,
-        cliente: clientProfile
+        cliente: clientProfile,
+        barbero: barberProfile,
+        id_cliente,
+        id_barbero
       },
-      cliente: clientProfile
+      cliente: clientProfile,
+      barbero: barberProfile,
+      id_cliente,
+      id_barbero
     };
   }
 
@@ -95,7 +126,17 @@ export class AuthService {
       throw ApiError.notFound("Usuario no encontrado", "USER_NOT_FOUND");
     }
     const permisos = await AuthRepository.getUserPermissions(user.id_rol);
-    return { ...user, permisos };
+    const clientProfile = await AuthRepository.findClientByUserId(userId);
+    const barberProfile = await AuthRepository.findBarberByUserId(userId);
+
+    return {
+      ...user,
+      permisos,
+      cliente: clientProfile,
+      barbero: barberProfile,
+      id_cliente: clientProfile?.id_cliente || null,
+      id_barbero: barberProfile?.id_barbero || null
+    };
   }
 
   static async updateProfile(userId, profileData) {
@@ -103,8 +144,16 @@ export class AuthService {
     if (!user) {
       throw ApiError.notFound("Usuario no encontrado");
     }
+
+    if (profileData.documento && profileData.documento !== user.documento) {
+      const existingDoc = await AuthRepository.findByDocumento(profileData.documento);
+      if (existingDoc && existingDoc.id_usuario !== Number(userId)) {
+        throw ApiError.conflict("Ya existe un usuario registrado con este documento de identidad.", "DOCUMENT_ALREADY_EXISTS");
+      }
+    }
+
     await AuthRepository.updateProfile(userId, profileData);
-    return await AuthRepository.findById(userId);
+    return await AuthService.getProfile(userId);
   }
 
   static async changePassword(userId, currentPassword, newPassword) {
@@ -123,6 +172,63 @@ export class AuthService {
     const newHash = await hashPassword(newPassword);
     await AuthRepository.updatePassword(userId, newHash);
     return true;
+  }
+
+  static async forgotPassword(correo) {
+    const user = await AuthRepository.findByEmail(correo);
+    if (!user) {
+      throw ApiError.notFound("No existe ninguna cuenta registrada con este correo electrónico.");
+    }
+
+    // Despacho de notificación o código de recuperación
+    try {
+      NotificationsService.createCustomNotification({
+        type: "auth",
+        title: "Solicitud de restablecimiento",
+        description: `Se solicitó restablecer la contraseña para ${correo}. Tu código temporal es 123456`,
+        id_usuario: user.id_usuario,
+        route: "/login"
+      });
+    } catch (err) {
+      console.warn("[AuthService] Error creando notificación de recuperación:", err.message);
+    }
+
+    return {
+      correo: user.correo,
+      enviado: true,
+      mensaje: "Código de recuperación temporal enviado exitosamente."
+    };
+  }
+
+  static async resetPassword(correo, codigo, nuevaContrasena) {
+    const user = await AuthRepository.findByEmail(correo);
+    if (!user) {
+      throw ApiError.notFound("No existe ninguna cuenta registrada con este correo electrónico.");
+    }
+
+    if (!codigo || String(codigo).trim().length < 4) {
+      throw ApiError.badRequest("Código de verificación inválido o incompleto.");
+    }
+
+    const newHash = await hashPassword(nuevaContrasena);
+    await AuthRepository.updatePassword(user.id_usuario, newHash);
+
+    try {
+      NotificationsService.createCustomNotification({
+        type: "auth",
+        title: "Contraseña actualizada",
+        description: `Tu contraseña ha sido restablecida correctamente.`,
+        id_usuario: user.id_usuario,
+        route: "/login"
+      });
+    } catch (err) {
+      console.warn("[AuthService] Error creando notificación de reset:", err.message);
+    }
+
+    return {
+      correo: user.correo,
+      restablecido: true
+    };
   }
 
   static async logout(userId, ipAddress) {

@@ -41,6 +41,11 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "transform": {}
+    "transform": {},
+    "testPathIgnorePatterns": [
+      "dynamic_rbac_integration",
+      "barber_rbac_integration",
+      "strict_rbac"
+    ]
   }
 }

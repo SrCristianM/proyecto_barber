@@ -30,6 +30,13 @@ export class ClientsService {
       throw ApiError.conflict("Ya existe un usuario con este correo electrónico.");
     }
 
+    if (clientData.documento) {
+      const existingDoc = await UsersRepository.findByDocumento(clientData.documento);
+      if (existingDoc) {
+        throw ApiError.conflict("Ya existe un usuario registrado con este documento de identidad.");
+      }
+    }
+
     const defaultPass = clientData.contrasena || "Cliente123*";
     const hashedPassword = await hashPassword(defaultPass);
 
@@ -47,6 +54,13 @@ export class ClientsService {
       const existing = await UsersRepository.findByEmail(clientData.correo);
       if (existing) {
         throw ApiError.conflict("El correo electrónico ya se encuentra registrado por otro usuario.");
+      }
+    }
+
+    if (clientData.documento && clientData.documento !== client.documento) {
+      const existingDoc = await UsersRepository.findByDocumento(clientData.documento);
+      if (existingDoc && existingDoc.id_usuario !== client.id_usuario) {
+        throw ApiError.conflict("El documento de identidad ya se encuentra registrado por otro usuario.");
       }
     }
 

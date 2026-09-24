@@ -1,3 +1,11 @@
+import {
+  getNovelties as getNoveltiesApi,
+  createNovelty as createNoveltyApi,
+  updateNoveltyStatus as updateNoveltyStatusApi,
+  getSchedules as getSchedulesApi
+} from "../../admin/schedules/services/schedulesService.js";
+import { getAppointments as getAppointmentsApi } from "../../admin/appointments/services/appointmentsService.js";
+import { getPackages as getPackagesApi } from "../../admin/services/services/packagesService.js";
 /**
  * @file barberStorageService.js
  * Servicio centralizado de datos y persistencia para el Portal del Barbero.
@@ -36,37 +44,30 @@ const INITIAL_BARBERS = [
 
 const INITIAL_SERVICES = [];
 
-const INITIAL_PACKAGES = [
-  {
-    id_paquete: 1,
-    nombre: "Combo Real Ejecutivo",
-    descripcion: "Corte premium degradado, perfilado de barba con toalla caliente y lavado capilar.",
-    servicios_ids: [1, 2],
-    descuento_porcentaje: 15,
-    precio: 45000,
-    estado: 1
-  },
-  {
-    id_paquete: 2,
-    nombre: "Experiencia Barba & Spa",
-    descripcion: "Ritual completo de afeitado tradicional con navaja clásica, hidratación con aceites y mascarilla facial.",
-    servicios_ids: [2, 3],
-    descuento_porcentaje: 10,
-    precio: 40000,
-    estado: 1
-  }
-];
+const INITIAL_PACKAGES = [];
 
 const INITIAL_SCHEDULES = [
   {
     id_horario: 1,
     id_barbero: 1,
-    dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
-    hora_inicio: "08:00:00",
+    dia_semana: "Lunes",
+    hora_inicio: "09:00:00",
     hora_fin: "18:00:00",
     fecha_inicio_vigencia: "2026-01-01",
     fecha_fin_vigencia: "2026-12-31",
-    estado: 1
+    estado: 1,
+    barbero_nombre: "Carlos Rodríguez"
+  },
+  {
+    id_horario: 2,
+    id_barbero: 1,
+    dia_semana: "Martes",
+    hora_inicio: "09:00:00",
+    hora_fin: "18:00:00",
+    fecha_inicio_vigencia: "2026-01-01",
+    fecha_fin_vigencia: "2026-12-31",
+    estado: 1,
+    barbero_nombre: "Carlos Rodríguez"
   }
 ];
 
@@ -128,6 +129,7 @@ export function getCurrentBarberProfile() {
 
   return {
     ...barber,
+    documento: user?.documento || barber.documento || "",
     nombre: user?.nombre || barber.nombre,
     apellido: user?.apellido || barber.apellido,
     correo: user?.correo || barber.correo,
@@ -342,24 +344,14 @@ export function getBarberAgendaForDate(targetDate = TODAY) {
 // 4. HORARIO SEMANAL DEL BARBERO
 // ==========================================
 
-export function getBarberWeeklySchedule() {
+export function getBarberWeeklySchedule(customSchedules = null) {
   const barber = getCurrentBarberProfile();
-  const allSchedules = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+  const allSchedules = customSchedules || getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
   
-  // Buscar horario por id_barbero o recurrir al primer horario configurado / inicial
-  const schedule = allSchedules.find((s) => Number(s.id_barbero) === Number(barber?.id_barbero)) ||
-                   allSchedules[0] ||
-                   INITIAL_SCHEDULES[0] ||
-                   {
-                     id_horario: 1,
-                     id_barbero: barber?.id_barbero || 1,
-                     dias_semana: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"],
-                     hora_inicio: "08:00:00",
-                     hora_fin: "18:00:00",
-                     fecha_inicio_vigencia: "2026-01-01",
-                     fecha_fin_vigencia: "2026-12-31",
-                     estado: 1
-                   };
+  // Filtrar exclusivamente turnos activos de este barbero
+  const barberSchedules = (Array.isArray(allSchedules) ? allSchedules : []).filter(
+    (s) => Number(s.id_barbero) === Number(barber?.id_barbero) && (s.estado === undefined || Number(s.estado) === 1)
+  );
 
   const daysOfWeek = [
     { key: "Lunes", label: "Lunes" },
@@ -371,23 +363,31 @@ export function getBarberWeeklySchedule() {
     { key: "Domingo", label: "Domingo" }
   ];
 
-  const diasConfigurados = Array.isArray(schedule.dias_semana)
-    ? schedule.dias_semana
-    : ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+  const norm = (str) =>
+    String(str || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
   const weeklySchedule = daysOfWeek.map((day) => {
-    const isWorking = diasConfigurados.some(
-      (d) => String(d).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") ===
-             day.key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    );
+    // Buscar si existe un registro de turno para este día (soporta dia_semana o arreglo dias_semana)
+    const matchingSchedule = barberSchedules.find((s) => {
+      if (s.dia_semana && norm(s.dia_semana) === norm(day.key)) {
+        return true;
+      }
+      if (Array.isArray(s.dias_semana) && s.dias_semana.some((d) => norm(d) === norm(day.key))) {
+        return true;
+      }
+      return false;
+    });
 
-    if (isWorking) {
+    if (matchingSchedule) {
       return {
         dia: day.label,
         key: day.key,
         tipo: "Turno Asignado",
-        horaInicio: schedule.hora_inicio ? String(schedule.hora_inicio).substring(0, 5) : "08:00",
-        horaFin: schedule.hora_fin ? String(schedule.hora_fin).substring(0, 5) : "18:00",
+        horaInicio: matchingSchedule.hora_inicio ? String(matchingSchedule.hora_inicio).substring(0, 5) : "09:00",
+        horaFin: matchingSchedule.hora_fin ? String(matchingSchedule.hora_fin).substring(0, 5) : "18:00",
         descanso: false
       };
     }
@@ -402,22 +402,44 @@ export function getBarberWeeklySchedule() {
     };
   });
 
+  const firstScheduleWithVigencia = barberSchedules.find((s) => s.fecha_inicio_vigencia);
+  const vigenciaInicio = firstScheduleWithVigencia?.fecha_inicio_vigencia || "01/01/2026";
+  const vigenciaFin = firstScheduleWithVigencia?.fecha_fin_vigencia || "31/12/2026";
+
   return {
     barberoNombre: barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero",
-    vigenciaInicio: schedule.fecha_inicio_vigencia || "01/01/2026",
-    vigenciaFin: schedule.fecha_fin_vigencia || "31/12/2026",
+    vigenciaInicio,
+    vigenciaFin,
     dias: weeklySchedule,
-    estadoHorario: schedule.estado === 1 ? "Activo" : "Inactivo"
+    estadoHorario: barberSchedules.length > 0 ? "Activo" : "Sin Turnos Asignados"
   };
+}
+
+/**
+ * Consulta los horarios reales en el backend y sincroniza el almacenamiento local.
+ */
+export async function fetchBarberWeeklySchedule() {
+  const barber = getCurrentBarberProfile();
+  try {
+    const res = await getSchedulesApi(barber?.id_barbero);
+    const schedulesList = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+    if (schedulesList) {
+      save(STORAGE_KEYS.SCHEDULES, schedulesList);
+      return getBarberWeeklySchedule(schedulesList);
+    }
+  } catch (err) {
+    console.warn("[BarberStorage] Error al consultar horarios desde API:", err.message);
+  }
+  return getBarberWeeklySchedule();
 }
 
 // ==========================================
 // 5. PAQUETES DE SERVICIOS (SOLO LECTURA)
 // ==========================================
 
-export function getBarberPackages() {
-  const rawPackages = getOrInit(STORAGE_KEYS.PACKAGES, INITIAL_PACKAGES);
-  const packages = (Array.isArray(rawPackages) && rawPackages.length > 0) ? rawPackages : INITIAL_PACKAGES;
+export function getBarberPackages(customPackages = null) {
+  const rawPackages = customPackages || getOrInit(STORAGE_KEYS.PACKAGES, INITIAL_PACKAGES);
+  const packages = Array.isArray(rawPackages) ? rawPackages : [];
   const services = getOrInit(STORAGE_KEYS.SERVICES, INITIAL_SERVICES);
 
   const packageImages = {
@@ -435,7 +457,7 @@ export function getBarberPackages() {
 
       const precioBase = serviciosIncluidos.length > 0
         ? serviciosIncluidos.reduce((acc, s) => acc + (s.precio || 0), 0)
-        : (pkg.precio || 45000);
+        : (pkg.precio || 0);
       const descuento = pkg.descuento_porcentaje || 0;
       const precioFinal = Math.round(precioBase * (1 - descuento / 100));
       const duracionTotal = serviciosIncluidos.reduce((acc, s) => acc + (s.duracion_minutos || 0), 0) || 45;
@@ -452,6 +474,59 @@ export function getBarberPackages() {
         imagen_url: pkg.imagen_url || packageImages[pkg.id_paquete] || packageImages[1]
       };
     });
+}
+
+/**
+ * Consulta los paquetes reales en el backend y sincroniza el almacenamiento local.
+ */
+export async function fetchBarberPackages() {
+  try {
+    const res = await getPackagesApi();
+    const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+    if (list) {
+      save(STORAGE_KEYS.PACKAGES, list);
+      return getBarberPackages(list);
+    }
+  } catch (err) {
+    console.warn("[BarberStorage] Error al consultar paquetes desde API:", err.message);
+  }
+  return getBarberPackages();
+}
+
+/**
+ * Sincroniza las citas reales desde la API para el barbero autenticado.
+ */
+export async function fetchBarberAppointments() {
+  const barber = getCurrentBarberProfile();
+  try {
+    const res = await getAppointmentsApi({ barbero: barber?.id_barbero });
+    const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+    if (list) {
+      save(STORAGE_KEYS.APPOINTMENTS, list);
+      return getBarberAppointments();
+    }
+  } catch (err) {
+    console.warn("[BarberStorage] Error consultando citas reales desde API:", err.message);
+  }
+  return getBarberAppointments();
+}
+
+/**
+ * Sincroniza las novedades de horario reales desde la API para el barbero autenticado.
+ */
+export async function fetchBarberNovelties() {
+  const barber = getCurrentBarberProfile();
+  try {
+    const res = await getNoveltiesApi({ barber: barber?.id_barbero });
+    const list = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+    if (list) {
+      save(STORAGE_KEYS.NOVELTIES, list);
+      return getBarberNovelties();
+    }
+  } catch (err) {
+    console.warn("[BarberStorage] Error consultando novedades reales desde API:", err.message);
+  }
+  return getBarberNovelties();
 }
 
 // ==========================================
@@ -488,6 +563,12 @@ export function createBarberNovelty(noveltyData) {
 
   const updated = [newNovelty, ...novelties];
   save(STORAGE_KEYS.NOVELTIES, updated);
+  createNoveltyApi({
+    id_barbero: Number(barber.id_barbero || 1),
+    tipo: newNovelty.tipo,
+    fecha: newNovelty.fecha,
+    descripcion: newNovelty.descripcion || ""
+  }).catch((e) => console.warn("[BarberStorage] Error enviando novedad a API:", e));
 
   try {
     createNotification({

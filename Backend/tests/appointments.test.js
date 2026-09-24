@@ -1,10 +1,14 @@
 import request from "supertest";
 import app from "../src/app.js";
+import { mockStore } from "../src/config/mockStore.js";
 
 describe("Módulo de Citas y Reglas de Negocio (Appointments API)", () => {
   let adminToken = "";
 
   beforeAll(async () => {
+    mockStore.citas = mockStore.citas.filter((c) => !(c.fecha === "2026-09-14" && c.hora.startsWith("09:00")));
+    mockStore.saveToFile();
+
     const res = await request(app)
       .post("/api/auth/login")
       .send({
@@ -87,5 +91,10 @@ describe("Módulo de Citas y Reglas de Negocio (Appointments API)", () => {
 
     expect(res.status).toBe(409);
     expect(res.body.success).toBe(false);
+  });
+
+  afterAll(() => {
+    mockStore.citas = mockStore.citas.filter((c) => !(c.fecha === "2026-09-14" && c.hora.startsWith("09:00")));
+    mockStore.saveToFile();
   });
 });

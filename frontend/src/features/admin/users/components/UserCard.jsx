@@ -58,6 +58,15 @@ export default function UserCard({
               </span>
               <span className="font-medium text-foreground truncate max-w-[160px]">{user.correo}</span>
             </div>
+            {user.documento && (
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-primary" />
+                  Documento
+                </span>
+                <span className="font-medium text-foreground">{user.documento}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-primary" />

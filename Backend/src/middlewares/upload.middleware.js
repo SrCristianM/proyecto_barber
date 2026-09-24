@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const uploadBaseDir = path.resolve(__dirname, "../../uploads");
 
 // Asegurar subdirectorios
-["barbers", "products", "services", "documents"].forEach((dir) => {
+["barbers", "products", "services", "documents", "users", "clients"].forEach((dir) => {
   const fullPath = path.join(uploadBaseDir, dir);
   if (!fs.existsSync(fullPath)) {
     fs.mkdirSync(fullPath, { recursive: true });

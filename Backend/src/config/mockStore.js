@@ -118,7 +118,7 @@ export class MockDataStore {
       { id_rol: 2, id_permiso: 46 }, { id_rol: 2, id_permiso: 47 }, { id_rol: 2, id_permiso: 48 }, { id_rol: 2, id_permiso: 49 },
       // Barbero (rol 3): Citas (ver, editar), Horarios (ver, crear), Servicios (ver), Ventas (ver)
       { id_rol: 3, id_permiso: 9 }, { id_rol: 3, id_permiso: 11 }, { id_rol: 3, id_permiso: 25 }, { id_rol: 3, id_permiso: 26 }, { id_rol: 3, id_permiso: 13 }, { id_rol: 3, id_permiso: 21 },
-      // Cliente (rol 4)
+      // Cliente (rol 4): Citas (ver, crear)
       { id_rol: 4, id_permiso: 9 }, { id_rol: 4, id_permiso: 10 }
     ];
 
@@ -126,10 +126,13 @@ export class MockDataStore {
     // Admin123* -> $2a$10$R5F7eDK4YIcPt4oUwiPmi.gGrb1DRT8eM2nXwfF39bMU5nTGWqOSu
     // Recepcionista123* -> $2a$10$Ku.tqQGp/NPVGoaCStVTzOuQFtRYIyoEA9PK01Ly1jriIflVN9WfO
     // Barbero123* -> $2a$10$..d9zrvkZBpDPQANvi.z.eblOC6bCJAR.juYapz84EHqG88H3e16q
+    // Cliente123* -> $2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.
     this.usuarios = [
-      { id_usuario: 1, nombre: "Cristian", apellido: "Mazo", correo: "cristianmazo957@gmail.com", contrasena: "$2a$10$R5F7eDK4YIcPt4oUwiPmi.gGrb1DRT8eM2nXwfF39bMU5nTGWqOSu", telefono: "+57 300 987 6543", id_rol: 1, estado: 1, fecha_registro: "2026-01-10 08:00:00" },
-      { id_usuario: 3, nombre: "María", apellido: "García", correo: "maria@example.com", contrasena: "$2a$10$Ku.tqQGp/NPVGoaCStVTzOuQFtRYIyoEA9PK01Ly1jriIflVN9WfO", telefono: "+57 301 234 5678", id_rol: 2, estado: 1, fecha_registro: "2026-02-20 14:15:00" },
-      { id_usuario: 4, nombre: "Carlos", apellido: "Rodríguez", correo: "barbero@tuturnobarber.com", contrasena: "$2a$10$..d9zrvkZBpDPQANvi.z.eblOC6bCJAR.juYapz84EHqG88H3e16q", telefono: "+57 302 345 6789", id_rol: 3, estado: 1, fecha_registro: "2026-03-10 09:00:00" }
+      { id_usuario: 1, nombre: "Cristian", apellido: "Mazo", documento: "1000000001", correo: "cristianmazo957@gmail.com", contrasena: "$2a$10$R5F7eDK4YIcPt4oUwiPmi.gGrb1DRT8eM2nXwfF39bMU5nTGWqOSu", telefono: "+57 300 987 6543", id_rol: 1, estado: 1, fecha_registro: "2026-01-10 08:00:00" },
+      { id_usuario: 3, nombre: "María", apellido: "García", documento: "1000000002", correo: "maria@example.com", contrasena: "$2a$10$Ku.tqQGp/NPVGoaCStVTzOuQFtRYIyoEA9PK01Ly1jriIflVN9WfO", telefono: "+57 301 234 5678", id_rol: 2, estado: 1, fecha_registro: "2026-02-20 14:15:00" },
+      { id_usuario: 4, nombre: "Carlos", apellido: "Rodríguez", documento: "1000000003", correo: "barbero@tuturnobarber.com", contrasena: "$2a$10$..d9zrvkZBpDPQANvi.z.eblOC6bCJAR.juYapz84EHqG88H3e16q", telefono: "+57 302 345 6789", id_rol: 3, estado: 1, fecha_registro: "2026-03-10 09:00:00" },
+      { id_usuario: 5, nombre: "Juan", apellido: "Pérez", documento: "1000000005", correo: "cliente@example.com", contrasena: "$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.", telefono: "+57 310 123 4567", id_rol: 4, estado: 1, fecha_registro: "2026-04-05 10:00:00" },
+      { id_usuario: 6, nombre: "Juan", apellido: "Pérez", documento: "1000000006", correo: "juan.perez@email.com", contrasena: "$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.", telefono: "+57 310 123 4567", id_rol: 4, estado: 1, fecha_registro: "2026-04-05 10:00:00" }
     ];
 
     // Barbero único por defecto (Carlos Rodríguez)
@@ -137,7 +140,12 @@ export class MockDataStore {
       { id_barbero: 1, id_usuario: 4, especialidad: "Corte Clásico & Fade", imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80", estado: 1 }
     ];
 
-    this.clientes = [];
+    // Clientes por defecto
+    this.clientes = [
+      { id_cliente: 1, id_usuario: 5, nivel_fidelidad: "Plata", direccion: "Calle 10 # 40-20, Medellín", estado: 1 },
+      { id_cliente: 2, id_usuario: 6, nivel_fidelidad: "Nuevo", direccion: "Carrera 43A # 1-50, Medellín", estado: 1 }
+    ];
+
     this.categoria_servicios = [
       { id_categoria_servicio: 1, nombre: "Cortes", estado: 1 },
       { id_categoria_servicio: 2, nombre: "Barba", estado: 1 },

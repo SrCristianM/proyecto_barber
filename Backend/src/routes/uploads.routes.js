@@ -10,4 +10,7 @@ router.post("/products", authenticate, uploadImage("products"), UploadsControlle
 router.post("/services", authenticate, uploadImage("services"), UploadsController.uploadImage);
 router.post("/documents", authenticate, uploadDocument(), UploadsController.uploadDocument);
 
+router.post("/users", authenticate, uploadImage("users"), UploadsController.uploadImage);
+router.post("/clients", authenticate, uploadImage("clients"), UploadsController.uploadImage);
+
 export default router;

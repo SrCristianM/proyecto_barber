@@ -90,7 +90,11 @@ export default function ClientsTable({
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{client.nombre} {client.apellido}</p>
-                        <p className="text-xs text-muted-foreground">{client.telefono || "Sin teléfono"}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {client.documento && <span>Doc: {client.documento}</span>}
+                          {client.documento && client.telefono && <span>•</span>}
+                          <span>{client.telefono || "Sin teléfono"}</span>
+                        </div>
                       </div>
                     </div>
                   </td>

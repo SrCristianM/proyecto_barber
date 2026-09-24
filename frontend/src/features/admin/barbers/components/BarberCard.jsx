@@ -1,4 +1,4 @@
-import { Edit, Trash2, User, Phone, Mail, Scissors } from "lucide-react";
+import { Edit, Trash2, User, Phone, Mail, Scissors, IdCard } from "lucide-react";
 import TiltCard from "../../shared/components/TiltCard";
 
 export default function BarberCard({
@@ -51,6 +51,13 @@ export default function BarberCard({
           </div>
 
           <div className="space-y-2 py-3 my-2 border-y border-border/60 text-xs">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <IdCard className="h-3.5 w-3.5 text-primary" />
+                Documento
+              </span>
+              <span className="font-medium text-foreground">{barber.documento || "—"}</span>
+            </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Mail className="h-3.5 w-3.5 text-primary" />

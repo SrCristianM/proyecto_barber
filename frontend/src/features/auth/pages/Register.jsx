@@ -14,6 +14,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
+    documento: "",
     telefono: "",
     correo: "",
     contrasena: "",
@@ -98,15 +99,13 @@ export default function Register() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
-            id="correo"
-            name="correo"
-            label="Correo Electrónico"
-            type="email"
-            value={formData.correo}
+            id="documento"
+            name="documento"
+            label="Documento de Identidad"
+            value={formData.documento}
             onChange={handleChange}
-            placeholder="correo@ejemplo.com"
-            error={errors.correo}
-            required
+            placeholder="Ej. 1020304050"
+            error={errors.documento}
           />
 
           <FormInput
@@ -118,6 +117,20 @@ export default function Register() {
             onChange={handleChange}
             placeholder="+57 300 123 4567"
             error={errors.telefono}
+          />
+        </div>
+
+        <div>
+          <FormInput
+            id="correo"
+            name="correo"
+            label="Correo Electrónico"
+            type="email"
+            value={formData.correo}
+            onChange={handleChange}
+            placeholder="correo@ejemplo.com"
+            error={errors.correo}
+            required
           />
         </div>
 

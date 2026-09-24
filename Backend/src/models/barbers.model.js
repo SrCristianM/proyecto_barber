@@ -7,7 +7,7 @@ export class BarbersRepository {
     if (isDatabaseConnected()) {
       let sql = `
         SELECT b.id_barbero, b.id_usuario, b.especialidad, b.imagen_url, b.estado,
-               u.nombre, u.apellido, u.correo, u.telefono
+               u.nombre, u.apellido, u.documento, u.correo, u.telefono
         FROM barbero b
         JOIN usuario u ON b.id_usuario = u.id_usuario
         WHERE 1=1
@@ -15,9 +15,9 @@ export class BarbersRepository {
       const params = [];
 
       if (search) {
-        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ?)`;
+        sql += ` AND (LOWER(CONCAT(u.nombre, ' ', u.apellido)) LIKE ? OR LOWER(u.correo) LIKE ? OR u.telefono LIKE ? OR (u.documento IS NOT NULL AND u.documento LIKE ?))`;
         const s = `%${search.toLowerCase()}%`;
-        params.push(s, s, s);
+        params.push(s, s, s, s);
       }
 
       if (status !== "all") {
@@ -45,6 +45,7 @@ export class BarbersRepository {
           estado: b.estado,
           nombre: u ? u.nombre : "Sin Nombre",
           apellido: u ? u.apellido : "",
+          documento: u ? (u.documento || null) : null,
           correo: u ? u.correo : "",
           telefono: u ? u.telefono : ""
         };
@@ -53,7 +54,11 @@ export class BarbersRepository {
         const fullName = `${b.nombre} ${b.apellido}`.toLowerCase();
         const s = (search || "").toLowerCase().trim();
         const matchesSearch =
-          s === "" || fullName.includes(s) || b.correo.toLowerCase().includes(s) || b.telefono.includes(s);
+          s === "" ||
+          fullName.includes(s) ||
+          b.correo.toLowerCase().includes(s) ||
+          b.telefono.includes(s) ||
+          (b.documento && b.documento.includes(s));
 
         const matchesStatus =
           status === "all" ||
@@ -73,7 +78,7 @@ export class BarbersRepository {
     if (isDatabaseConnected()) {
       const sql = `
         SELECT b.id_barbero, b.id_usuario, b.especialidad, b.imagen_url, b.estado,
-               u.nombre, u.apellido, u.correo, u.telefono
+               u.nombre, u.apellido, u.documento, u.correo, u.telefono
         FROM barbero b
         JOIN usuario u ON b.id_usuario = u.id_usuario
         WHERE b.id_barbero = ?
@@ -94,6 +99,7 @@ export class BarbersRepository {
       estado: b.estado,
       nombre: u ? u.nombre : "",
       apellido: u ? u.apellido : "",
+      documento: u ? (u.documento || null) : null,
       correo: u ? u.correo : "",
       telefono: u ? u.telefono : ""
     };
@@ -104,10 +110,11 @@ export class BarbersRepository {
       if (isDatabaseConnected() && conn) {
         // 1. Crear usuario con rol Barbero (3)
         const [userResult] = await conn.execute(
-          `INSERT INTO usuario (nombre, apellido, correo, contrasena, telefono, id_rol, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO usuario (nombre, apellido, documento, correo, contrasena, telefono, id_rol, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             barberData.nombre,
             barberData.apellido,
+            barberData.documento || null,
             barberData.correo,
             hashedPassword,
             barberData.telefono || null,
@@ -132,6 +139,7 @@ export class BarbersRepository {
         id_usuario: nextUserId,
         nombre: barberData.nombre,
         apellido: barberData.apellido,
+        documento: barberData.documento || null,
         correo: barberData.correo,
         contrasena: hashedPassword,
         telefono: barberData.telefono || null,
@@ -166,10 +174,11 @@ export class BarbersRepository {
       if (isDatabaseConnected() && conn) {
         // Actualizar usuario
         await conn.execute(
-          `UPDATE usuario SET nombre = ?, apellido = ?, correo = ?, telefono = ? WHERE id_usuario = ?`,
+          `UPDATE usuario SET nombre = ?, apellido = ?, documento = ?, correo = ?, telefono = ? WHERE id_usuario = ?`,
           [
             barberData.nombre !== undefined ? barberData.nombre : barber.nombre,
             barberData.apellido !== undefined ? barberData.apellido : barber.apellido,
+            barberData.documento !== undefined ? barberData.documento : (barber.documento || null),
             barberData.correo !== undefined ? barberData.correo : barber.correo,
             barberData.telefono !== undefined ? barberData.telefono : barber.telefono,
             barber.id_usuario
@@ -195,6 +204,7 @@ export class BarbersRepository {
       if (bObj && uObj) {
         if (barberData.nombre) uObj.nombre = barberData.nombre;
         if (barberData.apellido) uObj.apellido = barberData.apellido;
+        if (barberData.documento !== undefined) uObj.documento = barberData.documento;
         if (barberData.correo) uObj.correo = barberData.correo;
         if (barberData.telefono !== undefined) uObj.telefono = barberData.telefono;
         if (barberData.especialidad !== undefined) bObj.especialidad = barberData.especialidad;

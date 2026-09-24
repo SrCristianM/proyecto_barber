@@ -8,6 +8,7 @@
 export const INITIAL_USERS = [
   {
     id_usuario: 1,
+    documento: "1000000001",
     nombre: "Cristian",
     apellido: "Mazo",
     correo: "cristianmazo957@gmail.com",
@@ -19,6 +20,7 @@ export const INITIAL_USERS = [
   },
   {
     id_usuario: 3,
+    documento: "1000000002",
     nombre: "María",
     apellido: "García",
     correo: "maria@example.com",
@@ -30,6 +32,7 @@ export const INITIAL_USERS = [
   },
   {
     id_usuario: 4,
+    documento: "1000000003",
     nombre: "Carlos",
     apellido: "Rodríguez",
     correo: "barbero@tuturnobarber.com",
@@ -38,6 +41,69 @@ export const INITIAL_USERS = [
     estado: 1,
     contrasena: "Barbero123*",
     fecha_registro: "2026-03-10 09:00:00"
+  },
+  {
+    id_usuario: 5,
+    documento: "1000000005",
+    nombre: "Juan",
+    apellido: "Pérez",
+    correo: "cliente@example.com",
+    telefono: "+57 310 123 4567",
+    id_rol: 4, // Cliente
+    estado: 1,
+    contrasena: "Cliente123*",
+    fecha_registro: "2026-04-05 10:00:00"
+  },
+  {
+    id_usuario: 6,
+    documento: "1000000006",
+    nombre: "Juan",
+    apellido: "Pérez",
+    correo: "juan.perez@email.com",
+    telefono: "+57 310 123 4567",
+    id_rol: 4, // Cliente (alias móvil)
+    estado: 1,
+    contrasena: "Cliente123*",
+    fecha_registro: "2026-04-05 10:00:00"
+  }
+];
+
+export const DEMO_CREDENTIALS = [
+  {
+    role: "Administrador",
+    id_rol: 1,
+    name: "Cristian Mazo",
+    email: "cristianmazo957@gmail.com",
+    password: "Admin123*",
+    badge: "Control Total",
+    path: "/dashboard"
+  },
+  {
+    role: "Recepcionista",
+    id_rol: 2,
+    name: "María García",
+    email: "maria@example.com",
+    password: "Recepcionista123*",
+    badge: "Recepción & Citas",
+    path: "/dashboard"
+  },
+  {
+    role: "Barbero",
+    id_rol: 3,
+    name: "Carlos Rodríguez",
+    email: "barbero@tuturnobarber.com",
+    password: "Barbero123*",
+    badge: "Agenda Personal",
+    path: "/barbero"
+  },
+  {
+    role: "Cliente",
+    id_rol: 4,
+    name: "Juan Pérez",
+    email: "cliente@example.com",
+    password: "Cliente123*",
+    badge: "Portal Cliente",
+    path: "/portal"
   }
 ];
 
@@ -53,28 +119,30 @@ export function getStoredUsers() {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+      INITIAL_USERS.forEach((u) => {
+        if (u.id_rol === 4) syncClientStorage(u);
+      });
       return INITIAL_USERS;
     }
     const parsed = JSON.parse(data);
     if (!Array.isArray(parsed) || parsed.length === 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+      INITIAL_USERS.forEach((u) => {
+        if (u.id_rol === 4) syncClientStorage(u);
+      });
       return INITIAL_USERS;
     }
 
-    // Filtrar usuarios eliminados (barberos adicionales de prueba o administradores secundarios)
-    const allowedEmails = ["cristianmazo957@gmail.com", "maria@example.com", "barbero@tuturnobarber.com"];
-    // Mantener usuarios permitidos o nuevos usuarios que se registren
+    // Filtrar usuarios eliminados obsoletos (excepto los oficiales)
     let filtered = parsed.filter((u) => {
       const email = (u.correo || "").toLowerCase();
-      // Eliminar explícitamente los usuarios antiguos dados de baja
       const isOldDeleted = [
         "juan@example.com",
         "miguel@example.com",
         "javier@example.com",
         "ana@example.com",
         "luis@example.com",
-        "admin@barber.com",
-        "cliente@example.com"
+        "admin@barber.com"
       ].includes(email);
       return !isOldDeleted;
     });
@@ -109,6 +177,16 @@ export function getStoredUsers() {
         filtered.push(defaultRec);
         updated = true;
       }
+    } else {
+      const recIdx = filtered.findIndex((u) => u.correo.toLowerCase() === "maria@example.com");
+      if (recIdx >= 0) {
+        if (!filtered[recIdx].contrasena || filtered[recIdx].contrasena !== "Recepcionista123*" || filtered[recIdx].estado !== 1) {
+          filtered[recIdx].contrasena = "Recepcionista123*";
+          filtered[recIdx].estado = 1;
+          filtered[recIdx].id_rol = 2;
+          updated = true;
+        }
+      }
     }
 
     // Asegurar que el Barbero Carlos Rodríguez esté presente
@@ -128,6 +206,28 @@ export function getStoredUsers() {
           filtered[barberIdx].id_rol = 3;
           updated = true;
         }
+      }
+    }
+
+    // Asegurar que el Cliente por defecto esté presente
+    const hasClient = filtered.some((u) => u.correo.toLowerCase() === "cliente@example.com");
+    if (!hasClient) {
+      const defaultClient = INITIAL_USERS.find((u) => u.correo === "cliente@example.com");
+      if (defaultClient) {
+        filtered.push(defaultClient);
+        syncClientStorage(defaultClient);
+        updated = true;
+      }
+    } else {
+      const clientIdx = filtered.findIndex((u) => u.correo.toLowerCase() === "cliente@example.com");
+      if (clientIdx >= 0) {
+        if (!filtered[clientIdx].contrasena || filtered[clientIdx].contrasena !== "Cliente123*" || filtered[clientIdx].estado !== 1) {
+          filtered[clientIdx].contrasena = "Cliente123*";
+          filtered[clientIdx].estado = 1;
+          filtered[clientIdx].id_rol = 4;
+          updated = true;
+        }
+        syncClientStorage(filtered[clientIdx]);
       }
     }
 
@@ -162,7 +262,7 @@ export function findUserByEmail(email) {
   return users.find((u) => u.correo.toLowerCase() === cleanEmail) || null;
 }
 
-import { setStoredToken, clearStoredToken } from "../../../shared/api/apiClient.js";
+import { setStoredToken, clearStoredToken, getStoredToken } from "../../../shared/api/apiClient.js";
 
 /**
  * Sincroniza un usuario con rol cliente en la base de datos local de clientes (barber_clients_db).
@@ -185,6 +285,7 @@ export function syncClientStorage(user, direccion = "No especificada") {
       clients[idx] = {
         ...clients[idx],
         id_usuario: user.id_usuario || clients[idx].id_usuario,
+        documento: user.documento || clients[idx].documento || null,
         nombre: user.nombre ? user.nombre.trim() : clients[idx].nombre,
         apellido: user.apellido ? user.apellido.trim() : clients[idx].apellido,
         correo: user.correo ? user.correo.trim().toLowerCase() : clients[idx].correo,
@@ -197,6 +298,7 @@ export function syncClientStorage(user, direccion = "No especificada") {
       clients.push({
         id_cliente: nextId,
         id_usuario: user.id_usuario,
+        documento: user.documento || null,
         nombre: (user.nombre || "").trim(),
         apellido: (user.apellido || "").trim(),
         correo: cleanEmail,
@@ -226,6 +328,7 @@ export async function registerUser(userData) {
       body: JSON.stringify({
         nombre: userData.nombre.trim(),
         apellido: userData.apellido.trim(),
+        documento: userData.documento ? userData.documento.trim() : null,
         correo: cleanEmail,
         contrasena: userData.contrasena,
         telefono: userData.telefono ? userData.telefono.trim() : null,
@@ -269,6 +372,7 @@ export async function registerUser(userData) {
   const nextId = Math.max(...users.map((u) => u.id_usuario || 0), 0) + 1;
   const newUser = {
     id_usuario: nextId,
+    documento: userData.documento ? userData.documento.trim() : null,
     nombre: userData.nombre.trim(),
     apellido: userData.apellido.trim(),
     correo: cleanEmail,
@@ -364,8 +468,6 @@ export async function loginWithCredentials(email, password) {
       };
     }
 
-    // Si llegamos aquí (status >= 500 o respuesta no-JSON por proxy de Vite cuando el backend está inactivo),
-    // registramos advertencia y continuamos al fallback local con localStorage.
     console.warn(`[Auth] Backend no disponible (HTTP ${res.status}), autenticando con base de datos local.`);
   } catch (err) {
     console.warn("[Auth] Backend no disponible para login, validando credenciales localmente:", err.message);
@@ -447,4 +549,69 @@ export function logoutUser() {
   } catch (err) {
     console.error("Error al cerrar sesión:", err);
   }
+}
+
+/**
+ * Actualiza el perfil del usuario autenticado en Backend API y sincroniza localmente.
+ */
+export async function updateUserProfile(profileData) {
+  const token = getStoredToken();
+  const user = getCurrentUser();
+
+  const payload = {
+    nombre: profileData.nombre?.trim(),
+    apellido: profileData.apellido?.trim(),
+    documento: profileData.documento ? profileData.documento.trim() : null,
+    telefono: profileData.telefono ? profileData.telefono.trim() : null,
+    direccion: profileData.direccion ? profileData.direccion.trim() : null
+  };
+  if (profileData.nuevaContrasena) {
+    payload.contrasena = profileData.nuevaContrasena;
+    if (profileData.contrasenaActual) {
+      payload.contrasena_actual = profileData.contrasenaActual;
+    }
+  }
+
+  if (token) {
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data) {
+        const updated = json.data;
+        setCurrentUser(updated);
+        return { success: true, user: updated };
+      }
+      if (!res.ok) {
+        return { success: false, error: json?.message || json?.error || "Error al actualizar perfil." };
+      }
+    } catch (err) {
+      console.warn("[Auth] Error al actualizar perfil en backend, procediendo a fallback local:", err.message);
+    }
+  }
+
+  // Fallback local
+  if (user) {
+    const updated = {
+      ...user,
+      ...payload
+    };
+    setCurrentUser(updated);
+
+    const users = getStoredUsers();
+    const idx = users.findIndex((u) => u.id_usuario === user.id_usuario);
+    if (idx >= 0) {
+      users[idx] = { ...users[idx], ...payload };
+      saveStoredUsers(users);
+    }
+    return { success: true, user: updated };
+  }
+
+  return { success: false, error: "No se encontró sesión de usuario activa." };
 }

@@ -27,6 +27,14 @@ export function validateClientForm(formData) {
   const emailErr = validateEmail(formData.correo, true);
   if (emailErr) errors.correo = emailErr;
 
+  // Documento (Opcional, min 5 max 20)
+  if (formData.documento && formData.documento.trim() !== "") {
+    const docClean = formData.documento.trim();
+    if (docClean.length < 5 || docClean.length > 20) {
+      errors.documento = "El documento debe tener entre 5 y 20 caracteres.";
+    }
+  }
+
   // Teléfono (Opcional, máx 20)
   if (formData.telefono && formData.telefono.trim() !== "") {
     const phoneErr = validatePhone(formData.telefono, false);

@@ -107,27 +107,49 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
           </div>
         </div>
 
-        {/* Correo y Teléfono */}
+        {/* Correo Electrónico */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">
+            Correo Electrónico <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="email"
+            name="correo"
+            id="correo"
+            maxLength={120}
+            value={formData.correo}
+            onChange={(e) => handleChange("correo", e.target.value)}
+            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+              errors.correo
+                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                : "border-input focus:ring-2 focus:ring-primary"
+            }`}
+            placeholder="correo@ejemplo.com"
+          />
+          <FormFieldError error={errors.correo} />
+        </div>
+
+        {/* Documento y Teléfono */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Correo Electrónico <span className="text-destructive">*</span>
+              Documento de Identidad
             </label>
             <input
-              type="email"
-              name="correo"
-              id="correo"
-              maxLength={120}
-              value={formData.correo}
-              onChange={(e) => handleChange("correo", e.target.value)}
+              type="text"
+              name="documento"
+              id="documento"
+              maxLength={20}
+              value={formData.documento || ""}
+              onChange={(e) => handleChange("documento", e.target.value.replace(/[^0-9a-zA-Z-]/g, ""))}
               className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.correo
+                errors.documento
                   ? "border-destructive focus:ring-2 focus:ring-destructive/30"
                   : "border-input focus:ring-2 focus:ring-primary"
               }`}
-              placeholder="correo@ejemplo.com"
+              placeholder="Ej: 1020304050"
             />
-            <FormFieldError error={errors.correo} />
+            <FormFieldError error={errors.documento} />
           </div>
 
           <div>

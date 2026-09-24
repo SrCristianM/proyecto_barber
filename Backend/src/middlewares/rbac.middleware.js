@@ -145,7 +145,13 @@ export function authorizePermission(modulo, accion) {
 
       // 9. Reglas especiales para Barbero
       if (userRoleId === ROLES.BARBERO) {
-        if (normMod === "citas" && ["ver", "editar"].includes(normAct)) {
+        if (normMod === "citas" && ["ver", "crear", "editar", "cancelar"].includes(normAct)) {
+          return next();
+        }
+        if (normMod === "clientes" && ["ver", "crear"].includes(normAct)) {
+          return next();
+        }
+        if (false) {
           if (rolePermissions.includes(`citas_${normAct}`) || rolePermissions.includes("citas_ver")) {
             return next();
           }

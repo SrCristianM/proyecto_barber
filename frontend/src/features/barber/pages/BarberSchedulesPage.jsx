@@ -11,18 +11,41 @@ import {
   ChevronRight,
   Sparkles
 } from "lucide-react";
-import { getBarberWeeklySchedule } from "../services/barberStorageService";
+import { getBarberWeeklySchedule, fetchBarberWeeklySchedule } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+
+function formatScheduleTime(timeStr) {
+  if (!timeStr) return "";
+  const parts = String(timeStr).split(":");
+  let hour = parseInt(parts[0], 10);
+  const minutes = parts[1] || "00";
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+  return `${String(displayHour).padStart(2, "0")}:${minutes} ${ampm}`;
+}
 
 export default function BarberSchedulesPage() {
   const { canAccess, hasPermission } = usePermissions();
-  const [scheduleData, setScheduleData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [scheduleData, setScheduleData] = useState(() => getBarberWeeklySchedule());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const data = getBarberWeeklySchedule();
-    setScheduleData(data);
-    setLoading(false);
+    let isMounted = true;
+    async function syncSchedules() {
+      try {
+        const liveData = await fetchBarberWeeklySchedule();
+        if (isMounted && liveData) {
+          setScheduleData(liveData);
+        }
+      } catch (err) {
+        console.warn("[BarberSchedulesPage] Error al sincronizar horarios con API:", err);
+      }
+    }
+    syncSchedules();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
@@ -171,7 +194,7 @@ export default function BarberSchedulesPage() {
                 ) : (
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-[#DFB755]/10 text-foreground border border-[#DFB755]/30">
                     <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
-                    <span>{d.horaInicio} AM — {d.horaFin} PM</span>
+                    <span>{formatScheduleTime(d.horaInicio)} — {formatScheduleTime(d.horaFin)}</span>
                   </div>
                 )}
               </div>

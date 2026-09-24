@@ -42,6 +42,8 @@ CREATE TABLE `barbero` (
 
 LOCK TABLES `barbero` WRITE;
 /*!40000 ALTER TABLE `barbero` DISABLE KEYS */;
+INSERT INTO `barbero` (`id_barbero`, `id_usuario`, `especialidad`, `imagen_url`, `estado`) VALUES 
+(1, 4, 'Corte Clásico & Fade', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80', 1);
 /*!40000 ALTER TABLE `barbero` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -182,6 +184,9 @@ CREATE TABLE `cliente` (
 
 LOCK TABLES `cliente` WRITE;
 /*!40000 ALTER TABLE `cliente` DISABLE KEYS */;
+INSERT INTO `cliente` (`id_cliente`, `id_usuario`, `nivel_fidelidad`, `direccion`, `estado`) VALUES 
+(1, 5, 'Plata', 'Calle 10 # 40-20, Medellín', 1),
+(2, 6, 'Nuevo', 'Carrera 43A # 1-50, Medellín', 1);
 /*!40000 ALTER TABLE `cliente` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -573,6 +578,7 @@ CREATE TABLE `usuario` (
   `id_usuario` int NOT NULL AUTO_INCREMENT,
   `nombre` varchar(80) COLLATE utf8mb4_spanish_ci NOT NULL,
   `apellido` varchar(80) COLLATE utf8mb4_spanish_ci NOT NULL,
+  `documento` varchar(20) COLLATE utf8mb4_spanish_ci DEFAULT NULL,
   `correo` varchar(120) COLLATE utf8mb4_spanish_ci NOT NULL,
   `contrasena` varchar(255) COLLATE utf8mb4_spanish_ci NOT NULL,
   `telefono` varchar(20) COLLATE utf8mb4_spanish_ci DEFAULT NULL,
@@ -581,6 +587,7 @@ CREATE TABLE `usuario` (
   `fecha_registro` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_usuario`),
   UNIQUE KEY `correo` (`correo`),
+  UNIQUE KEY `idx_usuario_documento` (`documento`),
   KEY `fk_usuario_rol` (`id_rol`),
   KEY `idx_usuario_correo` (`correo`),
   CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -594,6 +601,12 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
+INSERT INTO `usuario` (`id_usuario`, `nombre`, `apellido`, `documento`, `correo`, `contrasena`, `telefono`, `id_rol`, `estado`, `fecha_registro`) VALUES 
+(1, 'Cristian', 'Mazo', '1000000001', 'cristianmazo957@gmail.com', '$2a$10$R5F7eDK4YIcPt4oUwiPmi.gGrb1DRT8eM2nXwfF39bMU5nTGWqOSu', '+57 300 987 6543', 1, 1, '2026-01-10 08:00:00'),
+(3, 'María', 'García', '1000000002', 'maria@example.com', '$2a$10$Ku.tqQGp/NPVGoaCStVTzOuQFtRYIyoEA9PK01Ly1jriIflVN9WfO', '+57 301 234 5678', 2, 1, '2026-02-20 14:15:00'),
+(4, 'Carlos', 'Rodríguez', '1000000003', 'barbero@tuturnobarber.com', '$2a$10$..d9zrvkZBpDPQANvi.z.eblOC6bCJAR.juYapz84EHqG88H3e16q', '+57 302 345 6789', 3, 1, '2026-03-10 09:00:00'),
+(5, 'Juan', 'Pérez', '1000000005', 'cliente@example.com', '$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.', '+57 310 123 4567', 4, 1, '2026-04-05 10:00:00'),
+(6, 'Juan', 'Pérez', '1000000006', 'juan.perez@email.com', '$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.', '+57 310 123 4567', 4, 1, '2026-04-05 10:00:00');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 
