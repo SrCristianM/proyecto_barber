@@ -32,6 +32,8 @@ import {
   createWhatsAppShareUrl
 } from "../utils/calendarUtils";
 import Modal from "../../admin/shared/components/Modal";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
+import { getLocalDateString, addDays } from "../../../shared/utils/dateUtils";
 
 export default function ClientMyAppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -59,7 +61,9 @@ export default function ClientMyAppointmentsPage() {
     loadAppointments();
   }, []);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS], loadAppointments);
+
+  const todayStr = getLocalDateString();
 
   // Separar en próximas e historial
   const upcomingAppointments = useMemo(() => {
@@ -87,12 +91,9 @@ export default function ClientMyAppointmentsPage() {
     });
   }, [historyAppointments, searchTerm]);
 
-  // Manejo de Reagendar
   const handleOpenReschedule = (apt) => {
     setSelectedApt(apt);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+    const tomorrowStr = addDays(getLocalDateString(), 1);
     setRescheduleDate(tomorrowStr);
     setShowRescheduleModal(true);
   };

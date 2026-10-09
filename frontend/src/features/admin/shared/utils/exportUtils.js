@@ -1,4 +1,5 @@
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import { getLocalDateString } from "../../../../shared/utils/dateUtils";
 
 /**
  * Utilidad universal para exportar datos con diseño profesional a Excel (.xls) o CSV compatible.
@@ -16,7 +17,7 @@ export function exportToCsv(filename, rows, columns) {
     exportToStyledExcel({
       title: filename.replace(/[_-]/g, " ").toUpperCase(),
       subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
-      filename: `${filename}_${new Date().toISOString().split("T")[0]}.xls`,
+      filename: `${filename}_${getLocalDateString()}.xls`,
       columns: columns.map(c => ({
         header: c.label || c.key,
         key: c.key,
@@ -51,7 +52,7 @@ export function exportToCsv(filename, rows, columns) {
   
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  link.setAttribute("download", `${filename}_${new Date().toISOString().split("T")[0]}.csv`);
+  link.setAttribute("download", `${filename}_${getLocalDateString()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

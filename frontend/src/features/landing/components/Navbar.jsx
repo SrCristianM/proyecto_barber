@@ -31,11 +31,10 @@ export default function Navbar() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-[#0D0D0D]/90 backdrop-blur-xl border-b border-[#C9A24A]/25 py-3 shadow-[0_10px_35px_rgba(0,0,0,0.85)]"
-          : "bg-[#0D0D0D]/70 backdrop-blur-md border-b border-white/5 py-4"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+        ? "bg-[#0D0D0D]/90 backdrop-blur-xl border-b border-[#C9A24A]/25 py-3 shadow-[0_10px_35px_rgba(0,0,0,0.85)]"
+        : "bg-[#0D0D0D]/70 backdrop-blur-md border-b border-white/5 py-4"
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}

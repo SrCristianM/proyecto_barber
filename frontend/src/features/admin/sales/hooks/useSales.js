@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { ESTADOS_VENTA } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
@@ -8,27 +8,18 @@ import {
   cancelSale,
   deleteSale
 } from "../services/salesService";
-
+import { getClients } from "../../clients/services/clientsService";
+import { getProducts } from "../../products/services/productsService";
+import { getServices } from "../../services/services/servicesService";
+import { getUsers } from "../../users/services/usersService";
 import { getRealClients } from "../../appointments/hooks/useAppointments";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService";
 
-export const clients = new Proxy([], {
-  get(target, prop) {
-    const fresh = getRealClients();
-    const val = fresh[prop];
-    if (typeof val === "function") {
-      return val.bind(fresh);
-    }
-    return val;
-  }
-});
-
-const mockUsersList = [
-  { id_usuario: 1, nombre: "Admin Principal" },
-  { id_usuario: 2, nombre: "Recepcionista 1" },
-  { id_usuario: 3, nombre: "Carlos Rodríguez" }
-];
-
-export const catalogItems = [
+const initialCatalogItems = [
   { id_item: "s_1", tipo_item: "Servicio", id_servicio: 1, id_producto: null, nombre: "Corte Clásico", precio_unitario: 15000 },
   { id_item: "s_2", tipo_item: "Servicio", id_servicio: 2, id_producto: null, nombre: "Corte + Barba", precio_unitario: 25000 },
   { id_item: "s_3", tipo_item: "Servicio", id_servicio: 3, id_producto: null, nombre: "Afeitado Premium", precio_unitario: 20000 },
@@ -39,9 +30,39 @@ export const catalogItems = [
   { id_item: "p_4", tipo_item: "Producto", id_servicio: null, id_producto: 4, nombre: "Aceite para Barba", precio_unitario: 25000 }
 ];
 
-const mockSales = [];
+let liveClients = [];
+let liveUsers = [
+  { id_usuario: 1, nombre: "Admin Principal" },
+  { id_usuario: 2, nombre: "Recepcionista 1" },
+  { id_usuario: 3, nombre: "Carlos Rodríguez" }
+];
+let liveCatalogItems = [...initialCatalogItems];
 
-export const users = mockUsersList;
+export const clients = new Proxy([], {
+  get(target, prop) {
+    const list = liveClients.length > 0 ? liveClients : getRealClients();
+    const val = list[prop];
+    if (typeof val === "function") return val.bind(list);
+    return val;
+  }
+});
+
+export const users = new Proxy([], {
+  get(target, prop) {
+    const val = liveUsers[prop];
+    if (typeof val === "function") return val.bind(liveUsers);
+    return val;
+  }
+});
+
+export const catalogItems = new Proxy([], {
+  get(target, prop) {
+    const val = liveCatalogItems[prop];
+    if (typeof val === "function") return val.bind(liveCatalogItems);
+    return val;
+  }
+});
+
 export const saleStatuses = ESTADOS_VENTA;
 
 const emptyForm = () => ({
@@ -59,6 +80,9 @@ const emptyForm = () => ({
 
 export function useSales() {
   const [sales, setSales] = useState([]);
+  const [clientsList, setClientsList] = useState(() => liveClients.length > 0 ? liveClients : getRealClients());
+  const [usersList, setUsersList] = useState(liveUsers);
+  const [catalogList, setCatalogList] = useState(liveCatalogItems);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'Activa' | 'Anulada'
   const [clientFilter, setClientFilter] = useState("all"); // 'all' | id_cliente
@@ -78,7 +102,7 @@ export function useSales() {
     if (sale?.cliente_nombre && sale.cliente_nombre.trim() !== "" && sale.cliente_nombre !== "Cliente") {
       return sale.cliente_nombre.trim();
     }
-    const currentClients = getRealClients();
+    const currentClients = clientsList.length > 0 ? clientsList : (liveClients.length > 0 ? liveClients : getRealClients());
     const found = currentClients.find(
       (c) =>
         Number(c.id_cliente) === Number(id_cliente) ||
@@ -90,7 +114,9 @@ export function useSales() {
   };
 
   const getUserName = (id_usuario) => {
-    return mockUsersList.find((u) => u.id_usuario === Number(id_usuario))?.nombre || "Usuario Desconocido";
+    const u = usersList.find((usr) => Number(usr.id_usuario) === Number(id_usuario)) ||
+      liveUsers.find((usr) => Number(usr.id_usuario) === Number(id_usuario));
+    return u?.nombre || "Usuario Desconocido";
   };
 
   const handleSort = (field) => {
@@ -157,9 +183,10 @@ export function useSales() {
   };
 
   const activeSales = sales.filter((s) => s.estado === "Activa");
-  const todayStr = new Date().toISOString().split("T")[0];
+  const colombiaNowStr = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false });
+  const todayStr = colombiaNowStr.split(",")[0].trim();
   const totalToday = activeSales
-    .filter((sale) => sale.fecha.startsWith(todayStr))
+    .filter((sale) => sale.fecha && sale.fecha.startsWith(todayStr))
     .reduce((sum, sale) => sum + Number(sale.total), 0);
   const totalMonth = activeSales.reduce((sum, sale) => sum + Number(sale.total), 0);
   const averageTicket = activeSales.length ? Math.round(totalMonth / activeSales.length) : 0;
@@ -256,7 +283,93 @@ export function useSales() {
     setSales([]);
   };
 
-  useEffect(() => {
+  const fetchClients = useCallback(async () => {
+    try {
+      const data = await getClients();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((c) => ({
+          id_cliente: Number(c.id_cliente),
+          id_usuario: c.id_usuario,
+          nombre: `${c.nombre} ${c.apellido || ""}`.trim() || "Cliente",
+          correo: c.correo || "",
+          telefono: c.telefono || "",
+          documento: c.documento || ""
+        }));
+        liveClients = mapped;
+        setClientsList(mapped);
+      }
+    } catch (err) {
+      console.warn("[Sales] Error al obtener clientes para ventas:", err);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const data = await getUsers();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((u) => ({
+          id_usuario: Number(u.id_usuario),
+          nombre: `${u.nombre} ${u.apellido || ""}`.trim(),
+          correo: u.correo,
+          id_rol: u.id_rol
+        }));
+        liveUsers = mapped;
+        setUsersList(mapped);
+      }
+    } catch (err) {
+      console.warn("[Sales] Error al obtener usuarios:", err);
+    }
+  }, []);
+
+  const fetchCatalog = useCallback(async () => {
+    try {
+      const [prodsRes, servsRes] = await Promise.allSettled([
+        getProducts(),
+        getServices()
+      ]);
+
+      const items = [];
+      if (servsRes.status === "fulfilled" && Array.isArray(servsRes.value)) {
+        servsRes.value
+          .filter((s) => s.estado === 1)
+          .forEach((s) => {
+            items.push({
+              id_item: `s_${s.id_servicio}`,
+              tipo_item: "Servicio",
+              id_servicio: s.id_servicio,
+              id_producto: null,
+              nombre: s.nombre,
+              precio_unitario: Number(s.precio) || 0
+            });
+          });
+      }
+
+      if (prodsRes.status === "fulfilled" && Array.isArray(prodsRes.value)) {
+        prodsRes.value
+          .filter((p) => p.estado === 1)
+          .forEach((p) => {
+            items.push({
+              id_item: `p_${p.id_producto}`,
+              tipo_item: "Producto",
+              id_servicio: null,
+              id_producto: p.id_producto,
+              nombre: p.nombre,
+              precio_unitario: Number(p.precio) || 0,
+              stock: p.stock
+            });
+          });
+      }
+
+      if (items.length > 0) {
+        liveCatalogItems = items;
+        setCatalogList(items);
+      }
+    } catch (err) {
+      console.warn("[Sales] Error sincronizando catálogo dinámico:", err);
+    }
+  }, []);
+
+  const fetchFreshSales = useCallback(() => {
     getSales()
       .then((data) => {
         if (Array.isArray(data)) {
@@ -273,6 +386,31 @@ export function useSales() {
         loadLocalSales();
       });
   }, []);
+
+  useEffect(() => {
+    fetchClients();
+    fetchUsers();
+    fetchCatalog();
+    fetchFreshSales();
+
+    const interval = setInterval(fetchFreshSales, 4000);
+    const onFocus = () => {
+      fetchClients();
+      fetchCatalog();
+      fetchFreshSales();
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchClients, fetchUsers, fetchCatalog, fetchFreshSales]);
+
+  useDataSync([SYNC_ENTITIES.CLIENTS, SYNC_ENTITIES.USERS], fetchClients);
+  useDataSync([SYNC_ENTITIES.USERS], fetchUsers);
+  useDataSync([SYNC_ENTITIES.PRODUCTS, SYNC_ENTITIES.SERVICES], fetchCatalog);
+  useDataSync([SYNC_ENTITIES.SALES], fetchFreshSales);
 
   const handleCreate = async () => {
     const formattedFecha = formData.fecha.includes(" ")
@@ -317,6 +455,8 @@ export function useSales() {
       setSales((prev) => [newSale, ...prev]);
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SALES, newSale);
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS);
       toast.success("Venta registrada y comprobante emitido exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al registrar la venta.");
@@ -371,7 +511,9 @@ export function useSales() {
         localStorage.setItem("barber_sales_db", JSON.stringify(updated));
       } catch {}
       setShowDeleteModal(false);
+      const deletedId = selectedSale.id_venta;
       setSelectedSale(null);
+      notifyDataChange(SYNC_ENTITIES.SALES, { id_venta: deletedId, deleted: true });
       toast.success("Venta eliminada correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar la venta.");
@@ -391,6 +533,8 @@ export function useSales() {
             : sale
         )
       );
+      notifyDataChange(SYNC_ENTITIES.SALES, { id_venta: saleId, toggled: true });
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS);
       toast.success("Estado de la venta actualizado en caja.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar estado de la venta.");
@@ -510,7 +654,9 @@ export function useSales() {
     toggleStatus,
     getClientName,
     getUserName,
-    clients,
+    clients: clientsList,
+    users: usersList,
+    catalogItems: catalogList,
     sales
   };
 }

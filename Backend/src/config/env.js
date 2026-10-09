@@ -27,5 +27,13 @@ export const env = {
   CORS_ORIGIN: (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000").split(","),
   MAX_FILE_SIZE_MB: Number(process.env.MAX_FILE_SIZE_MB) || 5,
   UPLOAD_PATH: process.env.UPLOAD_PATH || "uploads",
-  DB_MOCK_FALLBACK: process.env.DB_MOCK_FALLBACK === "true" || process.env.NODE_ENV !== "production"
+  DB_MOCK_FALLBACK: process.env.DB_MOCK_FALLBACK === "true" || process.env.NODE_ENV !== "production",
+  EMAIL: {
+    HOST: process.env.SMTP_HOST || process.env.EMAIL_HOST || "",
+    PORT: Number(process.env.SMTP_PORT || process.env.EMAIL_PORT) || 587,
+    SECURE: process.env.SMTP_SECURE === "true" || process.env.EMAIL_SECURE === "true",
+    USER: process.env.SMTP_USER || process.env.EMAIL_USER || "",
+    PASS: process.env.SMTP_PASS || process.env.EMAIL_PASS || "",
+    FROM: process.env.SMTP_FROM || process.env.EMAIL_FROM || '"Tu Turno Barber" <tuturnobarber@gmail.com>'
+  }
 };

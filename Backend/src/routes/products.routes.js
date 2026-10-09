@@ -15,6 +15,9 @@ const router = Router();
 // Categorías de producto
 router.get("/categories", optionalAuth, ProductsController.getCategories);
 router.post("/categories", authenticate, authorizePermission("productos", "crear"), validate(createCategoryValidation), ProductsController.createCategory);
+router.put("/categories/:id", authenticate, authorizePermission("productos", "editar"), validate(createCategoryValidation), ProductsController.updateCategory);
+router.patch("/categories/:id/status", authenticate, authorizePermission("productos", "activar"), ProductsController.toggleCategoryStatus);
+router.delete("/categories/:id", authenticate, authorizePermission("productos", "eliminar"), ProductsController.deleteCategory);
 
 // Catálogo de productos (Lectura para cualquier usuario / Portal del cliente)
 router.get("/", optionalAuth, ProductsController.getAll);

@@ -5,6 +5,8 @@ import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import FormFieldError from "../../shared/components/FormFieldError";
 import SearchableSelect from "../../shared/components/SearchableSelect";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
+import ScheduleNoveltyCard from "./ScheduleNoveltyCard";
 import { useScheduleNovelties, NOVELTY_TYPES } from "../hooks/useScheduleNovelties";
 import { validateNoveltyForm } from "../validations/scheduleValidation";
 import { ESTADOS_NOVEDAD } from "../../../../shared/types/database";
@@ -57,6 +59,7 @@ export default function ScheduleNoveltiesView() {
   } = useScheduleNovelties();
 
   const [formErrors, setFormErrors] = useState({});
+  const [viewMode, setViewMode] = useState("table");
 
   const onHandleCreate = () => {
     const result = validateNoveltyForm(formData);
@@ -157,14 +160,17 @@ export default function ScheduleNoveltiesView() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer shadow-xs"
-          >
-            <Plus className="h-4 w-4" />
-            {stats?.total === 0 ? "Crear primera novedad" : "Registrar Novedad"}
-          </button>
+          <div className="flex items-center gap-2">
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer shadow-xs"
+            >
+              <Plus className="h-4 w-4" />
+              {stats?.total === 0 ? "Crear primera novedad" : "Registrar Novedad"}
+            </button>
+          </div>
         </div>
 
         {/* Lista de novedades */}
@@ -172,9 +178,9 @@ export default function ScheduleNoveltiesView() {
           <div className="text-center py-12 text-muted-foreground text-sm">
             No se encontraron novedades registradas con los filtros seleccionados
           </div>
-        ) : (
+        ) : viewMode === "table" ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[700px] text-left text-sm">
               <thead className="border-b border-border text-muted-foreground text-xs uppercase tracking-wider bg-muted/30">
                 <tr>
                   <th className="py-3.5 px-4 font-bold">Barbero</th>
@@ -268,6 +274,21 @@ export default function ScheduleNoveltiesView() {
                 })}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredNovelties.map((nov) => (
+              <ScheduleNoveltyCard
+                key={nov.id_novedad}
+                novelty={nov}
+                barberName={getBarberName(nov.id_barbero) || "Barbero"}
+                typeBadges={TYPE_BADGES}
+                statusBadges={STATUS_BADGES}
+                onChangeStatus={onChangeStatus}
+                openEditModal={openEditModal}
+                openDeleteModal={openDeleteModal}
+              />
+            ))}
           </div>
         )}
       </div>

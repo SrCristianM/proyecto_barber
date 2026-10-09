@@ -53,7 +53,7 @@ export default function ProductsShowcase() {
       <div className="ambient-glow-gold w-[450px] h-[450px] bottom-0 -left-20 opacity-20" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>

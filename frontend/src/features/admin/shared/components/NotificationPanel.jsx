@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Check, CheckCheck, X, Calendar, Users, Clock, DollarSign, Package } from "lucide-react";
 import { motion } from "motion/react";
-import { timeAgo, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
+import { timeAgo, formatExactDateTime, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
 
 const TYPE_ICONS = {
   appointment: Calendar,
@@ -39,7 +39,7 @@ export default function NotificationPanel({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
-      className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+      className="absolute -right-10 sm:right-0 top-full mt-2 w-[calc(100vw-2.5rem)] max-w-xs sm:w-80 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
       style={{ maxHeight: "480px" }}
     >
       {/* Header */}
@@ -110,7 +110,11 @@ export default function NotificationPanel({
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">
                     {notif.description}
                   </p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">{timeAgo(notif.timestamp)}</p>
+                  <div className="flex items-center gap-1.5 text-[10px] mt-1 flex-wrap">
+                    <span className="font-semibold text-primary/90">{formatExactDateTime(notif.timestamp)}</span>
+                    <span className="text-muted-foreground/60">•</span>
+                    <span className="text-muted-foreground/70">{timeAgo(notif.timestamp)}</span>
+                  </div>
                 </div>
 
                 {/* Botón marcar como leída */}

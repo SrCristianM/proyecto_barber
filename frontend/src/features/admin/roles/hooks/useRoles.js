@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ROLES } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import { DEFAULT_ROLE_PERMISSIONS } from "../constants/permissions";
 import {
   getRoles,
   createRole,
@@ -17,11 +18,34 @@ const emptyForm = {
 };
 
 export function useRoles() {
-  const [roles, setRoles] = useState(ROLES.map((r) => ({
-    ...r,
-    permisos: r.permisos || [],
-    alcancePorPermiso: r.alcancePorPermiso || {}
-  })));
+  const [roles, setRoles] = useState(() => {
+    try {
+      const stored = localStorage.getItem("barber_roles_db");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((r) => {
+            const defs = DEFAULT_ROLE_PERMISSIONS[r.nombre_rol];
+            const perms = r.permisos && r.permisos.length > 0 ? r.permisos : (defs?.permisos || []);
+            return {
+              ...r,
+              permisos: perms,
+              alcancePorPermiso: r.alcancePorPermiso || defs?.alcancePorPermiso || {}
+            };
+          });
+        }
+      }
+    } catch {}
+
+    return ROLES.map((r) => {
+      const defs = DEFAULT_ROLE_PERMISSIONS[r.nombre_rol];
+      return {
+        ...r,
+        permisos: r.permisos && r.permisos.length > 0 ? r.permisos : (defs?.permisos || []),
+        alcancePorPermiso: r.alcancePorPermiso || defs?.alcancePorPermiso || {}
+      };
+    });
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [sortField, setSortField] = useState("nombre_rol");
@@ -40,13 +64,25 @@ export function useRoles() {
         if (Array.isArray(data)) {
           const mapped = data.map((r) => {
             let perms = r.permisos || [];
+            const defs = DEFAULT_ROLE_PERMISSIONS[r.nombre_rol];
             if (Number(r.id_rol) === 1 || (r.nombre_rol && r.nombre_rol.toLowerCase().trim() === "administrador")) {
-              perms = Array.from(new Set([...perms, "roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar"]));
+              perms = Array.from(
+                new Set([
+                  ...(perms.length > 0 ? perms : defs?.permisos || []),
+                  "roles_ver",
+                  "roles_crear",
+                  "roles_editar",
+                  "roles_eliminar",
+                  "roles_asignar"
+                ])
+              );
+            } else if (!perms || perms.length === 0) {
+              perms = defs?.permisos || [];
             }
             return {
               ...r,
               permisos: perms,
-              alcancePorPermiso: r.alcancePorPermiso || {}
+              alcancePorPermiso: r.alcancePorPermiso || defs?.alcancePorPermiso || {}
             };
           });
           setRoles(mapped);

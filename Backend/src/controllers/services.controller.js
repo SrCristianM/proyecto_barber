@@ -63,7 +63,10 @@ export class ServicesController {
 
   static async getCategories(req, res, next) {
     try {
-      const categories = await ServicesService.getAllCategories();
+      const filters = {
+        status: req.query.status || "all"
+      };
+      const categories = await ServicesService.getAllCategories(filters);
       return ApiResponse.success(res, categories, "Categorías de servicio obtenidas");
     } catch (error) {
       next(error);
@@ -74,6 +77,33 @@ export class ServicesController {
     try {
       const newCat = await ServicesService.createCategory(req.body.nombre);
       return ApiResponse.created(res, newCat, "Categoría creada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateCategory(req, res, next) {
+    try {
+      const updated = await ServicesService.updateCategory(req.params.id, req.body.nombre);
+      return ApiResponse.success(res, updated, "Categoría actualizada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async toggleCategoryStatus(req, res, next) {
+    try {
+      const result = await ServicesService.toggleCategoryStatus(req.params.id);
+      return ApiResponse.success(res, result, "Estado de categoría modificado");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteCategory(req, res, next) {
+    try {
+      await ServicesService.deleteCategory(req.params.id);
+      return ApiResponse.success(res, null, "Categoría eliminada exitosamente");
     } catch (error) {
       next(error);
     }

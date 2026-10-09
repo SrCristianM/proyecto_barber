@@ -48,10 +48,13 @@ import {
   getAvailableSlots,
   getClientLoyaltyDetails,
   getClientStyleLog,
-  getClientReviews
+  getClientReviews,
+  syncCatalogsFromApi
 } from "../services/clientStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 import { toast } from "sonner";
 import Modal from "../../admin/shared/components/Modal";
+import { getLocalDateString, addDays } from "../../../shared/utils/dateUtils";
 
 export default function ClientDashboard() {
   const [profile, setProfile] = useState(null);
@@ -82,7 +85,7 @@ export default function ClientDashboard() {
     setProfile(prof);
 
     const appointments = getClientAppointments();
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getLocalDateString();
 
     // Buscar la cita próxima más cercana
     const upcoming = appointments
@@ -111,8 +114,17 @@ export default function ClientDashboard() {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    syncCatalogsFromApi().then(() => loadDashboardData()).catch(() => loadDashboardData());
   }, []);
+
+  useDataSync([
+    SYNC_ENTITIES.PACKAGES,
+    SYNC_ENTITIES.SERVICES,
+    SYNC_ENTITIES.APPOINTMENTS,
+    SYNC_ENTITIES.SALES
+  ], () => {
+    syncCatalogsFromApi().then(() => loadDashboardData()).catch(() => loadDashboardData());
+  });
 
   // Actualizar slots al cambiar fecha en reagendar
   useEffect(() => {
@@ -126,9 +138,7 @@ export default function ClientDashboard() {
 
   const handleOpenReschedule = () => {
     if (!upcomingAppointment) return;
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+    const tomorrowStr = addDays(getLocalDateString(), 1);
     setRescheduleDate(tomorrowStr);
     setShowRescheduleModal(true);
   };
@@ -639,7 +649,7 @@ export default function ClientDashboard() {
               </label>
               <input
                 type="date"
-                min={new Date().toISOString().split("T")[0]}
+                min={getLocalDateString()}
                 value={rescheduleDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-input-background border border-input text-foreground text-sm focus:ring-2 focus:ring-[#DFB755]"

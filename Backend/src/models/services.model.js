@@ -178,12 +178,20 @@ export class ServicesRepository {
     return true;
   }
 
-  static async findAllCategories() {
+  static async findAllCategories({ status = "all" } = {}) {
     if (isDatabaseConnected()) {
-      const sql = `SELECT * FROM categoria_servicio WHERE estado = 1 ORDER BY nombre ASC`;
-      return await executeQuery(sql);
+      let sql = `SELECT * FROM categoria_servicio WHERE 1=1`;
+      const params = [];
+      if (status !== "all") {
+        sql += ` AND estado = ?`;
+        params.push(Number(status));
+      }
+      sql += ` ORDER BY nombre ASC`;
+      return await executeQuery(sql, params);
     }
-    return mockStore.categoria_servicios.filter((c) => c.estado === 1);
+    return mockStore.categoria_servicios.filter(
+      (c) => status === "all" || c.estado === Number(status)
+    );
   }
 
   static async createCategory(nombre) {
@@ -194,7 +202,47 @@ export class ServicesRepository {
     }
     const nextId = Math.max(...mockStore.categoria_servicios.map((c) => c.id_categoria_servicio || 0), 0) + 1;
     mockStore.categoria_servicios.push({ id_categoria_servicio: nextId, nombre, estado: 1 });
+    mockStore.saveToFile();
     return nextId;
+  }
+
+  static async updateCategory(id, nombre) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`UPDATE categoria_servicio SET nombre = ? WHERE id_categoria_servicio = ?`, [nombre, catId]);
+      return true;
+    }
+    const cat = mockStore.categoria_servicios.find((c) => c.id_categoria_servicio === catId);
+    if (cat) cat.nombre = nombre;
+    mockStore.saveToFile();
+    return true;
+  }
+
+  static async toggleCategoryStatus(id) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      const rows = await executeQuery(`SELECT estado FROM categoria_servicio WHERE id_categoria_servicio = ?`, [catId]);
+      if (!rows || rows.length === 0) return null;
+      const newStatus = rows[0].estado === 1 ? 0 : 1;
+      await executeQuery(`UPDATE categoria_servicio SET estado = ? WHERE id_categoria_servicio = ?`, [newStatus, catId]);
+      return newStatus;
+    }
+    const cat = mockStore.categoria_servicios.find((c) => c.id_categoria_servicio === catId);
+    if (!cat) return null;
+    cat.estado = cat.estado === 1 ? 0 : 1;
+    mockStore.saveToFile();
+    return cat.estado;
+  }
+
+  static async deleteCategory(id) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`DELETE FROM categoria_servicio WHERE id_categoria_servicio = ?`, [catId]);
+      return true;
+    }
+    mockStore.categoria_servicios = mockStore.categoria_servicios.filter((c) => c.id_categoria_servicio !== catId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 

@@ -4,6 +4,7 @@ import FormFieldError from "../../shared/components/FormFieldError";
 import SearchableSelect from "../../shared/components/SearchableSelect";
 import { availableRoles } from "../hooks/useUsers";
 import { validateUserForm } from "../validations/userValidation";
+import { DOCUMENT_TYPES } from "../../../../shared/constants/documentTypes";
 
 export default function UserFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
@@ -30,6 +31,42 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
   return (
     <Modal title={isCreate ? "Crear Nuevo Usuario" : "Editar Usuario"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* DOCUMENTO DE IDENTIDAD DE PRIMER CAMPO */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3.5 bg-secondary/20 border border-border/80 rounded-2xl">
+          <div className="sm:col-span-5">
+            <SearchableSelect
+              label="Tipo de Documento"
+              value={formData.tipo_documento || "CC"}
+              onChange={(val) => handleChange("tipo_documento", val)}
+              options={DOCUMENT_TYPES}
+              searchable={false}
+            />
+          </div>
+
+          <div className="sm:col-span-7">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Número de Documento
+            </label>
+            <input
+              type="text"
+              name="documento"
+              id="documento"
+              maxLength={20}
+              value={formData.documento || ""}
+              onChange={(e) => handleChange("documento", e.target.value)}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.documento
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: 1020304050"
+              autoFocus
+            />
+            <FormFieldError error={errors.documento} />
+          </div>
+        </div>
+
+        {/* Nombres y Apellidos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -48,7 +85,6 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
                   : "border-input focus:ring-2 focus:ring-primary"
               }`}
               placeholder="Ej: Juan"
-              autoFocus
             />
             <FormFieldError error={errors.nombre} />
           </div>
@@ -75,6 +111,7 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
           </div>
         </div>
 
+        {/* Correo Electrónico */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Correo Electrónico <span className="text-destructive">*</span>
@@ -96,26 +133,8 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
           <FormFieldError error={errors.correo} />
         </div>
 
+        {/* Teléfono y Rol */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Documento de Identidad</label>
-            <input
-              type="text"
-              name="documento"
-              id="documento"
-              maxLength={20}
-              value={formData.documento || ""}
-              onChange={(e) => handleChange("documento", e.target.value)}
-              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.documento
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-              placeholder="Ej: 1020304050"
-            />
-            <FormFieldError error={errors.documento} />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">Teléfono</label>
             <input
@@ -145,18 +164,18 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
             />
             <FormFieldError error={errors.telefono} />
           </div>
-        </div>
 
-        <div>
-          <SearchableSelect
-            label="Rol en el Sistema"
-            required
-            options={availableRoles.map((role) => ({ value: role.id_rol, label: role.nombre_rol }))}
-            value={formData.id_rol}
-            onChange={(val) => handleChange("id_rol", Number(val))}
-            placeholder="Seleccionar rol de usuario..."
-            error={errors.id_rol}
-          />
+          <div>
+            <SearchableSelect
+              label="Rol en el Sistema"
+              required
+              options={availableRoles.map((role) => ({ value: role.id_rol, label: role.nombre_rol }))}
+              value={formData.id_rol}
+              onChange={(val) => handleChange("id_rol", Number(val))}
+              placeholder="Seleccionar rol de usuario..."
+              error={errors.id_rol}
+            />
+          </div>
         </div>
 
         {isCreate && (
@@ -181,6 +200,20 @@ export default function UserFormModal({ mode, formData, setFormData, onSubmit, o
             <FormFieldError error={errors.contrasena} />
           </div>
         )}
+
+        {/* Estado del Usuario (Universal al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado !== undefined ? formData.estado : 1}
+            onChange={(val) => handleChange("estado", Number(val))}
+            options={[
+              { value: 1, label: "Activo (Acceso habilitado al sistema)" },
+              { value: 0, label: "Inactivo (Acceso suspendido)" }
+            ]}
+            searchable={false}
+          />
+        </div>
 
         <div className="flex gap-3 pt-3 border-t border-border">
           <button

@@ -46,12 +46,31 @@ export class ServicesService {
     return true;
   }
 
-  static async getAllCategories() {
-    return await ServicesRepository.findAllCategories();
+  static async getAllCategories(filters = {}) {
+    return await ServicesRepository.findAllCategories(filters);
   }
 
   static async createCategory(nombre) {
     const newId = await ServicesRepository.createCategory(nombre);
     return { id_categoria_servicio: newId, nombre, estado: 1 };
+  }
+
+  static async updateCategory(id, nombre) {
+    await ServicesRepository.updateCategory(id, nombre);
+    return { id_categoria_servicio: Number(id), nombre };
+  }
+
+  static async toggleCategoryStatus(id) {
+    const newStatus = await ServicesRepository.toggleCategoryStatus(id);
+    return { id_categoria_servicio: Number(id), estado: newStatus };
+  }
+
+  static async deleteCategory(id) {
+    const services = await ServicesRepository.findAll({ category: id });
+    if (services && services.length > 0) {
+      throw ApiError.badRequest("No se puede eliminar la categoría porque tiene servicios asociados.");
+    }
+    await ServicesRepository.deleteCategory(id);
+    return true;
   }
 }

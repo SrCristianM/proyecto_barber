@@ -9,7 +9,8 @@ export const createAppointmentValidation = [
     .custom((val, { req }) => {
       if (Array.isArray(val) && val.length > 0) return true;
       if (req.body.id_servicio) return true;
-      throw new Error("Debes especificar al menos un servicio para la cita.");
+      if (req.body.id_paquete) return true;
+      throw new Error("Debes especificar al menos un servicio o paquete para la cita.");
     }),
   body("estado").optional().isIn(["Programada", "Confirmada", "En Proceso", "Completada", "Cancelada", "Reprogramada"])
 ];

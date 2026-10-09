@@ -64,7 +64,10 @@ export class ProductsController {
 
   static async getCategories(req, res, next) {
     try {
-      const categories = await ProductsService.getAllCategories();
+      const filters = {
+        status: req.query.status || "all"
+      };
+      const categories = await ProductsService.getAllCategories(filters);
       return ApiResponse.success(res, categories, "Categorías de producto obtenidas");
     } catch (error) {
       next(error);
@@ -75,6 +78,33 @@ export class ProductsController {
     try {
       const newCat = await ProductsService.createCategory(req.body.nombre);
       return ApiResponse.created(res, newCat, "Categoría creada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateCategory(req, res, next) {
+    try {
+      const updated = await ProductsService.updateCategory(req.params.id, req.body.nombre);
+      return ApiResponse.success(res, updated, "Categoría actualizada exitosamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async toggleCategoryStatus(req, res, next) {
+    try {
+      const result = await ProductsService.toggleCategoryStatus(req.params.id);
+      return ApiResponse.success(res, result, "Estado de categoría modificado");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteCategory(req, res, next) {
+    try {
+      await ProductsService.deleteCategory(req.params.id);
+      return ApiResponse.success(res, null, "Categoría eliminada exitosamente");
     } catch (error) {
       next(error);
     }

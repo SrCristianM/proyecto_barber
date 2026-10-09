@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes.jsx";
 import { SalonAudioProvider } from "./client/context/SalonAudioContext.jsx";
+import { syncCatalogsFromApi } from "./client/services/clientStorageService.js";
 
 // Purga integral de datos registrados para entrega limpia y alineación con app móvil (v3)
 try {
@@ -158,6 +159,10 @@ export default function App() {
       // Ignorar error de storage
     }
   }, [isDark]);
+
+  useEffect(() => {
+    syncCatalogsFromApi().catch(() => {});
+  }, []);
 
   return (
     <div className={isDark ? "dark" : ""}>

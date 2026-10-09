@@ -66,6 +66,21 @@ export default function ServiceDetailModal({ service, onEdit, onClose }) {
             </span>
             <p className="text-base font-medium text-foreground">Individual / Paquete</p>
           </div>
+
+          <div className="sm:col-span-2 pt-3 border-t border-border/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Estado del Servicio
+            </span>
+            <span
+              className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+                service.estado === 1
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}
+            >
+              {service.estado === 1 ? "● Activo" : "● Inactivo"}
+            </span>
+          </div>
         </div>
 
         {/* Botones de acción */}

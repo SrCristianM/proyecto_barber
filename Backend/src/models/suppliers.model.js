@@ -90,11 +90,14 @@ export class SuppliersRepository {
     const newSupplier = {
       id_proveedor: nextId,
       nombre: supplierData.nombre,
+      tipo_documento: supplierData.tipo_documento || "NIT",
+      tipo_persona: supplierData.tipo_persona || "Persona Jurídica",
       nit: supplierData.nit || null,
       telefono: supplierData.telefono || null,
       correo: supplierData.correo || null,
       direccion: supplierData.direccion || null,
-      estado: supplierData.estado !== undefined ? supplierData.estado : 1
+      estado: supplierData.estado !== undefined ? supplierData.estado : 1,
+      factura_pdf: supplierData.factura_pdf || null
     };
     mockStore.proveedores.push(newSupplier);
     mockStore.saveToFile();
@@ -126,11 +129,14 @@ export class SuppliersRepository {
     const p = mockStore.proveedores.find((prov) => prov.id_proveedor === supplierId);
     if (!p) return false;
     if (supplierData.nombre !== undefined) p.nombre = supplierData.nombre;
+    if (supplierData.tipo_documento !== undefined) p.tipo_documento = supplierData.tipo_documento;
+    if (supplierData.tipo_persona !== undefined) p.tipo_persona = supplierData.tipo_persona;
     if (supplierData.nit !== undefined) p.nit = supplierData.nit;
     if (supplierData.telefono !== undefined) p.telefono = supplierData.telefono;
     if (supplierData.correo !== undefined) p.correo = supplierData.correo;
     if (supplierData.direccion !== undefined) p.direccion = supplierData.direccion;
     if (supplierData.estado !== undefined) p.estado = supplierData.estado;
+    if (supplierData.factura_pdf !== undefined) p.factura_pdf = supplierData.factura_pdf;
     mockStore.saveToFile();
     return true;
   }

@@ -10,6 +10,7 @@ import {
 import { getCurrentUser } from "../../../auth/services/authService.js";
 
 /** Devuelve texto legible para el tiempo relativo */
+/** Devuelve texto legible para el tiempo relativo */
 export function timeAgo(date) {
   if (!date) return "Reciente";
   const d = date instanceof Date ? date : new Date(date);
@@ -21,6 +22,51 @@ export function timeAgo(date) {
   if (hours < 24) return `Hace ${hours} hora${hours > 1 ? "s" : ""}`;
   const days = Math.floor(hours / 24);
   return `Hace ${days} día${days > 1 ? "s" : ""}`;
+}
+
+/** Devuelve la fecha y hora exacta en la zona horaria local del usuario */
+export function formatExactDateTime(date) {
+  if (!date) return "";
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return "";
+
+  const now = new Date();
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday =
+    d.getDate() === yesterday.getDate() &&
+    d.getMonth() === yesterday.getMonth() &&
+    d.getFullYear() === yesterday.getFullYear();
+
+  const timeStr = d.toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+
+  if (isToday) {
+    return `Hoy, ${timeStr}`;
+  } else if (isYesterday) {
+    return `Ayer, ${timeStr}`;
+  } else if (d.getFullYear() === now.getFullYear()) {
+    const dateStr = d.toLocaleDateString("es-CO", {
+      day: "numeric",
+      month: "short"
+    });
+    return `${dateStr}, ${timeStr}`;
+  } else {
+    const dateStr = d.toLocaleDateString("es-CO", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+    return `${dateStr}, ${timeStr}`;
+  }
 }
 
 /** Colores e iconos por tipo de notificación */

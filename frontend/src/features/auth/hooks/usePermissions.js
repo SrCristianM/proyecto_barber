@@ -52,7 +52,7 @@ export function usePermissions() {
       if (storedRolesRaw) {
         const storedRoles = JSON.parse(storedRolesRaw);
         const currentRole = storedRoles.find((r) => Number(r.id_rol) === Number(roleId));
-        if (currentRole && Array.isArray(currentRole.permisos)) {
+        if (currentRole && Array.isArray(currentRole.permisos) && currentRole.permisos.length > 0) {
           if (isAdmin) {
             // Regla de seguridad anti-lockout: Administrador SIEMPRE conserva los permisos de gestión de roles
             return Array.from(new Set([...currentRole.permisos, ...SYSTEM_ROLES_PERMISSIONS]));
@@ -72,7 +72,7 @@ export function usePermissions() {
       return user.permisos;
     }
 
-    // 3. Permisos predeterminados de fábrica (solo si no han sido personalizados)
+    // 3. Permisos predeterminados de fábrica según la lógica de la aplicación
     if (isAdmin) {
       return ["*"];
     }
@@ -87,21 +87,31 @@ export function usePermissions() {
         "clientes_ver", "clientes_crear", "clientes_editar", "clientes_activar",
         "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
         "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
+        "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar",
         "proveedores_ver", "proveedores_eliminar"
       ];
     }
 
     if (isBarbero) {
       return [
-        "citas_ver", "citas_editar",
-        "horarios_ver", "horarios_crear",
-        "servicios_ver",
+        "citas_ver", "citas_crear", "citas_editar", "citas_cancelar",
+        "horarios_ver", "horarios_crear", "horarios_editar", "horarios_eliminar", "horarios_activar",
+        "servicios_ver", "paquetes_ver",
+        "productos_ver",
+        "clientes_ver",
         "ventas_ver"
       ];
     }
 
     if (isCliente) {
-      return ["citas_ver", "citas_crear", "citas_cancelar", "servicios_ver", "productos_ver"];
+      return [
+        "citas_ver", "citas_crear", "citas_cancelar",
+        "servicios_ver", "paquetes_ver",
+        "productos_ver",
+        "horarios_ver",
+        "barberos_ver",
+        "ventas_ver", "ventas_crear"
+      ];
     }
 
     return [];

@@ -15,15 +15,22 @@ export default function SaleFormModal({
   onUpdateItemQuantity,
   onRemoveItem,
   onSubmit,
-  onClose
+  onClose,
+  clients: clientsProp,
+  users: usersProp,
+  catalogItems: catalogItemsProp
 }) {
   const isCreate = mode === "create";
-  const currentUser = users.find((u) => u.id_usuario === Number(formData.id_usuario)) || users[0];
-  const [selectedCatalogId, setSelectedCatalogId] = useState(catalogItems[0]?.id_item || catalogItems[0]?.id || "");
+  const activeClients = (clientsProp && clientsProp.length > 0) ? clientsProp : clients;
+  const activeUsers = (usersProp && usersProp.length > 0) ? usersProp : users;
+  const activeCatalog = (catalogItemsProp && catalogItemsProp.length > 0) ? catalogItemsProp : catalogItems;
+
+  const currentUser = activeUsers.find((u) => u.id_usuario === Number(formData.id_usuario)) || activeUsers[0];
+  const [selectedCatalogId, setSelectedCatalogId] = useState(activeCatalog[0]?.id_item || activeCatalog[0]?.id || "");
   const [addQty, setAddQty] = useState(1);
   const [errors, setErrors] = useState({});
 
-  const catalogOptions = (catalogItems || []).map((c) => {
+  const catalogOptions = (activeCatalog || []).map((c) => {
     const price = Number(c.precio_unitario ?? c.precio ?? 0);
     const tipo = c.tipo_item ?? c.tipo ?? "";
     const id = c.id_item ?? c.id ?? "";
@@ -37,7 +44,7 @@ export default function SaleFormModal({
   });
 
   const handleAddNewItem = () => {
-    const item = catalogItems.find((c) => (c.id_item ?? c.id) === selectedCatalogId);
+    const item = activeCatalog.find((c) => (c.id_item ?? c.id) === selectedCatalogId);
     if (!item) return;
     onAddItem(item, addQty);
     setAddQty(1);
@@ -71,7 +78,7 @@ export default function SaleFormModal({
             <SearchableSelect
               label="Cliente"
               required
-              options={clients.map((client) => ({
+              options={activeClients.map((client) => ({
                 value: client.id_cliente,
                 label: `${client.nombre} ${client.apellido || ""}${client.documento ? ` (Doc: ${client.documento})` : ""}`.trim()
               }))}
@@ -284,6 +291,20 @@ export default function SaleFormModal({
             </div>
           )}
           <FormFieldError error={errors.detalles} />
+        </div>
+
+        {/* Estado de la Venta (Universal al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado || "Activa"}
+            onChange={(val) => setFormData((prev) => ({ ...prev, estado: val }))}
+            options={[
+              { value: "Activa", label: "Activa / Registrada (Factura válida)" },
+              { value: "Anulada", label: "Anulada" }
+            ]}
+            searchable={false}
+          />
         </div>
 
         {/* Botones de acción */}

@@ -1,18 +1,23 @@
+import { useState } from "react";
 import { Plus, Download, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useRoles } from "../hooks/useRoles";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import RolesTable from "../components/RolesTable";
+import RoleCard from "../components/RoleCard";
 import RolesStats from "../components/RolesStats";
 import RoleFormModal from "../components/RoleFormModal";
 import RoleDetailModal from "../components/RoleDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 
 export default function RolesPage() {
   useSearchHighlight();
+  const [viewMode, setViewMode] = useState("table");
+
   const {
     roles,
     searchTerm,
@@ -90,7 +95,7 @@ export default function RolesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {roles.length === 0 ? "Crear primer rol" : "Nuevo Rol"}
@@ -101,8 +106,8 @@ export default function RolesPage() {
       {/* Stats Cards */}
       <RolesStats roles={roles} />
 
-      {/* Filtros y tabla */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      {/* Filtros y tabla / tarjetas */}
+      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-5 shadow-xs">
         {/* Toolbar Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -139,9 +144,11 @@ export default function RolesPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar
@@ -149,20 +156,38 @@ export default function RolesPage() {
           </div>
         </div>
 
-        <RolesTable
-          roles={filteredRoles}
-          totalCount={roles.length}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onDetail={openDetailModal}
-          onToggleStatus={openDeactivateModal}
-          onEdit={openEditModal}
-          onDelete={openDeleteModal}
-          canEdit={canEditRole}
-          canToggle={canToggleRole}
-          canDelete={canDeleteRole}
-        />
+        {viewMode === "table" ? (
+          <RolesTable
+            roles={filteredRoles}
+            totalCount={roles.length}
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onDetail={openDetailModal}
+            onToggleStatus={openDeactivateModal}
+            onEdit={openEditModal}
+            onDelete={openDeleteModal}
+            canEdit={canEditRole}
+            canToggle={canToggleRole}
+            canDelete={canDeleteRole}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRoles.map((role) => (
+              <RoleCard
+                key={role.id_rol}
+                role={role}
+                onDetail={openDetailModal}
+                onToggleStatus={openDeactivateModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+                canEdit={canEditRole}
+                canToggle={canToggleRole}
+                canDelete={canDeleteRole}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal Crear */}
@@ -196,23 +221,23 @@ export default function RolesPage() {
         />
       )}
 
-      {/* Modal Confirmar Eliminar */}
+      {/* Modal Eliminar */}
       {showDeleteModal && selectedRole && (
         <ConfirmModal
           variant="delete"
           title="¿Eliminar este rol?"
-          description={`Se eliminará el rol "${selectedRole.nombre_rol}" de forma permanente. Esta acción no se puede deshacer.`}
+          description={`Se eliminará el rol "${selectedRole.nombre_rol}". Los usuarios asignados deberán ser reasignados.`}
           confirmLabel="Eliminar"
           onConfirm={onHandleDelete}
           onClose={() => { setShowDeleteModal(false); setSelectedRole(null); }}
         />
       )}
 
-      {/* Modal Confirmar Desactivar/Activar */}
+      {/* Modal Activar / Desactivar */}
       {showDeactivateModal && selectedRole && (
         <ConfirmModal
           variant="deactivate"
-          title={selectedRole.estado === 1 ? "¿Desactivar este rol?" : "¿Activar este rol?"}
+          title={selectedRole.estado === 1 ? "¿Desactivar rol?" : "¿Activar rol?"}
           description={`Esta acción cambiará el estado del rol "${selectedRole.nombre_rol}".`}
           confirmLabel={selectedRole.estado === 1 ? "Desactivar" : "Activar"}
           onConfirm={onToggleStatus}

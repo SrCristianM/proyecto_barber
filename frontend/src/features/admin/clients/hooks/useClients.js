@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { NIVELES_FIDELIDAD } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
@@ -9,6 +9,11 @@ import {
   deleteClient,
   toggleClientStatus
 } from "../services/clientsService";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService";
 
 const mockClients = [];
 
@@ -132,23 +137,28 @@ export function useClients() {
     setClients([]);
   };
 
-  useEffect(() => {
-    getClients()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setClients(data);
-          try {
-            localStorage.setItem("barber_clients_db", JSON.stringify(data));
-          } catch {}
-        } else {
-          loadLocalClients();
-        }
-      })
-      .catch((err) => {
-        console.warn("[Clients] Usando datos de clientes registrados locales:", err.message);
+  const fetchClientsList = useCallback(async () => {
+    try {
+      const data = await getClients();
+      if (Array.isArray(data)) {
+        setClients(data);
+        try {
+          localStorage.setItem("barber_clients_db", JSON.stringify(data));
+        } catch {}
+      } else {
         loadLocalClients();
-      });
+      }
+    } catch (err) {
+      console.warn("[Clients] Usando datos de clientes registrados locales:", err.message);
+      loadLocalClients();
+    }
   }, []);
+
+  useEffect(() => {
+    fetchClientsList();
+  }, [fetchClientsList]);
+
+  useDataSync([SYNC_ENTITIES.CLIENTS, SYNC_ENTITIES.USERS], fetchClientsList);
 
   const handleCreate = async () => {
     const payload = {
@@ -178,6 +188,7 @@ export function useClients() {
       });
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.CLIENTS, newClient);
       toast.success("Cliente registrado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al registrar el cliente.");
@@ -208,6 +219,7 @@ export function useClients() {
       setShowEditModal(false);
       setSelectedClient(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.CLIENTS, { id_cliente: selectedClient.id_cliente, ...payload });
       toast.success("Cliente actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el cliente.");
@@ -234,7 +246,9 @@ export function useClients() {
         }
       } catch {}
       setShowDeleteModal(false);
+      const deletedId = selectedClient.id_cliente;
       setSelectedClient(null);
+      notifyDataChange(SYNC_ENTITIES.CLIENTS, { id_cliente: deletedId, deleted: true });
       toast.success("Cliente eliminado.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el cliente.");
@@ -249,6 +263,7 @@ export function useClients() {
           client.id_cliente === clientId ? { ...client, estado: client.estado === 1 ? 0 : 1 } : client
         )
       );
+      notifyDataChange(SYNC_ENTITIES.CLIENTS, { id_cliente: clientId, toggled: true });
       toast.success("Estado del cliente actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del cliente.");

@@ -27,6 +27,7 @@ import {
   fetchBarberAppointments
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
@@ -57,6 +58,8 @@ export default function BarberAppointmentsPage() {
   useEffect(() => {
     loadAppointments();
   }, []);
+
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS], loadAppointments);
 
   const loadAppointments = async () => {
     setLoading(true);

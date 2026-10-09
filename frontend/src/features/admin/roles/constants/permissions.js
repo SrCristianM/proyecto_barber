@@ -10,20 +10,67 @@ export const SYSTEM_ROLE_ORDER = ["Administrador", "Barbero", "Recepcionista", "
 
 export const DEFAULT_ROLE_PERMISSIONS = {
   Administrador: {
-    permisos: ["ver", "crear", "editar", "eliminar", "asignar_roles"],
+    permisos: [
+      "usuarios_ver", "usuarios_crear", "usuarios_editar", "usuarios_eliminar", "usuarios_activar",
+      "roles_ver", "roles_crear", "roles_editar", "roles_eliminar", "roles_asignar",
+      "citas_ver", "citas_crear", "citas_editar", "citas_cancelar",
+      "servicios_ver", "servicios_crear", "servicios_editar", "servicios_eliminar", "servicios_activar",
+      "productos_ver", "productos_crear", "productos_editar", "productos_eliminar", "productos_activar",
+      "ventas_ver", "ventas_crear", "ventas_editar", "ventas_anular",
+      "horarios_ver", "horarios_crear", "horarios_editar", "horarios_eliminar", "horarios_activar",
+      "clientes_ver", "clientes_crear", "clientes_editar", "clientes_activar",
+      "proveedores_ver", "proveedores_crear", "proveedores_editar", "proveedores_eliminar", "proveedores_activar",
+      "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
+      "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
+      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar"
+    ],
+    alcancePorPermiso: {}
+  },
+  Recepcionista: {
+    permisos: [
+      "citas_ver", "citas_crear", "citas_editar", "citas_cancelar",
+      "servicios_ver", "servicios_crear", "servicios_editar", "servicios_eliminar", "servicios_activar",
+      "productos_ver", "productos_crear", "productos_editar", "productos_eliminar", "productos_activar",
+      "ventas_ver", "ventas_crear", "ventas_editar", "ventas_anular",
+      "horarios_ver", "horarios_crear", "horarios_editar", "horarios_eliminar", "horarios_activar",
+      "clientes_ver", "clientes_crear", "clientes_editar", "clientes_activar",
+      "proveedores_ver", "proveedores_eliminar",
+      "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
+      "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
+      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar"
+    ],
     alcancePorPermiso: {}
   },
   Barbero: {
-    permisos: ["ver", "editar"],
-    alcancePorPermiso: { editar: "solo sus citas" }
-  },
-  Recepcionista: {
-    permisos: ["ver", "crear", "editar"],
-    alcancePorPermiso: {}
+    permisos: [
+      "citas_ver", "citas_crear", "citas_editar", "citas_cancelar",
+      "horarios_ver", "horarios_crear", "horarios_editar", "horarios_eliminar", "horarios_activar",
+      "servicios_ver", "paquetes_ver",
+      "productos_ver",
+      "clientes_ver",
+      "ventas_ver"
+    ],
+    alcancePorPermiso: {
+      citas_editar: "sus citas asignadas",
+      citas_cancelar: "sus citas asignadas",
+      horarios_crear: "sus novedades de turno",
+      ventas_ver: "sus comisiones y reportes"
+    }
   },
   Cliente: {
-    permisos: ["ver", "crear"],
-    alcancePorPermiso: { crear: "solo sus propias citas" }
+    permisos: [
+      "citas_ver", "citas_crear", "citas_cancelar",
+      "servicios_ver", "paquetes_ver",
+      "productos_ver",
+      "horarios_ver",
+      "barberos_ver",
+      "ventas_ver", "ventas_crear"
+    ],
+    alcancePorPermiso: {
+      citas_crear: "sus propias reservas",
+      citas_cancelar: "sus propias citas",
+      ventas_ver: "sus propios comprobantes"
+    }
   }
 };
 
@@ -33,7 +80,7 @@ export function getPermissionLabel(key) {
 
 export function formatPermissionItems(permisos = [], alcancePorPermiso = {}) {
   return permisos.map((key) => {
-    const label = getPermissionLabel(key).toLowerCase();
+    const label = getHumanPermissionLabel(key) || getPermissionLabel(key);
     const alcance = alcancePorPermiso[key];
     return alcance ? `${label} (${alcance})` : label;
   });
@@ -168,6 +215,29 @@ export const SYSTEM_MODULES = [
       { key: "compras_editar", label: "Editar Compras", accion: "Editar" },
       { key: "compras_anular", label: "Anular Compras", accion: "Anular" },
       { key: "compras_eliminar", label: "Eliminar Compras", accion: "Eliminar" }
+    ]
+  },
+  {
+    id: "barberos",
+    label: "Barberos",
+    iconName: "Scissors",
+    acciones: [
+      { key: "barberos_ver", label: "Ver Barberos", accion: "Ver" },
+      { key: "barberos_crear", label: "Crear Barberos", accion: "Crear" },
+      { key: "barberos_editar", label: "Editar Barberos", accion: "Editar" },
+      { key: "barberos_eliminar", label: "Eliminar Barberos", accion: "Eliminar" },
+      { key: "barberos_activar", label: "Activar / Desactivar", accion: "Estado" }
+    ]
+  },
+  {
+    id: "paquetes",
+    label: "Paquetes",
+    iconName: "Layers",
+    acciones: [
+      { key: "paquetes_ver", label: "Ver Paquetes", accion: "Ver" },
+      { key: "paquetes_crear", label: "Crear Paquetes", accion: "Crear" },
+      { key: "paquetes_editar", label: "Editar Paquetes", accion: "Editar" },
+      { key: "paquetes_eliminar", label: "Eliminar Paquetes", accion: "Eliminar" }
     ]
   }
 ];

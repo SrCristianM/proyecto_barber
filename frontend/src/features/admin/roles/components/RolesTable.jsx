@@ -18,29 +18,29 @@ export default function RolesTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[480px] sm:min-w-[650px] text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-3 px-4">
+            <tr className="border-b border-border text-[10px] sm:text-xs">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Rol" field="nombre_rol" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Descripción" field="descripcion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">Permisos</th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4 font-medium text-muted-foreground uppercase tracking-wide">Permisos</th>
+              <th className="hidden md:table-cell text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Creación" field="fecha_creacion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">Acciones</th>
+              <th className="text-right py-2.5 px-2 sm:py-3 sm:px-4 font-medium text-muted-foreground uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {roles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                <td colSpan={6} className="py-12 text-center text-xs sm:text-sm text-muted-foreground">
                   No se encontraron roles con los filtros aplicados
                 </td>
               </tr>
@@ -52,11 +52,11 @@ export default function RolesTable({
                   data-highlight-id={`rol-${role.id_rol}`}
                   className="border-b border-border hover:bg-accent/40 transition-colors"
                 >
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-foreground">{role.nombre_rol}</span>
+                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
+                    <span className="font-semibold text-foreground text-xs sm:text-sm">{role.nombre_rol}</span>
                   </td>
-                  <td className="py-3 px-4 text-muted-foreground">{role.descripcion || "—"}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 px-2 sm:py-3 sm:px-4 text-muted-foreground text-xs sm:text-sm max-w-[160px] truncate">{role.descripcion || "—"}</td>
+                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
                     {(() => {
                       const count = (role.permisos || []).length;
                       const totalPossible = 23;
@@ -65,12 +65,12 @@ export default function RolesTable({
                       const isMid = pct >= 50;
 
                       return (
-                        <div className="space-y-1.5 min-w-[130px]">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-foreground">{count} permisos</span>
-                            <span className="text-[10px] text-muted-foreground font-mono">{pct}%</span>
+                        <div className="space-y-1 min-w-[90px] sm:min-w-[130px]">
+                          <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                            <span className="font-semibold text-foreground">{count} perms</span>
+                            <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono">{pct}%</span>
                           </div>
-                          <div className="w-24 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                          <div className="w-16 sm:w-24 h-1 sm:h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
                             <div
                               style={{ width: `${pct}%` }}
                               className={`h-full rounded-full transition-all ${isFull
@@ -85,50 +85,50 @@ export default function RolesTable({
                       );
                     })()}
                   </td>
-                  <td className="py-3 px-4 text-muted-foreground text-xs">{role.fecha_creacion?.split(" ")[0]}</td>
-                  <td className="py-3 px-4">
+                  <td className="hidden md:table-cell py-2.5 px-2 sm:py-3 sm:px-4 text-muted-foreground text-xs">{role.fecha_creacion?.split(" ")[0]}</td>
+                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${role.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
+                      className={`inline-flex items-center px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full border ${role.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                         }`}
                     >
                       {role.estado === 1 ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
+                    <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                       <button
                         onClick={() => onDetail(role)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-1 sm:p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                         title="Ver detalle"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       {canToggle && (
                         <button
                           onClick={() => onToggleStatus(role)}
-                          className={`p-1.5 hover:bg-accent rounded-lg transition-colors ${role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
+                          className={`p-1 sm:p-1.5 hover:bg-accent rounded-lg transition-colors ${role.estado === 1 ? "text-success hover:text-success/80" : "text-muted-foreground hover:text-foreground"
                             }`}
                           title={role.estado === 1 ? "Desactivar" : "Activar"}
                         >
-                          <Power className="h-4 w-4" />
+                          <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                       {canEdit && (
                         <button
                           onClick={() => onEdit(role)}
-                          className="p-1.5 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors"
+                          className="p-1 sm:p-1.5 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors"
                           title="Editar"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                       {canDelete && (
                         <button
                           onClick={() => onDelete(role)}
-                          className="p-1.5 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors"
+                          className="p-1 sm:p-1.5 hover:bg-accent rounded-lg text-destructive hover:text-destructive/80 transition-colors"
                           title="Eliminar"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                     </div>

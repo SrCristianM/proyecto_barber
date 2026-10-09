@@ -1,18 +1,38 @@
-import { ShoppingBag, Building2, CheckCircle2, Ban, FileDown, FileText } from "lucide-react";
+import { ShoppingBag, Building2, CheckCircle2, Ban, FileDown } from "lucide-react";
 import Modal from "../../shared/components/Modal";
-import { availableSuppliers, availableUsers, availableProducts } from "../hooks/usePurchases";
 import { downloadPurchaseInvoicePDF } from "../../../../shared/utils/pdfInvoiceGenerator";
 
-export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
+export default function PurchaseDetailModal({
+  purchase,
+  suppliers = [],
+  products = [],
+  getSupplierObject,
+  onEdit,
+  onClose
+}) {
   if (!purchase) return null;
 
-  const supplier = availableSuppliers.find((s) => s.id_proveedor === Number(purchase.id_proveedor));
-  const user = availableUsers.find((u) => u.id_usuario === Number(purchase.id_usuario));
+  const supplier = getSupplierObject
+    ? getSupplierObject(purchase.id_proveedor, purchase)
+    : (suppliers || []).find((s) => s.id_proveedor === Number(purchase.id_proveedor)) || {
+        id_proveedor: Number(purchase.id_proveedor),
+        nombre: purchase.proveedor_nombre || `Proveedor #${purchase.id_proveedor}`,
+        nit: purchase.proveedor_nit || "—",
+        telefono: purchase.proveedor_telefono || "",
+        correo: "",
+        direccion: ""
+      };
+
+  const user = {
+    nombre: purchase.usuario_nombre || "Administrador"
+  };
+
   const isAnulada = purchase.estado === "Anulada";
 
   const getProdName = (id_producto, storedName) => {
     if (storedName) return storedName;
-    return availableProducts.find((p) => p.id_producto === Number(id_producto))?.nombre || "Producto";
+    const found = (products || []).find((p) => p.id_producto === Number(id_producto));
+    return found?.nombre || (id_producto ? `Producto #${id_producto}` : "Producto");
   };
 
   return (
@@ -50,7 +70,7 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Registrado Por</span>
-            <span className="text-sm font-semibold text-foreground">{user?.nombre || "Administrador"}</span>
+            <span className="text-sm font-semibold text-foreground">{user.nombre}</span>
           </div>
         </div>
 
@@ -129,7 +149,7 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
                 {(purchase.detalles || []).map((item, idx) => (
                   <tr key={idx} className="hover:bg-muted/20 transition-colors">
                     <td className="py-3 px-4 font-semibold text-foreground">
-                      {getProdName(item.id_producto, item.nombre_producto)}
+                      {getProdName(item.id_producto, item.nombre_producto || item.producto_nombre)}
                     </td>
                     <td className="py-3 px-4 text-center text-foreground font-medium">
                       {item.cantidad} uds.
@@ -155,6 +175,27 @@ export default function PurchaseDetailModal({ purchase, onEdit, onClose }) {
               </tfoot>
             </table>
           </div>
+        </div>
+
+        {/* Estado de la Compra (Universal al final) */}
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Estado de la Compra
+          </span>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1 text-xs font-semibold rounded-full border ${
+              purchase.estado === "Registrada"
+                ? "bg-success/10 text-success border-success/20"
+                : "bg-destructive/10 text-destructive border-destructive/20"
+            }`}
+          >
+            {purchase.estado === "Registrada" ? (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            ) : (
+              <Ban className="h-3.5 w-3.5" />
+            )}
+            <span>{purchase.estado}</span>
+          </span>
         </div>
 
         {/* Acciones */}

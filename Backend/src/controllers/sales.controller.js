@@ -37,7 +37,8 @@ export class SalesController {
 
   static async create(req, res, next) {
     try {
-      const newSale = await SalesService.createSale(req.body, req.user.id_usuario);
+      const userId = req.user?.id_usuario || req.body.id_usuario || 1;
+      const newSale = await SalesService.createSale(req.body, userId);
       return ApiResponse.created(res, newSale, "Venta registrada exitosamente y stock debitado");
     } catch (error) {
       next(error);

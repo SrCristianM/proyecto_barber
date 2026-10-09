@@ -1,11 +1,13 @@
 import rateLimit from "express-rate-limit";
 import { ApiResponse } from "../utils/apiResponse.js";
+import { env } from "../config/env.js";
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 30, // máximo 30 intentos por IP
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === "production" ? 30 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => env.NODE_ENV !== "production", // En desarrollo no bloquear intentos
   handler: (req, res) => {
     return ApiResponse.error(
       res,
@@ -14,4 +16,10 @@ export const authLimiter = rateLimit({
       "TOO_MANY_REQUESTS"
     );
   }
+});
+
+export const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === "production" ? 300 : 10000,
+  skip: () => env.NODE_ENV !== "production"
 });

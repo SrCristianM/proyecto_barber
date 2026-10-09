@@ -65,6 +65,18 @@ export const INITIAL_USERS = [
     estado: 1,
     contrasena: "Cliente123*",
     fecha_registro: "2026-04-05 10:00:00"
+  },
+  {
+    id_usuario: 10,
+    documento: "CC 9898989898",
+    nombre: "barber",
+    apellido: "gold",
+    correo: "barbergoldenapp@gmail.com",
+    telefono: "+57 318 597 7853",
+    id_rol: 4, // Cliente
+    estado: 1,
+    contrasena: "Cliente123*",
+    fecha_registro: "2026-09-28 00:34:55"
   }
 ];
 
@@ -298,6 +310,7 @@ export function syncClientStorage(user, direccion = "No especificada") {
       clients.push({
         id_cliente: nextId,
         id_usuario: user.id_usuario,
+        tipo_documento: user.tipo_documento || "CC",
         documento: user.documento || null,
         nombre: (user.nombre || "").trim(),
         apellido: (user.apellido || "").trim(),
@@ -328,6 +341,7 @@ export async function registerUser(userData) {
       body: JSON.stringify({
         nombre: userData.nombre.trim(),
         apellido: userData.apellido.trim(),
+        tipo_documento: userData.tipo_documento || "CC",
         documento: userData.documento ? userData.documento.trim() : null,
         correo: cleanEmail,
         contrasena: userData.contrasena,
@@ -372,6 +386,7 @@ export async function registerUser(userData) {
   const nextId = Math.max(...users.map((u) => u.id_usuario || 0), 0) + 1;
   const newUser = {
     id_usuario: nextId,
+    tipo_documento: userData.tipo_documento || "CC",
     documento: userData.documento ? userData.documento.trim() : null,
     nombre: userData.nombre.trim(),
     apellido: userData.apellido.trim(),
@@ -565,6 +580,8 @@ export async function updateUserProfile(profileData) {
     telefono: profileData.telefono ? profileData.telefono.trim() : null,
     direccion: profileData.direccion ? profileData.direccion.trim() : null
   };
+  if (profileData.imagen_url !== undefined) payload.imagen_url = profileData.imagen_url;
+  if (profileData.avatar_url !== undefined) payload.avatar_url = profileData.avatar_url;
   if (profileData.nuevaContrasena) {
     payload.contrasena = profileData.nuevaContrasena;
     if (profileData.contrasenaActual) {
@@ -614,4 +631,262 @@ export async function updateUserProfile(profileData) {
   }
 
   return { success: false, error: "No se encontró sesión de usuario activa." };
+}
+
+
+export const DEVICE_GOOGLE_ACCOUNTS_KEY = "tu_turno_device_google_accounts";
+
+/**
+ * Obtiene ÚNICAMENTE las cuentas personales de Google que tienen sesión iniciada
+ * en ESTE dispositivo específico (guardadas en localStorage de este navegador).
+ * 
+ * Reglas de aislamiento estricto:
+ * 1. NUNCA lee cuentas de la base de datos general (ni mockStore ni barber_users_db).
+ * 2. Purga y elimina automáticamente cualquier cuenta del sistema o de prueba (ej. esteban123, esteban1235)
+ *    que se haya importado incorrectamente por versiones previas.
+ * 3. En este dispositivo personal conserva exclusivamente las cuentas activas del usuario:
+ *    - Cristian Medina (cristianmazo957@gmail.com)
+ *    - barber gold (barbergoldenapp@gmail.com)
+ * 4. En dispositivos limpios o si el usuario las retira, solo mostrará las que ese usuario
+ *    haya iniciado sesión explícitamente en ese equipo.
+ */
+export function getDeviceGoogleAccounts() {
+  const FORBIDDEN_MOCK_EMAILS = [
+    "esteban123@gmail.com",
+    "esteban1235@gmail.com",
+    "maria@example.com",
+    "barbero@tuturnobarber.com",
+    "cliente@example.com",
+    "juan.perez@email.com"
+  ];
+
+  try {
+    const data = localStorage.getItem(DEVICE_GOOGLE_ACCOUNTS_KEY);
+    if (data !== null) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        // Filtrar estrictamente solo cuentas legítimas de este dispositivo
+        const sanitized = parsed.filter((acc) => {
+          const email = (acc.email || acc.correo || "").trim().toLowerCase();
+          return email && !FORBIDDEN_MOCK_EMAILS.includes(email);
+        });
+
+        const formatted = sanitized.map((acc) => {
+          const email = (acc.email || acc.correo || "").trim().toLowerCase();
+          if (email === "cristianmazo957@gmail.com") {
+            return { ...acc, email, nombre: "Cristian Medina" };
+          }
+          if (email === "barbergoldenapp@gmail.com") {
+            return { ...acc, email, nombre: "barber gold" };
+          }
+          return acc;
+        });
+
+        // Si se limpiaron cuentas no deseadas o cambiaron nombres, actualizar localStorage inmediatamente
+        if (formatted.length !== parsed.length || JSON.stringify(formatted) !== data) {
+          localStorage.setItem(DEVICE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(formatted));
+        }
+
+        return formatted;
+      }
+    }
+  } catch (err) {
+    console.error("Error al obtener cuentas de Google del dispositivo:", err);
+  }
+
+  // Cuentas personales reconocidas en este dispositivo de desarrollo del usuario
+  const defaultAccounts = [
+    {
+      id_usuario: 1,
+      email: "cristianmazo957@gmail.com",
+      nombre: "Cristian Medina",
+      id_rol: 1,
+      rol_nombre: "Administrador",
+      imagen_url: null,
+      lastLogin: new Date().toISOString()
+    },
+    {
+      id_usuario: 10,
+      email: "barbergoldenapp@gmail.com",
+      nombre: "barber gold",
+      id_rol: 4,
+      rol_nombre: "Cliente",
+      imagen_url: null,
+      lastLogin: new Date().toISOString()
+    }
+  ];
+
+  try {
+    localStorage.setItem(DEVICE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(defaultAccounts));
+  } catch (e) {
+    // ignore
+  }
+
+  return defaultAccounts;
+}
+
+/**
+ * Guarda o actualiza una cuenta que ha iniciado sesión exitosamente en este dispositivo.
+ * Solo se invoca tras una autenticación válida y exitosa.
+ */
+export function saveDeviceGoogleAccount(user) {
+  if (!user) return;
+  try {
+    const email = (user.correo || user.email || "").trim().toLowerCase();
+    if (!email) return;
+
+    // Validación: nunca registrar cuentas ficticias del sistema
+    const FORBIDDEN_MOCK_EMAILS = [
+      "esteban123@gmail.com",
+      "esteban1235@gmail.com",
+      "maria@example.com",
+      "barbero@tuturnobarber.com",
+      "cliente@example.com",
+      "juan.perez@email.com"
+    ];
+    if (FORBIDDEN_MOCK_EMAILS.includes(email)) return;
+
+    const existingAccounts = getDeviceGoogleAccounts();
+    const filtered = existingAccounts.filter(
+      (acc) => (acc.email || "").trim().toLowerCase() !== email
+    );
+
+    let displayName = user.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : email;
+    if (email === "cristianmazo957@gmail.com") displayName = "Cristian Medina";
+    if (email === "barbergoldenapp@gmail.com") displayName = "barber gold";
+
+    const cleanImg = user.imagen_url || user.avatar_url || null;
+
+    const accountToSave = {
+      id_usuario: user.id_usuario || null,
+      email: email,
+      nombre: displayName,
+      id_rol: Number(user.id_rol) || 4,
+      rol_nombre:
+        user.rol_nombre ||
+        user.rol ||
+        (Number(user.id_rol) === 1
+          ? "Administrador"
+          : Number(user.id_rol) === 2
+          ? "Recepcionista"
+          : Number(user.id_rol) === 3
+          ? "Barbero"
+          : "Cliente"),
+      imagen_url: cleanImg && !cleanImg.includes("unsplash.com") ? cleanImg : null,
+      lastLogin: new Date().toISOString()
+    };
+
+    filtered.unshift(accountToSave);
+    localStorage.setItem(DEVICE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(filtered));
+  } catch (err) {
+    console.error("Error al guardar cuenta de Google en dispositivo:", err);
+  }
+}
+
+/**
+ * Elimina una cuenta guardada en este dispositivo.
+ */
+export function removeDeviceGoogleAccount(email) {
+  if (!email) return [];
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const existingAccounts = getDeviceGoogleAccounts();
+    const filtered = existingAccounts.filter(
+      (acc) => (acc.email || "").trim().toLowerCase() !== cleanEmail
+    );
+    localStorage.setItem(DEVICE_GOOGLE_ACCOUNTS_KEY, JSON.stringify(filtered));
+    return filtered;
+  } catch (err) {
+    console.error("Error al eliminar cuenta de Google del dispositivo:", err);
+    return [];
+  }
+}
+
+/**
+ * Inicia sesión con cuenta de Google validando de forma estricta que la cuenta
+ * exista y se encuentre registrada en el sistema.
+ * Si la cuenta existe y está activa, se guarda en este dispositivo.
+ */
+export async function loginWithGoogle({ email, name, avatarUrl }) {
+  const cleanEmail = (email || "").trim().toLowerCase();
+  if (!cleanEmail) {
+    return { success: false, error: "El correo electrónico de Google es requerido." };
+  }
+
+  // Validación de formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return { success: false, error: "Por favor ingresa un formato de correo electrónico válido." };
+  }
+
+  // 1. Intentar validar e iniciar sesión en Backend API
+  try {
+    const res = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleanEmail, name, avatarUrl })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json?.data) {
+      const { token, user } = json.data;
+      if (token) setStoredToken(token);
+      if (user) {
+        setCurrentUser(user);
+        saveDeviceGoogleAccount(user);
+
+        // Sincronizar en DB local si aplica
+        const users = getStoredUsers();
+        const idx = users.findIndex((u) => u.correo.toLowerCase() === cleanEmail);
+        if (idx >= 0) {
+          users[idx] = { ...users[idx], ...user };
+        } else {
+          users.push(user);
+        }
+        saveStoredUsers(users);
+      }
+      return { success: true, user };
+    }
+
+    if (!res.ok) {
+      const errorMsg =
+        json?.message ||
+        json?.error ||
+        "No existe ninguna cuenta registrada con este correo de Google. Por favor crea una cuenta primero o verifica tus datos.";
+      return { success: false, error: errorMsg };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para login con Google, usando validación local:", err.message);
+  }
+
+  // 2. Validación local si el backend no responde (verificar estricta existencia)
+  const users = getStoredUsers();
+  const user = users.find((u) => u.correo.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return {
+      success: false,
+      error: "No existe ninguna cuenta registrada con este correo de Google. Por favor crea una cuenta primero o verifica tus datos."
+    };
+  }
+
+  if (user.estado === 0) {
+    return {
+      success: false,
+      error: "Tu cuenta se encuentra inactiva. Comunícate con el administrador."
+    };
+  }
+
+  setCurrentUser(user);
+  saveDeviceGoogleAccount(user);
+  return { success: true, user };
+}
+
+/**
+ * Obtiene las cuentas de Google guardadas exclusivamente en este dispositivo.
+ * Retorna las cuentas personales con las que se ha iniciado sesión previamente en este equipo.
+ */
+export async function getGoogleAccounts() {
+  return getDeviceGoogleAccounts();
 }

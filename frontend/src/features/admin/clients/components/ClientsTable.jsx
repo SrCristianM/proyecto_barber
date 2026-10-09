@@ -48,26 +48,26 @@ export default function ClientsTable({
 }) {
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto -mx-1 sm:mx-0">
+        <table className="w-full min-w-[480px] sm:min-w-[700px] text-left text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/20 text-muted-foreground text-xs uppercase tracking-wider">
-              <th className="py-3.5 px-4 font-bold">
+            <tr className="border-b border-border bg-muted/20 text-muted-foreground text-[11px] sm:text-xs uppercase tracking-wider">
+              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
                 <SortHeader label="Cliente" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-3.5 px-4 font-bold">
+              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
                 <SortHeader label="Correo" field="correo" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-3.5 px-4 font-bold">
+              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold hidden md:table-cell">
                 <SortHeader label="Dirección" field="direccion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-3.5 px-4 font-bold">
+              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
                 <SortHeader label="Nivel Fidelidad" field="nivel_fidelidad" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-3.5 px-4 font-bold">
+              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3.5 px-4 font-bold">Acciones</th>
+              <th className="text-right py-2 px-2 sm:py-3.5 sm:px-4 font-bold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -83,40 +83,40 @@ export default function ClientsTable({
                   data-highlight-id={`cli-${client.id_cliente}`}
                   className="table-row-accent transition-colors"
                 >
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
-                        <User className="h-5 w-5" />
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                    <div className="flex items-center gap-1.5 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-md sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                        <User className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
                       </div>
-                      <div>
-                        <p className="font-bold text-foreground">{client.nombre} {client.apellido}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-bold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[110px] sm:max-w-none">{client.nombre} {client.apellido}</p>
+                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground truncate max-w-[110px] sm:max-w-none">
                           {client.documento && <span>Doc: {client.documento}</span>}
                           {client.documento && client.telefono && <span>•</span>}
-                          <span>{client.telefono || "Sin teléfono"}</span>
+                          <span>{client.telefono || ""}</span>
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 text-muted-foreground font-medium">{client.correo}</td>
-                  <td className="py-3.5 px-4 text-foreground font-medium">{client.direccion || "—"}</td>
-                  <td className="py-3.5 px-4">
-                    <div className="space-y-1.5 min-w-[120px]">
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">{client.correo}</td>
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium hidden md:table-cell">{client.direccion || "—"}</td>
+                  <td className="py-2 px-2 sm:py-3.5 sm:px-4">
+                    <div className="space-y-1 min-w-[75px] sm:min-w-[120px]">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full border ${loyalty.badge}`}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-0.5 text-[10px] sm:text-xs font-bold rounded-full border whitespace-nowrap ${loyalty.badge}`}
                       >
-                        <LoyaltyIcon className="h-3 w-3" />
+                        <LoyaltyIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         {client.nivel_fidelidad || "Nuevo"}
                       </span>
                       {/* Barra de progreso animada acorde a su color de rango */}
-                      <div className="w-24 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                      <div className="w-14 sm:w-24 h-1 sm:h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
                         <div className={`h-full rounded-full ${loyalty.progressWidth} ${loyalty.progressClass}`} />
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full border ${
+                      className={`inline-flex items-center px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold rounded-full border whitespace-nowrap ${
                         isActive ? "badge-glow-success" : "badge-glow-destructive"
                       }`}
                     >

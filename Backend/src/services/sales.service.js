@@ -96,7 +96,7 @@ export class SalesService {
     const payload = {
       id_cliente: saleData.id_cliente,
       id_cita: saleData.id_cita || null,
-      id_usuario: userId
+      id_usuario: userId || saleData.id_usuario || 1
     };
 
     const newSaleId = await SalesRepository.createWithDetails(

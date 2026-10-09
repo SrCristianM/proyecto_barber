@@ -52,72 +52,86 @@ async function runBarberRBACTest() {
   const barberHeaders = { Authorization: `Bearer ${barberToken}` };
 
   // Paso 3: Obtener permisos actuales del Barbero
-  await test("3. Obtener rol Barbero actual", async () => {
-    const res = await request(app).get("/api/roles/3").set(adminHeaders);
+  await test("3. Obtener rol Barbero actual y asegurar permisos base", async () => {
+    const defaultPerms = [9, 11, 25, 26, 13, 21];
+    let res = await request(app).get("/api/roles/3").set(adminHeaders);
     assert.strictEqual(res.status, 200);
     initialBarberPermissions = res.body.data.permisos.map((p) => p.id_permiso);
-    console.log(`     Permisos iniciales de Barbero: ${initialBarberPermissions.length}`);
+    if (!initialBarberPermissions.includes(25) || !initialBarberPermissions.includes(26)) {
+      await request(app)
+        .put("/api/roles/3")
+        .set(adminHeaders)
+        .send({
+          nombre_rol: "Barbero",
+          descripcion: "Consulta de horarios y citas asignadas",
+          permisos: defaultPerms
+        });
+      initialBarberPermissions = defaultPerms;
+    }
+    console.log(`     Permisos base de Barbero verificados: ${initialBarberPermissions.length}`);
   });
 
-  // Paso 4: Barbero consulta citas con permiso (GET /api/appointments)
-  await test("4. Barbero consulta sus citas asignadas -> 200 OK", async () => {
-    const res = await request(app).get("/api/appointments").set(barberHeaders);
-    assert.strictEqual(res.status, 200);
-  });
+  try {
+    // Paso 4: Barbero consulta citas con permiso (GET /api/appointments)
+    await test("4. Barbero consulta sus citas asignadas -> 200 OK", async () => {
+      const res = await request(app).get("/api/appointments").set(barberHeaders);
+      assert.strictEqual(res.status, 200);
+    });
 
-  // Paso 5: Barbero consulta novedades de horarios con permiso (GET /api/schedules/novelties)
-  await test("5. Barbero consulta novedades de horario con permiso -> 200 OK", async () => {
-    const res = await request(app).get("/api/schedules/novelties").set(barberHeaders);
-    assert.strictEqual(res.status, 200);
-  });
+    // Paso 5: Barbero consulta novedades de horarios con permiso (GET /api/schedules/novelties)
+    await test("5. Barbero consulta novedades de horario con permiso -> 200 OK", async () => {
+      const res = await request(app).get("/api/schedules/novelties").set(barberHeaders);
+      assert.strictEqual(res.status, 200);
+    });
 
-  // Paso 6: Admin revoca 'horarios:ver' (id_permiso: 25) y 'horarios:crear' (id_permiso: 26) del Barbero
-  await test("6. Admin revoca permisos de horarios del Barbero (PUT /api/roles/3)", async () => {
-    const updatedPerms = initialBarberPermissions.filter((id) => id !== 25 && id !== 26);
-    const res = await request(app)
-      .put("/api/roles/3")
-      .set(adminHeaders)
-      .send({
-        nombre_rol: "Barbero",
-        descripcion: "Consulta de horarios y citas asignadas",
-        permisos: updatedPerms
-      });
-    assert.strictEqual(res.status, 200);
-  });
+    // Paso 6: Admin revoca 'horarios:ver' (id_permiso: 25) y 'horarios:crear' (id_permiso: 26) del Barbero
+    await test("6. Admin revoca permisos de horarios del Barbero (PUT /api/roles/3)", async () => {
+      const updatedPerms = initialBarberPermissions.filter((id) => id !== 25 && id !== 26);
+      const res = await request(app)
+        .put("/api/roles/3")
+        .set(adminHeaders)
+        .send({
+          nombre_rol: "Barbero",
+          descripcion: "Consulta de horarios y citas asignadas",
+          permisos: updatedPerms
+        });
+      assert.strictEqual(res.status, 200);
+    });
 
-  // Paso 7: Barbero intenta consultar novedades tras revocación -> 403 Forbidden
-  await test("7. Barbero intenta consultar novedades tras revocación -> 403 Forbidden inmediato", async () => {
-    const res = await request(app).get("/api/schedules/novelties").set(barberHeaders);
-    assert.strictEqual(res.status, 403);
-  });
+    // Paso 7: Barbero intenta consultar novedades tras revocación -> 403 Forbidden
+    await test("7. Barbero intenta consultar novedades tras revocación -> 403 Forbidden inmediato", async () => {
+      const res = await request(app).get("/api/schedules/novelties").set(barberHeaders);
+      assert.strictEqual(res.status, 403);
+    });
 
-  // Paso 8: Barbero intenta crear novedad tras revocación -> 403 Forbidden
-  await test("8. Barbero intenta crear novedad tras revocación -> 403 Forbidden inmediato", async () => {
-    const res = await request(app)
-      .post("/api/schedules/novelties")
-      .set(barberHeaders)
-      .send({
-        id_barbero: 1,
-        tipo: "Incapacidad",
-        fecha_inicio: "2026-10-01",
-        fecha_fin: "2026-10-02",
-        motivo: "Cita médica"
-      });
-    assert.strictEqual(res.status, 403);
-  });
-
-  // Paso 9: Limpieza - Restaurar permisos originales del Barbero
-  await test("9. Limpieza: restaurar permisos originales de Barbero", async () => {
-    const res = await request(app)
-      .put("/api/roles/3")
-      .set(adminHeaders)
-      .send({
-        nombre_rol: "Barbero",
-        descripcion: "Consulta de horarios y citas asignadas",
-        permisos: initialBarberPermissions
-      });
-    assert.strictEqual(res.status, 200);
-  });
+    // Paso 8: Barbero intenta crear novedad tras revocación -> 403 Forbidden
+    await test("8. Barbero intenta crear novedad tras revocación -> 403 Forbidden inmediato", async () => {
+      const res = await request(app)
+        .post("/api/schedules/novelties")
+        .set(barberHeaders)
+        .send({
+          id_barbero: 1,
+          tipo: "Incapacidad",
+          fecha_inicio: "2026-10-01",
+          fecha_fin: "2026-10-02",
+          motivo: "Cita médica"
+        });
+      assert.strictEqual(res.status, 403);
+    });
+  } finally {
+    // Paso 9: Limpieza - Restaurar permisos originales del Barbero
+    await test("9. Limpieza: restaurar permisos originales de Barbero", async () => {
+      const res = await request(app)
+        .put("/api/roles/3")
+        .set(adminHeaders)
+        .send({
+          nombre_rol: "Barbero",
+          descripcion: "Consulta de horarios y citas asignadas",
+          permisos: initialBarberPermissions
+        });
+      assert.strictEqual(res.status, 200);
+    });
+  }
 
   console.log(`\n============================================================`);
   console.log(`   RESULTADO: ${passedTests}/${totalTests} PRUEBAS SUPERADAS EXITOSAMENTE `);

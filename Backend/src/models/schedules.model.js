@@ -1,6 +1,14 @@
 import { executeQuery, executeTransaction, isDatabaseConnected } from "../config/db.js";
 import { mockStore } from "../config/mockStore.js";
 
+function normalizeDay(d) {
+  return String(d || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
 export class SchedulesRepository {
   static async findAll({ barber = "all", status = "all", day = "all" } = {}) {
     if (isDatabaseConnected()) {
@@ -79,14 +87,17 @@ export class SchedulesRepository {
 
   static async findByBarberAndDay(barberId, dayOfWeek) {
     const bId = Number(barberId);
+    const targetNorm = normalizeDay(dayOfWeek);
 
     if (isDatabaseConnected()) {
-      const sql = `SELECT * FROM horario WHERE id_barbero = ? AND dia_semana = ? AND estado = 1 LIMIT 1`;
-      const rows = await executeQuery(sql, [bId, dayOfWeek]);
+      const sql = `SELECT * FROM horario WHERE id_barbero = ? AND (dia_semana = ? OR dia_semana = ?) AND estado = 1 LIMIT 1`;
+      const accented = dayOfWeek.replace("Sabado", "Sábado").replace("Miercoles", "Miércoles");
+      const unaccented = dayOfWeek.replace("Sábado", "Sabado").replace("Miércoles", "Miercoles");
+      const rows = await executeQuery(sql, [bId, accented, unaccented]);
       return rows && rows.length > 0 ? rows[0] : null;
     }
 
-    return mockStore.horarios.find((h) => h.id_barbero === bId && h.dia_semana === dayOfWeek && h.estado === 1) || null;
+    return mockStore.horarios.find((h) => h.id_barbero === bId && normalizeDay(h.dia_semana) === targetNorm && h.estado === 1) || null;
   }
 
   static async createMultipleDays(scheduleData) {

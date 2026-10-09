@@ -4,13 +4,17 @@ import { Receipt, Download, Info, Search, Calendar, CheckCircle2, ShoppingBag, A
 import { getClientPurchases, getCurrentClientProfile } from "../services/clientStorageService";
 import { downloadClientSaleReceiptPDF } from "../../../shared/utils/pdfInvoiceGenerator";
 import Modal from "../../admin/shared/components/Modal";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 
 export default function ClientMyPurchasesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSale, setSelectedSale] = useState(null);
+  const [purchases, setPurchases] = useState(() => getClientPurchases());
 
   const client = useMemo(() => getCurrentClientProfile(), []);
-  const purchases = useMemo(() => getClientPurchases(), []);
+
+  const reloadPurchases = () => setPurchases(getClientPurchases());
+  useDataSync([SYNC_ENTITIES.SALES], reloadPurchases);
 
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
@@ -176,13 +180,13 @@ export default function ClientMyPurchasesPage() {
               )}
               {selectedSale.metodo_entrega && (
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Modalidad:</span>
+                  <span className="text-muted-foreground font-medium">Modalidad de Entrega:</span>
                   <span className="font-bold text-foreground">{selectedSale.metodo_entrega}</span>
                 </div>
               )}
-              {selectedSale.direccion_envio && (
+              {selectedSale.direccion_envio && !selectedSale.direccion_envio.toLowerCase().includes("salón") && !selectedSale.direccion_envio.toLowerCase().includes("salon") && (
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Dirección de Envío:</span>
+                  <span className="text-muted-foreground font-medium">Dirección:</span>
                   <span className="font-bold text-foreground text-right max-w-xs truncate">{selectedSale.direccion_envio}</span>
                 </div>
               )}

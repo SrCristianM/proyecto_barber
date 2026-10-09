@@ -1,13 +1,18 @@
-import { Plus, Edit, Power, Tag } from "lucide-react";
+import { useState } from "react";
+import { Plus, Edit, Power, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import TiltCard from "../../shared/components/TiltCard";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { useProductCategories } from "../hooks/useProductCategories";
 
 export default function ProductCategoriesView() {
+  const [viewMode, setViewMode] = useState("cards");
+
   const {
     filteredCategories,
     categories,
@@ -23,14 +28,18 @@ export default function ProductCategoriesView() {
     setShowEditModal,
     showDeactivateModal,
     setShowDeactivateModal,
+    showDeleteModal,
+    setShowDeleteModal,
     selectedCategory,
     setSelectedCategory,
     resetForm,
     handleCreate,
     handleEdit,
     toggleStatus,
+    handleDelete,
     openEditModal,
-    openDeactivateModal
+    openDeactivateModal,
+    openDeleteModal
   } = useProductCategories();
 
   const onHandleCreate = () => { handleCreate(); toast.success("Categoría creada correctamente"); };
@@ -41,6 +50,11 @@ export default function ProductCategoriesView() {
     toast.success(`Categoría ${newState} correctamente`);
     setShowDeactivateModal(false);
     setSelectedCategory(null);
+  };
+  const onHandleDelete = () => {
+    if (selectedCategory) {
+      handleDelete(selectedCategory.id_categoria_producto);
+    }
   };
 
   const CategoryForm = ({ onSubmit, onCancel }) => (
@@ -61,6 +75,18 @@ export default function ProductCategoriesView() {
         <span className="text-[11px] text-muted-foreground mt-1 block">
           Define el nombre de la categoría para clasificar productos en inventario y ventas.
         </span>
+      </div>
+      <div>
+        <SearchableSelect
+          label="Estado"
+          value={formData.estado !== undefined ? formData.estado : 1}
+          onChange={(val) => setFormData({ ...formData, estado: Number(val) })}
+          options={[
+            { value: 1, label: "Activo" },
+            { value: 0, label: "Inactivo" }
+          ]}
+          searchable={false}
+        />
       </div>
       <div className="flex gap-3 pt-3 border-t border-border">
         <button
@@ -89,12 +115,12 @@ export default function ProductCategoriesView() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total Categorías", value: categories.length, cls: "text-foreground" },
-          { label: "Categorías Activas", value: activeCount, cls: "text-success" },
-          { label: "Categorías Inactivas", value: inactiveCount, cls: "text-muted-foreground" }
-        ].map(({ label, value, cls }) => (
-          <div key={label} className="text-center p-4 gold-card">
-            <p className={`text-2xl font-extrabold ${cls}`}>{value}</p>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">{label}</p>
+          { label: "Activas", value: activeCount, cls: "text-emerald-500" },
+          { label: "Inactivas", value: inactiveCount, cls: "text-muted-foreground" }
+        ].map((s) => (
+          <div key={s.label} className="bg-background border border-border rounded-xl p-4">
+            <p className="text-xs text-muted-foreground font-medium">{s.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${s.cls}`}>{s.value}</p>
           </div>
         ))}
       </div>
@@ -106,7 +132,7 @@ export default function ProductCategoriesView() {
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar categorías..."
-            maxWidthClass="w-full sm:w-56"
+            maxWidthClass="w-full sm:w-64"
           />
           <StatusFilterPills
             value={statusFilter}
@@ -118,19 +144,101 @@ export default function ProductCategoriesView() {
             ]}
           />
         </div>
-        <button
-          onClick={() => { resetForm(); setShowCreateModal(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {categories.length === 0 ? "Crear primera categoría" : "Nueva Categoría"}
-        </button>
+
+        <div className="flex items-center gap-2">
+          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <button
+            onClick={() => { resetForm(); setShowCreateModal(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {categories.length === 0 ? "Crear primera categoría" : "Nueva Categoría"}
+          </button>
+        </div>
       </div>
 
-      {/* Grid de cards */}
+      {/* Vista de Datos: Tabla o Tarjetas */}
       {filteredCategories.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           No se encontraron categorías
+        </div>
+      ) : viewMode === "table" ? (
+        <div className="overflow-x-auto border border-border rounded-xl bg-card">
+          <table className="w-full text-sm text-left">
+            <thead className="border-b border-border bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              <tr>
+                <th className="py-3.5 px-4">ID</th>
+                <th className="py-3.5 px-4">Categoría</th>
+                <th className="py-3.5 px-4">Tipo</th>
+                <th className="py-3.5 px-4">Estado</th>
+                <th className="py-3.5 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredCategories.map((cat) => {
+                const isActive = cat.estado === 1;
+                return (
+                  <tr key={cat.id_categoria_producto} className="hover:bg-accent/40 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-muted-foreground text-xs">
+                      #{cat.id_categoria_producto}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                          <Tag className="h-4 w-4" />
+                        </div>
+                        <span className="font-semibold text-foreground text-sm">{cat.nombre}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                      Productos de Barbería
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                          isActive ? "badge-glow-success" : "badge-glow-destructive"
+                        }`}
+                      >
+                        {isActive ? "Activa" : "Inactiva"}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(cat)}
+                          className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeactivateModal(cat)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            isActive
+                              ? "text-destructive hover:bg-destructive/10"
+                              : "text-emerald-500 hover:bg-emerald-500/10"
+                          }`}
+                          title={isActive ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(cat)}
+                          className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors cursor-pointer"
+                          title="Eliminar categoría"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -158,7 +266,7 @@ export default function ProductCategoriesView() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-border/60">
                     <button
                       type="button"
                       onClick={() => openEditModal(cat)}
@@ -178,6 +286,14 @@ export default function ProductCategoriesView() {
                     >
                       <Power className="h-3.5 w-3.5" />
                       {isActive ? "Desactivar" : "Activar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDeleteModal(cat)}
+                      title="Eliminar categoría"
+                      className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors font-semibold cursor-pointer flex items-center justify-center shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -208,6 +324,18 @@ export default function ProductCategoriesView() {
           confirmLabel={selectedCategory.estado === 1 ? "Desactivar" : "Activar"}
           onConfirm={onToggleStatus}
           onClose={() => { setShowDeactivateModal(false); setSelectedCategory(null); }}
+        />
+      )}
+
+      {/* Modal Eliminar */}
+      {showDeleteModal && selectedCategory && (
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar categoría de producto?"
+          description={`¿Estás seguro de que deseas eliminar permanentemente la categoría "${selectedCategory.nombre}"? Si tiene productos asociados, no podrá ser eliminada.`}
+          confirmLabel="Eliminar Categoría"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedCategory(null); }}
         />
       )}
     </div>

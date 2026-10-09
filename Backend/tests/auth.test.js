@@ -91,4 +91,39 @@ describe("Módulo de Autenticación (Auth API)", () => {
     expect(res.body.success).toBe(true);
     expect(res.body.message).toContain("instrucciones");
   });
+
+  it("Debería rechazar el acceso con Google si la cuenta no se encuentra registrada", async () => {
+    const res = await request(app)
+      .post("/api/auth/google")
+      .send({
+        email: "no_registrado_123456@gmail.com"
+      });
+
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain("No existe ninguna cuenta registrada con este correo de Google");
+  });
+
+  it("Debería permitir el acceso con Google a una cuenta previamente registrada", async () => {
+    const res = await request(app)
+      .post("/api/auth/google")
+      .send({
+        email: "cristianmazo957@gmail.com"
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.correo).toBe("cristianmazo957@gmail.com");
+    expect(res.body.data).toHaveProperty("token");
+  });
+
+  it("Debería proteger la privacidad en /api/auth/google/accounts y no exponer usuarios globales", async () => {
+    const res = await request(app)
+      .get("/api/auth/google/accounts");
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual([]);
+  });
 });
+

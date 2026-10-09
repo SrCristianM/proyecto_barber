@@ -7,6 +7,7 @@ import { useSales, clients } from "../hooks/useSales";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import SalesStats from "../components/SalesStats";
 import SalesTable from "../components/SalesTable";
+import SaleCard from "../components/SaleCard";
 import SaleFormModal from "../components/SaleFormModal";
 import SaleDetailModal from "../components/SaleDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
@@ -14,6 +15,7 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 
 export default function SalesPage() {
   useSearchHighlight();
@@ -38,6 +40,8 @@ export default function SalesPage() {
     totalToday,
     totalMonth,
     averageTicket,
+    viewMode,
+    setViewMode,
     formData,
     setFormData,
     showCreateModal,
@@ -63,7 +67,10 @@ export default function SalesPage() {
     updateItemQuantity,
     removeItemFromSale,
     toggleStatus,
-    getClientName
+    getClientName,
+    clients: salesClients,
+    users: salesUsers,
+    catalogItems: salesCatalog
   } = useSales();
 
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -104,7 +111,9 @@ export default function SalesPage() {
     setShowDeactivateModal(true);
   };
 
-  const clientOptions = clients.map((c) => ({
+  const activeClientsList = (salesClients && salesClients.length > 0) ? salesClients : clients;
+
+  const clientOptions = activeClientsList.map((c) => ({
     value: c.id_cliente,
     label: c.nombre
   }));
@@ -115,33 +124,40 @@ export default function SalesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Ventas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las ventas y facturación de la barbería</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Control de facturación, caja y ventas del negocio</p>
         </div>
         {canCreateSale && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
-            {sales?.length === 0 ? "Crear primera venta" : "Nueva Venta"}
+            {sales.length === 0 ? "Registrar primera venta" : "Nueva Venta"}
           </motion.button>
         )}
       </div>
 
-      <SalesStats totalToday={totalToday} totalMonth={totalMonth} averageTicket={averageTicket} />
+      {/* Stats Cards */}
+      <SalesStats
+        totalToday={totalToday}
+        totalMonth={totalMonth}
+        salesCount={sales.length}
+        averageTicket={averageTicket}
+      />
 
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
-        {/* Barra de Filtros Estandarizada */}
+      {/* Filtros y tabla / tarjetas */}
+      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-5 shadow-xs">
+        {/* Toolbar Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
             {/* SearchBar */}
             <SearchBar
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Buscar ventas..."
-              maxWidthClass="w-full sm:w-60"
+              placeholder="Buscar por cliente, cobrado por, detalle..."
+              maxWidthClass="w-full sm:w-64"
             />
 
             {/* StatusFilterPills */}
@@ -187,11 +203,13 @@ export default function SalesPage() {
             )}
           </div>
 
-          {/* Botón Exportar */}
+          {/* Botón Exportar y Selector de Vista Universal */}
           <div className="flex items-center gap-2">
+            <ViewModeToggle viewMode={viewMode || "table"} onChange={setViewMode} />
+
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar
@@ -199,19 +217,36 @@ export default function SalesPage() {
           </div>
         </div>
 
-        <SalesTable
-          sales={filteredSales}
-          totalCount={filteredSales.length}
-          sortField={sortField}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onDetail={openDetailModal}
-          onEdit={openEditModal}
-          onDelete={openDeleteModal}
-          onDeactivate={openDeactivateModal}
-          canEdit={canEditSale}
-          canAnular={canAnularSale}
-        />
+        {viewMode === "table" ? (
+          <SalesTable
+            sales={filteredSales}
+            totalCount={filteredSales.length}
+            sortField={sortField}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onDetail={openDetailModal}
+            onEdit={openEditModal}
+            onDelete={openDeleteModal}
+            onDeactivate={openDeactivateModal}
+            canEdit={canEditSale}
+            canAnular={canAnularSale}
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSales.map((sale) => (
+              <SaleCard
+                key={sale.id_venta}
+                sale={sale}
+                clientName={getClientName(sale.id_cliente, sale)}
+                onDetail={openDetailModal}
+                onEdit={openEditModal}
+                onDeactivate={openDeactivateModal}
+                canEdit={canEditSale}
+                canAnular={canAnularSale}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {showCreateModal && (
@@ -219,6 +254,9 @@ export default function SalesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          clients={activeClientsList}
+          users={salesUsers}
+          catalogItems={salesCatalog}
           onAddItem={addItemToSale}
           onUpdateItemQuantity={updateItemQuantity}
           onRemoveItem={removeItemFromSale}
@@ -232,6 +270,9 @@ export default function SalesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          clients={activeClientsList}
+          users={salesUsers}
+          catalogItems={salesCatalog}
           onAddItem={addItemToSale}
           onUpdateItemQuantity={updateItemQuantity}
           onRemoveItem={removeItemFromSale}
@@ -243,7 +284,6 @@ export default function SalesPage() {
       {showDetailModal && selectedSale && (
         <SaleDetailModal
           sale={selectedSale}
-          onEdit={canEditSale ? () => { setShowDetailModal(false); openEditModal(selectedSale); } : undefined}
           onClose={() => { setShowDetailModal(false); setSelectedSale(null); }}
         />
       )}
@@ -252,7 +292,7 @@ export default function SalesPage() {
         <ConfirmModal
           variant="delete"
           title="¿Eliminar esta venta?"
-          description={`Se eliminará la venta #${selectedSale.id_venta} de ${getClientName(selectedSale.id_cliente)} por $${Number(selectedSale.total).toLocaleString()} de forma permanente.`}
+          description={`Se eliminará la venta #${selectedSale.id_venta} permanentemente. Esta acción es irreversible.`}
           confirmLabel="Eliminar"
           onConfirm={onHandleDelete}
           onClose={() => { setShowDeleteModal(false); setSelectedSale(null); }}
@@ -263,7 +303,7 @@ export default function SalesPage() {
         <ConfirmModal
           variant="deactivate"
           title="¿Anular esta venta?"
-          description={`La venta #${deactivateTarget.id_venta} de ${getClientName(deactivateTarget.id_cliente)} por $${Number(deactivateTarget.total).toLocaleString()} será marcada como Anulada.`}
+          description={`La venta #${deactivateTarget.id_venta} cambiará a estado "Anulada". Los productos se reintegrarán al stock.`}
           confirmLabel="Anular Venta"
           onConfirm={onAnularVenta}
           onClose={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}

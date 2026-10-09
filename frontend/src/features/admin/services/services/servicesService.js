@@ -11,8 +11,37 @@ export async function getServices(filters = {}) {
   return await apiRequest(`${API_URL}${qs}`);
 }
 
-export async function getServiceCategories() {
-  return await apiRequest(`${API_URL}/categories`);
+export async function getServiceCategories(filters = {}) {
+  const query = new URLSearchParams();
+  if (filters.status && filters.status !== "all") query.append("status", filters.status);
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  return await apiRequest(`${API_URL}/categories${qs}`);
+}
+
+export async function createServiceCategory(data) {
+  return await apiRequest(`${API_URL}/categories`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateServiceCategory(id, data) {
+  return await apiRequest(`${API_URL}/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function toggleServiceCategoryStatus(id) {
+  return await apiRequest(`${API_URL}/categories/${id}/status`, {
+    method: "PATCH"
+  });
+}
+
+export async function deleteServiceCategory(id) {
+  return await apiRequest(`${API_URL}/categories/${id}`, {
+    method: "DELETE"
+  });
 }
 
 export async function createService(data) {

@@ -1,29 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { CATEGORIAS_PRODUCTO } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import {
   getProducts,
+  getProductCategories,
   createProduct,
   updateProduct,
   deleteProduct,
   toggleProductStatus
 } from "../services/productsService";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService";
 
-const mockProducts = [];
+let liveCategories = [...CATEGORIAS_PRODUCTO];
 
-export const categories = CATEGORIAS_PRODUCTO;
+export const categories = new Proxy([], {
+  get(target, prop) {
+    const val = liveCategories[prop];
+    if (typeof val === "function") return val.bind(liveCategories);
+    return val;
+  }
+});
 
 const emptyForm = {
   nombre: "",
   id_categoria_producto: 1,
   stock: 0,
   precio: 0,
-  imagen_url: ""
+  imagen_url: "",
+  estado: 1
 };
 
 export function useProducts() {
   const [products, setProducts] = useState([]);
+  const [categoriesList, setCategoriesList] = useState(liveCategories);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
@@ -37,8 +51,40 @@ export function useProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const data = await getProductCategories();
+      if (Array.isArray(data)) {
+        liveCategories = data;
+        setCategoriesList(data);
+      }
+    } catch (err) {
+      console.warn("[Products] Usando categorías por fallback:", err.message);
+    }
+  }, []);
+
+  const fetchProductsList = useCallback(async () => {
+    try {
+      const data = await getProducts();
+      if (Array.isArray(data)) {
+        setProducts(data);
+        try { localStorage.setItem("barber_products_db", JSON.stringify(data)); } catch (_) {}
+      }
+    } catch (err) {
+      console.warn("[Products] Usando datos de respaldo local:", err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProductsList();
+    fetchCategories();
+  }, [fetchProductsList, fetchCategories]);
+
+  useDataSync([SYNC_ENTITIES.PRODUCTS], fetchProductsList);
+  useDataSync([SYNC_ENTITIES.PRODUCT_CATEGORIES], fetchCategories);
+
   const getCategoryName = (id_cat) => {
-    const c = CATEGORIAS_PRODUCTO.find((cat) => cat.id_categoria_producto === Number(id_cat));
+    const c = categoriesList.find((cat) => cat.id_categoria_producto === Number(id_cat));
     return c ? c.nombre : "Sin Categoría";
   };
 
@@ -83,18 +129,6 @@ export function useProducts() {
   const lowStockCount = products.filter((p) => p.stock <= 5).length;
   const hasActiveFilters = searchTerm !== "" || statusFilter !== "all" || categoryFilter !== "all";
 
-  useEffect(() => {
-    getProducts()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Products] Usando datos de respaldo local:", err.message);
-      });
-  }, []);
-
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
@@ -119,9 +153,14 @@ export function useProducts() {
         ...payload,
         id_producto: created?.id_producto || Math.max(...products.map((p) => p.id_producto), 0) + 1
       };
-      setProducts((prev) => [newProduct, ...prev]);
+      setProducts((prev) => {
+        const next = [newProduct, ...prev];
+        try { localStorage.setItem("barber_products_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS, newProduct);
       toast.success("Producto creado exitosamente en el catálogo.");
     } catch (err) {
       toast.error(err.message || "Error al crear el producto.");
@@ -140,16 +179,19 @@ export function useProducts() {
 
     try {
       await updateProduct(selectedProduct.id_producto, payload);
-      setProducts((prev) =>
-        prev.map((product) =>
+      setProducts((prev) => {
+        const next = prev.map((product) =>
           product.id_producto === selectedProduct.id_producto
             ? { ...product, ...payload }
             : product
-        )
-      );
+        );
+        try { localStorage.setItem("barber_products_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowEditModal(false);
       setSelectedProduct(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS, { id_producto: selectedProduct.id_producto, ...payload });
       toast.success("Producto actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el producto.");
@@ -160,9 +202,15 @@ export function useProducts() {
     if (!selectedProduct) return;
     try {
       await deleteProduct(selectedProduct.id_producto);
-      setProducts((prev) => prev.filter((product) => product.id_producto !== selectedProduct.id_producto));
+      setProducts((prev) => {
+        const next = prev.filter((product) => product.id_producto !== selectedProduct.id_producto);
+        try { localStorage.setItem("barber_products_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowDeleteModal(false);
+      const deletedId = selectedProduct.id_producto;
       setSelectedProduct(null);
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS, { deleted: true, id_producto: deletedId });
       toast.success("Producto eliminado del catálogo.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el producto.");
@@ -172,11 +220,14 @@ export function useProducts() {
   const toggleStatus = async (productId) => {
     try {
       await toggleProductStatus(productId);
-      setProducts((prev) =>
-        prev.map((product) =>
+      setProducts((prev) => {
+        const next = prev.map((product) =>
           product.id_producto === productId ? { ...product, estado: product.estado === 1 ? 0 : 1 } : product
-        )
-      );
+        );
+        try { localStorage.setItem("barber_products_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS, { toggled: true, id_producto: productId });
       toast.success("Estado del producto actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del producto.");
@@ -218,7 +269,8 @@ export function useProducts() {
       id_categoria_producto: product.id_categoria_producto,
       stock: product.stock,
       precio: product.precio,
-      imagen_url: product.imagen_url || ""
+      imagen_url: product.imagen_url || "",
+      estado: product.estado !== undefined ? product.estado : 1
     });
     setShowEditModal(true);
   };
@@ -271,6 +323,7 @@ export function useProducts() {
     openEditModal,
     openDetailModal,
     openDeleteModal,
-    getCategoryName
+    getCategoryName,
+    categories: categoriesList
   };
 }

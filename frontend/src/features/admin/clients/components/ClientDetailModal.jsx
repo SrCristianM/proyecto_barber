@@ -174,7 +174,9 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Documento de Identidad
             </span>
-            <p className="text-base font-bold text-foreground">{client.documento || "No registrado"}</p>
+            <p className="text-base font-bold text-foreground">
+              {client.tipo_documento ? `${client.tipo_documento} ` : ""}{client.documento || "No registrado"}
+            </p>
           </div>
 
           <div>
@@ -207,7 +209,16 @@ export default function ClientDetailModal({ client, onEdit, onClose }) {
 
           <div className="sm:col-span-2 pt-3 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
             <span>Usuario del Sistema Vinculado: <strong className="text-foreground">Cuenta ID #{client.id_usuario}</strong></span>
-            <span>Nivel de Fidelidad: <strong className="text-foreground">{client.nivel_fidelidad || "Nuevo"}</strong></span>
+            <div className="flex items-center gap-1.5">
+              <span>Estado del Cliente:</span>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
+                client.estado === 1
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}>
+                {client.estado === 1 ? "● Activo" : "● Inactivo"}
+              </span>
+            </div>
           </div>
         </div>
 

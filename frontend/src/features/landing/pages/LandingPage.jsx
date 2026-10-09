@@ -28,10 +28,10 @@ export default function LandingPage() {
   return (
     <div
       style={{ backgroundColor: "#0D0D0D", color: "#FFFFFF", fontFamily: "'Inter', sans-serif" }}
-      className="min-h-screen landing-page-root relative selection:bg-[#C9A24A] selection:text-black"
+      className="min-h-screen landing-page-root relative selection:bg-[#C9A24A] selection:text-black overflow-x-hidden"
     >
       <GoldGlowCursor />
-      
+
       <Navbar />
       <Hero />
       <Services />

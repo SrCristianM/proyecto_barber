@@ -57,7 +57,7 @@ export default function ReviewsSection() {
       <div className="ambient-glow-gold w-[500px] h-[500px] top-1/3 right-0 opacity-15" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>

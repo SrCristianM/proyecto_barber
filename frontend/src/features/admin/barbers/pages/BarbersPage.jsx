@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, RotateCcw, LayoutGrid, Table } from "lucide-react";
+import { Plus, Download, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useBarbers } from "../hooks/useBarbers";
@@ -12,6 +12,7 @@ import BarberDetailModal from "../components/BarberDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 
 export default function BarbersPage() {
   useSearchHighlight();
@@ -93,7 +94,7 @@ export default function BarbersPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {barbers.length === 0 ? "Crear primer barbero" : "Nuevo Barbero"}
@@ -103,7 +104,7 @@ export default function BarbersPage() {
 
       <BarbersStats barbers={barbers} />
 
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-5 shadow-xs">
         {/* Barra de Filtros Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -139,34 +140,9 @@ export default function BarbersPage() {
             )}
           </div>
 
-          {/* Botón Exportar y Selector de Vista */}
+          {/* Botón Exportar y Selector de Vista Universal */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
-                    ? "bg-card text-foreground shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Vista de Tabla"
-              >
-                <Table className="h-4 w-4" />
-                <span className="hidden sm:inline">Tabla</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
-                    ? "bg-card text-foreground shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Vista de Tarjetas 3D"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="hidden sm:inline">Tarjetas 3D</span>
-              </button>
-            </div>
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
             <button
               onClick={handleExport}

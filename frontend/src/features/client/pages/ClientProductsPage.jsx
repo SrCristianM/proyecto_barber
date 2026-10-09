@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import confetti from "canvas-confetti";
 import ClientImage from "../components/ClientImage";
 import ClientCartDrawer from "../components/ClientCartDrawer";
-import { getClientProducts } from "../services/clientStorageService";
+import { getClientProducts, syncCatalogsFromApi } from "../services/clientStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 import Modal from "../../admin/shared/components/Modal";
 import { toast } from "sonner";
 
@@ -21,9 +22,19 @@ export default function ClientProductsPage() {
 
   // Estado de Productos dinámico
   const [products, setProducts] = useState(() => getClientProducts());
-  const loadProducts = () => {
-    setProducts(getClientProducts());
-  };
+  const loadProducts = useCallback(() => {
+    syncCatalogsFromApi().then(() => {
+      setProducts(getClientProducts());
+    }).catch(() => {
+      setProducts(getClientProducts());
+    });
+  }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  useDataSync([SYNC_ENTITIES.PRODUCTS, SYNC_ENTITIES.PRODUCT_CATEGORIES], loadProducts);
 
   // Estado del Carrito de Compras
   const [cart, setCart] = useState(() => {
@@ -434,13 +445,37 @@ export default function ClientProductsPage() {
               </div>
             </div>
 
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                Información del Producto
-              </span>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {selectedProduct.descripcion || "Producto original garantizado de alta calidad. Puedes solicitarlo para entrega o recogerlo directamente en nuestra barbería."}
-              </p>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                  Información del Producto
+                </span>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {selectedProduct.descripcion || "Producto original garantizado de alta calidad para el cuidado y estilismo personal."}
+                </p>
+              </div>
+
+              {selectedProduct.modo_uso && (
+                <div className="p-3 rounded-xl bg-muted/30 border border-border">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#DDAE41] dark:text-[#E8C466] block mb-1">
+                    Modo de Uso Recomendado
+                  </span>
+                  <p className="text-xs text-foreground leading-relaxed">
+                    {selectedProduct.modo_uso}
+                  </p>
+                </div>
+              )}
+
+              {selectedProduct.ingredientes && (
+                <div className="p-3 rounded-xl bg-muted/30 border border-border">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#DDAE41] dark:text-[#E8C466] block mb-1">
+                    Ingredientes Activos
+                  </span>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {selectedProduct.ingredientes}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Selector de cantidad y botón comprar */}

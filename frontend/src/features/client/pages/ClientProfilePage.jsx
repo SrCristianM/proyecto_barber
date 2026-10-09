@@ -1,3 +1,4 @@
+import AvatarImageUploader from "../../admin/shared/components/AvatarImageUploader";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { User, Mail, Phone, MapPin, Award, Lock, Save, CheckCircle2, ShieldCheck } from "lucide-react";
@@ -43,6 +44,32 @@ export default function ClientProfilePage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  
+  const handlePhotoChange = async (newPhotoUrl) => {
+    setIsSaving(true);
+    try {
+      const result = await authUpdateUserProfile({
+        ...formData,
+        imagen_url: newPhotoUrl || null,
+        avatar_url: newPhotoUrl || null
+      });
+      if (result.success) {
+        setProfile((prev) => ({
+          ...prev,
+          imagen_url: newPhotoUrl || null,
+          avatar_url: newPhotoUrl || null
+        }));
+        toast.success("Foto de perfil actualizada exitosamente.");
+      } else {
+        toast.error(result.error || "No se pudo actualizar la foto.");
+      }
+    } catch (err) {
+      toast.error("Error al actualizar la foto.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -138,6 +165,19 @@ export default function ClientProfilePage() {
           <Award className="w-4 h-4" />
           <span>Nivel {loyaltyTier}</span>
         </div>
+      </div>
+
+      
+      {/* SECCIÓN CAMBIAR FOTO DE PERFIL */}
+      <div className="rounded-3xl bg-card border border-border p-6 shadow-sm">
+        <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground border-b border-border pb-2 mb-4">
+          Foto de Perfil del Cliente
+        </h3>
+        <AvatarImageUploader
+          value={profile?.imagen_url || ""}
+          onChange={handlePhotoChange}
+          label="Sube tu fotografía de perfil para personalizar tu experiencia en citas y compras"
+        />
       </div>
 
       {/* FORMULARIO DE EDICIÓN */}

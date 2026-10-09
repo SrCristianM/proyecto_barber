@@ -1,20 +1,27 @@
 import { useState } from "react";
-import { Plus, Edit, Power, Package, Check } from "lucide-react";
+import { Plus, Edit, Power, Package, Check, Trash2, Tag } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
+import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FormFieldError from "../../shared/components/FormFieldError";
 import NumericInput from "../../shared/components/NumericInput";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import TiltCard from "../../shared/components/TiltCard";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { useServicePackages } from "../hooks/useServicePackages";
 import { validateServicePackageForm } from "../validations/serviceValidation";
 
 export default function ServicePackagesView() {
+  const [viewMode, setViewMode] = useState("cards");
+
   const {
     packages = [],
     filteredPackages,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
     formData,
     setFormData,
     showCreateModal,
@@ -23,20 +30,30 @@ export default function ServicePackagesView() {
     setShowEditModal,
     showDeactivateModal,
     setShowDeactivateModal,
+    showDeleteModal,
+    setShowDeleteModal,
     selectedPackage,
     setSelectedPackage,
     resetForm,
     handleCreate,
     handleEdit,
+    handleDelete,
     toggleStatus,
     openEditModal,
     openDeactivateModal,
+    openDeleteModal,
     toggleServiceInForm,
     getServiceNames,
     availableServicesList
   } = useServicePackages();
 
   const [formErrors, setFormErrors] = useState({});
+
+  const onHandleDelete = () => {
+    if (selectedPackage) {
+      handleDelete(selectedPackage.id_paquete);
+    }
+  };
 
   const onHandleCreate = () => {
     const result = validateServicePackageForm(formData);
@@ -99,7 +116,8 @@ export default function ServicePackagesView() {
                   ? "border-destructive focus:ring-2 focus:ring-destructive/30"
                   : "border-input focus:ring-2 focus:ring-primary"
               }`}
-              placeholder="Ej: Combo Ejecutivo Premium"
+              placeholder="Ej: Combo Ejecutivo (Corte + Barba + Exfoliación)..."
+              required
               autoFocus
             />
             <FormFieldError error={formErrors.nombre} />
@@ -107,138 +125,123 @@ export default function ServicePackagesView() {
 
           {/* Descuento Porcentaje */}
           <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Porcentaje de Descuento (%) <span className="text-destructive">*</span>
+            </label>
             <NumericInput
-              label="Descuento Promocional (%)"
               name="descuento_porcentaje"
               id="descuento_porcentaje"
-              min={0}
-              max={100}
-              allowDecimal={true}
+              min="0"
+              max="100"
+              step="1"
               value={formData.descuento_porcentaje}
               onChange={(val) => {
                 setFormData({ ...formData, descuento_porcentaje: val });
                 if (formErrors.descuento_porcentaje) setFormErrors((prev) => ({ ...prev, descuento_porcentaje: null }));
               }}
-              error={formErrors.descuento_porcentaje}
-              placeholder="0"
+              className={`w-full px-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                formErrors.descuento_porcentaje
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="0 a 100%"
             />
             <span className="text-[11px] text-muted-foreground mt-1 block">
-              Se aplica automáticamente sobre el total de servicios seleccionados.
+              Ahorro aplicado automáticamente sobre la suma de los servicios seleccionados.
             </span>
+            <FormFieldError error={formErrors.descuento_porcentaje} />
           </div>
 
-          {/* Servicios que componen el paquete */}
-          <div className="border-t border-border/80 pt-3">
+          {/* Selección de Servicios */}
+          <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-foreground">
-                Servicios del Combo <span className="text-destructive">*</span>
+              <label className="block text-sm font-medium text-foreground">
+                Servicios Incluidos <span className="text-destructive">*</span>
               </label>
-              <span className="text-xs text-muted-foreground">
-                {selectedServices.length} seleccionado(s)
+              <span className="text-xs font-semibold text-primary">
+                {(formData.servicios_ids || []).length} seleccionados
               </span>
             </div>
-            <div className={`grid grid-cols-1 gap-2 max-h-56 overflow-y-auto p-2.5 bg-secondary/20 border rounded-xl transition-all ${
-              formErrors.servicios_ids ? "border-destructive ring-1 ring-destructive/30" : "border-border/70"
-            }`}>
-              {availableServicesList.map((svc) => {
-                const isChecked = (formData.servicios_ids || []).includes(svc.id_servicio);
-                return (
-                  <label
-                    key={svc.id_servicio}
-                    className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${
-                      isChecked
-                        ? "bg-primary/10 border-primary/40 text-foreground"
-                        : "bg-input-background border-input text-muted-foreground hover:bg-accent/40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          toggleServiceInForm(svc.id_servicio);
-                          if (formErrors.servicios_ids) setFormErrors((prev) => ({ ...prev, servicios_ids: null }));
-                        }}
-                        className="w-4 h-4 rounded text-primary border-input focus:ring-primary"
-                      />
-                      <div>
-                        <span className="text-xs font-semibold text-foreground block">{svc.nombre}</span>
-                        <span className="text-[10px] text-muted-foreground">⏱️ {svc.duracion_minutos} min</span>
+
+            <div className="border border-border rounded-xl p-3 max-h-56 overflow-y-auto space-y-2 bg-background/50">
+              {availableServicesList.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">No hay servicios disponibles registrados</p>
+              ) : (
+                availableServicesList.map((srv) => {
+                  const isChecked = (formData.servicios_ids || []).includes(srv.id_servicio);
+                  return (
+                    <label
+                      key={srv.id_servicio}
+                      className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${
+                        isChecked
+                          ? "bg-primary/10 border-primary/40 text-foreground"
+                          : "border-border hover:bg-accent/40 text-muted-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${
+                            isChecked ? "bg-primary border-primary text-primary-foreground" : "border-border"
+                          }`}
+                        >
+                          {isChecked && <Check className="h-3 w-3" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={isChecked}
+                          onChange={() => {
+                            toggleServiceInForm(srv.id_servicio);
+                            if (formErrors.servicios_ids) setFormErrors((prev) => ({ ...prev, servicios_ids: null }));
+                          }}
+                        />
+                        <span className="text-xs font-medium text-foreground">{srv.nombre}</span>
                       </div>
-                    </div>
-                    <span className="text-xs font-bold text-foreground">
-                      ${Number(svc.precio).toLocaleString("es-CO")}
-                    </span>
-                  </label>
-                );
-              })}
+                      <div className="text-right">
+                        <span className="text-xs font-mono font-bold text-foreground">
+                          ${Number(srv.precio).toLocaleString("es-CO")}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground block">
+                          {srv.duracion_minutos || 30} min
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })
+              )}
             </div>
             <FormFieldError error={formErrors.servicios_ids} />
           </div>
         </div>
 
-        {/* Columna Derecha: Live Preview Card (5 cols) */}
-        <div className="lg:col-span-5 bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 sticky top-4">
-          <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Vista Previa en Vivo
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Preview
-            </span>
-          </div>
-
-          {/* Tarjeta Visual del Paquete Simulada */}
-          <div className="relative rounded-2xl p-5 bg-gradient-to-br from-secondary/40 via-secondary/20 to-card border border-primary/30 shadow-md space-y-4 overflow-hidden">
-            {/* Badge de Descuento si aplica */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="px-2.5 py-1 text-[11px] font-extrabold uppercase rounded-lg bg-primary text-primary-foreground shadow-xs">
-                {discountRate > 0 ? `-${discountRate}% OFF` : "Combo Especial"}
+        {/* Columna Derecha: Tarjeta de Resumen en Vivo (5 cols) */}
+        <div className="lg:col-span-5 bg-card/60 border border-primary/20 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Package className="h-4 w-4 text-primary" />
+                Resumen del Paquete
               </span>
-              <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-                ⏱️ {totalDurationMin > 0 ? `${totalDurationMin} min totales` : "Duración variable"}
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {totalDurationMin} min estim.
               </span>
             </div>
 
-            {/* Nombre del Paquete */}
-            <div>
-              <h4 className="text-base sm:text-lg font-black text-foreground tracking-tight line-clamp-2">
-                {formData.nombre?.trim() || "Nombre del Paquete..."}
-              </h4>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {selectedServices.length > 0
-                  ? `${selectedServices.length} servicios incluidos en un solo turno`
-                  : "Selecciona al menos 2 servicios para armar el paquete"}
-              </p>
-            </div>
-
-            {/* Chips de Servicios Seleccionados */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                Servicios Incluidos:
-              </span>
+            {/* Lista visual de ítems incluidos */}
+            <div className="py-3 space-y-1.5 min-h-[140px]">
               {selectedServices.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic bg-background/50 p-2 rounded-lg border border-dashed border-border">
-                  Ningún servicio marcado todavía...
-                </p>
-              ) : (
-                <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
-                  {selectedServices.map((s) => (
-                    <div
-                      key={s.id_servicio}
-                      className="flex items-center justify-between text-xs py-1 px-2 rounded-md bg-background/80 border border-border/50 text-foreground"
-                    >
-                      <span className="truncate pr-2 font-medium flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-primary shrink-0" />
-                        {s.nombre}
-                      </span>
-                      <span className="text-muted-foreground text-[11px] shrink-0">
-                        ${Number(s.precio).toLocaleString("es-CO")}
-                      </span>
-                    </div>
-                  ))}
+                <div className="text-center py-8 text-xs text-muted-foreground">
+                  Selecciona al menos 2 servicios a la izquierda para ver el cálculo.
                 </div>
+              ) : (
+                selectedServices.map((s) => (
+                  <div key={s.id_servicio} className="flex items-center justify-between text-xs py-1">
+                    <span className="text-foreground truncate max-w-[170px]">{s.nombre}</span>
+                    <span className="font-mono text-muted-foreground">
+                      ${Number(s.precio).toLocaleString("es-CO")}
+                    </span>
+                  </div>
+                ))
               )}
             </div>
 
@@ -272,8 +275,28 @@ export default function ServicePackagesView() {
         </div>
       </div>
 
+      {/* Estado del Paquete (Universal al final) */}
+      <div>
+        <SearchableSelect
+          label="Estado"
+          value={formData.estado !== undefined ? formData.estado : 1}
+          onChange={(val) => setFormData({ ...formData, estado: Number(val) })}
+          options={[
+            { value: 1, label: "Activo (Disponible para contratación)" },
+            { value: 0, label: "Inactivo" }
+          ]}
+          searchable={false}
+        />
+      </div>
+
       {/* Botones de acción del formulario */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-border">
+      <div className="flex gap-3 pt-4 border-t border-border">
+        <button
+          type="submit"
+          className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold shadow-xs cursor-pointer"
+        >
+          {isEdit ? "Guardar Cambios del Paquete" : "Crear Paquete"}
+        </button>
         <button
           type="button"
           onClick={onCancel}
@@ -295,88 +318,208 @@ export default function ServicePackagesView() {
             placeholder="Buscar paquetes..."
             maxWidthClass="w-full sm:w-60"
           />
+          <StatusFilterPills
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { key: "all", label: "Todas" },
+              { key: "active", label: "Activas" },
+              { key: "inactive", label: "Inactivas" }
+            ]}
+          />
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setFormErrors({});
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {packages?.length === 0 ? "Crear primer paquete" : "Nuevo Paquete"}
-        </button>
+
+        <div className="flex items-center gap-2">
+          <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+          <button
+            onClick={() => {
+              resetForm();
+              setFormErrors({});
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {packages?.length === 0 ? "Crear primer paquete" : "Nuevo Paquete"}
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredPackages.map((pkg) => {
-          const serviceNames = getServiceNames(pkg.servicios_ids);
-          const isActive = pkg.estado === 1;
+      {filteredPackages.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
+          No se encontraron paquetes
+        </div>
+      ) : viewMode === "table" ? (
+        <div className="overflow-x-auto border border-border rounded-xl bg-card">
+          <table className="w-full text-sm text-left">
+            <thead className="border-b border-border bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              <tr>
+                <th className="py-3.5 px-4">ID</th>
+                <th className="py-3.5 px-4">Paquete</th>
+                <th className="py-3.5 px-4">Servicios Incluidos</th>
+                <th className="py-3.5 px-4">Descuento</th>
+                <th className="py-3.5 px-4">Estado</th>
+                <th className="py-3.5 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredPackages.map((pkg) => {
+                const serviceNames = getServiceNames(pkg.servicios_ids);
+                const isActive = pkg.estado === 1;
 
-          return (
-            <TiltCard key={pkg.id_paquete} maxTilt={6} scale={1.015}>
-              <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-3.5 hover:border-primary/40 hover:shadow-xl transition-all h-full">
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 text-primary">
-                      <Package className="h-5 w-5" />
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
+                return (
+                  <tr key={pkg.id_paquete} className="hover:bg-accent/40 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-muted-foreground text-xs">
+                      #{pkg.id_paquete}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                          <Package className="h-4 w-4" />
+                        </div>
+                        <span className="font-semibold text-foreground text-sm">{pkg.nombre}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-muted-foreground max-w-[250px] truncate" title={serviceNames.join(", ")}>
+                      {serviceNames.length > 0 ? serviceNames.join(" · ") : "—"}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs">
+                      {pkg.descuento_porcentaje > 0 ? (
+                        <span className="text-[11px] font-extrabold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-full shadow-2xs">
+                          -{pkg.descuento_porcentaje}% OFF
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">0%</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${
+                        className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
                           isActive ? "badge-glow-success" : "badge-glow-destructive"
                         }`}
                       >
                         {isActive ? "Activo" : "Inactivo"}
                       </span>
-                      {pkg.descuento_porcentaje > 0 && (
-                        <span className="text-[11px] font-extrabold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-full shadow-2xs">
-                          -{pkg.descuento_porcentaje}% OFF
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormErrors({});
+                            openEditModal(pkg);
+                          }}
+                          className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeactivateModal(pkg)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            isActive
+                              ? "text-destructive hover:bg-destructive/10"
+                              : "text-emerald-500 hover:bg-emerald-500/10"
+                          }`}
+                          title={isActive ? "Desactivar" : "Activar"}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal(pkg)}
+                          className="p-1.5 hover:bg-destructive/10 text-destructive rounded-lg transition-colors cursor-pointer"
+                          title="Eliminar paquete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredPackages.map((pkg) => {
+            const serviceNames = getServiceNames(pkg.servicios_ids);
+            const isActive = pkg.estado === 1;
+
+            return (
+              <TiltCard key={pkg.id_paquete} maxTilt={6} scale={1.015}>
+                <div className="bg-card border border-border rounded-2xl p-5 flex flex-col justify-between gap-3.5 hover:border-primary/40 hover:shadow-xl transition-all h-full">
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 text-primary">
+                        <Package className="h-5 w-5" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 text-[11px] font-bold rounded-full border ${
+                            isActive ? "badge-glow-success" : "badge-glow-destructive"
+                          }`}
+                        >
+                          {isActive ? "Activo" : "Inactivo"}
                         </span>
+                        {pkg.descuento_porcentaje > 0 && (
+                          <span className="text-[11px] font-extrabold text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-full shadow-2xs">
+                            -{pkg.descuento_porcentaje}% OFF
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <p className="font-bold text-foreground text-base leading-snug">{pkg.nombre}</p>
+                      {serviceNames.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          {serviceNames.join(" · ")}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <div className="mt-3">
-                    <p className="font-bold text-foreground text-base leading-snug">{pkg.nombre}</p>
-                    {serviceNames.length > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        {serviceNames.join(" · ")}
-                      </p>
-                    )}
+
+                  <div className="flex items-center gap-1.5 pt-2 border-t border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormErrors({});
+                        openEditModal(pkg);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDeactivateModal(pkg)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-xl transition-colors font-semibold cursor-pointer ${
+                        isActive
+                          ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
+                          : "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                      }`}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      {isActive ? "Desactivar" : "Activar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openDeleteModal(pkg)}
+                      title="Eliminar paquete"
+                      className="p-2 text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-xl transition-colors font-semibold cursor-pointer flex items-center justify-center shrink-0"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-2 border-t border-border/60">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormErrors({});
-                      openEditModal(pkg);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-colors font-semibold cursor-pointer"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openDeactivateModal(pkg)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs rounded-xl transition-colors font-semibold cursor-pointer ${
-                      isActive
-                        ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
-                        : "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
-                    }`}
-                  >
-                    <Power className="h-3.5 w-3.5" />
-                    {isActive ? "Desactivar" : "Activar"}
-                  </button>
-                </div>
-              </div>
-            </TiltCard>
-          );
-        })}
-      </div>
+              </TiltCard>
+            );
+          })}
+        </div>
+      )}
 
       {/* Modal Crear */}
       {showCreateModal && (
@@ -405,6 +548,18 @@ export default function ServicePackagesView() {
           confirmLabel={selectedPackage.estado === 1 ? "Desactivar" : "Activar"}
           onConfirm={onToggleStatus}
           onClose={() => setShowDeactivateModal(false)}
+        />
+      )}
+
+      {/* Modal Eliminar */}
+      {showDeleteModal && selectedPackage && (
+        <ConfirmModal
+          variant="delete"
+          title="¿Eliminar paquete de servicios?"
+          description={`¿Estás seguro de que deseas eliminar permanentemente el paquete "${selectedPackage.nombre}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar Paquete"
+          onConfirm={onHandleDelete}
+          onClose={() => { setShowDeleteModal(false); setSelectedPackage(null); }}
         />
       )}
     </div>

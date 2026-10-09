@@ -205,6 +205,20 @@ export default function ScheduleFormModal({
           </div>
         </div>
 
+        {/* Estado del Horario (Universal al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado !== undefined ? formData.estado : 1}
+            onChange={(val) => handleChange("estado", Number(val))}
+            options={[
+              { value: 1, label: "Activo (Horario operativo disponible)" },
+              { value: 0, label: "Inactivo" }
+            ]}
+            searchable={false}
+          />
+        </div>
+
         <div className="flex gap-3 pt-3 border-t border-border">
           <button
             type="submit"

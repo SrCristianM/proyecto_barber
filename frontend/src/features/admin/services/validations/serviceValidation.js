@@ -41,8 +41,8 @@ export function validateServiceForm(formData) {
   });
   if (precioErr) errors.precio = precioErr;
 
-  // Imagen URL (Opcional, máx 255)
-  if (formData.imagen_url && formData.imagen_url.trim() !== "") {
+  // Imagen URL (Opcional, máx 255 si es URL externa)
+  if (formData.imagen_url && formData.imagen_url.trim() !== "" && !formData.imagen_url.startsWith("data:image/")) {
     const lenImg = validateStringLength(formData.imagen_url, 0, 255, "La imagen del servicio");
     if (lenImg) errors.imagen_url = lenImg;
   }

@@ -202,12 +202,20 @@ export class ProductsRepository {
     return true;
   }
 
-  static async findAllCategories() {
+  static async findAllCategories({ status = "all" } = {}) {
     if (isDatabaseConnected()) {
-      const sql = `SELECT * FROM categoria_producto WHERE estado = 1 ORDER BY nombre ASC`;
-      return await executeQuery(sql);
+      let sql = `SELECT * FROM categoria_producto WHERE 1=1`;
+      const params = [];
+      if (status !== "all") {
+        sql += ` AND estado = ?`;
+        params.push(Number(status));
+      }
+      sql += ` ORDER BY nombre ASC`;
+      return await executeQuery(sql, params);
     }
-    return mockStore.categoria_productos.filter((c) => c.estado === 1);
+    return mockStore.categoria_productos.filter(
+      (c) => status === "all" || c.estado === Number(status)
+    );
   }
 
   static async createCategory(nombre) {
@@ -218,7 +226,47 @@ export class ProductsRepository {
     }
     const nextId = Math.max(...mockStore.categoria_productos.map((c) => c.id_categoria_producto || 0), 0) + 1;
     mockStore.categoria_productos.push({ id_categoria_producto: nextId, nombre, estado: 1 });
+    mockStore.saveToFile();
     return nextId;
+  }
+
+  static async updateCategory(id, nombre) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`UPDATE categoria_producto SET nombre = ? WHERE id_categoria_producto = ?`, [nombre, catId]);
+      return true;
+    }
+    const cat = mockStore.categoria_productos.find((c) => c.id_categoria_producto === catId);
+    if (cat) cat.nombre = nombre;
+    mockStore.saveToFile();
+    return true;
+  }
+
+  static async toggleCategoryStatus(id) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      const rows = await executeQuery(`SELECT estado FROM categoria_producto WHERE id_categoria_producto = ?`, [catId]);
+      if (!rows || rows.length === 0) return null;
+      const newStatus = rows[0].estado === 1 ? 0 : 1;
+      await executeQuery(`UPDATE categoria_producto SET estado = ? WHERE id_categoria_producto = ?`, [newStatus, catId]);
+      return newStatus;
+    }
+    const cat = mockStore.categoria_productos.find((c) => c.id_categoria_producto === catId);
+    if (!cat) return null;
+    cat.estado = cat.estado === 1 ? 0 : 1;
+    mockStore.saveToFile();
+    return cat.estado;
+  }
+
+  static async deleteCategory(id) {
+    const catId = Number(id);
+    if (isDatabaseConnected()) {
+      await executeQuery(`DELETE FROM categoria_producto WHERE id_categoria_producto = ?`, [catId]);
+      return true;
+    }
+    mockStore.categoria_productos = mockStore.categoria_productos.filter((c) => c.id_categoria_producto !== catId);
+    mockStore.saveToFile();
+    return true;
   }
 }
 

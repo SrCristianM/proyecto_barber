@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
+import { Plus, Download, RotateCcw, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useServices, availableCategories } from "../hooks/useServices";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -14,12 +14,13 @@ import ServicesStats from "../components/ServicesStats";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 const TABS = [
-  { key: "services", label: "Servicios" },
   { key: "categories", label: "Categorías" },
-  { key: "packages", label: "Paquetes" }
+  { key: "packages", label: "Paquetes" },
+  { key: "services", label: "Servicios" }
 ];
 
 export default function ServicesPage() {
@@ -30,7 +31,7 @@ export default function ServicesPage() {
   const canDeleteService = hasPermission("servicios", "eliminar");
   const canToggleService = hasPermission("servicios", "activar");
 
-  const [activeTab, setActiveTab] = useState("services");
+  const [activeTab, setActiveTab] = useState("categories");
   const [viewMode, setViewMode] = useState("table");
 
   const {
@@ -71,7 +72,8 @@ export default function ServicesPage() {
     openEditModal,
     openDetailModal,
     openDeleteModal,
-    openDeactivateModal
+    openDeactivateModal,
+    categories: serviceCategories
   } = useServices();
 
   const onHandleCreate = () => { handleCreate(); };
@@ -84,7 +86,9 @@ export default function ServicesPage() {
     setSelectedService(null);
   };
 
-  const categoryOptions = availableCategories.map((c) => ({
+  const activeCategoriesList = (serviceCategories && serviceCategories.length > 0) ? serviceCategories : availableCategories;
+
+  const categoryOptions = activeCategoriesList.map((c) => ({
     value: c.id_categoria_servicio,
     label: c.nombre
   }));
@@ -95,14 +99,14 @@ export default function ServicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Servicios</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona los servicios, categorías y paquetes</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las categorías, paquetes y servicios del negocio</p>
         </div>
         {activeTab === "services" && canCreateService && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {services.length === 0 ? "Crear primer servicio" : "Nuevo Servicio"}
@@ -134,12 +138,26 @@ export default function ServicesPage() {
         })}
       </div>
 
+      {/* Vista Categorías */}
+      {activeTab === "categories" && (
+        <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
+          <ServiceCategoriesView />
+        </div>
+      )}
+
+      {/* Vista Paquetes */}
+      {activeTab === "packages" && (
+        <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
+          <ServicePackagesView />
+        </div>
+      )}
+
       {/* Vista Servicios */}
       {activeTab === "services" && (
         <>
           <ServicesStats services={services} />
 
-          <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
             {/* Toolbar Estandarizada */}
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -185,34 +203,9 @@ export default function ServicesPage() {
                 )}
               </div>
 
-              {/* Botón Exportar y Selector de Vista */}
+              {/* Botón Exportar y Selector de Vista Universal */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("table")}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
-                        ? "bg-card text-foreground shadow-xs border border-border"
-                        : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    title="Vista de Tabla"
-                  >
-                    <Table className="h-4 w-4" />
-                    <span className="hidden sm:inline">Tabla</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
-                        ? "bg-card text-foreground shadow-xs border border-border"
-                        : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    title="Vista de Tarjetas 3D"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="hidden sm:inline">Tarjetas 3D</span>
-                  </button>
-                </div>
+                <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
                 <button
                   onClick={handleExport}
@@ -254,26 +247,13 @@ export default function ServicesPage() {
         </>
       )}
 
-      {/* Vista Categorías */}
-      {activeTab === "categories" && (
-        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
-          <ServiceCategoriesView />
-        </div>
-      )}
-
-      {/* Vista Paquetes */}
-      {activeTab === "packages" && (
-        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
-          <ServicePackagesView />
-        </div>
-      )}
-
       {/* Modales de Servicios */}
       {showCreateModal && (
         <ServiceFormModal
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          categories={activeCategoriesList}
           onSubmit={onHandleCreate}
           onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
@@ -284,6 +264,7 @@ export default function ServicesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          categories={activeCategoriesList}
           onSubmit={onHandleEdit}
           onClose={() => { setShowEditModal(false); setSelectedService(null); resetForm(); }}
         />

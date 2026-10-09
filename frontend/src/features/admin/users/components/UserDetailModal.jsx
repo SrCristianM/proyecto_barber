@@ -83,6 +83,15 @@ export default function UserDetailModal({ user, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              Documento de Identidad
+            </span>
+            <p className="text-base font-bold text-foreground">
+              {user.tipo_documento ? `${user.tipo_documento} ` : ""}{user.documento || "No especificado"}
+            </p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Nombre Completo
             </span>
             <p className="text-base font-bold text-foreground">{user.nombre} {user.apellido}</p>
@@ -97,19 +106,12 @@ export default function UserDetailModal({ user, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-              Documento de Identidad
-            </span>
-            <p className="text-sm font-semibold text-foreground">{user.documento || "No especificado"}</p>
-          </div>
-
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Teléfono
             </span>
             <p className="text-sm font-medium text-foreground">{user.telefono || "No especificado"}</p>
           </div>
 
-          <div className="sm:col-span-2">
+          <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Correo Electrónico
             </span>
@@ -118,7 +120,16 @@ export default function UserDetailModal({ user, onEdit, onClose }) {
 
           <div className="sm:col-span-2 pt-3 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
             <span>Fecha de Registro: <strong className="text-foreground">{user.fecha_registro}</strong></span>
-            <span>Estado: <strong className="text-foreground">{user.estado === 1 ? "Activo" : "Inactivo"}</strong></span>
+            <div className="flex items-center gap-1.5">
+              <span>Estado del Usuario:</span>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
+                user.estado === 1
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}>
+                {user.estado === 1 ? "● Activo" : "● Inactivo"}
+              </span>
+            </div>
           </div>
         </div>
 

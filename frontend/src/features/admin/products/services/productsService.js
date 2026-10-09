@@ -11,8 +11,37 @@ export async function getProducts(filters = {}) {
   return await apiRequest(`${API_URL}${qs}`);
 }
 
-export async function getProductCategories() {
-  return await apiRequest(`${API_URL}/categories`);
+export async function getProductCategories(filters = {}) {
+  const query = new URLSearchParams();
+  if (filters.status && filters.status !== "all") query.append("status", filters.status);
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  return await apiRequest(`${API_URL}/categories${qs}`);
+}
+
+export async function createProductCategory(data) {
+  return await apiRequest(`${API_URL}/categories`, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateProductCategory(id, data) {
+  return await apiRequest(`${API_URL}/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
+}
+
+export async function toggleProductCategoryStatus(id) {
+  return await apiRequest(`${API_URL}/categories/${id}/status`, {
+    method: "PATCH"
+  });
+}
+
+export async function deleteProductCategory(id) {
+  return await apiRequest(`${API_URL}/categories/${id}`, {
+    method: "DELETE"
+  });
 }
 
 export async function createProduct(data) {

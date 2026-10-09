@@ -1,136 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
 import SearchableSelect from "../../shared/components/SearchableSelect";
 import NumericInput from "../../shared/components/NumericInput";
+import ImageUploader from "../../shared/components/ImageUploader";
 import { availableCategories } from "../hooks/useServices";
-import { Scissors, ImageOff, Loader2, X } from "lucide-react";
 import { validateServiceForm } from "../validations/serviceValidation";
 
-const SAMPLE_IMAGES = [
-  { label: "Corte Clásico", url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80" },
-  { label: "Barba & Afeitado", url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80" },
-  { label: "Degradado / Fade", url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80" }
-];
-
-function ImagePreview({ url, onClear, onSelectSample }) {
-  const [status, setStatus] = useState("idle");
-
-  useEffect(() => {
-    const trimmed = (url || "").trim();
-    if (!trimmed) {
-      setStatus("idle");
-      return;
-    }
-
-    setStatus("loading");
-    const timeout = setTimeout(() => {
-      const img = new Image();
-      img.referrerPolicy = "no-referrer";
-      img.onload = () => setStatus("ok");
-      img.onerror = () => setStatus("error");
-      img.src = trimmed;
-    }, 200);
-
-    return () => clearTimeout(timeout);
-  }, [url]);
-
-  if (status === "idle") {
-    return (
-      <div className="mt-2 p-3 rounded-lg border border-dashed border-border bg-muted/20">
-        <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-          O prueba con una imagen de ejemplo rápida:
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {SAMPLE_IMAGES.map((sample) => (
-            <button
-              key={sample.label}
-              type="button"
-              onClick={() => onSelectSample(sample.url)}
-              className="px-2.5 py-1 text-[11px] font-medium bg-card hover:bg-accent border border-border rounded-md text-foreground transition-colors cursor-pointer"
-            >
-              {sample.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-2 space-y-2">
-      <div className="rounded-xl overflow-hidden border border-border bg-muted/30 relative group">
-        {status === "loading" && (
-          <div className="h-40 flex items-center justify-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            Cargando vista previa…
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="p-4 flex flex-col items-center justify-center text-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-              <ImageOff className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-destructive">
-                No se pudo cargar la imagen desde este enlace
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-1 max-w-sm">
-                Asegúrate de copiar la dirección directa de la imagen (.jpg, .png, .webp).
-              </p>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 justify-center">
-              <button
-                type="button"
-                onClick={() => onSelectSample(SAMPLE_IMAGES[0].url)}
-                className="px-2.5 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded-md font-medium transition-colors cursor-pointer"
-              >
-                Usar imagen de prueba
-              </button>
-              <button
-                type="button"
-                onClick={onClear}
-                className="px-2.5 py-1 text-xs border border-border hover:bg-accent rounded-md text-foreground transition-colors cursor-pointer"
-              >
-                Limpiar URL
-              </button>
-            </div>
-          </div>
-        )}
-
-        {status === "ok" && (
-          <div className="relative">
-            <img
-              src={url.trim()}
-              alt="Vista previa del servicio"
-              referrerPolicy="no-referrer"
-              className="w-full h-44 object-cover"
-            />
-            <button
-              type="button"
-              onClick={onClear}
-              className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-black text-white rounded-full transition-colors shadow cursor-pointer"
-              title="Quitar imagen"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {status === "ok" && (
-        <p className="text-[11px] text-success flex items-center gap-1">
-          ✓ Imagen cargada correctamente
-        </p>
-      )}
-    </div>
-  );
-}
-
-export default function ServiceFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
+export default function ServiceFormModal({ mode, formData, setFormData, onSubmit, onClose, categories: categoriesProp }) {
   const isCreate = mode === "create";
   const [errors, setErrors] = useState({});
+  const activeCategories = (categoriesProp && categoriesProp.length > 0) ? categoriesProp : availableCategories;
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -139,12 +19,11 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
     }
   };
 
-  const handleClearUrl = () => {
-    handleChange("imagen_url", "");
-  };
-
-  const handleSelectSample = (sampleUrl) => {
-    handleChange("imagen_url", sampleUrl);
+  const handleImageChange = (dataUrl) => {
+    setFormData((prev) => ({ ...prev, imagen_url: dataUrl || "" }));
+    if (errors.imagen_url) {
+      setErrors((prev) => ({ ...prev, imagen_url: null }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -161,6 +40,7 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
   return (
     <Modal title={isCreate ? "Crear Nuevo Servicio" : "Editar Servicio"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {/* Nombre del Servicio */}
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">
             Nombre del Servicio <span className="text-destructive">*</span>
@@ -183,11 +63,12 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           <FormFieldError error={errors.nombre} />
         </div>
 
+        {/* Categoría */}
         <div>
           <SearchableSelect
             label="Categoría"
             required
-            options={availableCategories.map((cat) => ({ value: cat.id_categoria_servicio, label: cat.nombre }))}
+            options={activeCategories.map((cat) => ({ value: cat.id_categoria_servicio, label: cat.nombre }))}
             value={formData.id_categoria_servicio}
             onChange={(val) => handleChange("id_categoria_servicio", Number(val))}
             placeholder="Seleccionar categoría de servicio..."
@@ -196,6 +77,7 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Duración */}
           <div>
             <NumericInput
               label="Duración (minutos)"
@@ -210,6 +92,7 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
               placeholder="30"
             />
           </div>
+          {/* Precio */}
           <div>
             <NumericInput
               label="Precio ($)"
@@ -226,35 +109,25 @@ export default function ServiceFormModal({ mode, formData, setFormData, onSubmit
           </div>
         </div>
 
-        {/* URL de imagen */}
+        {/* Imagen del Servicio igual que en productos */}
+        <ImageUploader
+          label="Imagen del Servicio (Opcional)"
+          value={formData.imagen_url}
+          onChange={handleImageChange}
+        />
+        <FormFieldError error={errors.imagen_url} />
+
+        {/* Estado del Servicio (Universal al final) */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-sm font-medium text-foreground">
-              URL de Imagen <span className="text-muted-foreground font-normal text-xs">(Opcional, máx. 255 car.)</span>
-            </label>
-          </div>
-          <div className="relative">
-            <Scissors className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="url"
-              name="imagen_url"
-              id="imagen_url"
-              maxLength={255}
-              value={formData.imagen_url || ""}
-              onChange={(e) => handleChange("imagen_url", e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.imagen_url
-                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                  : "border-input focus:ring-2 focus:ring-primary"
-              }`}
-              placeholder="https://images.unsplash.com/photo-..."
-            />
-          </div>
-          <FormFieldError error={errors.imagen_url} />
-          <ImagePreview
-            url={formData.imagen_url}
-            onClear={handleClearUrl}
-            onSelectSample={handleSelectSample}
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado !== undefined ? formData.estado : 1}
+            onChange={(val) => handleChange("estado", Number(val))}
+            options={[
+              { value: 1, label: "Activo (Disponible para citas y catálogo)" },
+              { value: 0, label: "Inactivo" }
+            ]}
+            searchable={false}
           />
         </div>
 

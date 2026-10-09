@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
-import { Plus, Download, LayoutGrid, Table, RotateCcw, Building2 } from "lucide-react";
+import { Plus, Download, RotateCcw, Building2 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
-import { usePurchases, availableSuppliers, availableProducts } from "../hooks/usePurchases";
+import { usePurchases } from "../hooks/usePurchases";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
 import PurchasesStats from "../components/PurchasesStats";
 import PurchaseCard from "../components/PurchaseCard";
@@ -15,6 +15,7 @@ import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 export default function PurchasesPage() {
@@ -79,7 +80,11 @@ export default function PurchasesPage() {
     openCancelModal,
     getSupplierName,
     getSupplierNit,
-    getUserName
+    getUserName,
+    suppliers,
+    products,
+    getSupplierObject,
+    getUserObject
   } = usePurchases();
 
   // Detección de reabastecimiento directo desde inventario de productos
@@ -88,13 +93,13 @@ export default function PurchasesPage() {
     if (reorderId) {
       const pId = Number(reorderId);
       openCreateModal();
-      const prod = availableProducts.find((p) => p.id_producto === pId) || {
+      const prod = (products || []).find((p) => p.id_producto === pId) || {
         id_producto: pId,
         nombre: `Producto #${pId}`,
-        precio_sugerido: 12000
+        precio: 12000
       };
       const suggestedQty = 10;
-      const unitPrice = prod.precio_sugerido || 10000;
+      const unitPrice = Number(prod.precio || prod.precio_sugerido || 10000);
       setFormData((prev) => ({
         ...prev,
         detalles: [
@@ -103,7 +108,8 @@ export default function PurchasesPage() {
             cantidad: suggestedQty,
             precio_unitario: unitPrice,
             subtotal: suggestedQty * unitPrice,
-            nombre_producto: prod.nombre
+            nombre_producto: prod.nombre,
+            producto_nombre: prod.nombre
           }
         ],
         total: suggestedQty * unitPrice
@@ -111,7 +117,7 @@ export default function PurchasesPage() {
       searchParams.delete("reorderProductId");
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, products]);
 
   const triggerGoldenConfetti = () => {
     try {
@@ -146,7 +152,7 @@ export default function PurchasesPage() {
     setSelectedPurchase(null);
   };
 
-  const supplierOptions = availableSuppliers.map((s) => ({
+  const supplierOptions = (suppliers || []).map((s) => ({
     value: s.id_proveedor,
     label: s.nombre
   }));
@@ -166,7 +172,7 @@ export default function PurchasesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {purchases.length === 0 ? "Crear primera compra" : "Nueva Compra"}
@@ -184,7 +190,7 @@ export default function PurchasesPage() {
       />
 
       {/* Contenedor Principal */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
         {/* Barra de Filtros Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -239,8 +245,10 @@ export default function PurchasesPage() {
             )}
           </div>
 
-          {/* Botón Exportar */}
+          {/* Botón Exportar y Selector de Vista Universal */}
           <div className="flex items-center gap-2">
+            <ViewModeToggle viewMode={viewMode || "table"} onChange={setViewMode} />
+
             <button
               onClick={handleExport}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
@@ -283,6 +291,8 @@ export default function PurchasesPage() {
             onSort={handleSort}
             getSupplierName={getSupplierName}
             getUserName={getUserName}
+            getSupplierObject={getSupplierObject}
+            getUserObject={getUserObject}
             onDetail={openDetailModal}
             onEdit={openEditModal}
             onCancel={canCancelPurchase ? openCancelModal : null}
@@ -297,6 +307,8 @@ export default function PurchasesPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          suppliers={suppliers}
+          products={products}
           addProductRow={addProductRow}
           updateProductRow={updateProductRow}
           removeProductRow={removeProductRow}
@@ -313,6 +325,8 @@ export default function PurchasesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          suppliers={suppliers}
+          products={products}
           addProductRow={addProductRow}
           updateProductRow={updateProductRow}
           removeProductRow={removeProductRow}
@@ -328,6 +342,9 @@ export default function PurchasesPage() {
       {showDetailModal && selectedPurchase && (
         <PurchaseDetailModal
           purchase={selectedPurchase}
+          suppliers={suppliers}
+          products={products}
+          getSupplierObject={getSupplierObject}
           onEdit={() => {
             setShowDetailModal(false);
             openEditModal(selectedPurchase);

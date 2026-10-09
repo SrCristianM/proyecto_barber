@@ -2,14 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { ESTADOS_NOVEDAD } from "../../../../shared/types/database";
 import { createNotification, dispatchNotificationUpdate } from "../../../../shared/services/notificationService";
 import { getNovelties, createNovelty as createNoveltyApi, updateNoveltyStatus as updateNoveltyStatusApi } from "../services/schedulesService.js";
+import { getBarbers } from "../../barbers/services/barbersService.js";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService.js";
+import { getLocalDateString } from "../../../../shared/utils/dateUtils";
 
 const STORAGE_KEY = "barber_novelties_db";
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
-  { id_barbero: 2, nombre: "Miguel Ángel" },
-  { id_barbero: 3, nombre: "Javier Torres" },
-  { id_barbero: 4, nombre: "Luis Martínez" }
+  { id_barbero: 2, nombre: "Esteban Mejía" },
+  { id_barbero: 3, nombre: "Mateo Gómez" }
 ];
 
 export const NOVELTY_TYPES = [
@@ -26,7 +32,7 @@ export const NOVELTY_TYPES = [
 const emptyForm = {
   id_barbero: 1,
   tipo: "Permiso",
-  fecha: new Date().toISOString().split("T")[0],
+  fecha: getLocalDateString(),
   descripcion: "",
   estado: "Pendiente"
 };
@@ -51,6 +57,7 @@ function saveStoredNovelties(data) {
 
 export function useScheduleNovelties() {
   const [novelties, setNovelties] = useState(getStoredNovelties);
+  const [barbersList, setBarbersList] = useState(mockBarbersList);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -59,6 +66,18 @@ export function useScheduleNovelties() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedNovelty, setSelectedNovelty] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+
+  const fetchBarbersList = useCallback(async () => {
+    try {
+      const data = await getBarbers();
+      if (Array.isArray(data) && data.length > 0) {
+        setBarbersList(data.map((b) => ({
+          id_barbero: b.id_barbero,
+          nombre: `${b.nombre} ${b.apellido || ""}`.trim()
+        })));
+      }
+    } catch {}
+  }, []);
 
   const fetchFromApi = useCallback(async () => {
     try {
@@ -75,6 +94,7 @@ export function useScheduleNovelties() {
 
   useEffect(() => {
     fetchFromApi();
+    fetchBarbersList();
 
     // Sondeo de tiempo real para que novedades enviadas desde la app móvil aparezcan de inmediato
     const interval = setInterval(() => {
@@ -83,6 +103,7 @@ export function useScheduleNovelties() {
 
     const handleSync = () => {
       fetchFromApi();
+      fetchBarbersList();
     };
     window.addEventListener("storage", handleSync);
     window.addEventListener("barber_notification_update", handleSync);
@@ -94,19 +115,17 @@ export function useScheduleNovelties() {
       window.removeEventListener("barber_notification_update", handleSync);
       window.removeEventListener("focus", handleSync);
     };
-  }, [fetchFromApi]);
+  }, [fetchFromApi, fetchBarbersList]);
+
+  useDataSync([SYNC_ENTITIES.BARBERS], fetchBarbersList);
+  useDataSync([SYNC_ENTITIES.SCHEDULES], fetchFromApi);
 
   const getBarberName = (id_barbero, novObj) => {
     if (novObj && novObj.barbero_nombre) {
       return novObj.barbero_nombre;
     }
-    try {
-      const rawBarbers = localStorage.getItem("barber_barbers_db");
-      const storedBarbers = rawBarbers ? JSON.parse(rawBarbers) : mockBarbersList;
-      const b = storedBarbers.find((barber) => Number(barber.id_barbero) === Number(id_barbero));
-      if (b) return `${b.nombre} ${b.apellido || ""}`.trim();
-    } catch {}
-    const b = mockBarbersList.find((barber) => barber.id_barbero === Number(id_barbero));
+    const b = barbersList.find((barber) => Number(barber.id_barbero) === Number(id_barbero)) ||
+      mockBarbersList.find((barber) => barber.id_barbero === Number(id_barbero));
     return b ? b.nombre : "Sin Barbero";
   };
 
@@ -155,6 +174,7 @@ export function useScheduleNovelties() {
 
     setShowCreateModal(false);
     resetForm();
+    notifyDataChange(SYNC_ENTITIES.SCHEDULES);
   };
 
   const handleEdit = () => {
@@ -176,6 +196,7 @@ export function useScheduleNovelties() {
     setShowEditModal(false);
     setSelectedNovelty(null);
     resetForm();
+    notifyDataChange(SYNC_ENTITIES.SCHEDULES);
   };
 
   const handleDelete = () => {
@@ -185,6 +206,7 @@ export function useScheduleNovelties() {
     saveStoredNovelties(updated);
     setShowDeleteModal(false);
     setSelectedNovelty(null);
+    notifyDataChange(SYNC_ENTITIES.SCHEDULES);
   };
 
   const changeStatus = async (id, newStatus) => {
@@ -201,6 +223,7 @@ export function useScheduleNovelties() {
     } catch (err) {
       console.warn("Error sincronizando cambio de estado con API:", err);
     }
+    notifyDataChange(SYNC_ENTITIES.SCHEDULES);
 
     // Despachar notificación al Barbero
     if (targetNov) {
@@ -251,7 +274,7 @@ export function useScheduleNovelties() {
   return {
     novelties,
     filteredNovelties,
-    barbers: mockBarbersList,
+    barbers: barbersList.length > 0 ? barbersList : mockBarbersList,
     noveltyTypes: NOVELTY_TYPES,
     noveltyStatuses: ESTADOS_NOVEDAD,
     searchTerm,

@@ -140,12 +140,12 @@ export default function SettingsPage({ isDark, setIsDark }) {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Personaliza el sistema según tus necesidades</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           {hasUnsaved && (
             <span className="text-xs text-warning font-medium flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-warning rounded-full animate-pulse" />
@@ -154,7 +154,7 @@ export default function SettingsPage({ isDark, setIsDark }) {
           )}
           <button
             onClick={handleSave}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium w-full sm:w-auto cursor-pointer"
           >
             <Save className="h-4 w-4" />
             Guardar Cambios
@@ -162,10 +162,10 @@ export default function SettingsPage({ isDark, setIsDark }) {
         </div>
       </div>
 
-      <div className="flex gap-5">
+      <div className="flex flex-col md:flex-row gap-5">
         {/* Sidebar de navegación */}
-        <div className="w-56 shrink-0">
-          <nav className="bg-card border border-border rounded-xl overflow-hidden">
+        <div className="w-full md:w-56 shrink-0">
+          <nav className="bg-card border border-border rounded-xl overflow-hidden flex md:flex-col overflow-x-auto">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isActive = activeSection === section.key;
@@ -173,9 +173,9 @@ export default function SettingsPage({ isDark, setIsDark }) {
                 <button
                   key={section.key}
                   onClick={() => setActiveSection(section.key)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors group border-b border-border last:border-0 ${
+                  className={`flex-1 md:flex-initial flex items-center gap-3 px-4 py-3.5 text-left transition-colors group border-b md:border-b border-r md:border-r-0 border-border last:border-0 whitespace-nowrap cursor-pointer ${
                     isActive
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-primary font-semibold"
                       : "text-foreground hover:bg-accent"
                   }`}
                 >

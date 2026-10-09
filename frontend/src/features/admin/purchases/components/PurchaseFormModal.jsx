@@ -1,22 +1,21 @@
-import { useState } from "react";
-import { Plus, Trash2, ShoppingBag, AlertCircle, Building2, UserCheck, Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router";
+import { Plus, Trash2, ShoppingBag, AlertCircle, Building2, UserCheck, Calendar, ExternalLink } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
 import SearchableSelect from "../../shared/components/SearchableSelect";
 import NumericInput from "../../shared/components/NumericInput";
 import PdfUploader from "../../shared/components/PdfUploader";
-import {
-  availableSuppliers,
-  availableProducts,
-  availableUsers,
-  purchaseStatuses
-} from "../hooks/usePurchases";
+import { getCurrentUser } from "../../../auth/services/authService";
+import { purchaseStatuses } from "../hooks/usePurchases";
 import { validatePurchaseForm } from "../validations/purchaseValidation";
 
 export default function PurchaseFormModal({
   mode,
   formData,
   setFormData,
+  suppliers = [],
+  products = [],
   addProductRow,
   updateProductRow,
   removeProductRow,
@@ -24,22 +23,42 @@ export default function PurchaseFormModal({
   onClose
 }) {
   const isCreate = mode === "create";
-  const currentUser = availableUsers.find((u) => u.id_usuario === Number(formData.id_usuario)) || availableUsers[0];
-  const [selectedProductId, setSelectedProductId] = useState(availableProducts[0]?.id_producto || 1);
+  const currentUser = getCurrentUser();
+
+  // Filtrar solo proveedores activos (o el actualmente asociado si está en modo edición)
+  const activeSuppliers = (suppliers || []).filter(
+    (s) => s.estado === 1 || (!isCreate && Number(s.id_proveedor) === Number(formData.id_proveedor))
+  );
+
+  // Filtrar productos activos
+  const activeProducts = (products || []).filter(
+    (p) => p.estado === 1 || (!isCreate && formData.detalles?.some((d) => Number(d.id_producto) === Number(p.id_producto)))
+  );
+
+  const [selectedProductId, setSelectedProductId] = useState(() => activeProducts[0]?.id_producto || "");
   const [addQuantity, setAddQuantity] = useState(1);
-  const [addPrice, setAddPrice] = useState(availableProducts[0]?.precio_sugerido || 10000);
+  const [addPrice, setAddPrice] = useState(() => activeProducts[0]?.precio || activeProducts[0]?.precio_sugerido || 0);
   const [errors, setErrors] = useState({});
 
-  const handleProductSelectChange = (e) => {
-    const prodId = Number(e.target.value);
+  // Sincronizar selección de producto inicial cuando cargue la lista desde el backend
+  useEffect(() => {
+    if ((!selectedProductId || !activeProducts.some((p) => p.id_producto === selectedProductId)) && activeProducts.length > 0) {
+      setSelectedProductId(activeProducts[0].id_producto);
+      setAddPrice(Number(activeProducts[0].precio || activeProducts[0].precio_sugerido || 0));
+    }
+  }, [activeProducts, selectedProductId]);
+
+  const handleProductSelectChange = (val) => {
+    const prodId = Number(val);
     setSelectedProductId(prodId);
-    const prod = availableProducts.find((p) => p.id_producto === prodId);
+    const prod = activeProducts.find((p) => p.id_producto === prodId);
     if (prod) {
-      setAddPrice(prod.precio_sugerido);
+      setAddPrice(Number(prod.precio || prod.precio_sugerido || 0));
     }
   };
 
   const handleAddNewItem = () => {
+    if (!selectedProductId) return;
     if (addQuantity < 1) return;
     addProductRow(selectedProductId, addQuantity, addPrice);
     setAddQuantity(1);
@@ -59,6 +78,10 @@ export default function PurchaseFormModal({
     onSubmit();
   };
 
+  const userDisplayName = currentUser
+    ? `${currentUser.nombre} ${currentUser.apellido || ""}`.trim()
+    : "Administrador en Turno";
+
   return (
     <Modal
       title={isCreate ? "Registrar Nueva Compra a Proveedor" : "Editar Compra"}
@@ -70,25 +93,57 @@ export default function PurchaseFormModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Proveedor */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
-              Proveedor <span className="text-destructive">*</span>
-            </label>
-            <SearchableSelect
-              value={formData.id_proveedor}
-              onChange={(val) => {
-                setFormData({ ...formData, id_proveedor: Number(val) });
-                if (errors.id_proveedor) setErrors((prev) => ({ ...prev, id_proveedor: null }));
-              }}
-              options={availableSuppliers.map((sup) => ({
-                value: sup.id_proveedor,
-                label: sup.nombre,
-                subtitle: sup.nit ? `NIT: ${sup.nit}` : undefined
-              }))}
-              placeholder="Seleccionar proveedor..."
-              searchPlaceholder="Buscar por nombre o NIT..."
-              error={errors.id_proveedor}
-            />
-            <FormFieldError error={errors.id_proveedor} />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-foreground">
+                Proveedor <span className="text-destructive">*</span>
+              </label>
+              <Link
+                to="/dashboard/suppliers"
+                className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                title="Administrar proveedores en el catálogo"
+              >
+                <span>Gestor Proveedores</span>
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {activeSuppliers.length === 0 ? (
+              <div className="p-3.5 bg-destructive/10 border border-destructive/30 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-destructive font-medium text-xs">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>No hay proveedores activos en la base de datos</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Debes registrar al menos un proveedor en el sistema antes de generar una orden de compra.
+                </p>
+                <Link
+                  to="/dashboard/suppliers"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <Building2 className="h-3.5 w-3.5" />
+                  <span>Registrar Proveedor Ahora</span>
+                </Link>
+              </div>
+            ) : (
+              <>
+                <SearchableSelect
+                  value={formData.id_proveedor}
+                  onChange={(val) => {
+                    setFormData({ ...formData, id_proveedor: Number(val) });
+                    if (errors.id_proveedor) setErrors((prev) => ({ ...prev, id_proveedor: null }));
+                  }}
+                  options={activeSuppliers.map((sup) => ({
+                    value: sup.id_proveedor,
+                    label: sup.nombre,
+                    subtitle: sup.nit ? `NIT: ${sup.nit}` : (sup.telefono ? `Tel: ${sup.telefono}` : undefined)
+                  }))}
+                  placeholder="Seleccionar proveedor registrado..."
+                  searchPlaceholder="Buscar por nombre o NIT..."
+                  error={errors.id_proveedor}
+                />
+                <FormFieldError error={errors.id_proveedor} />
+              </>
+            )}
           </div>
 
           {/* Usuario Responsable (Contexto de Sesión) */}
@@ -98,7 +153,7 @@ export default function PurchaseFormModal({
             </label>
             <div className="flex items-center gap-2 px-3.5 py-2.5 bg-secondary/40 border border-border/80 rounded-xl text-foreground text-sm font-medium">
               <UserCheck className="h-4 w-4 text-primary" />
-              <span>{currentUser?.nombre || "Administrador en Turno"}</span>
+              <span>{userDisplayName}</span>
             </div>
           </div>
         </div>
@@ -176,61 +231,68 @@ export default function PurchaseFormModal({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Agregar Producto a la Factura
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
-              <div className="sm:col-span-6">
-                <label className="block text-[11px] text-muted-foreground mb-1">Producto</label>
-                <SearchableSelect
-                  value={selectedProductId}
-                  onChange={(val) => {
-                    setSelectedProductId(Number(val));
-                    const prod = availableProducts.find((p) => p.id_producto === Number(val));
-                    if (prod) setAddPrice(prod.precio_sugerido || prod.precio || 10000);
-                  }}
-                  options={availableProducts.map((p) => ({
-                    value: p.id_producto,
-                    label: p.nombre,
-                    subtitle: `Stock actual: ${p.stock} | Precio sugerido: $${p.precio_sugerido?.toLocaleString() || p.precio?.toLocaleString()}`
-                  }))}
-                  placeholder="Seleccionar producto..."
-                  searchPlaceholder="Buscar producto..."
-                  size="sm"
-                />
+            {activeProducts.length === 0 ? (
+              <div className="p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground flex items-center justify-between">
+                <span>No hay productos registrados en el inventario.</span>
+                <Link to="/dashboard/products" className="text-primary hover:underline font-semibold flex items-center gap-1">
+                  <span>Ir a Productos</span>
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                <div className="sm:col-span-6">
+                  <label className="block text-[11px] text-muted-foreground mb-1">Producto</label>
+                  <SearchableSelect
+                    value={selectedProductId}
+                    onChange={handleProductSelectChange}
+                    options={activeProducts.map((p) => ({
+                      value: p.id_producto,
+                      label: p.nombre,
+                      subtitle: `Stock actual: ${p.stock ?? 0} | Costo sug: $${Number(p.precio || p.precio_sugerido || 0).toLocaleString("es-CO")}`
+                    }))}
+                    placeholder="Seleccionar producto del catálogo..."
+                    searchPlaceholder="Buscar producto..."
+                    size="sm"
+                  />
+                </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
-                <NumericInput
-                  min={1}
-                  value={addQuantity}
-                  onChange={(val) => setAddQuantity(parseInt(val, 10) || 1)}
-                  placeholder="1"
-                  className="py-1.5 text-xs text-center font-medium"
-                />
-              </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] text-muted-foreground mb-1">Cantidad</label>
+                  <NumericInput
+                    min={1}
+                    value={addQuantity}
+                    onChange={(val) => setAddQuantity(parseInt(val, 10) || 1)}
+                    placeholder="1"
+                    className="py-1.5 text-xs text-center font-medium"
+                  />
+                </div>
 
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] text-muted-foreground mb-1">Costo Unit. ($)</label>
-                <NumericInput
-                  min={0}
-                  allowDecimals={true}
-                  value={addPrice}
-                  onChange={(val) => setAddPrice(parseFloat(val) || 0)}
-                  placeholder="0"
-                  className="py-1.5 text-xs text-right font-medium"
-                />
-              </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] text-muted-foreground mb-1">Costo Unit. ($)</label>
+                  <NumericInput
+                    min={0}
+                    allowDecimals={true}
+                    value={addPrice}
+                    onChange={(val) => setAddPrice(parseFloat(val) || 0)}
+                    placeholder="0"
+                    className="py-1.5 text-xs text-right font-medium"
+                  />
+                </div>
 
-              <div className="sm:col-span-2">
-                <button
-                  type="button"
-                  onClick={handleAddNewItem}
-                  className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-xs font-medium flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Agregar
-                </button>
+                <div className="sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={handleAddNewItem}
+                    disabled={!selectedProductId}
+                    className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity text-xs font-medium flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Agregar
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Tabla de Productos Agregados */}
@@ -258,10 +320,10 @@ export default function PurchaseFormModal({
                         <SearchableSelect
                           value={detalle.id_producto}
                           onChange={(val) => updateProductRow(idx, "id_producto", val)}
-                          options={availableProducts.map((p) => ({
+                          options={activeProducts.map((p) => ({
                             value: p.id_producto,
                             label: p.nombre,
-                            subtitle: `$${Number(p.precio_sugerido || 0).toLocaleString("es-CO")}`
+                            subtitle: `$${Number(p.precio || p.precio_sugerido || 0).toLocaleString("es-CO")}`
                           }))}
                           size="sm"
                           searchable={true}
@@ -320,11 +382,25 @@ export default function PurchaseFormModal({
           <FormFieldError error={errors.detalles} />
         </div>
 
+        {/* Estado de la Compra (Universal al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado || "Registrada"}
+            onChange={(val) => setFormData((prev) => ({ ...prev, estado: val }))}
+            options={[
+              { value: "Registrada", label: "Registrada (Inventario incrementado)" },
+              { value: "Anulada", label: "Anulada" }
+            ]}
+            searchable={false}
+          />
+        </div>
+
         {/* Botones de acción */}
         <div className="flex gap-3 pt-3 border-t border-border">
           <button
             type="submit"
-            disabled={formData.detalles.length === 0}
+            disabled={formData.detalles.length === 0 || activeSuppliers.length === 0}
             className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold text-sm shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreate ? "Registrar Compra" : "Guardar Cambios"}

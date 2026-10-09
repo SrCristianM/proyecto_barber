@@ -29,6 +29,8 @@ import {
   completeBarberAppointment
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
+import { getLocalDateString, addDays, parseLocalDate } from "../../../shared/utils/dateUtils";
 
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
@@ -44,7 +46,7 @@ const getLoyaltyBadge = (tier) => {
 };
 
 export default function BarberAgendaPage() {
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
   const [agenda, setAgenda] = useState({ slots: [], totalCitas: 0, citasProgramadas: 0 });
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -55,6 +57,13 @@ export default function BarberAgendaPage() {
   });
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
+
+  const loadAgenda = (dateStr) => {
+    setLoading(true);
+    const data = getBarberAgendaForDate(dateStr);
+    setAgenda(data);
+    setLoading(false);
+  };
 
   // Actualizar hora en vivo cada minuto para la línea de escaneo temporal
   useEffect(() => {
@@ -69,12 +78,7 @@ export default function BarberAgendaPage() {
     loadAgenda(selectedDate);
   }, [selectedDate]);
 
-  const loadAgenda = (dateStr) => {
-    setLoading(true);
-    const data = getBarberAgendaForDate(dateStr);
-    setAgenda(data);
-    setLoading(false);
-  };
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS, SYNC_ENTITIES.SCHEDULES], () => loadAgenda(selectedDate));
 
   const handleCompleteAppointment = (id_cita) => {
     if (!hasPermission("citas", "editar")) {
@@ -122,12 +126,10 @@ export default function BarberAgendaPage() {
 
   // Generar 7 días circundantes para el selector visual de días
   const getDaysRow = () => {
-    const base = new Date(selectedDate + "T12:00:00");
     const days = [];
     for (let i = -3; i <= 3; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      const iso = d.toISOString().split("T")[0];
+      const iso = addDays(selectedDate, i);
+      const d = parseLocalDate(iso);
       const dayName = d.toLocaleDateString("es-ES", { weekday: "short" }).toUpperCase().replace(".", "");
       const dayNumber = d.getDate();
       days.push({ iso, dayName, dayNumber });
@@ -136,19 +138,15 @@ export default function BarberAgendaPage() {
   };
 
   const handlePrevDay = () => {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split("T")[0]);
+    setSelectedDate((d) => addDays(d, -1));
   };
 
   const handleNextDay = () => {
-    const d = new Date(selectedDate + "T12:00:00");
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split("T")[0]);
+    setSelectedDate((d) => addDays(d, 1));
   };
 
   const handleToday = () => {
-    setSelectedDate(new Date().toISOString().split("T")[0]);
+    setSelectedDate(getLocalDateString());
   };
 
   // Filtrar slots según filtro de estado
@@ -247,7 +245,7 @@ export default function BarberAgendaPage() {
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2 p-2 rounded-2xl bg-card border border-border/80 shadow-xs relative">
         {getDaysRow().map((item) => {
           const isSelected = item.iso === selectedDate;
-          const isToday = item.iso === new Date().toISOString().split("T")[0];
+          const isToday = item.iso === getLocalDateString();
 
           return (
             <button
@@ -369,7 +367,7 @@ export default function BarberAgendaPage() {
                 const apt = slot.cita;
 
                 // Detectar si este slot corresponde a la hora actual en la jornada de hoy
-                const isToday = selectedDate === new Date().toISOString().split("T")[0];
+                const isToday = selectedDate === getLocalDateString();
                 const [currentHour] = (currentTimeStr || "00:00").split(":").map(Number);
                 const safeSlotHora = String(slot.hora || "08:00");
                 const [slotHour] = safeSlotHora.split(":").map(Number);

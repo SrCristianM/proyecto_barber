@@ -46,12 +46,31 @@ export class ProductsService {
     return true;
   }
 
-  static async getAllCategories() {
-    return await ProductsRepository.findAllCategories();
+  static async getAllCategories(filters = {}) {
+    return await ProductsRepository.findAllCategories(filters);
   }
 
   static async createCategory(nombre) {
     const newId = await ProductsRepository.createCategory(nombre);
     return { id_categoria_producto: newId, nombre, estado: 1 };
+  }
+
+  static async updateCategory(id, nombre) {
+    await ProductsRepository.updateCategory(id, nombre);
+    return { id_categoria_producto: Number(id), nombre };
+  }
+
+  static async toggleCategoryStatus(id) {
+    const newStatus = await ProductsRepository.toggleCategoryStatus(id);
+    return { id_categoria_producto: Number(id), estado: newStatus };
+  }
+
+  static async deleteCategory(id) {
+    const products = await ProductsRepository.findAll({ category: id });
+    if (products && products.length > 0) {
+      throw ApiError.badRequest("No se puede eliminar la categoría porque tiene productos asociados.");
+    }
+    await ProductsRepository.deleteCategory(id);
+    return true;
   }
 }

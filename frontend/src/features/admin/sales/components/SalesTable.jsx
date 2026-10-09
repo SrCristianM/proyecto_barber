@@ -23,27 +23,28 @@ export default function SalesTable({
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto -mx-1 sm:mx-0">
+        <table className="w-full min-w-[500px] sm:min-w-[700px] text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="text-left py-3.5 px-4 font-semibold">
+            <tr className="border-b border-border text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground">
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
                 <SortHeader label="ID" field="id_venta" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3.5 px-4 font-semibold">
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
                 <SortHeader label="Fecha" field="fecha" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3.5 px-4 font-semibold">
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
                 <SortHeader label="Cliente" field="id_cliente" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3.5 px-4 font-semibold">Artículos</th>
-              <th className="text-left py-3.5 px-4 font-semibold">
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold hidden md:table-cell">Cobrado por</th>
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold hidden sm:table-cell">Artículos</th>
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
                 <SortHeader label="Total" field="total" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3.5 px-4 font-semibold">
+              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3.5 px-4 font-semibold">Acciones</th>
+              <th className="text-right py-2 px-2 sm:py-3.5 sm:px-4 font-semibold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -56,25 +57,28 @@ export default function SalesTable({
                   data-highlight-id={`sal-${sale.id_venta}`}
                   className="table-row-accent border-b border-border transition-colors"
                 >
-                  <td className="py-3.5 px-4 font-mono text-sm text-muted-foreground font-bold">#{sale.id_venta}</td>
-                  <td className="py-3.5 px-4 text-foreground text-sm font-medium">{sale.fecha}</td>
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 border border-primary/20">
-                        <DollarSign className="h-4 w-4 text-primary" />
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-mono text-xs sm:text-sm text-muted-foreground font-bold">#{sale.id_venta}</td>
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium whitespace-nowrap">{sale.fecha}</td>
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                    <div className="flex items-center gap-1.5 sm:gap-2.5">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 border border-primary/20">
+                        <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <span className="font-semibold text-foreground text-sm">{getClientName(sale.id_cliente, sale)}</span>
+                      <span className="font-semibold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[100px] sm:max-w-none">{getClientName(sale.id_cliente, sale)}</span>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 text-muted-foreground text-sm max-w-[200px] truncate font-medium">
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium hidden md:table-cell">
+                    {sale.cobrado_por || sale.usuario_nombre || "Personal de Caja"}
+                  </td>
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground text-xs sm:text-sm max-w-[180px] truncate font-medium hidden sm:table-cell">
                     {(sale.detalles || []).map((d) => d.nombre).join(", ") || "—"}
                   </td>
-                  <td className="py-3.5 px-4">
-                    <div className="space-y-1 min-w-[110px]">
-                      <span className={`font-bold text-base font-mono block ${isAnulada ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <td className="py-2 px-2 sm:py-3.5 sm:px-4">
+                    <div className="space-y-0.5 min-w-[75px] sm:min-w-[110px]">
+                      <span className={`font-bold text-xs sm:text-base font-mono block whitespace-nowrap ${isAnulada ? "line-through text-muted-foreground" : "text-foreground"}`}>
                         ${Number(sale.total).toLocaleString("es-CO")}
                       </span>
-                      <div className="w-24 h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/40">
+                      <div className="w-14 sm:w-24 h-1 sm:h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/40">
                         <div
                           className={`h-full rounded-full ${
                             Number(sale.total) >= 70000
@@ -87,45 +91,45 @@ export default function SalesTable({
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
                     <span
-                      className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full border ${
+                      className={`inline-flex items-center px-1.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold rounded-full border whitespace-nowrap ${
                         sale.estado === "Activa" ? "badge-glow-success" : "badge-glow-destructive"
                       }`}
                     >
                       {sale.estado}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onDetail(sale)}
-                        className="p-2 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        className="p-1 sm:p-2 hover:bg-accent rounded-md sm:rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         title="Ver detalle"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       {canEdit && !isAnulada && (
                         <button
                           onClick={() => onEdit(sale)}
-                          className="p-2 hover:bg-accent rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                          className="p-1 sm:p-2 hover:bg-accent rounded-md sm:rounded-lg text-primary hover:text-primary/80 transition-colors cursor-pointer"
                           title="Editar"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                       {canAnular && (
                         <button
                           onClick={() => !isAnulada && onDeactivate(sale)}
                           disabled={isAnulada}
-                          className={`p-2 rounded-lg transition-colors ${
+                          className={`p-1 sm:p-2 rounded-md sm:rounded-lg transition-colors ${
                             isAnulada
                               ? "text-muted-foreground/40 opacity-40 cursor-not-allowed hover:bg-transparent"
                               : "hover:bg-accent text-destructive hover:text-destructive/80 cursor-pointer"
                           }`}
                           title={isAnulada ? "Venta ya anulada (acción no disponible)" : "Anular venta"}
                         >
-                          <Ban className="h-4 w-4" />
+                          <Ban className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                     </div>

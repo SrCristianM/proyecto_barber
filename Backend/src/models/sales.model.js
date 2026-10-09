@@ -80,10 +80,12 @@ export class SalesRepository {
 
         return {
           ...v,
-          cliente_nombre: uc ? `${uc.nombre} ${uc.apellido}` : "Cliente",
+          cliente_nombre: uc ? `${uc.nombre} ${uc.apellido}`.trim() : "Cliente",
           cliente_correo: uc ? uc.correo : "",
           cliente_telefono: uc ? uc.telefono : "",
-          usuario_nombre: uu ? `${uu.nombre} ${uu.apellido}` : "Vendedor",
+          usuario_nombre: uu ? `${uu.nombre} ${uu.apellido}`.trim() : "Personal de Caja",
+          usuario_rol: uu ? (uu.id_rol === 1 ? 'Administrador' : (uu.id_rol === 2 ? 'Recepcionista' : 'Personal de Caja')) : 'Personal de Caja',
+          cobrado_por: uu ? `${uu.nombre} ${uu.apellido} (${uu.id_rol === 1 ? 'Administrador' : (uu.id_rol === 2 ? 'Recepcionista' : 'Personal de Caja')})`.trim() : "Personal de Caja",
           detalles: details
         };
       })
@@ -164,7 +166,7 @@ export class SalesRepository {
   }
 
   static async createWithDetails(saleData, detailsWithSubtotals, totalAmount) {
-    const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+    const now = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false }).replace(",", "");
 
     return await executeTransaction(async (conn) => {
       if (isDatabaseConnected() && conn) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { ROLES } from "../../../../shared/types/database";
 import { getStoredUsers, saveStoredUsers } from "../../../auth/services/authService";
@@ -10,6 +10,7 @@ import {
   deleteUser,
   toggleUserStatus
 } from "../services/usersService";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
 
 export const availableRoles = ROLES;
 
@@ -84,18 +85,23 @@ export function useUsers() {
 
   const resetForm = () => setFormData(emptyForm);
 
-  useEffect(() => {
-    getUsers()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setUsers(data);
-          saveStoredUsers(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Users] Usando usuarios locales por fallback:", err.message);
-      });
+  const fetchUsersList = useCallback(async () => {
+    try {
+      const data = await getUsers();
+      if (Array.isArray(data)) {
+        setUsers(data);
+        saveStoredUsers(data);
+      }
+    } catch (err) {
+      console.warn("[Users] Usando usuarios locales por fallback:", err.message);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchUsersList();
+  }, [fetchUsersList]);
+
+  useDataSync([SYNC_ENTITIES.USERS], fetchUsersList);
 
   const handleCreate = async () => {
     const payload = {
@@ -122,6 +128,9 @@ export function useUsers() {
       saveStoredUsers(updated);
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.USERS);
+      if (payload.id_rol === 4) notifyDataChange(SYNC_ENTITIES.CLIENTS);
+      if (payload.id_rol === 3) notifyDataChange(SYNC_ENTITIES.BARBERS);
       toast.success("Usuario creado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al crear el usuario.");
@@ -156,8 +165,12 @@ export function useUsers() {
       setUsers(updated);
       saveStoredUsers(updated);
       setShowEditModal(false);
+      const oldRol = selectedUser.id_rol;
       setSelectedUser(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.USERS);
+      if (payload.id_rol === 4 || oldRol === 4) notifyDataChange(SYNC_ENTITIES.CLIENTS);
+      if (payload.id_rol === 3 || oldRol === 3) notifyDataChange(SYNC_ENTITIES.BARBERS);
       toast.success("Usuario actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el usuario.");
@@ -171,8 +184,12 @@ export function useUsers() {
       const updated = users.filter((user) => user.id_usuario !== selectedUser.id_usuario);
       setUsers(updated);
       saveStoredUsers(updated);
+      const deletedUser = selectedUser;
       setShowDeleteModal(false);
       setSelectedUser(null);
+      notifyDataChange(SYNC_ENTITIES.USERS);
+      if (deletedUser.id_rol === 4) notifyDataChange(SYNC_ENTITIES.CLIENTS);
+      if (deletedUser.id_rol === 3) notifyDataChange(SYNC_ENTITIES.BARBERS);
       toast.success("Usuario eliminado.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el usuario.");
@@ -189,6 +206,9 @@ export function useUsers() {
       );
       setUsers(updated);
       saveStoredUsers(updated);
+      notifyDataChange(SYNC_ENTITIES.USERS);
+      if (targetUser?.id_rol === 4) notifyDataChange(SYNC_ENTITIES.CLIENTS);
+      if (targetUser?.id_rol === 3) notifyDataChange(SYNC_ENTITIES.BARBERS);
       toast.success("Estado del usuario modificado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del usuario.");

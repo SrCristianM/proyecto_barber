@@ -143,7 +143,7 @@ const NumericInput = forwardRef(function NumericInput(
         className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-xs sm:text-sm transition-all ${
           error
             ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-            : "border-input focus:ring-2 focus:ring-primary"
+            : "border-input hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
         } ${prefix ? "pl-8" : ""} ${suffix ? "pr-10" : ""} ${className}`}
         {...props}
       />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, User, Sun, Moon, LogOut, Search, Sparkles } from "lucide-react";
+import { Bell, User, Sun, Moon, LogOut, Search, Sparkles, Menu } from "lucide-react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useNotifications } from "../shared/hooks/useNotifications";
@@ -9,7 +9,7 @@ import CommandPaletteModal from "../shared/components/CommandPaletteModal";
 import { getCurrentUser, logoutUser } from "../../auth/services/authService";
 import { ROLES } from "../../../shared/types/database";
 
-const TopBar = ({ isDark, setIsDark }) => {
+const TopBar = ({ isDark, setIsDark, sidebarOpen, setSidebarOpen, isMobile }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAllNotificationsModal, setShowAllNotificationsModal] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -53,20 +53,31 @@ const TopBar = ({ isDark, setIsDark }) => {
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border px-6 flex items-center justify-between sticky top-0 z-30 gap-4">
-      {/* Disparador de Command Palette Global (Ctrl + K) */}
-      <div className="flex-1 max-w-md">
+    <header className="h-16 bg-card border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 gap-2 sm:gap-4">
+      {/* Botón de menú móvil + Disparador de Command Palette Global (Ctrl + K) */}
+      <div className="flex items-center gap-2 flex-1 max-w-md min-w-0">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="lg:hidden p-2 -ml-1 text-foreground hover:bg-secondary rounded-xl transition-colors cursor-pointer shrink-0"
+          aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+          title={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
         <button
           type="button"
           onClick={() => setShowCommandPalette(true)}
-          className="w-full flex items-center justify-between px-3.5 py-2 bg-secondary/60 hover:bg-secondary border border-border/80 hover:border-primary/50 rounded-xl transition-all text-xs text-muted-foreground group cursor-pointer shadow-2xs"
+          className="w-full flex items-center justify-between px-2.5 sm:px-3.5 py-2 bg-secondary/60 hover:bg-secondary border border-border/80 hover:border-primary/50 rounded-xl transition-all text-xs text-muted-foreground group cursor-pointer shadow-2xs min-w-0"
         >
-          <div className="flex items-center gap-2.5 truncate">
+          <div className="flex items-center gap-2 truncate min-w-0">
             <Search className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-            <span className="truncate">Buscar clientes, productos o acciones...</span>
+            <span className="hidden sm:inline truncate">Buscar clientes, productos o acciones...</span>
+            <span className="sm:hidden truncate">Buscar...</span>
           </div>
-          <div className="flex items-center gap-1 shrink-0 ml-2">
-            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold bg-background border border-border rounded text-muted-foreground shadow-2xs">
+          <div className="hidden sm:flex items-center gap-1 shrink-0 ml-2">
+            <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-bold bg-background border border-border rounded text-muted-foreground shadow-2xs">
               Ctrl K
             </kbd>
           </div>
@@ -76,7 +87,7 @@ const TopBar = ({ isDark, setIsDark }) => {
       {/* Modal de Command Palette */}
       <CommandPaletteModal open={showCommandPalette} onOpenChange={setShowCommandPalette} />
 
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Campanita con panel de notificaciones */}
         <div className="relative">
           <motion.button
@@ -148,9 +159,19 @@ const TopBar = ({ isDark, setIsDark }) => {
         </motion.button>
 
         {/* Avatar usuario y Perfil */}
-        <div className="flex items-center gap-3 pl-4 border-l border-border">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-xs">
-            <User className="h-4.5 w-4.5 text-primary-foreground" />
+        <div className="flex items-center gap-1.5 sm:gap-3 pl-2 sm:pl-4 border-l border-border">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary rounded-xl flex items-center justify-center shadow-xs overflow-hidden border border-border/50 shrink-0">
+            {currentUser?.imagen_url || currentUser?.avatar_url ? (
+              <img
+                src={currentUser.imagen_url || currentUser.avatar_url}
+                alt={currentUser.nombre}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-xs font-black text-primary-foreground">
+                {currentUser?.nombre ? currentUser.nombre[0].toUpperCase() : <User className="h-4.5 w-4.5 text-primary-foreground" />}
+              </span>
+            )}
           </div>
           <div className="hidden md:block text-left">
             <p className="text-xs font-semibold text-foreground">

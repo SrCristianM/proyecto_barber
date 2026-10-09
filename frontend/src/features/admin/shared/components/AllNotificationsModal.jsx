@@ -17,7 +17,7 @@ import {
   Inbox
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { timeAgo, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
+import { timeAgo, formatExactDateTime, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
 
 const TYPE_ICONS = {
   appointment: Calendar,
@@ -457,9 +457,12 @@ function NotificationItem({ notif, onMarkAsRead, onMarkAsUnread, onDelete, onNav
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <span className="text-xs font-semibold text-primary">
+              {formatExactDateTime(notif.timestamp)}
+            </span>
             <span className="text-[11px] text-muted-foreground font-medium">
-              {timeAgo(notif.timestamp)}
+              ({timeAgo(notif.timestamp)})
             </span>
             {!notif.read && (
               <span className="w-2 h-2 rounded-full bg-primary inline-block" title="No leída" />

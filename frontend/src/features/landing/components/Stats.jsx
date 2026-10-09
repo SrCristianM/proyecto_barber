@@ -36,7 +36,7 @@ export default function Stats() {
       <div className="ambient-glow-gold w-[400px] h-[400px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {STATS.map((stat, i) => (

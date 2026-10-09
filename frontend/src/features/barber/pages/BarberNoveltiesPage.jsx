@@ -30,6 +30,7 @@ import {
   fetchBarberAppointments
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { getLocalDateString } from "../../../shared/utils/dateUtils";
 
 const NOVELTY_TYPES = [
   "Solicitud de cancelación de cita",
@@ -41,7 +42,7 @@ const NOVELTY_TYPES = [
 
 const emptyFormData = {
   tipo: "Solicitud de cancelación de cita",
-  fecha: new Date().toISOString().split("T")[0],
+  fecha: getLocalDateString(),
   cita_relacionada: "Ninguna",
   motivo: "",
   descripcion: ""
@@ -80,7 +81,7 @@ export default function BarberNoveltiesPage() {
       const apt = location.state.fromAppointment;
       setFormData({
         tipo: "Solicitud de cancelación de cita",
-        fecha: apt.fecha || new Date().toISOString().split("T")[0],
+        fecha: apt.fecha || getLocalDateString(),
         cita_relacionada: apt.label || `Cita #${apt.id_cita}`,
         motivo: `Solicitud de cancelación para Cita #${apt.id_cita}`,
         descripcion: `Solicito la cancelación o reasignación de la Cita #${apt.id_cita} debido a: `

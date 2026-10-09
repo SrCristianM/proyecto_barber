@@ -76,13 +76,31 @@ export default function SupplierDetailModal({ supplier, onEdit, onClose }) {
           </div>
         </div>
 
-        {/* Cuadrícula de datos con el ID DE PRIMERO */}
+        {/* Cuadrícula de datos con Documento primero, Tipo de Persona y Estado al final */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 sm:p-5 bg-card border border-border rounded-2xl">
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               ID de Proveedor
             </span>
             <p className="text-base font-bold text-foreground">#{supplier.id_proveedor}</p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              Documento de Identificación
+            </span>
+            <p className="text-base font-bold text-foreground">
+              {supplier.tipo_documento ? `${supplier.tipo_documento} ` : ""}{supplier.nit || "No especificado"}
+            </p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+              Tipo de Persona
+            </span>
+            <p className="text-sm font-semibold text-primary">
+              {supplier.tipo_persona || "Persona Jurídica"}
+            </p>
           </div>
 
           <div>
@@ -94,19 +112,12 @@ export default function SupplierDetailModal({ supplier, onEdit, onClose }) {
 
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-              NIT / Identificación
-            </span>
-            <p className="text-sm font-medium text-foreground">{supplier.nit || "No especificado"}</p>
-          </div>
-
-          <div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Teléfono de Contacto
             </span>
             <p className="text-sm font-medium text-foreground">{supplier.telefono || "No especificado"}</p>
           </div>
 
-          <div className="sm:col-span-2">
+          <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Correo Electrónico
             </span>
@@ -154,6 +165,25 @@ export default function SupplierDetailModal({ supplier, onEdit, onClose }) {
               </div>
             </div>
           )}
+
+          {/* Estado Universal al Final */}
+          <div className="sm:col-span-2 pt-3 border-t border-border flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                Estado
+              </span>
+              <span className="text-xs text-muted-foreground">Estado del proveedor para compras e insumos</span>
+            </div>
+            <span
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
+                supplier.estado === 1
+                  ? "bg-success/15 text-success border-success/30"
+                  : "bg-destructive/15 text-destructive border-destructive/30"
+              }`}
+            >
+              {supplier.estado === 1 ? "● Activo" : "● Inactivo"}
+            </span>
+          </div>
         </div>
 
         {/* Acciones de Contacto Rápido Directo */}

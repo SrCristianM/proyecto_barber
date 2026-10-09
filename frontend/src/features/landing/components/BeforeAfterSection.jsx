@@ -35,7 +35,7 @@ export default function BeforeAfterSection() {
       <div className="ambient-glow-gold w-[450px] h-[450px] top-1/2 -left-20 opacity-20" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Section Title */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -54,7 +54,7 @@ export default function BeforeAfterSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          
+
           {/* Interactive Before/After Slider (7 cols) */}
           <div className="lg:col-span-7">
             <div
@@ -116,11 +116,11 @@ export default function BeforeAfterSection() {
               <span className="px-3 py-1 rounded-full bg-[#C9A24A]/20 border border-[#C9A24A]/40 text-[#C9A24A] text-xs font-bold uppercase tracking-wider inline-block mb-3">
                 CASO DESTACADO
               </span>
-              
+
               <h3 className="text-white text-xl font-bold mb-2">
                 Transformación Integral: Mid Fade + Ritual de Barba
               </h3>
-              
+
               <p className="text-[#8E8E93] text-xs leading-relaxed mb-6">
                 Cliente con crecimiento irregular y barba sin definición. Se aplicó visagismo para resaltar la línea de mandíbula y degradado medio afeitado a navaja.
               </p>

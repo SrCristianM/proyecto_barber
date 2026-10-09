@@ -18,7 +18,7 @@ export default function FilterSelect({
   const unifiedOptions = [allOption, ...options.filter((o) => o.value !== "all")];
 
   return (
-    <div className={`relative flex items-center min-w-[170px] ${className}`}>
+    <div className={`relative flex items-center w-full sm:w-auto min-w-0 sm:min-w-[160px] ${className}`}>
       <SearchableSelect
         value={value ?? "all"}
         onChange={(val) => onChange(val === "" ? "all" : val)}

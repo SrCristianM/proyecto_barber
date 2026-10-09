@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { DIAS_SEMANA } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
@@ -10,14 +10,22 @@ import {
   toggleScheduleStatus
 } from "../services/schedulesService";
 import { getBarbers } from "../../barbers/services/barbersService";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
 
-const mockBarbersList = [
+let liveBarbers = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" }
 ];
 
-const mockSchedules = [];
+export const barbers = new Proxy([], {
+  get(target, prop) {
+    if (prop === "length") return liveBarbers.length;
+    if (prop === Symbol.iterator) return liveBarbers[Symbol.iterator].bind(liveBarbers);
+    if (typeof prop === "string" && !isNaN(prop)) return liveBarbers[prop];
+    const val = liveBarbers[prop];
+    return typeof val === "function" ? val.bind(liveBarbers) : val;
+  }
+});
 
-export const barbers = mockBarbersList;
 export const daysOfWeek = DIAS_SEMANA;
 
 const emptyForm = {
@@ -31,7 +39,7 @@ const emptyForm = {
 
 export function useSchedules() {
   const [schedules, setSchedules] = useState([]);
-  const [barbersList, setBarbersList] = useState(mockBarbersList);
+  const [barbersList, setBarbersList] = useState(liveBarbers);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [barberFilter, setBarberFilter] = useState("all"); // 'all' | id_barbero
@@ -48,32 +56,40 @@ export function useSchedules() {
   const itemsPerPage = 8;
   const [formData, setFormData] = useState(emptyForm);
 
-  useEffect(() => {
-    getSchedules()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setSchedules(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Schedules] Usando horarios locales por fallback:", err.message);
-      });
-
-    getBarbers()
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setBarbersList(
-            data.map((b) => ({
-              id_barbero: b.id_barbero,
-              nombre: `${b.nombre} ${b.apellido || ""}`.trim()
-            }))
-          );
-        }
-      })
-      .catch((err) => {
-        console.warn("[Schedules] Usando barberos locales para horarios:", err.message);
-      });
+  const fetchSchedulesList = useCallback(async () => {
+    try {
+      const data = await getSchedules();
+      if (Array.isArray(data)) {
+        setSchedules(data);
+      }
+    } catch (err) {
+      console.warn("[Schedules] Usando horarios locales por fallback:", err.message);
+    }
   }, []);
+
+  const fetchBarbersList = useCallback(async () => {
+    try {
+      const data = await getBarbers();
+      if (Array.isArray(data) && data.length > 0) {
+        const formatted = data.map((b) => ({
+          id_barbero: b.id_barbero,
+          nombre: `${b.nombre} ${b.apellido || ""}`.trim()
+        }));
+        liveBarbers = formatted;
+        setBarbersList(formatted);
+      }
+    } catch (err) {
+      console.warn("[Schedules] Usando barberos locales para horarios:", err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSchedulesList();
+    fetchBarbersList();
+  }, [fetchSchedulesList, fetchBarbersList]);
+
+  useDataSync([SYNC_ENTITIES.SCHEDULES], fetchSchedulesList);
+  useDataSync([SYNC_ENTITIES.BARBERS, SYNC_ENTITIES.USERS], fetchBarbersList);
 
   const getBarberName = (id_barbero) => {
     const b = barbersList.find((barber) => barber.id_barbero === Number(id_barbero));
@@ -162,6 +178,7 @@ export function useSchedules() {
       setSchedules((prev) => [newSchedule, ...prev]);
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
       toast.success("Horario asignado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al crear el horario.");
@@ -191,6 +208,7 @@ export function useSchedules() {
       setShowEditModal(false);
       setSelectedSchedule(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
       toast.success("Horario modificado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el horario.");
@@ -204,6 +222,7 @@ export function useSchedules() {
       setSchedules((prev) => prev.filter((schedule) => schedule.id_horario !== selectedSchedule.id_horario));
       setShowDeleteModal(false);
       setSelectedSchedule(null);
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
       toast.success("Horario eliminado con éxito.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el horario.");
@@ -218,6 +237,7 @@ export function useSchedules() {
           schedule.id_horario === scheduleId ? { ...schedule, estado: schedule.estado === 1 ? 0 : 1 } : schedule
         )
       );
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
       toast.success("Estado de horario actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del horario.");
@@ -322,6 +342,8 @@ export function useSchedules() {
     openDeleteModal,
     openDeactivateModal,
     getBarberName,
+    barbersList,
+    barbers: barbersList,
     schedules
   };
 }

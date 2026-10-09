@@ -8,7 +8,6 @@ import {
   Trash2,
   ArrowRight,
   CheckCircle2,
-  Truck,
   Store,
   CreditCard,
   Banknote,
@@ -30,9 +29,7 @@ export default function ClientCartDrawer({
   onClearCart,
   onPurchaseSuccess
 }) {
-  const [deliveryMethod, setDeliveryMethod] = useState("pickup"); // 'pickup' | 'delivery'
   const [paymentMethod, setPaymentMethod] = useState("cash"); // 'cash' | 'transfer'
-  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedSale, setCompletedSale] = useState(null);
@@ -41,25 +38,20 @@ export default function ClientCartDrawer({
   const clientProfile = getCurrentClientProfile();
 
   const subtotal = cart.reduce((sum, item) => sum + Number(item.precio) * Number(item.cantidad), 0);
-  const deliveryFee = deliveryMethod === "delivery" && subtotal < 60000 ? 5000 : 0;
-  const total = subtotal + deliveryFee;
+  const deliveryFee = 0; // Exclusivo retiro en salón físico (gratis)
+  const total = subtotal;
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-
-    if (deliveryMethod === "delivery" && !deliveryAddress.trim() && !clientProfile?.direccion) {
-      toast.error("Por favor indica la dirección de entrega.");
-      return;
-    }
 
     setIsSubmitting(true);
 
     setTimeout(() => {
       const res = createClientPurchase({
         items: cart,
-        metodoPago: paymentMethod === "cash" ? "Efectivo / Datáfono" : "Transferencia Nequi/Bancolombia",
-        metodoEntrega: deliveryMethod === "pickup" ? "Retiro en Barbería" : "Envío a Domicilio",
-        direccionEnvio: deliveryAddress || clientProfile?.direccion || "",
+        metodoPago: paymentMethod === "cash" ? "Efectivo / Datáfono en Salón" : "Transferencia Nequi/Bancolombia",
+        metodoEntrega: "Retiro en Salón Físico",
+        direccionEnvio: "Salón Físico / Negocio Presencial",
         notas: notes
       });
 
@@ -77,7 +69,7 @@ export default function ClientCartDrawer({
         setCompletedSale(res.sale);
         if (onClearCart) onClearCart();
         if (onPurchaseSuccess) onPurchaseSuccess(res.sale);
-        toast.success("¡Compra realizada con éxito! Comprobante generado.");
+        toast.success("¡Compra realizada con éxito! Comprobante de retiro en salón generado.");
       } else {
         toast.error(res.error || "No se pudo procesar la compra.");
       }
@@ -315,62 +307,27 @@ export default function ClientCartDrawer({
                   </div>
                 </div>
 
-                {/* MÉTODO DE ENTREGA */}
+                {/* MODALIDAD DE ENTREGA: EXCLUSIVO SALÓN FÍSICO */}
                 <div className="space-y-2 pt-2 border-t border-border">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                    Forma de Entrega
+                    Modalidad de Entrega
                   </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethod("pickup")}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                        deliveryMethod === "pickup"
-                          ? "bg-[#DFB755]/15 border-[#DFB755] text-foreground font-bold"
-                          : "bg-card border-border hover:bg-muted/40 text-muted-foreground"
-                      }`}
-                    >
-                      <Store className="w-4 h-4 text-[#DFB755] shrink-0" />
-                      <div>
-                        <p className="text-xs font-black">Retiro en Salón</p>
-                        <span className="text-[10px] text-emerald-500 font-bold block">Gratis</span>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setDeliveryMethod("delivery")}
-                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
-                        deliveryMethod === "delivery"
-                          ? "bg-[#DFB755]/15 border-[#DFB755] text-foreground font-bold"
-                          : "bg-card border-border hover:bg-muted/40 text-muted-foreground"
-                      }`}
-                    >
-                      <Truck className="w-4 h-4 text-[#DFB755] shrink-0" />
-                      <div>
-                        <p className="text-xs font-black">A Domicilio</p>
-                        <span className="text-[10px] text-muted-foreground block">
-                          {subtotal >= 60000 ? "¡Envío Gratis!" : "$5.000 COP"}
+                  <div className="p-3.5 rounded-2xl bg-[#DFB755]/10 border border-[#DFB755]/30 flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-[#DFB755]/20 text-[#DFB755] shrink-0 mt-0.5">
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-black text-foreground">Retiro en Salón Físico</h4>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                          Gratis
                         </span>
                       </div>
-                    </button>
-                  </div>
-
-                  {deliveryMethod === "delivery" && (
-                    <div className="pt-2 space-y-1">
-                      <label className="text-[11px] font-bold text-muted-foreground block">
-                        Dirección de Entrega
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Calle 10 # 40-20, Apto 502"
-                        defaultValue={clientProfile?.direccion || ""}
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-input-background border border-input text-foreground focus:ring-2 focus:ring-[#DFB755]"
-                      />
+                      <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                        Tus productos se apartan y preparan para que los reclames directamente en la barbería física. Sin costo de entrega adicional.
+                      </p>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* MÉTODO DE PAGO */}
@@ -390,8 +347,8 @@ export default function ClientCartDrawer({
                     >
                       <Banknote className="w-4 h-4 text-[#DFB755] shrink-0" />
                       <div>
-                        <p className="text-xs font-black">Contra Entrega</p>
-                        <span className="text-[10px] text-muted-foreground block">Efectivo/Datáfono</span>
+                        <p className="text-xs font-black">En el Salón</p>
+                        <span className="text-[10px] text-muted-foreground block">Efectivo / Datáfono</span>
                       </div>
                     </button>
 
@@ -416,11 +373,11 @@ export default function ClientCartDrawer({
                 {/* NOTAS ADICIONALES */}
                 <div className="pt-2 border-t border-border">
                   <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-                    Instrucciones o notas adicionales (opcional)
+                    Instrucciones o notas para el retiro (opcional)
                   </label>
                   <input
                     type="text"
-                    placeholder="Ej: Entregar en portería, etc."
+                    placeholder="Ej: Paso a recogerlo hoy a las 4:00 PM..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl bg-input-background border border-input text-foreground focus:ring-2 focus:ring-[#DFB755]"
@@ -441,9 +398,9 @@ export default function ClientCartDrawer({
                   </span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Costo de Entrega:</span>
-                  <span className={`font-bold ${deliveryFee === 0 ? "text-emerald-500" : "text-foreground"}`}>
-                    {deliveryFee === 0 ? "Gratis" : `$${deliveryFee.toLocaleString("es-CO")}`}
+                  <span>Modalidad de Entrega:</span>
+                  <span className="font-bold text-emerald-500">
+                    Retiro en Salón ($0 COP)
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-border text-sm">

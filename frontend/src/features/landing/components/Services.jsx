@@ -114,11 +114,10 @@ export default function Services() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative px-4 py-2 text-xs font-bold tracking-wider rounded-lg transition-all duration-300 ${
-                  activeTab === tab.id
-                    ? "text-[#0D0D0D] font-extrabold shadow-md"
-                    : "text-[#8E8E93] hover:text-white hover:bg-white/5"
-                }`}
+                className={`relative px-4 py-2 text-xs font-bold tracking-wider rounded-lg transition-all duration-300 ${activeTab === tab.id
+                  ? "text-[#0D0D0D] font-extrabold shadow-md"
+                  : "text-[#8E8E93] hover:text-white hover:bg-white/5"
+                  }`}
               >
                 {activeTab === tab.id && (
                   <motion.div
@@ -174,7 +173,7 @@ export default function Services() {
                   <h3 className="text-white text-base font-bold tracking-wider mb-2 group-hover:text-[#D4AF37] transition-colors">
                     {s.title}
                   </h3>
-                  
+
                   <div className="text-xl font-extrabold text-[#C9A24A] mb-3">
                     {s.price}
                   </div>

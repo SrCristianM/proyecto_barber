@@ -15,6 +15,8 @@ import {
 const router = Router();
 
 router.post("/login", authLimiter, validate(loginValidation), AuthController.login);
+router.get("/google/accounts", AuthController.getGoogleAccounts);
+router.post("/google", authLimiter, AuthController.googleLogin);
 router.post("/register", authLimiter, validate(registerValidation), AuthController.register);
 router.post("/forgot-password", authLimiter, validate(forgotPasswordValidation), AuthController.forgotPassword);
 router.post("/reset-password", authLimiter, validate(resetPasswordValidation), AuthController.resetPassword);

@@ -86,6 +86,8 @@ export default function SearchableSelect({
     return labelStr.includes(query) || subStr.includes(query);
   });
 
+  const [openUpward, setOpenUpward] = useState(false);
+
   const handleSelect = (val) => {
     onChange?.(val);
     setIsOpen(false);
@@ -100,15 +102,24 @@ export default function SearchableSelect({
 
   const toggleOpen = () => {
     if (disabled) return;
+    if (!isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 240 && rect.top > 240) {
+        setOpenUpward(true);
+      } else {
+        setOpenUpward(false);
+      }
+    }
     setIsOpen((prev) => !prev);
     if (!isOpen) setSearchTerm("");
   };
 
   const sizeClasses = {
     sm: "h-9 text-xs px-3",
-    md: "h-10 text-xs sm:text-sm px-3.5",
-    lg: "h-11 text-sm px-4"
-  }[size] || "h-10 text-xs sm:text-sm px-3.5";
+    md: "min-h-[42px] py-2 text-xs sm:text-sm px-3.5",
+    lg: "min-h-[46px] py-2.5 text-sm px-4"
+  }[size] || "min-h-[42px] py-2 text-xs sm:text-sm px-3.5";
 
   return (
     <div
@@ -187,7 +198,7 @@ export default function SearchableSelect({
 
       {/* Menú flotante desplegable */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-card dark:bg-[#151921] border border-border/70 rounded-2xl shadow-2xl overflow-hidden p-1.5 animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className={`absolute z-50 left-0 right-0 ${openUpward ? "bottom-full mb-1.5" : "top-full mt-1.5"} bg-card dark:bg-[#151921] border border-border/70 rounded-2xl shadow-2xl overflow-hidden p-1.5 animate-in fade-in-0 zoom-in-95 duration-150`}>
           {/* Barra de búsqueda interactiva (solo si showSearch es true) */}
           {showSearch && (
             <div className="p-1.5 mb-1 bg-muted/20 rounded-xl">
@@ -223,7 +234,7 @@ export default function SearchableSelect({
               </div>
             ) : (
               filteredOptions.map((opt) => {
-                const isSelected = String(opt.value) === String(value);
+                const isSelected = value !== null && value !== undefined && value !== "" && String(opt.value) === String(value);
                 return (
                   <div
                     key={String(opt.value)}

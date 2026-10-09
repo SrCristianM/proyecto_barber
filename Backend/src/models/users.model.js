@@ -130,10 +130,24 @@ export class UsersRepository {
         userData.correo,
         userData.contrasena,
         userData.telefono || null,
-        userData.id_rol,
-        userData.estado !== undefined ? userData.estado : 1
+        Number(userData.id_rol),
+        userData.estado !== undefined ? Number(userData.estado) : 1
       ]);
-      return result.insertId;
+      const newUserId = result.insertId;
+
+      // Auto-sincronizar con entidad correspondiente según rol
+      if (Number(userData.id_rol) === 4) {
+        await executeQuery(
+          "INSERT INTO cliente (id_usuario, nivel_fidelidad, direccion, estado) VALUES (?, 'Nuevo', ?, 1)",
+          [newUserId, userData.direccion || null]
+        );
+      } else if (Number(userData.id_rol) === 3) {
+        await executeQuery(
+          "INSERT INTO barbero (id_usuario, especialidad, imagen_url, estado) VALUES (?, 'Corte Clásico', NULL, 1)",
+          [newUserId]
+        );
+      }
+      return newUserId;
     }
 
     const nextId = Math.max(...mockStore.usuarios.map((u) => u.id_usuario || 0), 0) + 1;
@@ -146,10 +160,32 @@ export class UsersRepository {
       contrasena: userData.contrasena,
       telefono: userData.telefono || null,
       id_rol: Number(userData.id_rol),
-      estado: userData.estado !== undefined ? userData.estado : 1,
+      estado: userData.estado !== undefined ? Number(userData.estado) : 1,
       fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
     mockStore.usuarios.push(newUser);
+
+    // Auto-sincronizar en almacén local
+    if (Number(userData.id_rol) === 4) {
+      const nextClientId = Math.max(...mockStore.clientes.map((c) => c.id_cliente || 0), 0) + 1;
+      mockStore.clientes.push({
+        id_cliente: nextClientId,
+        id_usuario: nextId,
+        nivel_fidelidad: "Nuevo",
+        direccion: userData.direccion || "",
+        estado: 1
+      });
+    } else if (Number(userData.id_rol) === 3) {
+      const nextBarberId = Math.max(...mockStore.barberos.map((b) => b.id_barbero || 0), 0) + 1;
+      mockStore.barberos.push({
+        id_barbero: nextBarberId,
+        id_usuario: nextId,
+        especialidad: "Corte Clásico",
+        imagen_url: "",
+        estado: 1
+      });
+    }
+
     mockStore.saveToFile();
     return nextId;
   }
@@ -166,15 +202,38 @@ export class UsersRepository {
       if (userData.documento !== undefined) { fields.push("documento = ?"); values.push(userData.documento || null); }
       if (userData.correo !== undefined) { fields.push("correo = ?"); values.push(userData.correo); }
       if (userData.telefono !== undefined) { fields.push("telefono = ?"); values.push(userData.telefono); }
-      if (userData.id_rol !== undefined) { fields.push("id_rol = ?"); values.push(userData.id_rol); }
-      if (userData.estado !== undefined) { fields.push("estado = ?"); values.push(userData.estado); }
+      if (userData.id_rol !== undefined) { fields.push("id_rol = ?"); values.push(Number(userData.id_rol)); }
+      if (userData.estado !== undefined) { fields.push("estado = ?"); values.push(Number(userData.estado)); }
       if (userData.contrasena) { fields.push("contrasena = ?"); values.push(userData.contrasena); }
 
-      if (fields.length === 0) return true;
+      if (fields.length > 0) {
+        values.push(userId);
+        const sql = `UPDATE usuario SET ${fields.join(", ")} WHERE id_usuario = ?`;
+        await executeQuery(sql, values);
+      }
 
-      values.push(userId);
-      const sql = `UPDATE usuario SET ${fields.join(", ")} WHERE id_usuario = ?`;
-      await executeQuery(sql, values);
+      // Sincronizar roles asociados
+      if (userData.id_rol !== undefined) {
+        const roleId = Number(userData.id_rol);
+        if (roleId === 4) {
+          const clientRows = await executeQuery("SELECT id_cliente FROM cliente WHERE id_usuario = ?", [userId]);
+          if (!clientRows || clientRows.length === 0) {
+            await executeQuery("INSERT INTO cliente (id_usuario, nivel_fidelidad, direccion, estado) VALUES (?, 'Nuevo', NULL, 1)", [userId]);
+          }
+        } else if (roleId === 3) {
+          const barberRows = await executeQuery("SELECT id_barbero FROM barbero WHERE id_usuario = ?", [userId]);
+          if (!barberRows || barberRows.length === 0) {
+            await executeQuery("INSERT INTO barbero (id_usuario, especialidad, imagen_url, estado) VALUES (?, 'Corte Clásico', NULL, 1)", [userId]);
+          }
+        }
+      }
+
+      if (userData.estado !== undefined) {
+        const st = Number(userData.estado);
+        await executeQuery("UPDATE cliente SET estado = ? WHERE id_usuario = ?", [st, userId]);
+        await executeQuery("UPDATE barbero SET estado = ? WHERE id_usuario = ?", [st, userId]);
+      }
+
       return true;
     }
 
@@ -183,10 +242,26 @@ export class UsersRepository {
 
     if (userData.nombre !== undefined) user.nombre = userData.nombre;
     if (userData.apellido !== undefined) user.apellido = userData.apellido;
+    if (userData.documento !== undefined) user.documento = userData.documento;
     if (userData.correo !== undefined) user.correo = userData.correo;
     if (userData.telefono !== undefined) user.telefono = userData.telefono;
-    if (userData.id_rol !== undefined) user.id_rol = Number(userData.id_rol);
-    if (userData.estado !== undefined) user.estado = Number(userData.estado);
+    if (userData.id_rol !== undefined) {
+      user.id_rol = Number(userData.id_rol);
+      if (user.id_rol === 4 && !mockStore.clientes.some((c) => c.id_usuario === userId)) {
+        const nextCId = Math.max(...mockStore.clientes.map((c) => c.id_cliente || 0), 0) + 1;
+        mockStore.clientes.push({ id_cliente: nextCId, id_usuario: userId, nivel_fidelidad: "Nuevo", direccion: "", estado: user.estado || 1 });
+      } else if (user.id_rol === 3 && !mockStore.barberos.some((b) => b.id_usuario === userId)) {
+        const nextBId = Math.max(...mockStore.barberos.map((b) => b.id_barbero || 0), 0) + 1;
+        mockStore.barberos.push({ id_barbero: nextBId, id_usuario: userId, especialidad: "Corte Clásico", imagen_url: "", estado: user.estado || 1 });
+      }
+    }
+    if (userData.estado !== undefined) {
+      user.estado = Number(userData.estado);
+      const c = mockStore.clientes.find((cl) => cl.id_usuario === userId);
+      if (c) c.estado = user.estado;
+      const b = mockStore.barberos.find((ba) => ba.id_usuario === userId);
+      if (b) b.estado = user.estado;
+    }
     if (userData.contrasena) user.contrasena = userData.contrasena;
 
     mockStore.saveToFile();
@@ -203,12 +278,18 @@ export class UsersRepository {
     if (isDatabaseConnected()) {
       const sql = `UPDATE usuario SET estado = ? WHERE id_usuario = ?`;
       await executeQuery(sql, [newStatus, userId]);
+      await executeQuery(`UPDATE cliente SET estado = ? WHERE id_usuario = ?`, [newStatus, userId]);
+      await executeQuery(`UPDATE barbero SET estado = ? WHERE id_usuario = ?`, [newStatus, userId]);
       return newStatus;
     }
 
     const user = mockStore.usuarios.find((u) => u.id_usuario === userId);
     if (user) {
       user.estado = newStatus;
+      const c = mockStore.clientes.find((cl) => cl.id_usuario === userId);
+      if (c) c.estado = newStatus;
+      const b = mockStore.barberos.find((ba) => ba.id_usuario === userId);
+      if (b) b.estado = newStatus;
       mockStore.saveToFile();
     }
     return newStatus;

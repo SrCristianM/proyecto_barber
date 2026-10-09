@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Printer, Receipt } from "lucide-react";
+import { Printer, ShieldCheck, Headphones } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { clients, users } from "../hooks/useSales";
 import SaleReceiptModal from "./SaleReceiptModal";
@@ -12,7 +12,10 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
   const clientMatch = clients.find((c) => c.id_cliente === Number(sale.id_cliente));
   const clientName = sale.cliente_nombre || (clientMatch ? `${clientMatch.nombre} ${clientMatch.apellido || ""}`.trim() : "Cliente Desconocido");
   const clientDoc = sale.cliente_documento || clientMatch?.documento;
-  const userName = users.find((u) => u.id_usuario === Number(sale.id_usuario))?.nombre || "Usuario Desconocido";
+
+  const chargedByName = sale.usuario_nombre || users.find((u) => u.id_usuario === Number(sale.id_usuario))?.nombre || "Personal de Caja";
+  const chargedByRole = sale.usuario_rol || (Number(sale.id_usuario) === 1 ? "Administrador" : (Number(sale.id_usuario) === 2 || Number(sale.id_usuario) === 3 ? "Recepcionista" : "Personal de Caja"));
+  const fullCashierDisplay = `${chargedByName} (${chargedByRole})`;
 
   return (
     <>
@@ -61,9 +64,25 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
 
             <div>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-                Atendido por
+                Cobrado por
               </span>
-              <p className="text-base font-semibold text-primary">{userName}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-base font-semibold text-foreground">{chargedByName}</p>
+                <span
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-lg border ${
+                    chargedByRole.toLowerCase().includes("admin")
+                      ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                      : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                  }`}
+                >
+                  {chargedByRole.toLowerCase().includes("admin") ? (
+                    <ShieldCheck className="h-3 w-3" />
+                  ) : (
+                    <Headphones className="h-3 w-3" />
+                  )}
+                  {chargedByRole}
+                </span>
+              </div>
             </div>
 
             <div>
@@ -122,6 +141,22 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
             </div>
           </div>
 
+          {/* Estado de la Venta (Universal al final) */}
+          <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Estado de la Venta
+            </span>
+            <span
+              className={`px-3.5 py-1 text-xs font-semibold rounded-full border ${
+                sale.estado === "Activa"
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-destructive/10 text-destructive border-destructive/20"
+              }`}
+            >
+              {sale.estado === "Activa" ? "● Registrada / Activa" : "● Anulada"}
+            </span>
+          </div>
+
           <div className="flex gap-3 pt-2">
             {onEdit && (
               <button
@@ -145,7 +180,7 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
         <SaleReceiptModal
           sale={sale}
           clientName={clientName}
-          userName={userName}
+          userName={fullCashierDisplay}
           clientDoc={clientDoc}
           onClose={() => setShowReceipt(false)}
         />
@@ -153,4 +188,3 @@ export default function SaleDetailModal({ sale, onEdit, onClose }) {
     </>
   );
 }
-

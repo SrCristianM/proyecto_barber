@@ -101,6 +101,48 @@ export default function ProductDetailModal({ product, onEdit, onClose }) {
               {product.stock > 0 ? "En inventario" : "Agotado"}
             </p>
           </div>
+
+          {product.descripcion && (
+            <div className="sm:col-span-2 pt-2 border-t border-border">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                Descripción
+              </span>
+              <p className="text-sm text-foreground leading-relaxed">{product.descripcion}</p>
+            </div>
+          )}
+
+          {product.modo_uso && (
+            <div className="sm:col-span-2 pt-2 border-t border-border">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                Modo de Uso
+              </span>
+              <p className="text-sm text-foreground leading-relaxed">{product.modo_uso}</p>
+            </div>
+          )}
+
+          {product.ingredientes && (
+            <div className="sm:col-span-2 pt-2 border-t border-border">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                Ingredientes Activos
+              </span>
+              <p className="text-sm text-foreground leading-relaxed">{product.ingredientes}</p>
+            </div>
+          )}
+
+          <div className="sm:col-span-2 pt-3 border-t border-border/60 flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Estado del Producto
+            </span>
+            <span
+              className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+                product.estado === 1
+                  ? "bg-success/10 text-success border-success/20"
+                  : "bg-muted text-muted-foreground border-border"
+              }`}
+            >
+              {product.estado === 1 ? "● Activo" : "● Inactivo"}
+            </span>
+          </div>
         </div>
 
         {/* Botones de acción */}

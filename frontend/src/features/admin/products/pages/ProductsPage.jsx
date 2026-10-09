@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, AlertCircle, RotateCcw, Tag, LayoutGrid, Table } from "lucide-react";
+import { Plus, Download, AlertCircle, RotateCcw, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useProducts, categories } from "../hooks/useProducts";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -13,11 +13,12 @@ import ProductsStats from "../components/ProductsStats";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 const TABS = [
-  { key: "products", label: "Productos" },
-  { key: "categories", label: "Categorías" }
+  { key: "categories", label: "Categorías" },
+  { key: "products", label: "Productos" }
 ];
 
 export default function ProductsPage() {
@@ -64,12 +65,13 @@ export default function ProductsPage() {
     handleExport,
     openEditModal,
     openDetailModal,
-    openDeleteModal
+    openDeleteModal,
+    categories: productCategories
   } = useProducts();
 
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("categories");
 
   const onHandleCreate = () => { handleCreate(); };
   const onHandleEdit = () => { handleEdit(); };
@@ -85,7 +87,9 @@ export default function ProductsPage() {
     setShowDeactivateModal(true);
   };
 
-  const categoryOptions = categories.map((cat) => ({
+  const activeCategoriesList = (productCategories && productCategories.length > 0) ? productCategories : categories;
+
+  const categoryOptions = activeCategoriesList.map((cat) => ({
     value: cat.id_categoria_producto,
     label: cat.nombre
   }));
@@ -96,14 +100,14 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Productos</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gestiona tu inventario de productos y categorías</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Gestiona las categorías y el catálogo de productos</p>
         </div>
         {activeTab === "products" && canCreateProduct && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {products.length === 0 ? "Crear primer producto" : "Nuevo Producto"}
@@ -112,22 +116,38 @@ export default function ProductsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg w-fit border border-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all cursor-pointer ${activeTab === tab.key
-                ? "bg-card text-foreground shadow-xs border border-border"
-                : "text-muted-foreground hover:text-foreground"
+      <div className="flex items-center gap-1 bg-secondary/70 p-1.5 rounded-xl w-fit border border-border">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="productsTabPill"
+                  className="absolute inset-0 bg-card rounded-lg border border-border shadow-xs"
+                  transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Vista condicional por tab */}
+      {/* Vista Categorías */}
+      {activeTab === "categories" && (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <ProductCategoriesView />
+        </div>
+      )}
+
+      {/* Vista Productos */}
       {activeTab === "products" && (
         <>
           <ProductsStats products={products} />
@@ -135,18 +155,18 @@ export default function ProductsPage() {
           {lowStockCount > 0 && (
             <div className="bg-warning/10 border border-warning/20 rounded-xl p-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-warning shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-warning">Alerta de Stock</p>
-                <p className="text-xs text-warning/80 mt-0.5">
-                  {lowStockCount} producto{lowStockCount > 1 ? "s" : ""} con stock bajo o agotado
-                </p>
+              <div className="text-sm">
+                <span className="font-semibold text-warning">Alerta de stock:</span>
+                <span className="text-foreground ml-1">
+                  Hay {lowStockCount} producto{lowStockCount > 1 ? "s" : ""} con stock crítico (menos de 5 unidades).
+                </span>
               </div>
             </div>
           )}
 
-          <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
             {/* Toolbar Estandarizada */}
-            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3 mb-3.5 sm:mb-6">
               <div className="flex flex-wrap items-center gap-3 flex-1">
                 {/* SearchBar */}
                 <SearchBar
@@ -190,34 +210,9 @@ export default function ProductsPage() {
                 )}
               </div>
 
-              {/* Botón Exportar y Selector de Vista */}
+              {/* Botón Exportar y Selector de Vista Universal */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("table")}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
-                        ? "bg-card text-foreground shadow-xs border border-border"
-                        : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    title="Vista de Tabla"
-                  >
-                    <Table className="h-4 w-4" />
-                    <span className="hidden sm:inline">Tabla</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
-                        ? "bg-card text-foreground shadow-xs border border-border"
-                        : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    title="Vista de Tarjetas 3D"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="hidden sm:inline">Tarjetas 3D</span>
-                  </button>
-                </div>
+                <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
                 <button
                   onClick={handleExport}
@@ -259,17 +254,12 @@ export default function ProductsPage() {
         </>
       )}
 
-      {activeTab === "categories" && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <ProductCategoriesView />
-        </div>
-      )}
-
       {showCreateModal && (
         <ProductFormModal
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          categories={activeCategoriesList}
           onSubmit={onHandleCreate}
           onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
@@ -280,6 +270,7 @@ export default function ProductsPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          categories={activeCategoriesList}
           onSubmit={onHandleEdit}
           onClose={() => { setShowEditModal(false); setSelectedProduct(null); resetForm(); }}
         />

@@ -34,6 +34,8 @@ const MODULE_ICONS = {
   clientes: UserCheck,
   proveedores: Truck,
   compras: ShoppingCart,
+  barberos: Scissors,
+  paquetes: Layers,
   general: Shield
 };
 
@@ -281,6 +283,28 @@ export default function RoleDetailModal({ role, onEdit, onClose }) {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Estado del Rol (Universal al final) */}
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+              Estado del Rol
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {role.estado === 1 ? "Habilitado para asignación a usuarios" : "Deshabilitado temporalmente"}
+            </span>
+          </div>
+          <span
+            className={`px-3.5 py-1 text-xs font-bold rounded-full border flex items-center gap-1.5 ${
+              role.estado === 1
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                : "bg-muted text-muted-foreground border-border"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${role.estado === 1 ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
+            <span>{role.estado === 1 ? "Activo" : "Inactivo"}</span>
+          </span>
         </div>
 
         {/* =========================================================================

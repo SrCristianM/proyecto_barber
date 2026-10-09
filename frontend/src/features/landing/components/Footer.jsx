@@ -24,7 +24,7 @@ export default function Footer() {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
-          
+
           {/* Col 1: Brand & Bio */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default function Footer() {
                 <Phone className="w-4 h-4 text-[#C9A24A] flex-shrink-0" />
                 <span>+57 (300) 123-4567</span>
               </div>
-              
+
               <div className="pt-2">
                 <Link
                   to="/login"

@@ -3,8 +3,10 @@ import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
 import MultiSelectSearchable from "../../shared/components/MultiSelectSearchable";
 import AvatarImageUploader from "../../shared/components/AvatarImageUploader";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { availableSpecialties } from "../hooks/useBarbers";
 import { validateBarberForm } from "../validations/barberValidation";
+import { DOCUMENT_TYPES } from "../../../../shared/constants/documentTypes";
 
 export default function BarberFormModal({ mode, formData, setFormData, onSubmit, onClose }) {
   const isCreate = mode === "create";
@@ -62,6 +64,41 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
         />
         <FormFieldError error={errors.imagen_url} />
 
+        {/* 1. Documento de Identidad (PRIMER CAMPO) */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div className="sm:col-span-5">
+            <SearchableSelect
+              label="Tipo de Doc."
+              value={formData.tipo_documento || "CC"}
+              onChange={(val) => handleChange("tipo_documento", val)}
+              options={DOCUMENT_TYPES}
+              searchable={false}
+            />
+          </div>
+
+          <div className="sm:col-span-7">
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Número de Documento
+            </label>
+            <input
+              type="text"
+              name="documento"
+              id="documento"
+              maxLength={20}
+              value={formData.documento || ""}
+              onChange={(e) => handleChange("documento", e.target.value.replace(/[^0-9a-zA-Z-]/g, ""))}
+              className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
+                errors.documento
+                  ? "border-destructive focus:ring-2 focus:ring-destructive/30"
+                  : "border-input focus:ring-2 focus:ring-primary"
+              }`}
+              placeholder="Ej: 1020304050"
+              autoFocus
+            />
+            <FormFieldError error={errors.documento} />
+          </div>
+        </div>
+
         {/* Nombres y Apellidos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -81,7 +118,6 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
                   : "border-input focus:ring-2 focus:ring-primary"
               }`}
               placeholder="Ej: Carlos"
-              autoFocus
             />
             <FormFieldError error={errors.nombre} />
           </div>
@@ -107,49 +143,27 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
           </div>
         </div>
 
-        {/* Correo Electrónico */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">
-            Correo Electrónico <span className="text-destructive">*</span>
-          </label>
-          <input
-            type="email"
-            name="correo"
-            id="correo"
-            maxLength={120}
-            value={formData.correo}
-            onChange={(e) => handleChange("correo", e.target.value)}
-            className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-              errors.correo
-                ? "border-destructive focus:ring-2 focus:ring-destructive/30"
-                : "border-input focus:ring-2 focus:ring-primary"
-            }`}
-            placeholder="correo@ejemplo.com"
-          />
-          <FormFieldError error={errors.correo} />
-        </div>
-
-        {/* Documento y Teléfono */}
+        {/* Correo Electrónico y Teléfono */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
-              Documento de Identidad
+              Correo Electrónico <span className="text-destructive">*</span>
             </label>
             <input
-              type="text"
-              name="documento"
-              id="documento"
-              maxLength={20}
-              value={formData.documento || ""}
-              onChange={(e) => handleChange("documento", e.target.value.replace(/[^0-9a-zA-Z-]/g, ""))}
+              type="email"
+              name="correo"
+              id="correo"
+              maxLength={120}
+              value={formData.correo}
+              onChange={(e) => handleChange("correo", e.target.value)}
               className={`w-full px-3.5 py-2.5 bg-input-background border rounded-xl focus:outline-none text-foreground text-sm transition-all ${
-                errors.documento
+                errors.correo
                   ? "border-destructive focus:ring-2 focus:ring-destructive/30"
                   : "border-input focus:ring-2 focus:ring-primary"
               }`}
-              placeholder="Ej: 1020304050"
+              placeholder="correo@ejemplo.com"
             />
-            <FormFieldError error={errors.documento} />
+            <FormFieldError error={errors.correo} />
           </div>
 
           <div>
@@ -195,6 +209,21 @@ export default function BarberFormModal({ mode, formData, setFormData, onSubmit,
             error={errors.especialidad}
           />
           <FormFieldError error={errors.especialidad} />
+        </div>
+
+        {/* Estado (Universal - Siempre al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            required
+            value={formData.estado !== undefined ? formData.estado : 1}
+            onChange={(val) => handleChange("estado", Number(val))}
+            options={[
+              { value: 1, label: "Activo" },
+              { value: 0, label: "Inactivo" }
+            ]}
+            searchable={false}
+          />
         </div>
 
         <div className="flex gap-3 pt-3 border-t border-border">

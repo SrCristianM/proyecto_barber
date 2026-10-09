@@ -90,7 +90,7 @@ export default function Gallery() {
       <div className="ambient-glow-gold w-[450px] h-[450px] top-1/4 -right-20 opacity-20" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Header & Filter Controls */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
@@ -114,11 +114,10 @@ export default function Gallery() {
                   setActiveCategory(cat.id);
                   setSelectedIdx(null);
                 }}
-                className={`relative px-4 py-2 text-xs font-bold tracking-wider rounded-lg transition-all duration-300 ${
-                  activeCategory === cat.id
-                    ? "text-[#0D0D0D] font-extrabold shadow-md"
-                    : "text-[#8E8E93] hover:text-white hover:bg-white/5"
-                }`}
+                className={`relative px-4 py-2 text-xs font-bold tracking-wider rounded-lg transition-all duration-300 ${activeCategory === cat.id
+                  ? "text-[#0D0D0D] font-extrabold shadow-md"
+                  : "text-[#8E8E93] hover:text-white hover:bg-white/5"
+                  }`}
               >
                 {activeCategory === cat.id && (
                   <motion.div

@@ -5,15 +5,18 @@ import { motion } from "motion/react";
 import AuthCard from "../components/AuthCard";
 import AuthHeader from "../components/AuthHeader";
 import FormInput from "../components/FormInput";
+import FormSelect from "../components/FormSelect";
 import PasswordInput from "../components/PasswordInput";
 import AuthButton from "../components/AuthButton";
 import { validateRegisterForm } from "../validations/authValidation";
 import { registerUser } from "../services/authService";
+import { DOCUMENT_TYPES } from "../../../shared/constants/documentTypes";
 
 export default function Register() {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
+    tipo_documento: "CC",
     documento: "",
     telefono: "",
     correo: "",
@@ -98,6 +101,16 @@ export default function Register() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormSelect
+            id="tipo_documento"
+            name="tipo_documento"
+            label="Tipo de Documento"
+            value={formData.tipo_documento}
+            onChange={handleChange}
+            options={DOCUMENT_TYPES}
+            error={errors.tipo_documento}
+          />
+
           <FormInput
             id="documento"
             name="documento"
@@ -106,6 +119,20 @@ export default function Register() {
             onChange={handleChange}
             placeholder="Ej. 1020304050"
             error={errors.documento}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormInput
+            id="correo"
+            name="correo"
+            label="Correo Electrónico"
+            type="email"
+            value={formData.correo}
+            onChange={handleChange}
+            placeholder="correo@ejemplo.com"
+            error={errors.correo}
+            required
           />
 
           <FormInput
@@ -117,20 +144,6 @@ export default function Register() {
             onChange={handleChange}
             placeholder="+57 300 123 4567"
             error={errors.telefono}
-          />
-        </div>
-
-        <div>
-          <FormInput
-            id="correo"
-            name="correo"
-            label="Correo Electrónico"
-            type="email"
-            value={formData.correo}
-            onChange={handleChange}
-            placeholder="correo@ejemplo.com"
-            error={errors.correo}
-            required
           />
         </div>
 

@@ -53,8 +53,8 @@ export default function PurchaseCard({
                 <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
                 Proveedor
               </span>
-              <span className="font-bold text-foreground truncate max-w-[160px] text-right" title={getSupplierName(purchase.id_proveedor)}>
-                {getSupplierName(purchase.id_proveedor)}
+              <span className="font-bold text-foreground truncate max-w-[160px] text-right" title={getSupplierName(purchase.id_proveedor, purchase)}>
+                {getSupplierName(purchase.id_proveedor, purchase)}
               </span>
             </div>
 
@@ -64,7 +64,7 @@ export default function PurchaseCard({
                 Registrado por
               </span>
               <span className="text-foreground font-medium truncate max-w-[160px]">
-                {getUserName(purchase.id_usuario)}
+                {getUserName(purchase.id_usuario, purchase)}
               </span>
             </div>
 

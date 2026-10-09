@@ -1,3 +1,35 @@
+
+function formatNotificationTime(timeStr) {
+  if (!timeStr) return "";
+  const raw = String(timeStr).trim();
+  const match = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?$/i);
+  if (!match) return raw;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const modifier = match[4] ? match[4].toLowerCase() : null;
+
+  if (modifier) {
+    const isPm = modifier.includes("p");
+    if (isPm && h < 12) h += 12;
+    if (!isPm && h === 12) h = 0;
+  }
+
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12.toString().padStart(2, "0")}:${m} ${period}`;
+}
+
+function formatNotificationDate(dateStr) {
+  if (!dateStr) return "";
+  const str = String(dateStr).trim().substring(0, 10);
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return str;
+  const [_, y, m, d] = match;
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthName = months[parseInt(m, 10) - 1] || m;
+  return `${d} ${monthName} ${y}`;
+}
+
 import { AppointmentsRepository } from "../models/appointments.model.js";
 import { BarbersRepository } from "../models/barbers.model.js";
 import { ClientsRepository } from "../models/clients.model.js";
@@ -71,6 +103,16 @@ export class AppointmentsService {
       serviceIds = appointmentData.servicios.map((s) => (typeof s === "object" ? s.id_servicio : Number(s)));
     } else if (appointmentData.id_servicio) {
       serviceIds = [Number(appointmentData.id_servicio)];
+    } else if (appointmentData.id_paquete) {
+      const { PackagesRepository } = await import("../models/packages.model.js");
+      const pkg = await PackagesRepository.findById(appointmentData.id_paquete);
+      if (pkg) {
+        if (Array.isArray(pkg.servicios) && pkg.servicios.length > 0) {
+          serviceIds = pkg.servicios.map((s) => Number(s.id_servicio || s));
+        } else if (Array.isArray(pkg.servicios_ids) && pkg.servicios_ids.length > 0) {
+          serviceIds = pkg.servicios_ids.map((id) => Number(id));
+        }
+      }
     }
 
     if (serviceIds.length === 0) {
@@ -104,14 +146,14 @@ export class AppointmentsService {
       NotificationsService.createCustomNotification({
         type: "appointment",
         title: "Nueva cita agendada",
-        description: `Nueva cita agendada para el ${fecha} a las ${requestedTime} con ${barber.nombre}.`,
+        description: `Nueva cita agendada para el ${formatNotificationDate(fecha)} a las ${formatNotificationTime(requestedTime)} con ${barber.nombre}.`,
         id_rol: ROLES.ADMIN,
         route: "/admin/citas"
       });
       NotificationsService.createCustomNotification({
         type: "appointment",
         title: "Nueva cita agendada",
-        description: `Nueva cita agendada para el ${fecha} a las ${requestedTime} con ${barber.nombre}.`,
+        description: `Nueva cita agendada para el ${formatNotificationDate(fecha)} a las ${formatNotificationTime(requestedTime)} con ${barber.nombre}.`,
         id_rol: ROLES.RECEPCIONISTA,
         route: "/admin/citas"
       });
@@ -119,20 +161,12 @@ export class AppointmentsService {
         NotificationsService.createCustomNotification({
           type: "appointment",
           title: "Nueva cita asignada",
-          description: `Tienes una nueva cita para el ${fecha} a las ${requestedTime} (${appointmentData.cliente_nombre || client.nombre || "Cliente"}).`,
+          description: `Tienes una nueva cita para el ${formatNotificationDate(fecha)} a las ${formatNotificationTime(requestedTime)} (${appointmentData.cliente_nombre || client.nombre || "Cliente"}).`,
           id_usuario: barber.id_usuario,
           route: "/barbero/agenda"
         });
       }
-      if (client.id_usuario) {
-        NotificationsService.createCustomNotification({
-          type: "appointment",
-          title: "¡Cita agendada con éxito!",
-          description: `Tu cita para el ${fecha} a las ${requestedTime} con ${barber.nombre} ha sido confirmada.`,
-          id_usuario: client.id_usuario,
-          route: "/portal/mis-citas"
-        });
-      }
+      // Notificación unificada generada en NotificationsService para evitar duplicados
     } catch (err) {
       console.warn("[AppointmentsService] No se pudo despachar notificación:", err.message);
     }
@@ -195,7 +229,7 @@ export class AppointmentsService {
         NotificationsService.createCustomNotification({
           type: "appointment",
           title: "Cita cancelada",
-          description: `La cita del ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelada.`,
+          description: `La cita del ${formatNotificationDate(apt.fecha)} a las ${formatNotificationTime(apt.hora)} ha sido cancelada.`,
           id_rol: ROLES.ADMIN,
           route: "/admin/citas"
         });
@@ -205,7 +239,7 @@ export class AppointmentsService {
             NotificationsService.createCustomNotification({
               type: "appointment",
               title: "Cita cancelada",
-              description: `Tu cita del ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelada.`,
+              description: `Tu cita del ${formatNotificationDate(apt.fecha)} a las ${formatNotificationTime(apt.hora)} ha sido cancelada.`,
               id_usuario: barber.id_usuario,
               route: "/barbero/agenda"
             });

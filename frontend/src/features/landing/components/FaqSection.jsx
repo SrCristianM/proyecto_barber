@@ -49,7 +49,7 @@ export default function FaqSection() {
       <div className="ambient-glow-gold w-[400px] h-[400px] top-1/4 right-0 opacity-15" />
 
       <div className="max-w-4xl mx-auto px-6 relative z-10">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-xl mx-auto mb-16">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -75,11 +75,10 @@ export default function FaqSection() {
               <motion.div
                 key={faq.id}
                 initial={false}
-                className={`rounded-2xl border transition-colors duration-300 overflow-hidden ${
-                  isOpen
-                    ? "bg-[#141414] border-[#C9A24A]/60 shadow-[0_10px_25px_rgba(201,162,74,0.1)]"
-                    : "bg-[#111111] border-white/10 hover:border-white/20"
-                }`}
+                className={`rounded-2xl border transition-colors duration-300 overflow-hidden ${isOpen
+                  ? "bg-[#141414] border-[#C9A24A]/60 shadow-[0_10px_25px_rgba(201,162,74,0.1)]"
+                  : "bg-[#111111] border-white/10 hover:border-white/20"
+                  }`}
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}
@@ -89,11 +88,10 @@ export default function FaqSection() {
                     {faq.question}
                   </span>
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isOpen
-                        ? "bg-[#C9A24A] text-black"
-                        : "bg-white/5 text-[#8E8E93]"
-                    }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isOpen
+                      ? "bg-[#C9A24A] text-black"
+                      : "bg-white/5 text-[#8E8E93]"
+                      }`}
                   >
                     {isOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                   </div>

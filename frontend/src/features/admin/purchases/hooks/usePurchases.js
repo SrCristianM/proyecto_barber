@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import { ESTADOS_COMPRA } from "../../../../shared/types/database";
@@ -8,95 +8,55 @@ import {
   cancelPurchase,
   deletePurchase
 } from "../services/purchasesService";
+import { getSuppliers } from "../../suppliers/services/suppliersService";
+import { getProducts } from "../../products/services/productsService";
+import { getCurrentUser } from "../../../auth/services/authService";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
+import { getLocalDateString } from "../../../../shared/utils/dateUtils";
 
-export const availableSuppliers = [
-  {
-    id_proveedor: 1,
-    nombre: "Distribuidora Barber Pro Colombia",
-    nit: "901.234.567-1",
-    telefono: "+57 (601) 745-8920",
-    correo: "ventas@barberprocolombia.com",
-    direccion: "Cra. 15 # 85-32, Zona Rosa",
-    ciudad: "Bogotá D.C."
-  },
-  {
-    id_proveedor: 2,
-    nombre: "Cosméticos & Cuidado Capilar S.A.S.",
-    nit: "900.876.543-2",
-    telefono: "+57 (604) 448-1122",
-    correo: "contacto@cuidadocapilar.com.co",
-    direccion: "Calle 10 # 43E-21, El Poblado",
-    ciudad: "Medellín"
-  },
-  {
-    id_proveedor: 3,
-    nombre: "Herramientas & Barber Supplies",
-    nit: "800.345.678-9",
-    telefono: "+57 (602) 667-3344",
-    correo: "pedidos@barbersupplies.co",
-    direccion: "Av. 6N # 28N-50, Sta. Mónica",
-    ciudad: "Cali"
-  },
-  {
-    id_proveedor: 4,
-    nombre: "Insumos y Lociones del Valle",
-    nit: "901.567.890-4",
-    telefono: "+57 318 554 9921",
-    correo: "servicio@insumosdelvalle.com",
-    direccion: "Cra. 1 # 44-12, San Fernando",
-    ciudad: "Cali"
-  },
-  {
-    id_proveedor: 5,
-    nombre: "Navajas & Acero Premium Ltd",
-    nit: "900.654.321-7",
-    telefono: "+57 310 998 7766",
-    correo: "ventas@aceropremium.com",
-    direccion: "Calle 72 # 20-15, Chapinero",
-    ciudad: "Bogotá D.C."
-  }
-];
+// Mantenemos constantes exportadas vacías por retrocompatibilidad segura
+export const availableSuppliers = [];
+export const availableProducts = [];
+export const availableUsers = [];
 
-export const getSupplierObject = (id_proveedor) => {
-  return availableSuppliers.find((s) => s.id_proveedor === Number(id_proveedor)) || {
+export const getSupplierObject = (id_proveedor, purchaseObj = null, suppliersList = []) => {
+  const found = suppliersList.find((s) => s.id_proveedor === Number(id_proveedor));
+  if (found) return found;
+  return {
     id_proveedor: Number(id_proveedor),
-    nombre: "Distribuidora Barber Pro Colombia",
-    nit: "901.234.567-1",
-    telefono: "+57 (601) 745-8920",
-    correo: "ventas@barberprocolombia.com",
-    direccion: "Cra. 15 # 85-32, Zona Rosa",
-    ciudad: "Bogotá D.C."
+    nombre: purchaseObj?.proveedor_nombre || (id_proveedor ? `Proveedor #${id_proveedor}` : "Proveedor"),
+    nit: purchaseObj?.proveedor_nit || "—",
+    telefono: purchaseObj?.proveedor_telefono || "",
+    correo: "",
+    direccion: "",
+    ciudad: ""
   };
 };
 
-export const getUserObject = (id_usuario) => {
-  return availableUsers.find((u) => u.id_usuario === Number(id_usuario)) || {
+export const getUserObject = (id_usuario, purchaseObj = null) => {
+  const currentUser = getCurrentUser();
+  if (purchaseObj?.usuario_nombre) {
+    return {
+      id_usuario: Number(id_usuario),
+      nombre: purchaseObj.usuario_nombre,
+      cargo: "Usuario del Sistema"
+    };
+  }
+  if (currentUser && Number(currentUser.id_usuario) === Number(id_usuario)) {
+    return {
+      id_usuario: Number(id_usuario),
+      nombre: `${currentUser.nombre} ${currentUser.apellido || ""}`.trim(),
+      cargo: "Sesión Activa"
+    };
+  }
+  return {
     id_usuario: Number(id_usuario),
-    nombre: "Administrador Principal",
+    nombre: id_usuario ? `Usuario #${id_usuario}` : "Administrador Principal",
     cargo: "Administrador del Sistema ERP"
   };
 };
 
-export const availableProducts = [
-  { id_producto: 1, nombre: "Gel para Cabello", id_categoria_producto: 1, precio_sugerido: 10000 },
-  { id_producto: 2, nombre: "Cera Modeladora", id_categoria_producto: 1, precio_sugerido: 12000 },
-  { id_producto: 3, nombre: "Shampoo Premium", id_categoria_producto: 2, precio_sugerido: 14000 },
-  { id_producto: 4, nombre: "Aceite para Barba", id_categoria_producto: 3, precio_sugerido: 16000 },
-  { id_producto: 5, nombre: "Navaja Profesional", id_categoria_producto: 4, precio_sugerido: 28000 },
-  { id_producto: 6, nombre: "Tijeras Profesionales", id_categoria_producto: 4, precio_sugerido: 42000 },
-  { id_producto: 7, nombre: "Peine de Carbono", id_categoria_producto: 4, precio_sugerido: 4500 },
-  { id_producto: 8, nombre: "Bálsamo para Barba", id_categoria_producto: 3, precio_sugerido: 13000 }
-];
-
-export const availableUsers = [
-  { id_usuario: 1, nombre: "Admin Principal" },
-  { id_usuario: 2, nombre: "Recepcionista 1" },
-  { id_usuario: 3, nombre: "Carlos Rodríguez" }
-];
-
 export const purchaseStatuses = ESTADOS_COMPRA;
-
-const mockPurchases = [];
 
 const emptyForm = () => {
   const now = new Date();
@@ -106,28 +66,25 @@ const emptyForm = () => {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+  const currentUser = getCurrentUser();
 
   return {
-    id_proveedor: 1,
-    id_usuario: 1,
+    id_proveedor: "",
+    id_usuario: currentUser?.id_usuario || 1,
     fecha: localDateTime,
     estado: "Registrada",
-    detalles: [
-      {
-        id_producto: 1,
-        cantidad: 1,
-        precio_unitario: 10000,
-        subtotal: 10000,
-        nombre_producto: "Gel para Cabello"
-      }
-    ],
-    total: 10000,
+    detalles: [],
+    total: 0,
     factura_pdf: null
   };
 };
 
 export function usePurchases() {
   const [purchases, setPurchases] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'Registrada' | 'Anulada'
   const [supplierFilter, setSupplierFilter] = useState("all");
@@ -146,21 +103,61 @@ export function usePurchases() {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [formData, setFormData] = useState(emptyForm());
 
-  const getSupplierName = (id_proveedor) => {
-    return availableSuppliers.find((s) => s.id_proveedor === Number(id_proveedor))?.nombre || "Proveedor Desconocido";
-  };
+  const loadCatalogData = useCallback(async () => {
+    setIsLoadingCatalog(true);
+    try {
+      const [supRes, prodRes] = await Promise.allSettled([
+        getSuppliers(),
+        getProducts()
+      ]);
+      if (supRes.status === "fulfilled" && Array.isArray(supRes.value)) {
+        setSuppliers(supRes.value);
+      }
+      if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value)) {
+        setProducts(prodRes.value);
+      }
+    } catch (err) {
+      console.warn("[Purchases] Error cargando proveedores y productos:", err);
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  }, []);
 
-  const getSupplierNit = (id_proveedor) => {
-    return availableSuppliers.find((s) => s.id_proveedor === Number(id_proveedor))?.nit || "—";
-  };
+  const getSupplierName = useCallback((id_proveedor, purchaseObj = null) => {
+    if (purchaseObj?.proveedor_nombre) return purchaseObj.proveedor_nombre;
+    const found = suppliers.find((s) => s.id_proveedor === Number(id_proveedor));
+    return found?.nombre || (id_proveedor ? `Proveedor #${id_proveedor}` : "Proveedor Desconocido");
+  }, [suppliers]);
 
-  const getUserName = (id_usuario) => {
-    return availableUsers.find((u) => u.id_usuario === Number(id_usuario))?.nombre || "Usuario Desconocido";
-  };
+  const getSupplierNit = useCallback((id_proveedor, purchaseObj = null) => {
+    if (purchaseObj?.proveedor_nit) return purchaseObj.proveedor_nit;
+    const found = suppliers.find((s) => s.id_proveedor === Number(id_proveedor));
+    return found?.nit || "—";
+  }, [suppliers]);
 
-  const getProductName = (id_producto) => {
-    return availableProducts.find((p) => p.id_producto === Number(id_producto))?.nombre || "Producto";
-  };
+  const getUserName = useCallback((id_usuario, purchaseObj = null) => {
+    if (purchaseObj?.usuario_nombre) return purchaseObj.usuario_nombre;
+    const currentUser = getCurrentUser();
+    if (currentUser && Number(currentUser.id_usuario) === Number(id_usuario)) {
+      return `${currentUser.nombre} ${currentUser.apellido || ""}`.trim();
+    }
+    return id_usuario ? `Usuario #${id_usuario}` : "Usuario Desconocido";
+  }, []);
+
+  const getProductName = useCallback((id_producto, detailObj = null) => {
+    if (detailObj?.producto_nombre) return detailObj.producto_nombre;
+    if (detailObj?.nombre_producto) return detailObj.nombre_producto;
+    const found = products.find((p) => p.id_producto === Number(id_producto));
+    return found?.nombre || (id_producto ? `Producto #${id_producto}` : "Producto");
+  }, [products]);
+
+  const getResolvedSupplierObject = useCallback((id_proveedor, purchaseObj = null) => {
+    return getSupplierObject(id_proveedor, purchaseObj, suppliers);
+  }, [suppliers]);
+
+  const getResolvedUserObject = useCallback((id_usuario, purchaseObj = null) => {
+    return getUserObject(id_usuario, purchaseObj);
+  }, []);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -174,10 +171,10 @@ export function usePurchases() {
   const filteredPurchases = purchases
     .filter((purchase) => {
       const search = searchTerm.toLowerCase().trim();
-      const supName = getSupplierName(purchase.id_proveedor).toLowerCase();
-      const uName = getUserName(purchase.id_usuario).toLowerCase();
-      const idStr = purchase.id_compra.toString();
-      const estadoStr = purchase.estado.toLowerCase();
+      const supName = getSupplierName(purchase.id_proveedor, purchase).toLowerCase();
+      const uName = getUserName(purchase.id_usuario, purchase).toLowerCase();
+      const idStr = (purchase.id_compra || "").toString();
+      const estadoStr = (purchase.estado || "").toLowerCase();
 
       const matchesSearch =
         search === "" ||
@@ -191,10 +188,10 @@ export function usePurchases() {
 
       let matchesDate = true;
       if (startDate) {
-        matchesDate = matchesDate && purchase.fecha.substring(0, 10) >= startDate;
+        matchesDate = matchesDate && (purchase.fecha || "").substring(0, 10) >= startDate;
       }
       if (endDate) {
-        matchesDate = matchesDate && purchase.fecha.substring(0, 10) <= endDate;
+        matchesDate = matchesDate && (purchase.fecha || "").substring(0, 10) <= endDate;
       }
 
       return matchesSearch && matchesStatus && matchesSupplier && matchesDate;
@@ -228,17 +225,23 @@ export function usePurchases() {
   const resetForm = () => setFormData(emptyForm());
 
   // Manejo dinámico de líneas de productos en el formulario
-  const addProductRow = (id_producto = 1, cantidad = 1, precio_unitario = null) => {
-    const prod = availableProducts.find((p) => p.id_producto === Number(id_producto)) || availableProducts[0];
-    const unitPrice = precio_unitario !== null ? precio_unitario : prod.precio_sugerido;
-    const subtotal = Number(cantidad) * Number(unitPrice);
+  const addProductRow = (id_producto, cantidad = 1, precio_unitario = null) => {
+    const prod = products.find((p) => p.id_producto === Number(id_producto)) || products[0];
+    if (!prod) {
+      toast.error("Selecciona un producto válido registrado.");
+      return;
+    }
+    const unitPrice = precio_unitario !== null ? Number(precio_unitario) : Number(prod.precio || prod.precio_sugerido || 0);
+    const qty = Math.max(1, Number(cantidad) || 1);
+    const subtotal = qty * unitPrice;
 
     const newRow = {
       id_producto: prod.id_producto,
-      cantidad: Number(cantidad),
-      precio_unitario: Number(unitPrice),
+      cantidad: qty,
+      precio_unitario: unitPrice,
       subtotal: subtotal,
-      nombre_producto: prod.nombre
+      nombre_producto: prod.nombre,
+      producto_nombre: prod.nombre
     };
 
     const newDetalles = [...formData.detalles, newRow];
@@ -256,11 +259,12 @@ export function usePurchases() {
     const item = { ...newDetalles[index] };
 
     if (field === "id_producto") {
-      const prod = availableProducts.find((p) => p.id_producto === Number(value));
+      const prod = products.find((p) => p.id_producto === Number(value));
       item.id_producto = Number(value);
       item.nombre_producto = prod ? prod.nombre : "Producto";
+      item.producto_nombre = prod ? prod.nombre : "Producto";
       if (!item.precio_unitario && prod) {
-        item.precio_unitario = prod.precio_sugerido;
+        item.precio_unitario = Number(prod.precio || prod.precio_sugerido || 0);
       }
     } else if (field === "cantidad") {
       item.cantidad = Math.max(1, parseInt(value, 10) || 1);
@@ -290,19 +294,35 @@ export function usePurchases() {
     });
   };
 
-  useEffect(() => {
-    getPurchases()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setPurchases(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Purchases] Usando compras locales por fallback:", err.message);
-      });
+  const fetchPurchasesList = useCallback(async () => {
+    try {
+      const data = await getPurchases();
+      if (Array.isArray(data)) {
+        setPurchases(data);
+      }
+    } catch (err) {
+      console.warn("[Purchases] Usando compras locales por fallback:", err.message);
+    }
   }, []);
 
+  useEffect(() => {
+    loadCatalogData();
+    fetchPurchasesList();
+  }, [loadCatalogData, fetchPurchasesList]);
+
+  useDataSync([SYNC_ENTITIES.SUPPLIERS, SYNC_ENTITIES.PRODUCTS], loadCatalogData);
+  useDataSync([SYNC_ENTITIES.PURCHASES], fetchPurchasesList);
+
   const handleCreate = async () => {
+    if (!formData.id_proveedor || Number(formData.id_proveedor) <= 0) {
+      toast.error("Debes seleccionar un proveedor registrado en el sistema.");
+      return;
+    }
+    if (!formData.detalles || formData.detalles.length === 0) {
+      toast.error("Debes agregar al menos un producto a la compra.");
+      return;
+    }
+
     const formattedFecha = formData.fecha.includes(" ")
       ? formData.fecha
       : `${formData.fecha.replace("T", " ")}:00`;
@@ -318,12 +338,17 @@ export function usePurchases() {
 
     try {
       const created = await createPurchase(payload);
+      const supplier = suppliers.find((s) => s.id_proveedor === Number(formData.id_proveedor));
+      const currentUser = getCurrentUser();
       const nextCompraId = created?.id_compra || Math.max(...purchases.map((p) => p.id_compra), 0) + 1;
       const newPurchase = {
         id_compra: nextCompraId,
         id_proveedor: Number(formData.id_proveedor),
-        id_usuario: Number(formData.id_usuario || 1),
-        fecha: formattedFecha,
+        proveedor_nombre: supplier?.nombre || created?.proveedor_nombre || `Proveedor #${formData.id_proveedor}`,
+        proveedor_nit: supplier?.nit || created?.proveedor_nit || "",
+        id_usuario: Number(formData.id_usuario || currentUser?.id_usuario || 1),
+        usuario_nombre: currentUser ? `${currentUser.nombre} ${currentUser.apellido || ""}`.trim() : "Administrador",
+        fecha: created?.fecha || formattedFecha,
         total: Number(formData.total),
         estado: "Registrada",
         factura_pdf: formData.factura_pdf || null,
@@ -334,13 +359,16 @@ export function usePurchases() {
           cantidad: Number(d.cantidad),
           precio_unitario: Number(d.precio_unitario),
           subtotal: Number(d.subtotal),
-          nombre_producto: getProductName(d.id_producto)
+          nombre_producto: d.nombre_producto || getProductName(d.id_producto),
+          producto_nombre: d.nombre_producto || getProductName(d.id_producto)
         }))
       };
 
       setPurchases([newPurchase, ...purchases]);
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.PURCHASES);
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS);
       toast.success("Compra registrada y stock actualizado exitosamente.");
       return newPurchase;
     } catch (err) {
@@ -354,12 +382,16 @@ export function usePurchases() {
       ? formData.fecha
       : `${formData.fecha.replace("T", " ")}:00`;
 
+    const supplier = suppliers.find((s) => s.id_proveedor === Number(formData.id_proveedor));
+
     setPurchases(
       purchases.map((purchase) =>
         purchase.id_compra === selectedPurchase.id_compra
           ? {
             ...purchase,
             id_proveedor: Number(formData.id_proveedor),
+            proveedor_nombre: supplier?.nombre || purchase.proveedor_nombre,
+            proveedor_nit: supplier?.nit || purchase.proveedor_nit,
             id_usuario: Number(formData.id_usuario),
             fecha: formattedFecha,
             total: Number(formData.total),
@@ -372,7 +404,8 @@ export function usePurchases() {
               cantidad: Number(d.cantidad),
               precio_unitario: Number(d.precio_unitario),
               subtotal: Number(d.subtotal),
-              nombre_producto: getProductName(d.id_producto)
+              nombre_producto: d.nombre_producto || getProductName(d.id_producto),
+              producto_nombre: d.producto_nombre || getProductName(d.id_producto)
             }))
           }
           : purchase
@@ -381,6 +414,7 @@ export function usePurchases() {
     setShowEditModal(false);
     setSelectedPurchase(null);
     resetForm();
+    notifyDataChange(SYNC_ENTITIES.PURCHASES);
     toast.success("Compra actualizada correctamente.");
   };
 
@@ -391,6 +425,8 @@ export function usePurchases() {
       setPurchases(purchases.filter((p) => p.id_compra !== selectedPurchase.id_compra));
       setShowDeleteModal(false);
       setSelectedPurchase(null);
+      notifyDataChange(SYNC_ENTITIES.PURCHASES);
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS);
       toast.success("Compra eliminada correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar la compra.");
@@ -410,6 +446,8 @@ export function usePurchases() {
             : p
         )
       );
+      notifyDataChange(SYNC_ENTITIES.PURCHASES);
+      notifyDataChange(SYNC_ENTITIES.PRODUCTS);
       toast.success("Estado de la orden de compra actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar estado de la compra.");
@@ -434,13 +472,13 @@ export function usePurchases() {
       ],
       data: filteredPurchases.map((p) => {
         const itemNames = (p.detalles || [])
-          .map((d) => `${d.nombre_producto || getProductName(d.id_producto)} (x${d.cantidad} a $${d.precio_unitario})`)
+          .map((d) => `${d.nombre_producto || getProductName(d.id_producto, d)} (x${d.cantidad} a $${d.precio_unitario})`)
           .join("; ");
         return {
           ...p,
-          proveedorNombre: getSupplierName(p.id_proveedor),
-          proveedorNit: getSupplierNit(p.id_proveedor),
-          usuarioNombre: getUserName(p.id_usuario),
+          proveedorNombre: getSupplierName(p.id_proveedor, p),
+          proveedorNit: getSupplierNit(p.id_proveedor, p),
+          usuarioNombre: getUserName(p.id_usuario, p),
           articulosTexto: itemNames
         };
       })
@@ -448,11 +486,13 @@ export function usePurchases() {
   };
 
   const openCreateModal = () => {
+    loadCatalogData();
     resetForm();
     setShowCreateModal(true);
   };
 
   const openEditModal = (purchase) => {
+    loadCatalogData();
     setSelectedPurchase(purchase);
     const rawFecha = purchase.fecha ? String(purchase.fecha) : "";
     const safeFecha = rawFecha.includes(" ")
@@ -472,7 +512,8 @@ export function usePurchases() {
         cantidad: d.cantidad,
         precio_unitario: d.precio_unitario,
         subtotal: d.subtotal,
-        nombre_producto: d.nombre_producto || getProductName(d.id_producto)
+        nombre_producto: d.nombre_producto || d.producto_nombre || getProductName(d.id_producto),
+        producto_nombre: d.producto_nombre || d.nombre_producto || getProductName(d.id_producto)
       })),
       total: purchase.total,
       factura_pdf: purchase.factura_pdf || null
@@ -497,9 +538,9 @@ export function usePurchases() {
 
   // Stats
   const activePurchases = purchases.filter((p) => p.estado === "Registrada");
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString();
   const totalToday = activePurchases
-    .filter((p) => p.fecha.startsWith(todayStr))
+    .filter((p) => (p.fecha || "").startsWith(todayStr))
     .reduce((sum, p) => sum + Number(p.total), 0);
   const totalMonth = activePurchases.reduce((sum, p) => sum + Number(p.total), 0);
   const averagePurchase = activePurchases.length ? Math.round(totalMonth / activePurchases.length) : 0;
@@ -508,6 +549,10 @@ export function usePurchases() {
 
   return {
     purchases,
+    suppliers,
+    products,
+    isLoadingCatalog,
+    loadCatalogData,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -562,6 +607,8 @@ export function usePurchases() {
     getSupplierName,
     getSupplierNit,
     getUserName,
-    getProductName
+    getUserObject: getResolvedUserObject,
+    getProductName,
+    getSupplierObject: getResolvedSupplierObject
   };
 }

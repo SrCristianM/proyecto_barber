@@ -91,7 +91,9 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Documento de Identidad
             </span>
-            <p className="text-base font-bold text-foreground">{barber.documento || "No registrado"}</p>
+            <p className="text-base font-bold text-foreground">
+              {barber.tipo_documento ? `${barber.tipo_documento} ` : ""}{barber.documento || "No registrado"}
+            </p>
           </div>
 
           <div>
@@ -125,6 +127,25 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
           <div className="sm:col-span-2 pt-3 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
             <span>Usuario del Sistema Vinculado: <strong className="text-foreground">Cuenta ID #{barber.id_usuario}</strong></span>
             <span>Estado Operativo: <strong className="text-foreground">{barber.estado === 1 ? "Habilitado para citas" : "Suspendido"}</strong></span>
+          </div>
+
+          {/* Estado Universal al Final */}
+          <div className="sm:col-span-2 pt-3 border-t border-border flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                Estado
+              </span>
+              <span className="text-xs text-muted-foreground">Estado de actividad del barbero en la barbería</span>
+            </div>
+            <span
+              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border ${
+                barber.estado === 1
+                  ? "bg-success/15 text-success border-success/30"
+                  : "bg-destructive/15 text-destructive border-destructive/30"
+              }`}
+            >
+              {barber.estado === 1 ? "● Activo" : "● Inactivo"}
+            </span>
           </div>
         </div>
 

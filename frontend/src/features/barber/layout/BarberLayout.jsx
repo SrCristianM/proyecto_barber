@@ -33,13 +33,14 @@ import {
   getBarberAppointments,
   getBarberNovelties
 } from "../services/barberStorageService";
+import { getLocalDateString } from "../../../shared/utils/dateUtils";
 import {
   getNotifications,
   markAsRead as serviceMarkAsRead,
   markAllAsRead as serviceMarkAllAsRead,
   subscribeNotifications
 } from "../../../shared/services/notificationService";
-import { timeAgo } from "../../admin/shared/hooks/useNotifications";
+import { timeAgo, formatExactDateTime } from "../../admin/shared/hooks/useNotifications";
 import ErrorBoundary from "../../../shared/components/ErrorBoundary";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 
@@ -64,7 +65,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString();
 
   const loadNotificationsData = async () => {
     try {
@@ -274,7 +275,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 8, scale: 0.95 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-88 rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 max-h-[85vh] flex flex-col"
+                              className="absolute -right-12 sm:right-0 mt-2 w-[calc(100vw-2.5rem)] max-w-sm sm:w-88 rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 max-h-[85vh] flex flex-col"
                             >
                               <div className="flex items-center justify-between pb-2.5 border-b border-border mb-3 shrink-0">
                                 <div className="flex items-center gap-2">

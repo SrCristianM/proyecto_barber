@@ -1,18 +1,37 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { Scissors, Clock, Search, Filter, Info, ArrowRight, Check } from "lucide-react";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import ClientImage from "../components/ClientImage";
-import { getClientServices } from "../services/clientStorageService";
+import { getClientServices, fetchClientServices } from "../services/clientStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 import Modal from "../../admin/shared/components/Modal";
 
 export default function ClientServicesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedService, setSelectedService] = useState(null);
+  const [services, setServices] = useState(() => getClientServices());
   const navigate = useNavigate();
 
-  const services = useMemo(() => getClientServices(), []);
+  const refreshServices = useCallback(async () => {
+    try {
+      const live = await fetchClientServices();
+      if (Array.isArray(live)) {
+        setServices(live);
+      } else {
+        setServices(getClientServices());
+      }
+    } catch {
+      setServices(getClientServices());
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshServices();
+  }, [refreshServices]);
+
+  useDataSync([SYNC_ENTITIES.SERVICES, SYNC_ENTITIES.SERVICE_CATEGORIES], refreshServices);
 
   const categories = useMemo(() => {
     const cats = ["all"];

@@ -1,3 +1,54 @@
+
+function normalizeTimeTo24(timeStr) {
+  if (!timeStr) return "09:00:00";
+  const raw = String(timeStr).trim();
+  const match = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?$/i);
+  if (!match) return "09:00:00";
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const s = match[3] || "00";
+  const modifier = match[4] ? match[4].toLowerCase() : null;
+
+  if (modifier) {
+    const isPm = modifier.includes("p");
+    if (isPm && h < 12) h += 12;
+    if (!isPm && h === 12) h = 0;
+  }
+  return `${h.toString().padStart(2, "0")}:${m}:${s}`;
+}
+
+function formatNotificationTime(timeStr) {
+  if (!timeStr) return "";
+  const raw = String(timeStr).trim();
+  const match = raw.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?$/i);
+  if (!match) return raw;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const modifier = match[4] ? match[4].toLowerCase() : null;
+
+  if (modifier) {
+    const isPm = modifier.includes("p");
+    if (isPm && h < 12) h += 12;
+    if (!isPm && h === 12) h = 0;
+  }
+
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12.toString().padStart(2, "0")}:${m} ${period}`;
+}
+
+function formatNotificationDate(dateStr) {
+  if (!dateStr) return "";
+  const str = String(dateStr).trim().substring(0, 10);
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return str;
+  const [_, y, m, d] = match;
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthName = months[parseInt(m, 10) - 1] || m;
+  return `${d} ${monthName} ${y}`;
+}
+
+
 /**
  * @file notifications.service.js
  * Servicio centralizado de notificaciones generado puramente mediante lógica de negocio
@@ -39,13 +90,18 @@ export class NotificationsService {
         const recentAppointments = (allAppointments || []).slice(0, 30);
 
         for (const apt of recentAppointments) {
+          const timeStr = normalizeTimeTo24(apt.hora);
+          const aptTimestamp = apt.fecha_registro || (apt.fecha ? `${String(apt.fecha).substring(0, 10)}T${timeStr}` : new Date().toISOString());
+          const displayTime = formatNotificationTime(apt.hora);
+          const displayDate = formatNotificationDate(apt.fecha);
+
           if (apt.estado === "Cancelada") {
             notifications.push({
               id: `apt-canc-${apt.id_cita}`,
               type: "appointment",
               title: "Cita cancelada",
-              description: `La cita de ${apt.cliente_nombre || "Cliente"} (${apt.fecha} ${apt.hora ? apt.hora.substring(0, 5) : ""}) fue cancelada.`,
-              timestamp: apt.fecha_registro || (apt.fecha && apt.hora ? `${apt.fecha}T${apt.hora}` : new Date().toISOString()),
+              description: `La cita de ${apt.cliente_nombre || "Cliente"} (${displayDate} a las ${displayTime}) fue cancelada.`,
+              timestamp: aptTimestamp,
               route: "/admin/citas"
             });
           } else if (apt.estado === "Reprogramada") {
@@ -53,8 +109,8 @@ export class NotificationsService {
               id: `apt-reprog-${apt.id_cita}`,
               type: "appointment",
               title: "Cita reprogramada",
-              description: `La cita de ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""}.`,
-              timestamp: apt.fecha_registro || apt.fecha,
+              description: `La cita de ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${displayDate} a las ${displayTime}.`,
+              timestamp: aptTimestamp,
               route: "/admin/citas"
             });
           } else {
@@ -62,8 +118,8 @@ export class NotificationsService {
               id: `apt-new-${apt.id_cita}`,
               type: "appointment",
               title: "Cita en agenda",
-              description: `Cita programada con ${apt.barbero_nombre || "Barbero"} para ${apt.cliente_nombre || "Cliente"} el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""}.`,
-              timestamp: apt.fecha_registro || apt.fecha,
+              description: `Cita programada con ${apt.barbero_nombre || "Barbero"} para ${apt.cliente_nombre || "Cliente"} el ${displayDate} a las ${displayTime}.`,
+              timestamp: aptTimestamp,
               route: "/admin/citas"
             });
           }
@@ -74,12 +130,13 @@ export class NotificationsService {
         const pendingNovelties = (allNovelties || []).filter((n) => n.estado === "Pendiente");
 
         for (const nov of pendingNovelties) {
+          const novTimestamp = nov.fecha_registro || (nov.fecha ? `${nov.fecha}T08:00:00` : new Date().toISOString());
           notifications.push({
             id: `nov-pend-${nov.id_novedad}`,
             type: "schedule",
             title: "Nueva novedad de horario solicitada",
-            description: `El barbero ${nov.barbero_nombre || "Barbero"} solicitó ${nov.tipo} para el ${nov.fecha}.`,
-            timestamp: nov.fecha_registro || nov.fecha,
+            description: `El barbero ${nov.barbero_nombre || "Barbero"} solicitó ${nov.tipo} para el ${formatNotificationDate(nov.fecha)}.`,
+            timestamp: novTimestamp,
             route: "/admin/horarios"
           });
         }
@@ -110,13 +167,18 @@ export class NotificationsService {
           // Citas asignadas a este barbero
           const barberAppointments = await AppointmentsRepository.findAll({ barber: barberId });
           for (const apt of barberAppointments || []) {
+            const timeStr = normalizeTimeTo24(apt.hora);
+          const aptTimestamp = apt.fecha_registro || (apt.fecha ? `${String(apt.fecha).substring(0, 10)}T${timeStr}` : new Date().toISOString());
+          const displayTime = formatNotificationTime(apt.hora);
+          const displayDate = formatNotificationDate(apt.fecha);
+
             if (apt.estado === "Cancelada") {
               notifications.push({
                 id: `barber-apt-canc-${apt.id_cita}`,
                 type: "appointment",
                 title: "Cita cancelada",
-                description: `Tu cita con ${apt.cliente_nombre || "Cliente"} para el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""} ha sido cancelada.`,
-                timestamp: apt.fecha_registro || apt.fecha,
+                description: `Tu cita con ${apt.cliente_nombre || "Cliente"} para el ${displayDate} a las ${displayTime} ha sido cancelada.`,
+                timestamp: aptTimestamp,
                 route: "/barbero/agenda"
               });
             } else {
@@ -124,8 +186,8 @@ export class NotificationsService {
                 id: `barber-apt-${apt.id_cita}`,
                 type: "appointment",
                 title: "Cita en tu agenda",
-                description: `Tienes cita programada con ${apt.cliente_nombre || "Cliente"} el ${apt.fecha} a las ${apt.hora ? apt.hora.substring(0, 5) : ""}.`,
-                timestamp: apt.fecha_registro || apt.fecha,
+                description: `Tienes cita programada con ${apt.cliente_nombre || "Cliente"} el ${displayDate} a las ${displayTime}.`,
+                timestamp: aptTimestamp,
                 route: "/barbero/agenda"
               });
             }
@@ -134,13 +196,14 @@ export class NotificationsService {
           // Novedades de este barbero (Aprobadas o Rechazadas)
           const allNovelties = await SchedulesRepository.findAllNovelties({ barber: barberId });
           for (const nov of allNovelties || []) {
+            const novTimestamp = nov.fecha_registro || (nov.fecha ? `${nov.fecha}T08:00:00` : new Date().toISOString());
             if (nov.estado === "Aprobado" || nov.estado === "Aprobada") {
               notifications.push({
                 id: `barber-nov-aprob-${nov.id_novedad}`,
                 type: "schedule",
                 title: "Novedad Aprobada",
-                description: `Tu solicitud de ${nov.tipo} para el día ${nov.fecha} fue aprobada por la administración.`,
-                timestamp: nov.fecha_registro || nov.fecha,
+                description: `Tu solicitud de ${nov.tipo} para el día ${formatNotificationDate(nov.fecha)} fue aprobada por la administración.`,
+                timestamp: novTimestamp,
                 route: "/barbero/novedades"
               });
             } else if (nov.estado === "Rechazado" || nov.estado === "Rechazada") {
@@ -148,8 +211,8 @@ export class NotificationsService {
                 id: `barber-nov-rech-${nov.id_novedad}`,
                 type: "schedule",
                 title: "Novedad Rechazada",
-                description: `Tu solicitud de ${nov.tipo} para el día ${nov.fecha} fue rechazada por la administración.`,
-                timestamp: nov.fecha_registro || nov.fecha,
+                description: `Tu solicitud de ${nov.tipo} para el día ${formatNotificationDate(nov.fecha)} fue rechazada por la administración.`,
+                timestamp: novTimestamp,
                 route: "/barbero/novedades"
               });
             }
@@ -170,14 +233,15 @@ export class NotificationsService {
             const timeStr = apt.hora ? (apt.hora.length === 5 ? `${apt.hora}:00` : apt.hora) : "09:00:00";
             // Timestamp con fecha y hora combinadas para evitar desfase de zona horaria UTC
             const aptTimestamp = apt.fecha_registro || (apt.fecha ? `${apt.fecha}T${timeStr}` : new Date().toISOString());
-            const displayTime = apt.hora ? apt.hora.substring(0, 5) : "";
+            const displayTime = formatNotificationTime(apt.hora || timeStr);
+            const displayDate = formatNotificationDate(apt.fecha);
 
             if (apt.estado === "Cancelada") {
               notifications.push({
                 id: `client-apt-canc-${apt.id_cita}`,
                 type: "appointment",
                 title: "Tu cita fue cancelada",
-                description: `Tu turno para el ${apt.fecha} a las ${displayTime} ha sido cancelado.`,
+                description: `Tu turno para el ${displayDate} a las ${displayTime} ha sido cancelado.`,
                 timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
@@ -186,7 +250,7 @@ export class NotificationsService {
                 id: `client-apt-reprog-${apt.id_cita}`,
                 type: "appointment",
                 title: "Tu cita fue reprogramada",
-                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} ha sido reprogramado para el ${apt.fecha} a las ${displayTime}.`,
+                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} ha sido reprogramado para el ${displayDate} a las ${displayTime}.`,
                 timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
@@ -195,7 +259,7 @@ export class NotificationsService {
                 id: `client-apt-conf-${apt.id_cita}`,
                 type: "appointment",
                 title: "Cita agendada con éxito",
-                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} está confirmado para el ${apt.fecha} a las ${displayTime}.`,
+                description: `Tu turno con ${apt.barbero_nombre || "tu barbero"} está confirmado para el ${displayDate} a las ${displayTime}.`,
                 timestamp: aptTimestamp,
                 route: "/portal/mis-citas"
               });
@@ -217,7 +281,7 @@ export class NotificationsService {
                     id: `client-nov-alert-${apt.id_cita}-${affectedNov.id_novedad}`,
                     type: "schedule",
                     title: "Alerta de Disponibilidad",
-                    description: `Tu barbero reportó una ausencia por ${affectedNov.tipo} el ${affectedNov.fecha}. Te sugerimos reprogramar tu turno.`,
+                    description: `Tu barbero reportó una ausencia por ${affectedNov.tipo} el ${formatNotificationDate(affectedNov.fecha)}. Te sugerimos reprogramar tu turno.`,
                     timestamp: affectedNov.fecha_registro || `${apt.fecha}T07:00:00`,
                     route: "/portal/mis-citas"
                   });
@@ -231,7 +295,7 @@ export class NotificationsService {
             notifications.push({
               id: `client-welcome-${userId}`,
               type: "system",
-              title: "¡Bienvenido a BarberBook!",
+              title: "¡Bienvenido a Tu Turno Barber!",
               description: "Tu cuenta ha sido creada exitosamente. Explora nuestro catálogo y agenda tu primer turno.",
               timestamp: currentClient.fecha_registro || new Date().toISOString(),
               route: "/portal/agendar"
@@ -252,14 +316,31 @@ export class NotificationsService {
       console.error("[NotificationsService] Error generando notificaciones dinámicas:", err);
     }
 
-    // Filtrar descartadas y mapear estado de lectura
+    // Filtrar descartadas y mapear estado de lectura con timestamp ISO 8601 estandarizado
     return notifications
       .filter((n) => !userDismissedSet.has(String(n.id)))
-      .map((n) => ({
-        ...n,
-        read: userReadSet.has(String(n.id)) || !!n.read,
-        timestamp: n.timestamp ? new Date(n.timestamp) : new Date()
-      }))
+      .map((n) => {
+        let isoTimestamp = new Date().toISOString();
+        if (n.timestamp) {
+          if (n.timestamp instanceof Date && !isNaN(n.timestamp.getTime())) {
+            isoTimestamp = n.timestamp.toISOString();
+          } else {
+            const str = String(n.timestamp).trim();
+            if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}(:\d{2})?$/.test(str)) {
+              const d = new Date(str.replace(" ", "T"));
+              if (!isNaN(d.getTime())) isoTimestamp = d.toISOString();
+            } else {
+              const d = new Date(str);
+              if (!isNaN(d.getTime())) isoTimestamp = d.toISOString();
+            }
+          }
+        }
+        return {
+          ...n,
+          read: userReadSet.has(String(n.id)) || !!n.read,
+          timestamp: isoTimestamp
+        };
+      })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }
 
@@ -312,7 +393,23 @@ export class NotificationsService {
   /**
    * Limpia todas las notificaciones marcadas como leídas para un usuario.
    */
-  static async clearRead(user) {
+    /**
+   * Limpia y vacía toda la bandeja de notificaciones para un usuario.
+   */
+  static async clearAll(user) {
+    const notifications = await this.getNotificationsForUser(user);
+    const uId = Number(user.id_usuario);
+    if (!dismissedNotificationIdsByUser.has(uId)) {
+      dismissedNotificationIdsByUser.set(uId, new Set());
+    }
+    const dismissed = dismissedNotificationIdsByUser.get(uId);
+    for (const n of notifications) {
+      dismissed.add(String(n.id));
+    }
+    return { success: true, count: notifications.length };
+  }
+
+static async clearRead(user) {
     const notifications = await this.getNotificationsForUser(user);
     const uId = Number(user.id_usuario);
     if (!dismissedNotificationIdsByUser.has(uId)) {

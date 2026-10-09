@@ -86,7 +86,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     try {
-      const todayStr = new Date().toISOString().split("T")[0];
+      const colombiaNow = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false });
+      const todayStr = colombiaNow.split(",")[0].trim();
       const rawApts = localStorage.getItem("barber_appointments_db");
       const rawClients = localStorage.getItem("barber_clients_db");
       const rawUsers = localStorage.getItem("barber_users_db");
@@ -210,6 +211,61 @@ export default function AdminDashboard() {
     } catch {
       // Manejo seguro
     }
+
+    // Sondeo en tiempo real del dashboard y caja cada 4 segundos
+    const syncRealtime = () => {
+      fetch("/api/dashboard/admin", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+        }
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json && json.data) {
+            setKpis((prev) => ({
+              ...prev,
+              ingresosHoy: json.data.ventas_hoy !== undefined ? Number(json.data.ventas_hoy) : prev.ingresosHoy,
+              citasHoy: json.data.citas_hoy !== undefined ? Number(json.data.citas_hoy) : prev.citasHoy,
+              stockCriticoCount: json.data.productos_bajo_stock !== undefined ? Number(json.data.productos_bajo_stock) : prev.stockCriticoCount
+            }));
+          }
+        })
+        .catch(() => {});
+
+      fetch("/api/sales", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+        }
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json && Array.isArray(json.data)) {
+            const freshSales = json.data;
+            try {
+              localStorage.setItem("barber_sales_db", JSON.stringify(freshSales));
+            } catch {}
+            const colombiaNow = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false });
+            const todayStr = colombiaNow.split(",")[0].trim();
+            const todaySales = freshSales.filter((s) => s.fecha && s.fecha.startsWith(todayStr) && s.estado !== "Anulada");
+            const totalIngresos = todaySales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+            setKpis((prev) => ({
+              ...prev,
+              ingresosHoy: totalIngresos
+            }));
+          }
+        })
+        .catch(() => {});
+    };
+
+    syncRealtime();
+    const dashInterval = setInterval(syncRealtime, 4000);
+    const onWindowFocus = () => syncRealtime();
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(dashInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, []);
 
   const containerVariants = {

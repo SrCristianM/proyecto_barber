@@ -5,6 +5,8 @@
  * en Excel, LibreOffice y Google Sheets con auto-ajuste de columnas y formato monetario.
  */
 
+import { getLocalDateString } from "./dateUtils.js";
+
 export function exportToStyledExcel({
   filename = "reporte",
   sheetName = "Datos",
@@ -22,7 +24,7 @@ export function exportToStyledExcel({
     minute: "2-digit"
   });
 
-  const cleanFilename = `${filename}_${currentDate.toISOString().split("T")[0]}.xls`;
+  const cleanFilename = `${filename}_${getLocalDateString(currentDate)}.xls`;
 
   // Construcción del documento XML Spreadsheet 2003
   let xml = `<?xml version="1.0" encoding="UTF-8"?>

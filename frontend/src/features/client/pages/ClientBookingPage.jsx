@@ -27,13 +27,16 @@ import {
   getClientSchedules,
   getAvailableSlots,
   bookAppointment,
-  getCurrentClientProfile
+  getCurrentClientProfile,
+  syncCatalogsFromApi
 } from "../services/clientStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 import {
   createGoogleCalendarUrl,
   downloadIcsFile,
   createWhatsAppShareUrl
 } from "../utils/calendarUtils";
+import { getLocalDateString } from "../../../shared/utils/dateUtils";
 
 export default function ClientBookingPage() {
   const [searchParams] = useSearchParams();
@@ -42,12 +45,33 @@ export default function ClientBookingPage() {
   // Paso actual (1: Servicios/Paquete, 2: Barbero, 3: Fecha, 4: Horario, 5: Confirmación)
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Catálogos y perfil de cliente
-  const services = useMemo(() => getClientServices(), []);
-  const packages = useMemo(() => getClientPackages(), []);
-  const barbers = useMemo(() => getClientBarbers(), []);
-  const schedules = useMemo(() => getClientSchedules(), []);
+  // Catálogos reactivos y perfil de cliente
+  const [services, setServices] = useState(() => getClientServices());
+  const [packages, setPackages] = useState(() => getClientPackages());
+  const [barbers, setBarbers] = useState(() => getClientBarbers());
+  const [schedules, setSchedules] = useState(() => getClientSchedules());
   const clientProfile = useMemo(() => getCurrentClientProfile(), []);
+
+  const refreshCatalogs = () => {
+    syncCatalogsFromApi().then(() => {
+      setServices(getClientServices());
+      setPackages(getClientPackages());
+      setBarbers(getClientBarbers());
+      setSchedules(getClientSchedules());
+    });
+  };
+
+  useEffect(() => {
+    refreshCatalogs();
+  }, []);
+
+  useDataSync([
+    SYNC_ENTITIES.SERVICES,
+    SYNC_ENTITIES.PACKAGES,
+    SYNC_ENTITIES.BARBERS,
+    SYNC_ENTITIES.SCHEDULES,
+    SYNC_ENTITIES.APPOINTMENTS
+  ], refreshCatalogs);
 
   // Estado del agendamiento
   const [bookingType, setBookingType] = useState("services"); // 'services' | 'package'
@@ -85,15 +109,18 @@ export default function ClientBookingPage() {
     }
   }, [searchParams, services]);
 
-  // Preseleccionar primer barbero disponible si no hay seleccionado
+  // Preseleccionar barbero disponible (respetando si viene especificado en la URL)
   useEffect(() => {
-    if (barbers.length > 0 && !selectedBarberId) {
+    const bId = searchParams.get("barbero") || searchParams.get("barberoId");
+    if (bId && barbers.some((b) => b.id_barbero === Number(bId))) {
+      setSelectedBarberId(Number(bId));
+    } else if (barbers.length > 0 && !selectedBarberId) {
       setSelectedBarberId(barbers[0].id_barbero);
     }
-  }, [barbers, selectedBarberId]);
+  }, [searchParams, barbers, selectedBarberId]);
 
   // Inicializar fecha mínima (mañana o hoy)
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString();
   useEffect(() => {
     if (!selectedDate) {
       setSelectedDate(todayStr);
@@ -106,18 +133,18 @@ export default function ClientBookingPage() {
       const slots = getAvailableSlots(selectedBarberId, selectedDate);
       setAvailableSlots(slots);
 
-      // Si el slot actual ya no está disponible, limpiar o seleccionar el primero libre
-      if (slots.length > 0) {
-        const stillFree = slots.find((s) => s.hora === selectedTimeSlot && s.disponible);
-        if (!stillFree) {
+      setSelectedTimeSlot((prev) => {
+        if (!prev) {
           const firstFree = slots.find((s) => s.disponible);
-          setSelectedTimeSlot(firstFree ? firstFree.hora : "");
+          return firstFree ? firstFree.hora : "";
         }
-      } else {
-        setSelectedTimeSlot("");
-      }
+        const stillFree = slots.find((s) => s.hora === prev && s.disponible);
+        if (stillFree) return prev;
+        const firstFree = slots.find((s) => s.disponible);
+        return firstFree ? firstFree.hora : "";
+      });
     }
-  }, [selectedBarberId, selectedDate, selectedTimeSlot]);
+  }, [selectedBarberId, selectedDate]);
 
   // Cálculos de selección
   const selectedServices = useMemo(() => {
@@ -148,13 +175,33 @@ export default function ClientBookingPage() {
     return barbers.find((b) => b.id_barbero === Number(selectedBarberId)) || null;
   }, [selectedBarberId, barbers]);
 
+  // Disponibilidad de la fecha seleccionada
+  const dateAvailability = useMemo(() => {
+    if (!selectedBarberId || !selectedDate) return null;
+    const slots = getAvailableSlots(selectedBarberId, selectedDate);
+    if (slots.length === 0) {
+      return { valid: false, reason: "El profesional no presta servicio en este día de la semana." };
+    }
+    if (slots.every((s) => s.bloqueadoPorNovedad)) {
+      return {
+        valid: false,
+        reason: `El profesional tiene una novedad aprobada (${slots[0]?.novedadMotivo || "Permiso"}) en esta fecha.`
+      };
+    }
+    const freeCount = slots.filter((s) => s.disponible).length;
+    if (freeCount === 0) {
+      return { valid: false, reason: "Todos los horarios de este día ya se encuentran ocupados." };
+    }
+    return { valid: true, freeCount };
+  }, [selectedBarberId, selectedDate, schedules]);
+
   // Validaciones para avanzar paso a paso
   const canAdvanceFromStep1 =
     (bookingType === "services" && selectedServiceIds.length > 0) ||
     (bookingType === "package" && selectedPackageId !== null);
 
   const canAdvanceFromStep2 = Boolean(selectedBarberId);
-  const canAdvanceFromStep3 = Boolean(selectedDate);
+  const canAdvanceFromStep3 = Boolean(selectedDate) && (!dateAvailability || dateAvailability.valid);
   const canAdvanceFromStep4 = Boolean(selectedTimeSlot);
 
   // Manejo de confirmación final
@@ -613,6 +660,28 @@ export default function ClientBookingPage() {
                   required
                 />
               </div>
+
+              {dateAvailability && !dateAvailability.valid && (
+                <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Fecha no disponible para reserva:</p>
+                    <p className="opacity-90">{dateAvailability.reason}</p>
+                    <p className="mt-1 font-semibold underline">Por favor selecciona otra fecha para continuar.</p>
+                  </div>
+                </div>
+              )}
+
+              {dateAvailability && dateAvailability.valid && (
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5">
+                    <Check className="w-4 h-4" /> Fecha habilitada para atención
+                  </span>
+                  <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20">
+                    {dateAvailability.freeCount} turno(s) libre(s)
+                  </span>
+                </div>
+              )}
 
               {selectedBarber && (
                 <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs space-y-1.5">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Download, RotateCcw, Shield, LayoutGrid, Table } from "lucide-react";
+import { Plus, Download, RotateCcw, Shield } from "lucide-react";
 import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useUsers, availableRoles } from "../hooks/useUsers";
@@ -13,6 +13,7 @@ import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 
 export default function UsersPage() {
   useSearchHighlight();
@@ -101,7 +102,7 @@ export default function UsersPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {users.length === 0 ? "Crear primer usuario" : "Nuevo Usuario"}
@@ -112,7 +113,7 @@ export default function UsersPage() {
       <UsersStats users={users} />
 
       {/* Contenedor Principal */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-5 shadow-xs">
         {/* Barra de Filtros Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -158,34 +159,9 @@ export default function UsersPage() {
             )}
           </div>
 
-          {/* Botón Exportar y Selector de Vista */}
+          {/* Botón Exportar y Selector de Vista Universal */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-muted/40 p-1 rounded-xl border border-border">
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "table"
-                    ? "bg-card text-foreground shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Vista de Tabla"
-              >
-                <Table className="h-4 w-4" />
-                <span className="hidden sm:inline">Tabla</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === "grid"
-                    ? "bg-card text-foreground shadow-xs border border-border"
-                    : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Vista de Tarjetas 3D"
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="hidden sm:inline">Tarjetas 3D</span>
-              </button>
-            </div>
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
             <button
               onClick={handleExport}
@@ -197,7 +173,7 @@ export default function UsersPage() {
           </div>
         </div>
 
-        {/* Tabla o Tarjetas */}
+        {/* Visualización de Datos (Tabla vs Grid de Tarjetas 3D) */}
         {filteredUsers.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-border rounded-xl">
             <p className="text-sm text-muted-foreground">No se encontraron usuarios con los filtros aplicados.</p>
@@ -242,6 +218,7 @@ export default function UsersPage() {
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          roles={availableRoles}
           onSubmit={onHandleCreate}
           onClose={() => {
             setShowCreateModal(false);
@@ -256,6 +233,7 @@ export default function UsersPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          roles={availableRoles}
           onSubmit={onHandleEdit}
           onClose={() => {
             setShowEditModal(false);

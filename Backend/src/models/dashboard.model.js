@@ -3,7 +3,7 @@ import { mockStore } from "../config/mockStore.js";
 
 export class DashboardRepository {
   static async getAdminMetrics() {
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false }).split(",")[0].trim();
 
     if (isDatabaseConnected()) {
       // 1. Total ventas hoy
@@ -71,7 +71,7 @@ export class DashboardRepository {
   }
 
   static async getBarberMetrics(barberId) {
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false }).split(",")[0].trim();
     const bId = Number(barberId);
 
     if (isDatabaseConnected()) {

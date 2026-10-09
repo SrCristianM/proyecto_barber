@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
   ShoppingBag,
-  Share2,
   Copy,
   Check,
-  Gift,
   Coffee,
   ArrowRight,
   ChevronLeft,
@@ -38,24 +36,6 @@ const PROMOS = [
     highlightTag: "⭐ Más Vendido"
   },
   {
-    id: "referral",
-    tag: "Programa de Referidos",
-    badgeColor: "from-emerald-500/20 to-emerald-600/10 text-emerald-500 border-emerald-500/30",
-    icon: Gift,
-    title: "Invita a un Amigo y Gana un Corte",
-    subtitle: "Tu amigo recibe $15.000 COP y tú ganas 1 servicio gratis",
-    description:
-      "Comparte tu código personal. Cuando tu recomendado complete su primera cita de corte o barba, recibirás un corte de cortesía en tu membresía VIP.",
-    code: "TURNO-VIP92",
-    discountText: "$15.000 REGALO",
-    ctaText: "Compartir por WhatsApp",
-    isWhatsApp: true,
-    shareUrl: "https://wa.me/?text=" + encodeURIComponent("¡Ey bro! Te regalo $15.000 de descuento en tu primer corte en Tu Turno Barber Club usando mi código VIP: TURNO-VIP92. Agenda aquí: https://tuturnobarber.com/portal/agendar"),
-    ctaIcon: Share2,
-    image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=500&auto=format&fit=crop&q=80",
-    highlightTag: "🤝 1 Amigo = 1 Corte"
-  },
-  {
     id: "lounge",
     tag: "Beneficio en Salón",
     badgeColor: "from-purple-500/20 to-purple-600/10 text-purple-500 border-purple-500/30",
@@ -80,7 +60,7 @@ export default function ClientPromoBanner() {
   const [isPaused, setIsPaused] = useState(false);
   const navigate = useNavigate();
 
-  const activePromo = PROMOS[currentIdx];
+  const activePromo = PROMOS[currentIdx] || PROMOS[0];
 
   // Auto-rotar cada 7 segundos si el usuario no tiene el puntero encima
   useEffect(() => {
@@ -242,26 +222,14 @@ export default function ClientPromoBanner() {
                 </button>
 
                 {/* Botón de Acción Principal */}
-                {activePromo.isWhatsApp ? (
-                  <a
-                    href={activePromo.shareUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>{activePromo.ctaText}</span>
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate(activePromo.ctaLink)}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black text-xs font-black shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <activePromo.ctaIcon className="w-3.5 h-3.5" />
-                    <span>{activePromo.ctaText}</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => navigate(activePromo.ctaLink)}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black text-xs font-black shadow-xs hover:shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <activePromo.ctaIcon className="w-3.5 h-3.5" />
+                  <span>{activePromo.ctaText}</span>
+                </button>
               </div>
             </div>
           </motion.div>

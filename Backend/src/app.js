@@ -45,12 +45,20 @@ app.use(
   })
 );
 
+// Manejo de Private Network Access para navegadores (Chrome/Edge)
+app.use((req, res, next) => {
+  if (req.headers["access-control-request-private-network"]) {
+    res.setHeader("Access-Control-Allow-Private-Network", "true");
+  }
+  next();
+});
+
 app.use(
   cors({
     origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With", "Origin"]
   })
 );
 

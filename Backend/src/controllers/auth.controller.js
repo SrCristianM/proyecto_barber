@@ -2,6 +2,27 @@ import { AuthService } from "../services/auth.service.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
 export class AuthController {
+
+  static async getGoogleAccounts(req, res, next) {
+    try {
+      // Las cuentas de Google son personales por dispositivo. No se exponen usuarios globales.
+      return ApiResponse.success(res, [], "Las cuentas son personales por dispositivo");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+
+  static async googleLogin(req, res, next) {
+    try {
+      const { email, name, avatarUrl } = req.body;
+      const result = await AuthService.googleLogin({ email, name, avatarUrl });
+      return ApiResponse.success(res, result, "Inicio de sesión con Google exitoso");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async login(req, res, next) {
     try {
       const { correo, contrasena } = req.body;

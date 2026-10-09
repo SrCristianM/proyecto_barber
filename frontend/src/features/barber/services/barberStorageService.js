@@ -15,6 +15,7 @@ import { getPackages as getPackagesApi } from "../../admin/services/services/pac
 
 import { getCurrentUser } from "../../auth/services/authService.js";
 import { createNotification } from "../../../shared/services/notificationService.js";
+import { notifyDataChange, SYNC_ENTITIES } from "../../../shared/services/dataSyncService.js";
 
 const STORAGE_KEYS = {
   APPOINTMENTS: "barber_appointments_db",
@@ -26,7 +27,9 @@ const STORAGE_KEYS = {
   NOVELTIES: "barber_novelties_db"
 };
 
-const TODAY = new Date().toISOString().split("T")[0];
+import { getLocalDateString } from "../../../shared/utils/dateUtils.js";
+
+const TODAY = getLocalDateString();
 
 const INITIAL_BARBERS = [
   {
@@ -37,7 +40,7 @@ const INITIAL_BARBERS = [
     correo: "barbero@tuturnobarber.com",
     telefono: "+57 302 345 6789",
     especialidad: "Corte Clásico & Fade",
-    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    imagen_url: null,
     estado: 1
   }
 ];
@@ -267,6 +270,7 @@ export function completeBarberAppointment(id_cita) {
   };
 
   save(STORAGE_KEYS.APPOINTMENTS, appointments);
+  notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
   return { success: true, appointment: appointments[index] };
 }
 

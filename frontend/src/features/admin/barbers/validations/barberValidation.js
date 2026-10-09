@@ -52,8 +52,8 @@ export function validateBarberForm(formData) {
     if (espLenErr) errors.especialidad = espLenErr;
   }
 
-  // Imagen URL (Opcional, máx 255)
-  if (formData.imagen_url && formData.imagen_url.trim() !== "") {
+  // Imagen URL (Opcional, máx 255 a menos que sea subida local data:image/)
+  if (formData.imagen_url && formData.imagen_url.trim() !== "" && !formData.imagen_url.startsWith("data:image/")) {
     const imgLenErr = validateStringLength(formData.imagen_url, 0, 255, "La URL de la imagen");
     if (imgLenErr) errors.imagen_url = imgLenErr;
   }

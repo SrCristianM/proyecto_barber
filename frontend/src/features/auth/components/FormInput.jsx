@@ -1,4 +1,4 @@
-import { Mail, User, Phone, Tag } from "lucide-react";
+import { Mail, User, Phone, Tag, FileText } from "lucide-react";
 import FormFieldError from "../../admin/shared/components/FormFieldError";
 
 export default function FormInput({
@@ -18,6 +18,7 @@ export default function FormInput({
     if (type === "email" || id === "correo") return <Mail className="w-4 h-4 text-[#8E8E93]" />;
     if (id === "nombre" || id === "apellido") return <User className="w-4 h-4 text-[#8E8E93]" />;
     if (type === "tel" || id === "telefono") return <Phone className="w-4 h-4 text-[#8E8E93]" />;
+    if (id === "documento") return <FileText className="w-4 h-4 text-[#8E8E93]" />;
     return null;
   };
 

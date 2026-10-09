@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Package, Eye, Sparkles, Check, Clock, Tag, Search } from "lucide-react";
 import Modal from "../../admin/shared/components/Modal";
 import { getBarberPackages, fetchBarberPackages } from "../services/barberStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 
 export default function BarberPackagesPage() {
   const [packages, setPackages] = useState([]);
@@ -9,21 +10,23 @@ export default function BarberPackagesPage() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const data = getBarberPackages();
-    setPackages(data);
-    setLoading(false);
-
-    async function syncPackages() {
-      try {
-        const livePkgs = await fetchBarberPackages();
-        if (livePkgs) setPackages(livePkgs);
-      } catch {
-        // fallback
-      }
+  const syncPackages = useCallback(async () => {
+    try {
+      const livePkgs = await fetchBarberPackages();
+      if (Array.isArray(livePkgs)) setPackages(livePkgs);
+    } catch {
+      setPackages(getBarberPackages());
+    } finally {
+      setLoading(false);
     }
-    syncPackages();
   }, []);
+
+  useEffect(() => {
+    setPackages(getBarberPackages());
+    syncPackages();
+  }, [syncPackages]);
+
+  useDataSync([SYNC_ENTITIES.PACKAGES, SYNC_ENTITIES.SERVICES], syncPackages);
 
   const filteredPackages = (packages || []).filter((pkg) => {
     if (!pkg) return false;

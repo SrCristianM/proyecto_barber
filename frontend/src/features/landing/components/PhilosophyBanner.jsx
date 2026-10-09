@@ -39,7 +39,7 @@ export default function PhilosophyBanner() {
       <div className="ambient-glow-gold w-[600px] h-[600px] bottom-0 right-0 opacity-25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
-        
+
         {/* Top Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center mb-16">
           <motion.div

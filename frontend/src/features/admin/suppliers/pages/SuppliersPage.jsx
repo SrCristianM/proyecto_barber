@@ -1,4 +1,4 @@
-import { Plus, Download, LayoutGrid, List, RotateCcw } from "lucide-react";
+import { Plus, Download, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { useSuppliers } from "../hooks/useSuppliers";
 import { useSearchHighlight } from "../../shared/hooks/useSearchHighlight";
@@ -10,6 +10,7 @@ import SupplierDetailModal from "../components/SupplierDetailModal";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 
 export default function SuppliersPage() {
@@ -93,7 +94,7 @@ export default function SuppliersPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={openCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {suppliers.length === 0 ? "Crear primer proveedor" : "Nuevo Proveedor"}
@@ -105,7 +106,7 @@ export default function SuppliersPage() {
       <SuppliersStats stats={stats} />
 
       {/* Contenedor Principal */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+      <div className="bg-card border border-border rounded-xl p-3.5 sm:p-5 shadow-xs">
         {/* Barra de Filtros Estandarizada */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
           <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -141,36 +142,13 @@ export default function SuppliersPage() {
             )}
           </div>
 
-          {/* Opciones a la derecha: Toggle Vista y Exportar */}
+          {/* Opciones a la derecha: Toggle Vista Universal y Exportar */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-secondary/50 border border-border rounded-lg p-0.5">
-              <button
-                onClick={() => setViewMode("cards")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "cards"
-                    ? "bg-card text-primary shadow-xs font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Vista en Cards"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-md transition-colors ${
-                  viewMode === "table"
-                    ? "bg-card text-primary shadow-xs font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Vista en Tabla"
-              >
-                <List className="h-4 w-4" />
-              </button>
-            </div>
+            <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
 
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
               Exportar

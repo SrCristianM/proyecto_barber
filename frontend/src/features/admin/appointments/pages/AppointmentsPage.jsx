@@ -36,6 +36,9 @@ export default function AppointmentsPage() {
     barbers,
     clients,
     services,
+    packages,
+    schedules,
+    novelties,
     getAppointmentForSlot,
     getClientName,
     getBarberName,
@@ -87,7 +90,7 @@ export default function AppointmentsPage() {
         id_cita: r.id_cita,
         fecha: r.fecha,
         hora: r.hora,
-        cliente: getClientName(r.id_cliente),
+        cliente: getClientName(r.id_cliente, r),
         barbero: getBarberName(r.id_barbero),
         servicio: getServiceInfo(r.id_servicio)?.nombre || "Servicio General",
         duracion: getServiceInfo(r.id_servicio)?.duracion_minutos || 30,
@@ -111,21 +114,22 @@ export default function AppointmentsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Citas</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Gestiona las citas de la barbería y su disponibilidad</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={handleExportAppointments}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-card hover:bg-accent border border-border text-foreground rounded-xl transition-colors text-sm font-medium shadow-2xs cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 bg-card hover:bg-accent border border-border text-foreground rounded-xl transition-colors text-sm font-medium shadow-2xs cursor-pointer"
             title="Exportar agenda a Excel con diseño profesional"
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">Exportar Excel</span>
+            <span className="sm:hidden">Exportar</span>
           </button>
           {canCreateAppointment && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={openCreateModal}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               {appointments.length === 0 ? "Crear primera cita" : "Agendar Cita"}
@@ -185,7 +189,7 @@ export default function AppointmentsPage() {
             <ChevronLeft className="h-4 w-4 text-foreground" />
           </motion.button>
 
-          <div className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg min-w-[220px] justify-center shadow-2xs">
+          <div className="flex-1 sm:flex-initial flex items-center gap-2 px-3 sm:px-4 py-2 bg-card border border-border rounded-lg min-w-0 sm:min-w-[200px] justify-center shadow-2xs">
             <CalendarIcon className="h-4 w-4 text-primary shrink-0" />
             <span className="text-sm font-medium text-foreground capitalize">
               {formatDateDisplay(selectedDate)}
@@ -297,6 +301,11 @@ export default function AppointmentsPage() {
           clients={clients}
           barbers={barbers}
           services={services}
+          packages={packages}
+          appointments={appointments}
+          selectedAppointmentId={selectedAppointment?.id_cita}
+          schedules={schedules}
+          novelties={novelties}
           onSubmit={selectedAppointment ? onHandleEdit : onHandleCreate}
           onClose={() => {
             setShowFormModal(false);

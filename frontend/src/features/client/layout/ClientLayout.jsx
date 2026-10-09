@@ -35,7 +35,7 @@ import {
   markAllAsRead as serviceMarkAllAsRead,
   subscribeNotifications
 } from "../../../shared/services/notificationService";
-import { timeAgo } from "../../admin/shared/hooks/useNotifications";
+import { timeAgo, formatExactDateTime } from "../../admin/shared/hooks/useNotifications";
 
 export default function ClientLayout({ isDark, setIsDark, onLogout }) {
   return <ClientLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />;
@@ -265,7 +265,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 8, scale: 0.95 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute right-0 mt-2 w-84 rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 max-h-[85vh] flex flex-col"
+                              className="absolute -right-12 sm:right-0 mt-2 w-[calc(100vw-2.5rem)] max-w-sm sm:w-84 rounded-2xl bg-card border border-border shadow-2xl p-4 z-50 max-h-[85vh] flex flex-col"
                             >
                               <div className="flex items-center justify-between pb-2.5 border-b border-border mb-3 shrink-0">
                                 <div className="flex items-center gap-2">

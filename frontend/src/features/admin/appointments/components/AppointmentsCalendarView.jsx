@@ -87,7 +87,7 @@ export default function AppointmentsCalendarView({
                     >
                       <div className="flex items-center justify-between gap-1">
                         <p className="text-xs font-bold leading-tight truncate">
-                          {getClientName ? getClientName(appointment.id_cliente) : `#${appointment.id_cliente}`}
+                          {getClientName ? getClientName(appointment.id_cliente, appointment) : `#${appointment.id_cliente}`}
                         </p>
                         {svcInfo && (
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-background/80 font-bold border border-current shrink-0">

@@ -30,6 +30,8 @@ import {
   getBarberNovelties,
   completeBarberAppointment
 } from "../services/barberStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
+import { getLocalDateString } from "../../../shared/utils/dateUtils";
 
 // Helper para calcular hora de finalización
 const calculateEndTime = (startTimeStr, durationMinutes = 30) => {
@@ -68,11 +70,15 @@ export default function BarberDashboard() {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString();
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS, SYNC_ENTITIES.SCHEDULES], () => {
+    loadDashboardData();
+  });
 
   const loadDashboardData = () => {
     setLoading(true);

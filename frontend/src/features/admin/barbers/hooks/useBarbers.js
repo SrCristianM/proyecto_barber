@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import {
@@ -8,6 +8,7 @@ import {
   deleteBarber,
   toggleBarberStatus
 } from "../services/barbersService";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
 
 const mockBarbers = [
   {
@@ -35,12 +36,14 @@ export const availableSpecialties = [
 const emptyForm = {
   nombre: "",
   apellido: "",
+  tipo_documento: "CC",
   documento: "",
   correo: "",
   telefono: "",
   especialidad: "Corte Clásico",
   imagen_url: "",
-  id_usuario: null
+  id_usuario: null,
+  estado: 1
 };
 
 export function useBarbers() {
@@ -95,17 +98,23 @@ export function useBarbers() {
 
   const hasActiveFilters = searchTerm !== "" || statusFilter !== "all";
 
-  useEffect(() => {
-    getBarbers()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setBarbers(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Barbers] Usando barberos locales por fallback:", err.message);
-      });
+  const fetchBarbersList = useCallback(async () => {
+    try {
+      const data = await getBarbers();
+      if (Array.isArray(data)) {
+        setBarbers(data);
+        try { localStorage.setItem("barber_barbers_db", JSON.stringify(data)); } catch (_) {}
+      }
+    } catch (err) {
+      console.warn("[Barbers] Usando barberos locales por fallback:", err.message);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchBarbersList();
+  }, [fetchBarbersList]);
+
+  useDataSync([SYNC_ENTITIES.BARBERS, SYNC_ENTITIES.USERS], fetchBarbersList);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -118,12 +127,13 @@ export function useBarbers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      tipo_documento: formData.tipo_documento || "CC",
       documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       especialidad: formData.especialidad,
       imagen_url: formData.imagen_url || null,
-      estado: 1
+      estado: formData.estado !== undefined ? Number(formData.estado) : 1
     };
 
     try {
@@ -133,9 +143,15 @@ export function useBarbers() {
         id_barbero: created?.id_barbero || Math.max(...barbers.map((b) => b.id_barbero), 0) + 1,
         id_usuario: created?.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1
       };
-      setBarbers((prev) => [newBarber, ...prev]);
+      setBarbers((prev) => {
+        const next = [newBarber, ...prev];
+        try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Barbero registrado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al registrar el barbero.");
@@ -147,25 +163,31 @@ export function useBarbers() {
     const payload = {
       nombre: formData.nombre.trim(),
       apellido: formData.apellido.trim(),
+      tipo_documento: formData.tipo_documento || "CC",
       documento: formData.documento ? formData.documento.trim() : null,
       correo: formData.correo.trim(),
       telefono: formData.telefono ? formData.telefono.trim() : null,
       especialidad: formData.especialidad,
-      imagen_url: formData.imagen_url || null
+      imagen_url: formData.imagen_url || null,
+      estado: formData.estado !== undefined ? Number(formData.estado) : selectedBarber.estado
     };
 
     try {
       await updateBarber(selectedBarber.id_barbero, payload);
-      setBarbers((prev) =>
-        prev.map((barber) =>
+      setBarbers((prev) => {
+        const next = prev.map((barber) =>
           barber.id_barbero === selectedBarber.id_barbero
             ? { ...barber, ...payload }
             : barber
-        )
-      );
+        );
+        try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowEditModal(false);
       setSelectedBarber(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Perfil de barbero actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el barbero.");
@@ -176,7 +198,11 @@ export function useBarbers() {
     if (!selectedBarber) return;
     try {
       await deleteBarber(selectedBarber.id_barbero);
-      setBarbers((prev) => prev.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero));
+      setBarbers((prev) => {
+        const next = prev.filter((barber) => barber.id_barbero !== selectedBarber.id_barbero);
+        try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       try {
         const rawUsers = localStorage.getItem("barber_users_db");
         if (rawUsers) {
@@ -191,6 +217,8 @@ export function useBarbers() {
       } catch {}
       setShowDeleteModal(false);
       setSelectedBarber(null);
+      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Barbero eliminado.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el barbero.");
@@ -200,11 +228,14 @@ export function useBarbers() {
   const toggleStatus = async (barberId) => {
     try {
       await toggleBarberStatus(barberId);
-      setBarbers((prev) =>
-        prev.map((barber) =>
+      setBarbers((prev) => {
+        const next = prev.map((barber) =>
           barber.id_barbero === barberId ? { ...barber, estado: barber.estado === 1 ? 0 : 1 } : barber
-        )
-      );
+        );
+        try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
+      notifyDataChange(SYNC_ENTITIES.BARBERS);
       toast.success("Estado del barbero actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del barbero.");
@@ -252,13 +283,15 @@ export function useBarbers() {
     setFormData({
       nombre: barber.nombre || "",
       apellido: barber.apellido || "",
+      tipo_documento: barber.tipo_documento || "CC",
       documento: barber.documento || "",
       correo: barber.correo || "",
       telefono: barber.telefono || "",
       especialidad: espList.join(", "),
       especialidades: espList,
       imagen_url: barber.imagen_url || "",
-      id_usuario: barber.id_usuario
+      id_usuario: barber.id_usuario,
+      estado: barber.estado !== undefined ? barber.estado : 1
     });
     setShowEditModal(true);
   };

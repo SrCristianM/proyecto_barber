@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { ESTADOS_CITA } from "../../../../shared/types/database";
 import {
@@ -10,6 +10,22 @@ import {
 } from "../services/appointmentsService";
 import { getBarbers } from "../../barbers/services/barbersService";
 import { getServices } from "../../services/services/servicesService";
+import { getPackages } from "../../services/services/packagesService";
+import { getClients } from "../../clients/services/clientsService";
+import { getSchedules, getNovelties } from "../../schedules/services/schedulesService";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService";
+import {
+  getLocalDateString,
+  addDays,
+  formatDateDisplay,
+  getNowLocalDateTimeString
+} from "../../../../shared/utils/dateUtils";
+
+export { formatDateDisplay, getLocalDateString };
 
 export function getRealClients() {
   try {
@@ -60,9 +76,8 @@ export function getRealClients() {
 
 const mockBarbersList = [
   { id_barbero: 1, nombre: "Carlos Rodríguez" },
-  { id_barbero: 2, nombre: "Miguel Ángel" },
-  { id_barbero: 3, nombre: "Javier Torres" },
-  { id_barbero: 4, nombre: "Luis Martínez" }
+  { id_barbero: 2, nombre: "Esteban Mejía" },
+  { id_barbero: 3, nombre: "Mateo Gómez" }
 ];
 
 const mockServicesList = [
@@ -72,43 +87,28 @@ const mockServicesList = [
   { id_servicio: 4, nombre: "Diseño y Color", duracion_minutos: 60, precio: 30000 }
 ];
 
-const TODAY = new Date().toISOString().split("T")[0];
-
 const mockAppointments = [];
 
-const timeSlots = Array.from({ length: 11 }, (_, i) => `${(i + 9).toString().padStart(2, "0")}:00`);
+// Base de horarios cada 30 minutos alineado con la jornada de atención de la barbería
+const BASE_TIME_SLOTS = [
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"
+];
 
 const emptyForm = {
   id_cliente: "",
   id_barbero: "",
   id_servicio: "",
-  fecha: TODAY,
+  fecha: getLocalDateString(),
   hora: "09:00",
   estado: "Programada"
 };
 
-/** Avanza/retrocede una fecha ISO string en N días */
-function addDays(isoDate, n) {
-  const d = new Date(isoDate + "T12:00:00");
-  d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
-}
-
-/** Formatea fecha ISO a texto legible en español */
-export function formatDateDisplay(isoDate) {
-  const d = new Date(isoDate + "T12:00:00");
-  return d.toLocaleDateString("es-CO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
-}
-
 export function useAppointments() {
   const [appointments, setAppointments] = useState(mockAppointments);
   const [view, setView] = useState("calendar");
-  const [selectedDate, setSelectedDate] = useState(TODAY);
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [barberFilter, setBarberFilter] = useState("all");
@@ -120,6 +120,21 @@ export function useAppointments() {
   const [clientsList, setClientsList] = useState(() => getRealClients());
   const [barbersList, setBarbersList] = useState(mockBarbersList);
   const [servicesList, setServicesList] = useState(mockServicesList);
+  const [packagesList, setPackagesList] = useState([]);
+  const [schedulesList, setSchedulesList] = useState([]);
+  const [noveltiesList, setNoveltiesList] = useState([]);
+
+  // Generación reactiva de slots: incluye slots base y cualquier cita del día
+  const timeSlots = useMemo(() => {
+    const slotsSet = new Set(BASE_TIME_SLOTS);
+    appointments
+      .filter((a) => a.fecha === selectedDate && a.hora)
+      .forEach((a) => {
+        const timeStr = a.hora.substring(0, 5);
+        if (timeStr) slotsSet.add(timeStr);
+      });
+    return Array.from(slotsSet).sort();
+  }, [appointments, selectedDate]);
 
   // ---- Helpers ----
   const getClientName = (id_cliente, apt) => {
@@ -133,17 +148,17 @@ export function useAppointments() {
         (apt?.id_usuario && Number(c.id_usuario) === Number(apt.id_usuario)) ||
         (apt?.cliente_correo && c.correo && c.correo.toLowerCase() === apt.cliente_correo.toLowerCase())
     );
-    if (found) return found.nombre;
+    if (found) return `${found.nombre} ${found.apellido || ""}`.trim() || found.nombre;
     return "Cliente Registrado";
   };
 
   const getBarberName = (id_barbero) =>
-    barbersList.find((b) => b.id_barbero === Number(id_barbero))?.nombre ||
-    mockBarbersList.find((b) => b.id_barbero === Number(id_barbero))?.nombre || "Barbero Desconocido";
+    barbersList.find((b) => Number(b.id_barbero) === Number(id_barbero))?.nombre ||
+    mockBarbersList.find((b) => Number(b.id_barbero) === Number(id_barbero))?.nombre || "Barbero Desconocido";
 
   const getServiceInfo = (id_servicio) =>
-    servicesList.find((s) => s.id_servicio === Number(id_servicio)) ||
-    mockServicesList.find((s) => s.id_servicio === Number(id_servicio)) || {
+    servicesList.find((s) => Number(s.id_servicio) === Number(id_servicio)) ||
+    mockServicesList.find((s) => Number(s.id_servicio) === Number(id_servicio)) || {
       nombre: "Servicio General",
       duracion_minutos: 30,
       precio: 0
@@ -154,9 +169,10 @@ export function useAppointments() {
     const timePrefix = timeStr.substring(0, 5);
     return appointments.find(
       (apt) =>
-        apt.id_barbero === Number(id_barbero) &&
+        Number(apt.id_barbero) === Number(id_barbero) &&
         apt.hora.substring(0, 5) === timePrefix &&
-        apt.fecha === selectedDate
+        apt.fecha === selectedDate &&
+        apt.estado !== "Cancelada"
     );
   };
 
@@ -190,8 +206,8 @@ export function useAppointments() {
   // ---- Navegación de fechas ----
   const goToPrevDay = () => setSelectedDate((d) => addDays(d, -1));
   const goToNextDay = () => setSelectedDate((d) => addDays(d, 1));
-  const goToToday = () => setSelectedDate(TODAY);
-  const isToday = selectedDate === TODAY;
+  const goToToday = () => setSelectedDate(getLocalDateString());
+  const isToday = selectedDate === getLocalDateString();
 
   const loadLocalAppointments = () => {
     try {
@@ -209,45 +225,143 @@ export function useAppointments() {
     setAppointments([]);
   };
 
-  useEffect(() => {
-    setClientsList(getRealClients());
+  const fetchClients = useCallback(async () => {
+    try {
+      const data = await getClients();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((c) => ({
+          id_cliente: Number(c.id_cliente),
+          id_usuario: c.id_usuario,
+          nombre: `${c.nombre} ${c.apellido || ""}`.trim() || "Cliente",
+          correo: c.correo || "",
+          telefono: c.telefono || "",
+          documento: c.documento || ""
+        }));
+        setClientsList(mapped);
+      } else {
+        setClientsList(getRealClients());
+      }
+    } catch {
+      setClientsList(getRealClients());
+    }
+  }, []);
 
-    getBarbers().then((data) => {
+  const fetchBarbers = useCallback(async () => {
+    try {
+      const data = await getBarbers();
       if (Array.isArray(data) && data.length > 0) {
         setBarbersList(data.map((b) => ({
           id_barbero: b.id_barbero,
-          nombre: `${b.nombre} ${b.apellido || ""}`.trim()
+          nombre: `${b.nombre} ${b.apellido || ""}`.trim(),
+          documento: b.documento || ""
         })));
       }
-    }).catch(() => {});
+    } catch {}
+  }, []);
 
-    getServices().then((data) => {
+  const fetchServices = useCallback(async () => {
+    try {
+      const data = await getServices();
       if (Array.isArray(data) && data.length > 0) {
         setServicesList(data);
       }
-    }).catch(() => {});
-
-    getAppointments()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setAppointments(data);
-          try {
-            localStorage.setItem("barber_appointments_db", JSON.stringify(data));
-          } catch {}
-        } else {
-          loadLocalAppointments();
-        }
-      })
-      .catch((err) => {
-        console.warn("[Appointments] Usando citas locales por fallback:", err.message);
-        loadLocalAppointments();
-      });
+    } catch {}
   }, []);
+
+  const fetchPackages = useCallback(async () => {
+    try {
+      const data = await getPackages();
+      if (Array.isArray(data) && data.length > 0) {
+        setPackagesList(data);
+      }
+    } catch {}
+  }, []);
+
+  const fetchSchedules = useCallback(async () => {
+    try {
+      const data = await getSchedules();
+      if (Array.isArray(data)) {
+        setSchedulesList(data);
+      }
+    } catch {}
+  }, []);
+
+  const fetchNovelties = useCallback(async () => {
+    try {
+      const data = await getNovelties();
+      if (Array.isArray(data)) {
+        setNoveltiesList(data);
+      }
+    } catch {}
+  }, []);
+
+  const fetchAppointments = useCallback(async () => {
+    try {
+      const data = await getAppointments();
+      if (Array.isArray(data)) {
+        // Combinar con almacenamiento local por resiliencia inmediata
+        const localRaw = localStorage.getItem("barber_appointments_db");
+        const local = localRaw ? JSON.parse(localRaw) : [];
+        const map = new Map();
+        data.forEach((a) => map.set(Number(a.id_cita), a));
+        if (Array.isArray(local)) {
+          local.forEach((a) => {
+            if (a.id_cita && !map.has(Number(a.id_cita))) {
+              map.set(Number(a.id_cita), a);
+            }
+          });
+        }
+        const merged = Array.from(map.values());
+        setAppointments(merged);
+        try {
+          localStorage.setItem("barber_appointments_db", JSON.stringify(merged));
+        } catch {}
+      } else {
+        loadLocalAppointments();
+      }
+    } catch (err) {
+      console.warn("[Appointments] Usando citas locales por fallback:", err.message);
+      loadLocalAppointments();
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+    fetchBarbers();
+    fetchServices();
+    fetchPackages();
+    fetchSchedules();
+    fetchNovelties();
+    fetchAppointments();
+  }, [fetchClients, fetchBarbers, fetchServices, fetchPackages, fetchSchedules, fetchNovelties, fetchAppointments]);
+
+  useDataSync([SYNC_ENTITIES.CLIENTS, SYNC_ENTITIES.USERS], fetchClients);
+  useDataSync([SYNC_ENTITIES.BARBERS], fetchBarbers);
+  useDataSync([SYNC_ENTITIES.SERVICES], fetchServices);
+  useDataSync([SYNC_ENTITIES.PACKAGES], fetchPackages);
+  useDataSync([SYNC_ENTITIES.SCHEDULES], fetchSchedules);
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS], fetchAppointments);
 
   // ---- CRUD ----
   const resetForm = () => setFormData({ ...emptyForm, fecha: selectedDate });
 
   const handleCreate = async () => {
+    const requestedTime = formData.hora.substring(0, 5);
+
+    // Validación preventiva de colisión en frontend
+    const conflict = appointments.find(
+      (a) =>
+        Number(a.id_barbero) === Number(formData.id_barbero) &&
+        a.fecha === formData.fecha &&
+        a.hora.substring(0, 5) === requestedTime &&
+        a.estado !== "Cancelada"
+    );
+
+    if (conflict) {
+      toast.error(`El horario ${requestedTime} ya se encuentra ocupado para este barbero.`);
+      return;
+    }
+
     const svc = getServiceInfo(Number(formData.id_servicio));
     const payload = {
       id_cliente: Number(formData.id_cliente),
@@ -265,11 +379,16 @@ export function useAppointments() {
         ...payload,
         id_cita: created?.id_cita || Math.max(...appointments.map((a) => a.id_cita), 0) + 1,
         precio: svc.precio,
-        fecha_registro: new Date().toISOString().replace("T", " ").substring(0, 19)
+        fecha_registro: getNowLocalDateTimeString()
       };
       setAppointments((prev) => [newAppointment, ...prev]);
+      try {
+        const local = JSON.parse(localStorage.getItem("barber_appointments_db") || "[]");
+        localStorage.setItem("barber_appointments_db", JSON.stringify([newAppointment, ...local]));
+      } catch {}
       setShowFormModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, newAppointment);
       toast.success("Cita agendada exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al agendar la cita.");
@@ -278,6 +397,23 @@ export function useAppointments() {
 
   const handleEdit = async () => {
     if (!selectedAppointment) return;
+    const requestedTime = formData.hora.substring(0, 5);
+
+    // Validación preventiva de colisión excluyendo la cita actual
+    const conflict = appointments.find(
+      (a) =>
+        Number(a.id_barbero) === Number(formData.id_barbero) &&
+        a.fecha === formData.fecha &&
+        a.hora.substring(0, 5) === requestedTime &&
+        a.estado !== "Cancelada" &&
+        Number(a.id_cita) !== Number(selectedAppointment.id_cita)
+    );
+
+    if (conflict) {
+      toast.error(`El horario ${requestedTime} ya se encuentra ocupado para este barbero.`);
+      return;
+    }
+
     const svc = getServiceInfo(Number(formData.id_servicio));
     const payload = {
       id_cliente: Number(formData.id_cliente),
@@ -302,9 +438,17 @@ export function useAppointments() {
             : apt
         )
       );
+      try {
+        const local = JSON.parse(localStorage.getItem("barber_appointments_db") || "[]");
+        const updated = local.map((apt) =>
+          apt.id_cita === selectedAppointment.id_cita ? { ...apt, ...payload, precio: svc.precio } : apt
+        );
+        localStorage.setItem("barber_appointments_db", JSON.stringify(updated));
+      } catch {}
       setShowFormModal(false);
       setSelectedAppointment(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, { id_cita: selectedAppointment.id_cita, ...payload });
       toast.success("Cita actualizada correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar la cita.");
@@ -335,7 +479,7 @@ export function useAppointments() {
       id_cliente: appointment.id_cliente,
       id_barbero: appointment.id_barbero,
       id_servicio: appointment.id_servicio,
-      fecha: appointment.fecha || new Date().toISOString().substring(0, 10),
+      fecha: appointment.fecha || getLocalDateString(),
       hora: appointment.hora ? String(appointment.hora).substring(0, 5) : "09:00",
       estado: appointment.estado || "Programada"
     });
@@ -350,6 +494,7 @@ export function useAppointments() {
       try {
         localStorage.setItem("barber_appointments_db", JSON.stringify(updated));
       } catch {}
+      notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, { id_cita: id, deleted: true });
       toast.success("Cita eliminada correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar la cita.");
@@ -381,6 +526,9 @@ export function useAppointments() {
     barbers: barbersList.length > 0 ? barbersList : mockBarbersList,
     clients: clientsList,
     services: servicesList.length > 0 ? servicesList : mockServicesList,
+    packages: packagesList,
+    schedules: schedulesList,
+    novelties: noveltiesList,
     availableStatuses: ESTADOS_CITA,
     getClientName,
     getBarberName,

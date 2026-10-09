@@ -23,6 +23,11 @@ export const registerValidation = [
     .withMessage("El apellido es requerido.")
     .isLength({ max: 80 })
     .withMessage("El apellido no puede superar los 80 caracteres."),
+  body("tipo_documento")
+    .optional({ checkFalsy: true })
+    .trim()
+    .isIn(["CC", "TI", "CE", "NIT", "PAS", "PEP", "DNI"])
+    .withMessage("El tipo de documento debe ser válido (CC, TI, CE, NIT, PAS, PEP, DNI)."),
   body("documento")
     .optional({ checkFalsy: true })
     .trim()

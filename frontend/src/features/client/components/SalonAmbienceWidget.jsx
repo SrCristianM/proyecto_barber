@@ -178,7 +178,11 @@ export default function SalonAmbienceWidget() {
           <div className="flex items-center justify-between text-xs pt-0.5 gap-2">
             <div className="flex items-center gap-2 truncate pr-2">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-[#1DB954] animate-ping opacity-75" />
+                <span
+                  className={`absolute inline-flex h-full w-full rounded-full bg-[#1DB954] ${
+                    isSpotifyPlaying ? "animate-ping opacity-75" : "opacity-0"
+                  }`}
+                />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1DB954]" />
               </span>
               <span className="text-[11px] font-bold text-muted-foreground truncate">
@@ -191,13 +195,13 @@ export default function SalonAmbienceWidget() {
                 type="button"
                 onClick={togglePlayback}
                 className={`px-3 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                  isPlaying
+                  isSpotifyPlaying
                     ? "bg-[#1DB954]/20 border-[#1DB954]/50 text-[#1DB954]"
                     : "bg-[#1DB954] hover:bg-[#1aa34a] text-white border-transparent"
                 }`}
-                title={isPlaying ? "Pausar música del salón" : "Reproducir música del salón"}
+                title={isSpotifyPlaying ? "Pausar música de Spotify" : "Reproducir música de Spotify"}
               >
-                {isPlaying ? (
+                {isSpotifyPlaying ? (
                   <>
                     <Pause className="w-3.5 h-3.5 fill-current" />
                     <span>Pausar</span>
@@ -394,6 +398,7 @@ export default function SalonAmbienceWidget() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {curatedPlaylists.map((pl) => {
                     const isSelected = activePlaylistId === pl.id;
+                    const isCurrentlyPlaying = isSelected && isSpotifyPlaying;
                     return (
                       <div
                         key={pl.id}
@@ -411,8 +416,20 @@ export default function SalonAmbienceWidget() {
                             alt={pl.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
-                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Play className="w-5 h-5 text-white fill-white" />
+                          <div
+                            className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
+                              isCurrentlyPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            }`}
+                          >
+                            {isCurrentlyPlaying ? (
+                              <div className="flex items-end gap-0.5 h-4">
+                                <span className="w-1 h-3 bg-[#1DB954] rounded-full animate-bounce" />
+                                <span className="w-1 h-4 bg-[#1DB954] rounded-full animate-pulse" />
+                                <span className="w-1 h-2 bg-[#1DB954] rounded-full animate-bounce" />
+                              </div>
+                            ) : (
+                              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                            )}
                           </div>
                         </div>
 
@@ -424,7 +441,7 @@ export default function SalonAmbienceWidget() {
                             </span>
                             {isSelected && (
                               <span className="text-[10px] font-black text-[#1DB954] flex items-center gap-0.5">
-                                <Check className="w-3 h-3" /> Activa
+                                <Check className="w-3 h-3" /> {isCurrentlyPlaying ? "Sonando" : "Seleccionada"}
                               </span>
                             )}
                           </div>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Calendar as CalendarIcon, Clock, Scissors, UserCheck } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Calendar as CalendarIcon, Clock, Scissors, UserCheck, AlertCircle, AlertTriangle } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import DateRangePicker from "../../shared/components/DateRangePicker";
 import FormFieldError from "../../shared/components/FormFieldError";
@@ -8,11 +8,20 @@ import MultiSelectSearchable from "../../shared/components/MultiSelectSearchable
 import { ESTADOS_CITA } from "../../../../shared/types/database";
 import { validateAppointmentForm } from "../validations/appointmentValidation";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
+import { getLocalDateString, parseLocalDate } from "../../../../shared/utils/dateUtils";
 
 const QUICK_TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00"
 ];
+
+function normalizeText(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
 
 export default function AppointmentFormModal({
   mode,
@@ -23,12 +32,88 @@ export default function AppointmentFormModal({
   clients = [],
   barbers = [],
   services = [],
-  packages = []
+  packages = [],
+  appointments = [],
+  selectedAppointmentId = null,
+  schedules = [],
+  novelties = []
 }) {
   const isCreate = mode === "create";
   const [errors, setErrors] = useState({});
   const { hasPermission } = usePermissions();
   const canCancelAppointment = hasPermission("citas", "cancelar");
+
+  // Información del día de la semana para la fecha seleccionada
+  const dayInfo = useMemo(() => {
+    if (!formData.fecha) return { dayName: "", displayDayName: "" };
+    const [y, m, d] = formData.fecha.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d, 12, 0, 0);
+    const DAYS = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+    const DAYS_DISPLAY = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const idx = dateObj.getDay();
+    return { dayName: DAYS[idx], displayDayName: DAYS_DISPLAY[idx] };
+  }, [formData.fecha]);
+
+  // Novedad aprobada en la fecha para este barbero
+  const barberNovelty = useMemo(() => {
+    if (!formData.id_barbero || !formData.fecha || !novelties.length) return null;
+    return novelties.find(
+      (n) =>
+        Number(n.id_barbero) === Number(formData.id_barbero) &&
+        n.fecha === formData.fecha &&
+        (n.estado === "Aprobado" || n.estado === "Aprobada")
+    ) || null;
+  }, [formData.id_barbero, formData.fecha, novelties]);
+
+  // Horario del barbero para este día de la semana
+  const barberSchedule = useMemo(() => {
+    if (!formData.id_barbero || !dayInfo.dayName || !schedules.length) return null;
+    const targetDay = normalizeText(dayInfo.dayName);
+    return schedules.find((s) => {
+      if (Number(s.id_barbero) !== Number(formData.id_barbero)) return false;
+      if (Number(s.estado) === 0) return false;
+      if (s.dia_semana && normalizeText(s.dia_semana) === targetDay) return true;
+      if (Array.isArray(s.dias_semana) && s.dias_semana.some((sd) => normalizeText(sd) === targetDay)) return true;
+      return false;
+    }) || null;
+  }, [formData.id_barbero, dayInfo.dayName, schedules]);
+
+  const barberHasConfiguredSchedules = useMemo(() => {
+    if (!formData.id_barbero || !schedules.length) return false;
+    return schedules.some((s) => Number(s.id_barbero) === Number(formData.id_barbero));
+  }, [formData.id_barbero, schedules]);
+
+  // Cálculo de horarios ocupados para el barbero y fecha seleccionados
+  const occupiedSlots = useMemo(() => {
+    if (!formData.id_barbero || !formData.fecha) return new Set();
+    const set = new Set();
+    (appointments || []).forEach((a) => {
+      if (
+        Number(a.id_barbero) === Number(formData.id_barbero) &&
+        a.fecha === formData.fecha &&
+        a.estado !== "Cancelada" &&
+        (!selectedAppointmentId || Number(a.id_cita) !== Number(selectedAppointmentId))
+      ) {
+        const timeStr = a.hora ? a.hora.substring(0, 5) : "";
+        if (timeStr) {
+          set.add(timeStr);
+          const duration = Number(a.duracion_minutos || a.duracion || 30);
+          if (duration > 30) {
+            const [h, m] = timeStr.split(":").map(Number);
+            let currentM = h * 60 + m + 30;
+            const endM = h * 60 + m + duration;
+            while (currentM < endM) {
+              const nextH = Math.floor(currentM / 60).toString().padStart(2, "0");
+              const nextMin = (currentM % 60).toString().padStart(2, "0");
+              set.add(`${nextH}:${nextMin}`);
+              currentM += 30;
+            }
+          }
+        }
+      }
+    });
+    return set;
+  }, [formData.id_barbero, formData.fecha, appointments, selectedAppointmentId]);
 
   const serviceOptions = (services || []).map((s) => ({
     value: `svc-${s.id_servicio}`,
@@ -71,6 +156,18 @@ export default function AppointmentFormModal({
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    if (field === "hora") {
+      const requestedTime = String(value || "").substring(0, 5);
+      if (occupiedSlots.has(requestedTime)) {
+        setErrors((prev) => ({
+          ...prev,
+          hora: `El horario ${requestedTime} ya se encuentra ocupado para este barbero.`
+        }));
+        return;
+      }
+    }
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -106,20 +203,23 @@ export default function AppointmentFormModal({
   };
 
   // Manejo de la fecha seleccionada en el componente de Calendario
-  const selectedDateObj = formData.fecha ? new Date(formData.fecha + "T00:00:00") : new Date();
+  const selectedDateObj = formData.fecha ? parseLocalDate(formData.fecha) : new Date();
 
   const handleCalendarDateChange = (date) => {
     if (!date) return;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const formattedDate = `${year}-${month}-${day}`;
-    handleChange("fecha", formattedDate);
+    handleChange("fecha", getLocalDateString(date));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const result = validateAppointmentForm(formData, isCreate);
+    const result = validateAppointmentForm(
+      formData,
+      isCreate,
+      appointments,
+      selectedAppointmentId,
+      schedules,
+      novelties
+    );
     if (!result.isValid) {
       setErrors(result.errors);
       return;
@@ -185,6 +285,31 @@ export default function AppointmentFormModal({
           />
         </div>
 
+        {/* Alerta de Novedad o Día no laboral del barbero */}
+        {barberNovelty && (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-start gap-2.5 text-xs font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Novedad registrada para el barbero:</p>
+              <p className="opacity-90">
+                Cuenta con un permiso o ausencia autorizada ({barberNovelty.tipo || "Permiso"}) el día {formData.fecha}.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {barberHasConfiguredSchedules && !barberSchedule && !barberNovelty && formData.fecha && (
+          <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-start gap-2.5 text-xs font-medium">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Barbero fuera de jornada:</p>
+              <p className="opacity-90">
+                El profesional seleccionado no tiene turno programado los días {dayInfo.displayDayName}. Por favor elige otro día.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Fila 3: Selección Visual de Fecha con Calendario y Horas */}
         <div className={`grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 bg-secondary/20 border rounded-2xl transition-all ${
           errors.fecha || errors.hora ? "border-destructive/60 ring-1 ring-destructive/20" : "border-border/70"
@@ -220,26 +345,49 @@ export default function AppointmentFormModal({
                   Horario Disponible <span className="text-destructive">*</span>
                 </span>
               </div>
-              <label className="block text-xs text-muted-foreground mb-2">
+              <label className="block text-xs text-muted-foreground mb-1.5">
                 Elige un turno o ingresa la hora exacta:
               </label>
+
+              {/* Leyenda de slots */}
+              <div className="flex items-center gap-3 text-[10px] text-muted-foreground mb-2">
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block"></span> Elegido
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-border inline-block"></span> Libre
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-destructive inline-block"></span> Ocupado
+                </span>
+              </div>
 
               {/* Grid de turnos rápidos */}
               <div className="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto pr-1 mb-3">
                 {QUICK_TIME_SLOTS.map((slot) => {
+                  const isOccupied = occupiedSlots.has(slot);
                   const isSelected = formData.hora?.startsWith(slot);
                   return (
                     <button
                       key={slot}
                       type="button"
-                      onClick={() => handleChange("hora", slot)}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                          : "bg-card border-border text-foreground hover:bg-accent hover:border-primary/40"
+                      disabled={isOccupied}
+                      onClick={() => !isOccupied && handleChange("hora", slot)}
+                      title={isOccupied ? `Horario ${slot} ya ocupado para este barbero` : `Turno ${slot}`}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all border flex items-center justify-between ${
+                        isOccupied
+                          ? "bg-destructive/10 text-destructive/70 border-destructive/30 cursor-not-allowed line-through opacity-75 shadow-none"
+                          : isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs cursor-pointer"
+                          : "bg-card border-border text-foreground hover:bg-accent hover:border-primary/40 cursor-pointer"
                       }`}
                     >
-                      {slot}
+                      <span>{slot}</span>
+                      {isOccupied && (
+                        <span className="text-[8px] font-black uppercase text-destructive no-underline ml-0.5">
+                          Ocupado
+                        </span>
+                      )}
                     </button>
                   );
                 })}

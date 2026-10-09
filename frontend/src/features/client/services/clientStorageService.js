@@ -7,9 +7,16 @@
  */
 
 import { getCurrentUser, getStoredUsers, saveStoredUsers, updateUserProfile as authUpdateUserProfile } from "../../auth/services/authService.js";
-import { createAppointment as apiCreateAppointment, updateAppointmentStatus as apiUpdateAppointmentStatus } from "../../admin/appointments/services/appointmentsService.js";
+import { getAppointments, createAppointment as apiCreateAppointment, updateAppointmentStatus as apiUpdateAppointmentStatus } from "../../admin/appointments/services/appointmentsService.js";
 import { createSale as apiCreateSale } from "../../admin/sales/services/salesService.js";
 import { createNotification } from "../../../shared/services/notificationService.js";
+import { notifyDataChange, SYNC_ENTITIES } from "../../../shared/services/dataSyncService.js";
+import { getServices } from "../../admin/services/services/servicesService.js";
+import { getPackages } from "../../admin/services/services/packagesService.js";
+import { getBarbers } from "../../admin/barbers/services/barbersService.js";
+import { getSchedules } from "../../admin/schedules/services/schedulesService.js";
+import { getProducts } from "../../admin/products/services/productsService.js";
+import { getLocalDateString } from "../../../shared/utils/dateUtils.js";
 
 // Claves de almacenamiento
 const STORAGE_KEYS = {
@@ -24,7 +31,48 @@ const STORAGE_KEYS = {
 };
 
 // Datos iniciales si aún no se han persistido
-const INITIAL_SERVICES = [];
+const INITIAL_SERVICES = [
+  {
+    id_servicio: 1,
+    nombre: "Corte Clásico",
+    id_categoria_servicio: 1,
+    categoria: "Cortes",
+    duracion_minutos: 30,
+    precio: 15000,
+    estado: 1,
+    imagen_url: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id_servicio: 2,
+    nombre: "Corte + Barba",
+    id_categoria_servicio: 4,
+    categoria: "Combos",
+    duracion_minutos: 45,
+    precio: 25000,
+    estado: 1,
+    imagen_url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id_servicio: 3,
+    nombre: "Afeitado Premium",
+    id_categoria_servicio: 2,
+    categoria: "Barba",
+    duracion_minutos: 35,
+    precio: 20000,
+    estado: 1,
+    imagen_url: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80"
+  },
+  {
+    id_servicio: 4,
+    nombre: "Diseño y Color",
+    id_categoria_servicio: 3,
+    categoria: "Tratamientos",
+    duracion_minutos: 60,
+    precio: 30000,
+    estado: 1,
+    imagen_url: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&auto=format&fit=crop&q=80"
+  }
+];
 
 const INITIAL_PACKAGES = [];
 
@@ -39,7 +87,18 @@ const INITIAL_BARBERS = [
     correo: "barbero@tuturnobarber.com",
     telefono: "+57 302 345 6789",
     especialidad: "Corte Clásico & Fade",
-    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    imagen_url: null,
+    estado: 1
+  },
+  {
+    id_barbero: 2,
+    id_usuario: 12,
+    nombre: "Esteban",
+    apellido: "Mejía",
+    correo: "esteban1235@gmail.com",
+    telefono: "+57 312 456 5697",
+    especialidad: "Corte Clásico, Diseño y Color",
+    imagen_url: null,
     estado: 1
   }
 ];
@@ -67,7 +126,7 @@ const INITIAL_SCHEDULES = [
 
 const INITIAL_CLIENTS = [];
 
-const TODAY = new Date().toISOString().split("T")[0];
+const TODAY = getLocalDateString();
 
 const INITIAL_APPOINTMENTS = [];
 
@@ -96,6 +155,104 @@ function save(key, data) {
   } catch (err) {
     console.error(`Error guardando ${key} en localStorage:`, err);
   }
+}
+
+export async function syncCatalogsFromApi() {
+  try {
+    const [servRes, packRes, barbRes, schedRes, prodRes, aptsRes] = await Promise.allSettled([
+      getServices(),
+      getPackages(),
+      getBarbers(),
+      getSchedules(),
+      getProducts(),
+      getAppointments()
+    ]);
+    if (servRes.status === "fulfilled" && Array.isArray(servRes.value)) {
+      save(STORAGE_KEYS.SERVICES, servRes.value);
+    }
+    if (packRes.status === "fulfilled" && Array.isArray(packRes.value)) {
+      save(STORAGE_KEYS.PACKAGES, packRes.value);
+    }
+    if (barbRes.status === "fulfilled" && Array.isArray(barbRes.value)) {
+      save(STORAGE_KEYS.BARBERS, barbRes.value);
+    }
+    if (schedRes.status === "fulfilled" && Array.isArray(schedRes.value)) {
+      save(STORAGE_KEYS.SCHEDULES, schedRes.value);
+    }
+    if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value)) {
+      save(STORAGE_KEYS.PRODUCTS, prodRes.value);
+    }
+    if (aptsRes.status === "fulfilled" && Array.isArray(aptsRes.value)) {
+      const current = getOrInit(STORAGE_KEYS.APPOINTMENTS, []);
+      const map = new Map();
+      aptsRes.value.forEach((a) => map.set(Number(a.id_cita), a));
+      current.forEach((a) => {
+        if (a.id_cita && !map.has(Number(a.id_cita))) {
+          map.set(Number(a.id_cita), a);
+        }
+      });
+      save(STORAGE_KEYS.APPOINTMENTS, Array.from(map.values()));
+    }
+  } catch (e) {
+    console.warn("[ClientStorage] Error al sincronizar catálogos:", e);
+  }
+}
+
+// Sincronizador en segundo plano cuando se detectan eventos de datos
+if (typeof window !== "undefined") {
+  window.addEventListener("barber_data_sync", (event) => {
+    const detail = event?.detail;
+    if (!detail) return;
+    try {
+      if (detail.entity === "packages") {
+        if (detail.payload?.deleted && detail.payload.id_paquete) {
+          const current = getOrInit(STORAGE_KEYS.PACKAGES, []);
+          const updated = current.filter((p) => p.id_paquete !== detail.payload.id_paquete);
+          save(STORAGE_KEYS.PACKAGES, updated);
+        } else {
+          getPackages().then((pkgs) => {
+            if (Array.isArray(pkgs)) save(STORAGE_KEYS.PACKAGES, pkgs);
+          }).catch(() => {});
+        }
+      } else if (detail.entity === "services") {
+        if (detail.payload?.deleted && detail.payload.id_servicio) {
+          const current = getOrInit(STORAGE_KEYS.SERVICES, []);
+          const updated = current.filter((s) => s.id_servicio !== detail.payload.id_servicio);
+          save(STORAGE_KEYS.SERVICES, updated);
+        } else {
+          getServices().then((srvs) => {
+            if (Array.isArray(srvs)) save(STORAGE_KEYS.SERVICES, srvs);
+          }).catch(() => {});
+        }
+      } else if (detail.entity === "products") {
+        if (detail.payload?.deleted && detail.payload.id_producto) {
+          const current = getOrInit(STORAGE_KEYS.PRODUCTS, []);
+          const updated = current.filter((p) => p.id_producto !== detail.payload.id_producto);
+          save(STORAGE_KEYS.PRODUCTS, updated);
+        } else {
+          getProducts().then((prods) => {
+            if (Array.isArray(prods)) save(STORAGE_KEYS.PRODUCTS, prods);
+          }).catch(() => {});
+        }
+      } else if (detail.entity === "appointments") {
+        getAppointments().then((apts) => {
+          if (Array.isArray(apts)) {
+            const current = getOrInit(STORAGE_KEYS.APPOINTMENTS, []);
+            const map = new Map();
+            apts.forEach((a) => map.set(Number(a.id_cita), a));
+            current.forEach((a) => {
+              if (a.id_cita && !map.has(Number(a.id_cita))) {
+                map.set(Number(a.id_cita), a);
+              }
+            });
+            save(STORAGE_KEYS.APPOINTMENTS, Array.from(map.values()));
+          }
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.warn("[ClientStorage] Error procesando evento reactivo de sincronización:", e);
+    }
+  });
 }
 
 // ==========================================
@@ -140,18 +297,52 @@ export function getClientServices() {
   return healed.filter((s) => s.estado === 1);
 }
 
+export async function fetchClientPackages() {
+  try {
+    const pkgs = await getPackages();
+    if (Array.isArray(pkgs)) {
+      save(STORAGE_KEYS.PACKAGES, pkgs);
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error consultando paquetes desde API:", err.message);
+  }
+  return getClientPackages();
+}
+
+export async function fetchClientServices() {
+  try {
+    const srvs = await getServices();
+    if (Array.isArray(srvs)) {
+      save(STORAGE_KEYS.SERVICES, srvs);
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error consultando servicios desde API:", err.message);
+  }
+  return getClientServices();
+}
+
 export function getClientPackages() {
   const packages = getOrInit(STORAGE_KEYS.PACKAGES, INITIAL_PACKAGES).filter((p) => p.estado === 1);
   const services = getClientServices();
 
   return packages.map((pkg) => {
-    const includedServices = (pkg.servicios_ids || []).map((id) =>
-      services.find((s) => s.id_servicio === id)
-    ).filter(Boolean);
+    // Si ya trae el listado poblado de servicios desde el backend
+    const includedServices = (Array.isArray(pkg.servicios) && pkg.servicios.length > 0)
+      ? pkg.servicios
+      : (pkg.servicios_ids || []).map((id) =>
+          services.find((s) => s.id_servicio === Number(id))
+        ).filter(Boolean);
 
-    const originalPrice = includedServices.reduce((sum, s) => sum + Number(s.precio || 0), 0);
+    const originalPrice = pkg.precio_base
+      ? Number(pkg.precio_base)
+      : includedServices.reduce((sum, s) => sum + Number(s.precio || 0), 0);
+
     const discount = Number(pkg.descuento_porcentaje || 0);
-    const finalPrice = Math.round(originalPrice * (1 - discount / 100));
+
+    const finalPrice = pkg.precio_final !== undefined
+      ? Number(pkg.precio_final)
+      : Math.round(originalPrice * (1 - discount / 100));
+
     const totalDuration = includedServices.reduce((sum, s) => sum + Number(s.duracion_minutos || 0), 0);
 
     return {
@@ -159,7 +350,7 @@ export function getClientPackages() {
       servicios: includedServices,
       precioOriginal: originalPrice,
       precioFinal: finalPrice,
-      ahorro: originalPrice - finalPrice,
+      ahorro: Math.max(0, originalPrice - finalPrice),
       duracionTotal: totalDuration
     };
   });
@@ -192,17 +383,21 @@ export function getClientProducts() {
 }
 
 export function getClientBarbers() {
-  const barbers = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+  const stored = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+  // Asegurar que solo existan los barberos registrados en el sistema (limpiar residuos de pruebas)
+  const barbers = stored.filter((b) => b.id_barbero !== 3 && b.correo !== "mateo@tuturno.com");
+  if (barbers.length !== stored.length) {
+    save(STORAGE_KEYS.BARBERS, barbers);
+  }
+
   const barberFallbacks = [
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80"
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80"
   ];
 
   const barberMetadata = {
     1: { rating: 4.9, reviewsCount: 148, badge: "Master Fade", nextSlot: "Hoy 16:00" },
-    2: { rating: 4.8, reviewsCount: 112, badge: "Color & Tendencias", nextSlot: "Hoy 17:30" },
-    3: { rating: 5.0, reviewsCount: 96, badge: "Navaja Clásica & Spa", nextSlot: "Mañana 10:00" }
+    2: { rating: 4.8, reviewsCount: 112, badge: "Color & Tendencias", nextSlot: "Hoy 17:30" }
   };
 
   let changed = false;
@@ -226,6 +421,86 @@ export function getClientBarbers() {
     save(STORAGE_KEYS.BARBERS, healed);
   }
   return healed.filter((b) => b.estado === 1);
+}
+
+/**
+ * Consulta el estado y movimientos en tiempo real de los barberos en el salón.
+ * Cruza los barberos registrados y activos con las citas programadas para el momento exacto.
+ */
+export function getLiveBarbersStatus() {
+  const barbers = getClientBarbers();
+  const allAppointments = getOrInit(STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+
+  const now = new Date();
+  const todayStr = getLocalDateString(now);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  let busyCount = 0;
+
+  const barbersWithStatus = barbers.map((b) => {
+    // Buscar si tiene una cita activa hoy en este momento
+    const currentAppointment = allAppointments.find((apt) => {
+      if (Number(apt.id_barbero) !== Number(b.id_barbero)) return false;
+      if (apt.fecha !== todayStr) return false;
+      if (apt.estado === "Cancelada" || apt.estado === "Completada") return false;
+
+      const [h, m] = (apt.hora || "00:00").split(":").map(Number);
+      const startMin = (h || 0) * 60 + (m || 0);
+      const duration = Number(apt.duracion || apt.duracion_minutos || 30);
+      const endMin = startMin + duration;
+
+      return currentMinutes >= startMin && currentMinutes < endMin;
+    });
+
+    if (currentAppointment) {
+      busyCount++;
+      const [h, m] = (currentAppointment.hora || "00:00").split(":").map(Number);
+      const startMin = (h || 0) * 60 + (m || 0);
+      const duration = Number(currentAppointment.duracion || currentAppointment.duracion_minutos || 30);
+      const endMin = startMin + duration;
+      const endHourStr = `${Math.floor(endMin / 60).toString().padStart(2, "0")}:${(endMin % 60).toString().padStart(2, "0")}`;
+
+      return {
+        ...b,
+        isBusy: true,
+        statusText: "Atendiendo cliente",
+        movementDescription: `En atención con cliente (hasta ${endHourStr})`,
+        serviceName: currentAppointment.servicioNombre || currentAppointment.nombre_item || "Corte",
+        endsAt: endHourStr,
+        remainingMinutes: Math.max(1, endMin - currentMinutes)
+      };
+    }
+
+    return {
+      ...b,
+      isBusy: false,
+      statusText: "En silla • Disponible",
+      movementDescription: "En silla listo para atender",
+      serviceName: null,
+      endsAt: null,
+      remainingMinutes: 0
+    };
+  });
+
+  const totalBarbers = barbers.length;
+  const freeBarbers = Math.max(0, totalBarbers - busyCount);
+
+  let estimatedWaitTime = "Inmediata (Sin espera)";
+  if (totalBarbers === 0) {
+    estimatedWaitTime = "Sin servicio activo";
+  } else if (freeBarbers === 0) {
+    const remainingTimes = barbersWithStatus.map((b) => b.remainingMinutes).filter((t) => t > 0);
+    const minWait = remainingTimes.length > 0 ? Math.min(...remainingTimes) : 15;
+    estimatedWaitTime = `${minWait}-${minWait + 10} min`;
+  }
+
+  return {
+    totalBarbers,
+    busyCount,
+    freeBarbers,
+    estimatedWaitTime,
+    barbers: barbersWithStatus
+  };
 }
 
 export function getClientSchedules() {
@@ -472,7 +747,7 @@ export function getAvailableSlots(id_barbero, isoDate) {
   const busyTimes = allAppointments
     .filter(
       (a) =>
-        a.id_barbero === Number(id_barbero) &&
+        Number(a.id_barbero) === Number(id_barbero) &&
         a.fecha === isoDate &&
         a.estado !== "Cancelada"
     )
@@ -516,7 +791,7 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
   // Validar si el slot sigue disponible
   const isSlotTaken = allAppointments.some(
     (a) =>
-      a.id_barbero === Number(id_barbero) &&
+      Number(a.id_barbero) === Number(id_barbero) &&
       a.fecha === fecha &&
       a.hora.substring(0, 5) === hora.substring(0, 5) &&
       a.estado !== "Cancelada"
@@ -600,6 +875,7 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
     console.warn("[ClientStorage] Cita sincronizada localmente (API fallback):", err.message);
   });
 
+  notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
   return { success: true, appointment: newAppointment };
 }
 
@@ -667,6 +943,7 @@ export function rescheduleAppointment(id_cita, { nuevaFecha, nuevaHora }) {
     console.warn("[ClientStorage] Error al despachar notificación de reprogramación:", err);
   }
 
+  notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
   return { success: true, appointment: allAppointments[aptIndex] };
 }
 
@@ -722,6 +999,7 @@ export function cancelAppointment(id_cita, motivo = "Cancelada por el cliente") 
     console.warn("[ClientStorage] Cita cancelada localmente (API fallback):", err.message);
   });
 
+  notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
   return { success: true, appointment: allAppointments[aptIndex] };
 }
 
@@ -750,9 +1028,9 @@ export function getClientPurchases() {
  */
 export function createClientPurchase({
   items,
-  metodoPago = "Efectivo",
-  metodoEntrega = "Retiro en Salón",
-  direccionEnvio = "",
+  metodoPago = "Efectivo / Datáfono en Salón",
+  metodoEntrega = "Retiro en Salón Físico",
+  direccionEnvio = "Salón Físico / Negocio Presencial",
   notas = ""
 }) {
   const client = getCurrentClientProfile();
@@ -799,7 +1077,7 @@ export function createClientPurchase({
   const newSaleId = maxSaleId + 1;
 
   const now = new Date();
-  const dateStr = now.toISOString().split("T")[0];
+  const dateStr = getLocalDateString(now);
   const timeStr = now.toTimeString().split(" ")[0];
   const fullDateTime = `${dateStr} ${timeStr}`;
 
@@ -834,8 +1112,8 @@ export function createClientPurchase({
     total: totalCalculado,
     estado: "Activa",
     metodo_pago: metodoPago,
-    metodo_entrega: metodoEntrega,
-    direccion_envio: direccionEnvio || client.direccion || "",
+    metodo_entrega: metodoEntrega || "Retiro en Salón Físico",
+    direccion_envio: direccionEnvio || "Salón Físico / Negocio Presencial",
     notas: notas,
     detalles: detalles
   };
@@ -861,6 +1139,8 @@ export function createClientPurchase({
     console.warn("[ClientStorage] Venta sincronizada localmente (API fallback):", err.message);
   });
 
+  notifyDataChange(SYNC_ENTITIES.SALES);
+  notifyDataChange(SYNC_ENTITIES.PRODUCTS);
   return { success: true, sale: newSale };
 }
 
@@ -982,7 +1262,7 @@ export function saveClientReview(reviewData) {
 
   const newReview = {
     id: `rev-${Date.now()}`,
-    fecha: new Date().toISOString().split("T")[0],
+    fecha: getLocalDateString(),
     id_cliente: client?.id_cliente || null,
     id_usuario: client?.id_usuario || null,
     cliente_nombre: clientFullName,
@@ -1151,7 +1431,7 @@ export function claimClientReward(rewardId) {
   }
 
   const updated = rewards.map((r) =>
-    r.id === rewardId ? { ...r, canjeado: true, fechaCanje: new Date().toISOString().split("T")[0] } : r
+    r.id === rewardId ? { ...r, canjeado: true, fechaCanje: getLocalDateString() } : r
   );
   save("tu_turno_client_rewards", updated);
   return { success: true, reward: { ...reward, canjeado: true } };

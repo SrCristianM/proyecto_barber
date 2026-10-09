@@ -15,6 +15,9 @@ const router = Router();
 // Categorías de servicio
 router.get("/categories", optionalAuth, ServicesController.getCategories);
 router.post("/categories", authenticate, authorizePermission("servicios", "crear"), validate(createCategoryValidation), ServicesController.createCategory);
+router.put("/categories/:id", authenticate, authorizePermission("servicios", "editar"), validate(createCategoryValidation), ServicesController.updateCategory);
+router.patch("/categories/:id/status", authenticate, authorizePermission("servicios", "activar"), ServicesController.toggleCategoryStatus);
+router.delete("/categories/:id", authenticate, authorizePermission("servicios", "eliminar"), ServicesController.deleteCategory);
 
 // Catálogo de servicios (Lectura pública / cualquier cliente para agendar)
 router.get("/", optionalAuth, ServicesController.getAll);

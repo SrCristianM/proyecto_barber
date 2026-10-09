@@ -43,6 +43,15 @@ export class NotificationsController {
     }
   }
 
+    static async clearAll(req, res, next) {
+    try {
+      const result = await NotificationsService.clearAll(req.user);
+      return ApiResponse.success(res, result, "Todas las notificaciones eliminadas correctamente");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async clearRead(req, res, next) {
     try {
       const result = await NotificationsService.clearRead(req.user);

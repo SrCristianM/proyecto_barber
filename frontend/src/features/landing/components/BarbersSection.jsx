@@ -44,7 +44,7 @@ export default function BarbersSection() {
       <div className="ambient-glow-gold w-[450px] h-[450px] bottom-0 left-0 opacity-15" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -81,7 +81,7 @@ export default function BarbersSection() {
                   alt={barber.name}
                   className="w-full h-full object-cover transform group-hover:scale-108 transition-transform duration-700 ease-out"
                 />
-                
+
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/30 to-transparent" />
 
                 {/* Rating Badge */}

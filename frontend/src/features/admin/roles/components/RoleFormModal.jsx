@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckSquare, Square } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import FormFieldError from "../../shared/components/FormFieldError";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 import { validateRoleForm } from "../validations/roleValidation";
 
 /**
@@ -125,6 +126,16 @@ const SYSTEM_MODULES = [
       { key: "barberos_editar", label: "Editar" },
       { key: "barberos_eliminar", label: "Eliminar" },
       { key: "barberos_activar", label: "Activar / Desactivar" }
+    ]
+  },
+  {
+    id: "paquetes",
+    label: "Paquetes",
+    acciones: [
+      { key: "paquetes_ver", label: "Ver" },
+      { key: "paquetes_crear", label: "Crear" },
+      { key: "paquetes_editar", label: "Editar" },
+      { key: "paquetes_eliminar", label: "Eliminar" }
     ]
   }
 ];
@@ -356,6 +367,20 @@ export default function RoleFormModal({
           <p className="text-xs text-muted-foreground mt-2">
             {permisos.length} de {allKeys.length} permisos seleccionados
           </p>
+        </div>
+
+        {/* Estado del Rol (Universal al final) */}
+        <div>
+          <SearchableSelect
+            label="Estado"
+            value={formData.estado !== undefined ? formData.estado : 1}
+            onChange={(val) => handleChange("estado", Number(val))}
+            options={[
+              { value: 1, label: "Activo (Permite asignar este rol a usuarios)" },
+              { value: 0, label: "Inactivo" }
+            ]}
+            searchable={false}
+          />
         </div>
 
         <div className="flex gap-3 pt-2">

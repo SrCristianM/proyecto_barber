@@ -13,7 +13,7 @@ export default function StatusFilterPills({
   className = ""
 }) {
   return (
-    <div className={`flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border ${className}`}>
+    <div className={`flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border max-w-full overflow-x-auto ${className}`}>
       {options.map((opt) => {
         const isSelected = String(value) === String(opt.key);
         return (
@@ -21,7 +21,7 @@ export default function StatusFilterPills({
             key={opt.key}
             type="button"
             onClick={() => onChange(opt.key)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               isSelected
                 ? "bg-card text-foreground font-semibold shadow-xs border border-border"
                 : "text-muted-foreground hover:text-foreground"

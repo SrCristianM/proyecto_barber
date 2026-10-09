@@ -1,29 +1,43 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { CATEGORIAS_SERVICIO } from "../../../../shared/types/database";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import {
   getServices,
+  getServiceCategories,
   createService,
   updateService,
   deleteService,
   toggleServiceStatus
 } from "../services/servicesService";
+import {
+  notifyDataChange,
+  useDataSync,
+  SYNC_ENTITIES
+} from "../../../../shared/services/dataSyncService";
 
-const mockServices = [];
+let liveCategories = [...CATEGORIAS_SERVICIO];
 
-export const availableCategories = CATEGORIAS_SERVICIO;
+export const availableCategories = new Proxy([], {
+  get(target, prop) {
+    const val = liveCategories[prop];
+    if (typeof val === "function") return val.bind(liveCategories);
+    return val;
+  }
+});
 
 const emptyForm = {
   nombre: "",
   id_categoria_servicio: 1,
   precio: 0,
   duracion_minutos: 30,
-  imagen_url: ""
+  imagen_url: "",
+  estado: 1
 };
 
 export function useServices() {
   const [services, setServices] = useState([]);
+  const [categoriesList, setCategoriesList] = useState(liveCategories);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | '1' | '0'
   const [categoryFilter, setCategoryFilter] = useState("all"); // 'all' | id_categoria
@@ -37,20 +51,40 @@ export function useServices() {
   const [selectedService, setSelectedService] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
-  useEffect(() => {
-    getServices()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setServices(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Services] Usando servicios locales por fallback:", err.message);
-      });
+  const fetchCategories = useCallback(async () => {
+    try {
+      const data = await getServiceCategories();
+      if (Array.isArray(data)) {
+        liveCategories = data;
+        setCategoriesList(data);
+      }
+    } catch (err) {
+      console.warn("[Services] Usando categorías por fallback:", err.message);
+    }
   }, []);
 
+  const fetchServicesList = useCallback(async () => {
+    try {
+      const data = await getServices();
+      if (Array.isArray(data)) {
+        setServices(data);
+        try { localStorage.setItem("barber_services_db", JSON.stringify(data)); } catch (_) {}
+      }
+    } catch (err) {
+      console.warn("[Services] Usando servicios locales por fallback:", err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchServicesList();
+    fetchCategories();
+  }, [fetchServicesList, fetchCategories]);
+
+  useDataSync([SYNC_ENTITIES.SERVICES], fetchServicesList);
+  useDataSync([SYNC_ENTITIES.SERVICE_CATEGORIES], fetchCategories);
+
   const getCategoryName = (id_cat) => {
-    const c = CATEGORIAS_SERVICIO.find((cat) => cat.id_categoria_servicio === Number(id_cat));
+    const c = categoriesList.find((cat) => cat.id_categoria_servicio === Number(id_cat));
     return c ? c.nombre : "Sin Categoría";
   };
 
@@ -119,9 +153,14 @@ export function useServices() {
         id_servicio: res?.id_servicio || Math.max(...services.map((s) => s.id_servicio), 0) + 1,
         estado: 1
       };
-      setServices((prev) => [newService, ...prev]);
+      setServices((prev) => {
+        const next = [newService, ...prev];
+        try { localStorage.setItem("barber_services_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SERVICES, newService);
       toast.success("Servicio creado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al crear el servicio.");
@@ -140,16 +179,19 @@ export function useServices() {
 
     try {
       await updateService(selectedService.id_servicio, payload);
-      setServices((prev) =>
-        prev.map((service) =>
+      setServices((prev) => {
+        const next = prev.map((service) =>
           service.id_servicio === selectedService.id_servicio
             ? { ...service, ...payload }
             : service
-        )
-      );
+        );
+        try { localStorage.setItem("barber_services_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowEditModal(false);
       setSelectedService(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SERVICES, { id_servicio: selectedService.id_servicio, ...payload });
       toast.success("Servicio actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el servicio.");
@@ -160,9 +202,15 @@ export function useServices() {
     if (!selectedService) return;
     try {
       await deleteService(selectedService.id_servicio);
-      setServices((prev) => prev.filter((service) => service.id_servicio !== selectedService.id_servicio));
+      setServices((prev) => {
+        const next = prev.filter((service) => service.id_servicio !== selectedService.id_servicio);
+        try { localStorage.setItem("barber_services_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowDeleteModal(false);
+      const deletedId = selectedService.id_servicio;
       setSelectedService(null);
+      notifyDataChange(SYNC_ENTITIES.SERVICES, { id_servicio: deletedId, deleted: true });
       toast.success("Servicio eliminado con éxito.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el servicio.");
@@ -172,11 +220,14 @@ export function useServices() {
   const toggleStatus = async (serviceId) => {
     try {
       await toggleServiceStatus(serviceId);
-      setServices((prev) =>
-        prev.map((service) =>
+      setServices((prev) => {
+        const next = prev.map((service) =>
           service.id_servicio === serviceId ? { ...service, estado: service.estado === 1 ? 0 : 1 } : service
-        )
-      );
+        );
+        try { localStorage.setItem("barber_services_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
+      notifyDataChange(SYNC_ENTITIES.SERVICES, { id_servicio: serviceId, toggled: true });
       toast.success("Estado del servicio actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del servicio.");
@@ -218,7 +269,8 @@ export function useServices() {
       id_categoria_servicio: service.id_categoria_servicio,
       precio: service.precio,
       duracion_minutos: service.duracion_minutos,
-      imagen_url: service.imagen_url || ""
+      imagen_url: service.imagen_url || "",
+      estado: service.estado !== undefined ? service.estado : 1
     });
     setShowEditModal(true);
   };
@@ -277,6 +329,8 @@ export function useServices() {
     openDetailModal,
     openDeleteModal,
     openDeactivateModal,
-    getCategoryName
+    getCategoryName,
+    categories: categoriesList,
+    availableCategories: categoriesList
   };
 }

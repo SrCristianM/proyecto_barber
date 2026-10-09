@@ -10,7 +10,7 @@ export default function LoyaltyBanner() {
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
+
           {/* Left Info (7 cols) */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}

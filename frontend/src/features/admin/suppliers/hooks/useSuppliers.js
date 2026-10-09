@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 import {
@@ -8,12 +8,15 @@ import {
   deleteSupplier,
   toggleSupplierStatus
 } from "../services/suppliersService";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
 
 const mockSuppliers = [];
 
 const emptyForm = {
   nombre: "",
+  tipo_documento: "NIT",
   nit: "",
+  tipo_persona: "Persona Jurídica",
   telefono: "",
   correo: "",
   direccion: "",
@@ -80,24 +83,31 @@ export function useSuppliers() {
     setStatusFilter("all");
   };
 
-  useEffect(() => {
-    getSuppliers()
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setSuppliers(data);
-        }
-      })
-      .catch((err) => {
-        console.warn("[Suppliers] Usando proveedores locales por fallback:", err.message);
-      });
+  const fetchSuppliersList = useCallback(async () => {
+    try {
+      const data = await getSuppliers();
+      if (Array.isArray(data)) {
+        setSuppliers(data);
+      }
+    } catch (err) {
+      console.warn("[Suppliers] Usando proveedores locales por fallback:", err.message);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchSuppliersList();
+  }, [fetchSuppliersList]);
+
+  useDataSync([SYNC_ENTITIES.SUPPLIERS], fetchSuppliersList);
 
   const resetForm = () => setFormData(emptyForm);
 
   const handleCreate = async () => {
     const payload = {
       nombre: formData.nombre.trim(),
+      tipo_documento: formData.tipo_documento || "NIT",
       nit: formData.nit ? formData.nit.trim() : null,
+      tipo_persona: formData.tipo_persona || "Persona Jurídica",
       telefono: formData.telefono ? formData.telefono.trim() : null,
       correo: formData.correo ? formData.correo.trim() : null,
       direccion: formData.direccion ? formData.direccion.trim() : null,
@@ -114,6 +124,7 @@ export function useSuppliers() {
       setSuppliers((prev) => [newSupplier, ...prev]);
       setShowCreateModal(false);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SUPPLIERS);
       toast.success("Proveedor registrado exitosamente.");
       return newSupplier;
     } catch (err) {
@@ -125,7 +136,9 @@ export function useSuppliers() {
     if (!selectedSupplier) return;
     const payload = {
       nombre: formData.nombre.trim(),
+      tipo_documento: formData.tipo_documento || "NIT",
       nit: formData.nit ? formData.nit.trim() : null,
+      tipo_persona: formData.tipo_persona || "Persona Jurídica",
       telefono: formData.telefono ? formData.telefono.trim() : null,
       correo: formData.correo ? formData.correo.trim() : null,
       direccion: formData.direccion ? formData.direccion.trim() : null,
@@ -145,6 +158,7 @@ export function useSuppliers() {
       setShowEditModal(false);
       setSelectedSupplier(null);
       resetForm();
+      notifyDataChange(SYNC_ENTITIES.SUPPLIERS);
       toast.success("Proveedor actualizado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el proveedor.");
@@ -158,6 +172,7 @@ export function useSuppliers() {
       setSuppliers((prev) => prev.filter((sup) => sup.id_proveedor !== selectedSupplier.id_proveedor));
       setShowDeleteModal(false);
       setSelectedSupplier(null);
+      notifyDataChange(SYNC_ENTITIES.SUPPLIERS);
       toast.success("Proveedor eliminado.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el proveedor.");
@@ -174,6 +189,7 @@ export function useSuppliers() {
             : sup
         )
       );
+      notifyDataChange(SYNC_ENTITIES.SUPPLIERS);
       toast.success("Estado del proveedor modificado.");
     } catch (err) {
       toast.error(err.message || "Error al modificar estado del proveedor.");
@@ -216,7 +232,9 @@ export function useSuppliers() {
     setSelectedSupplier(supplier);
     setFormData({
       nombre: supplier.nombre || "",
+      tipo_documento: supplier.tipo_documento || "NIT",
       nit: supplier.nit || "",
+      tipo_persona: supplier.tipo_persona || "Persona Jurídica",
       telefono: supplier.telefono || "",
       correo: supplier.correo || "",
       direccion: supplier.direccion || "",

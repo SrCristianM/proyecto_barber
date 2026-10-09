@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
 import { useSchedules, barbers, daysOfWeek } from "../hooks/useSchedules";
 import SchedulesTable from "../components/SchedulesTable";
+import ScheduleCard from "../components/ScheduleCard";
 import SchedulesStats from "../components/SchedulesStats";
 import ScheduleFormModal from "../components/ScheduleFormModal";
 import ScheduleDetailModal from "../components/ScheduleDetailModal";
@@ -12,6 +13,7 @@ import ScheduleNoveltiesView from "../components/ScheduleNoveltiesView";
 import SearchBar from "../../shared/components/SearchBar";
 import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
+import ViewModeToggle from "../../shared/components/ViewModeToggle";
 
 const TABS = [
   { key: "schedules", label: "Horarios" },
@@ -20,6 +22,7 @@ const TABS = [
 
 export default function SchedulesPage() {
   const [activeTab, setActiveTab] = useState("schedules");
+  const [viewMode, setViewMode] = useState("table");
 
   const {
     schedules = [],
@@ -62,7 +65,8 @@ export default function SchedulesPage() {
     openDetailModal,
     openDeleteModal,
     openDeactivateModal,
-    getBarberName
+    getBarberName,
+    barbers: liveBarbersList
   } = useSchedules();
 
   const { hasPermission } = usePermissions();
@@ -89,7 +93,7 @@ export default function SchedulesPage() {
     setSelectedSchedule(null);
   };
 
-  const barberOptions = barbers.map((b) => ({
+  const barberOptions = (liveBarbersList || barbers).map((b) => ({
     value: b.id_barbero,
     label: b.nombre
   }));
@@ -112,7 +116,7 @@ export default function SchedulesPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-medium shadow-xs cursor-pointer w-full sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {schedules?.length === 0 ? "Crear primer horario" : "Nuevo Horario"}
@@ -128,8 +132,9 @@ export default function SchedulesPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
+              className={`relative px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
+                isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               {isActive && (
                 <motion.div
@@ -149,7 +154,7 @@ export default function SchedulesPage() {
         <>
           <SchedulesStats schedules={filteredSchedules} />
 
-          <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
             {/* Toolbar Estandarizada */}
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-6">
               <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -157,7 +162,7 @@ export default function SchedulesPage() {
                 <SearchBar
                   value={searchTerm}
                   onChange={setSearchTerm}
-                  placeholder="Buscar horarios..."
+                  placeholder="Buscar por barbero u horario..."
                   maxWidthClass="w-full sm:w-60"
                 />
 
@@ -172,7 +177,7 @@ export default function SchedulesPage() {
                   ]}
                 />
 
-                {/* FilterSelect FK: Barbero */}
+                {/* FilterSelect: Barbero */}
                 <FilterSelect
                   value={barberFilter}
                   onChange={setBarberFilter}
@@ -205,11 +210,13 @@ export default function SchedulesPage() {
                 )}
               </div>
 
-              {/* Botón Exportar */}
+              {/* Botón Exportar y Selector de Vista Universal */}
               <div className="flex items-center gap-2">
+                <ViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+
                 <button
                   onClick={handleExport}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-background border border-border rounded-lg hover:bg-accent transition-colors text-foreground text-xs font-medium cursor-pointer"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Exportar
@@ -217,37 +224,58 @@ export default function SchedulesPage() {
               </div>
             </div>
 
-            <SchedulesTable
-              schedules={paginatedSchedules}
-              totalCount={filteredSchedules.length}
-              sortField={sortField}
-              sortDir={sortDir}
-              onSort={handleSort}
-              onDetail={openDetailModal}
-              onToggleStatus={openDeactivateModal}
-              onEdit={openEditModal}
-              onDelete={openDeleteModal}
-              getBarberName={getBarberName}
-              canEdit={canEditSchedule}
-              canToggle={canToggleSchedule}
-              canDelete={canDeleteSchedule}
-            />
+            {viewMode === "table" ? (
+              <SchedulesTable
+                schedules={paginatedSchedules}
+                totalCount={filteredSchedules.length}
+                sortField={sortField}
+                sortDir={sortDir}
+                onSort={handleSort}
+                onDetail={openDetailModal}
+                onToggleStatus={openDeactivateModal}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+                getBarberName={getBarberName}
+                canEdit={canEditSchedule}
+                canToggle={canToggleSchedule}
+                canDelete={canDeleteSchedule}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paginatedSchedules.map((schedule) => (
+                  <ScheduleCard
+                    key={schedule.id_horario}
+                    schedule={schedule}
+                    getBarberName={getBarberName}
+                    onDetail={openDetailModal}
+                    onToggleStatus={openDeactivateModal}
+                    onEdit={openEditModal}
+                    onDelete={openDeleteModal}
+                    canEdit={canEditSchedule}
+                    canToggle={canToggleSchedule}
+                    canDelete={canDeleteSchedule}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}
 
       {/* Tab Novedades de Horario */}
       {activeTab === "novelties" && (
-        <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+        <div className="bg-card border border-border rounded-xl p-3 sm:p-5 shadow-xs">
           <ScheduleNoveltiesView />
         </div>
       )}
 
+      {/* Modal Crear */}
       {showCreateModal && (
         <ScheduleFormModal
           mode="create"
           formData={formData}
           setFormData={setFormData}
+          barbers={liveBarbersList || barbers}
           onSubmit={onHandleCreate}
           onClose={() => { setShowCreateModal(false); resetForm(); }}
         />
@@ -258,35 +286,40 @@ export default function SchedulesPage() {
           mode="edit"
           formData={formData}
           setFormData={setFormData}
+          barbers={liveBarbersList || barbers}
           onSubmit={onHandleEdit}
           onClose={() => { setShowEditModal(false); setSelectedSchedule(null); resetForm(); }}
         />
       )}
 
+      {/* Modal Detalle */}
       {showDetailModal && selectedSchedule && (
         <ScheduleDetailModal
           schedule={selectedSchedule}
-          onEdit={canEditSchedule ? () => { setShowDetailModal(false); openEditModal(selectedSchedule); } : undefined}
+          getBarberName={getBarberName}
+          onEdit={() => { setShowDetailModal(false); openEditModal(selectedSchedule); }}
           onClose={() => { setShowDetailModal(false); setSelectedSchedule(null); }}
         />
       )}
 
+      {/* Modal Eliminar */}
       {showDeleteModal && selectedSchedule && (
         <ConfirmModal
           variant="delete"
           title="¿Eliminar este horario?"
-          description={`Se eliminará el horario de ${getBarberName(selectedSchedule.id_barbero)} — ${(selectedSchedule.dias_semana || []).join(", ")}.`}
+          description={`Se eliminará permanentemente el horario de ${getBarberName(selectedSchedule.id_barbero)}. Esta acción no se puede revertir.`}
           confirmLabel="Eliminar"
           onConfirm={onHandleDelete}
           onClose={() => { setShowDeleteModal(false); setSelectedSchedule(null); }}
         />
       )}
 
+      {/* Modal Desactivar / Activar */}
       {showDeactivateModal && selectedSchedule && (
         <ConfirmModal
           variant="deactivate"
-          title={selectedSchedule.estado === 1 ? "¿Desactivar este horario?" : "¿Activar este horario?"}
-          description="Esta acción cambiará el estado del horario seleccionado."
+          title={selectedSchedule.estado === 1 ? "¿Desactivar horario?" : "¿Activar horario?"}
+          description={`Esta acción cambiará el estado del horario asignado a ${getBarberName(selectedSchedule.id_barbero)}.`}
           confirmLabel={selectedSchedule.estado === 1 ? "Desactivar" : "Activar"}
           onConfirm={onToggleStatus}
           onClose={() => { setShowDeactivateModal(false); setSelectedSchedule(null); }}

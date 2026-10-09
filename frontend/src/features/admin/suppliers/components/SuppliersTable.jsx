@@ -15,28 +15,28 @@ export default function SuppliersTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[480px] sm:min-w-[700px] text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-3 px-4">
+            <tr className="border-b border-border text-[10px] sm:text-xs">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Proveedor" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="NIT / Doc" field="nit" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Teléfono" field="telefono" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="hidden sm:table-cell text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Correo" field="correo" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="hidden md:table-cell text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Dirección" field="direccion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-3 px-4">
+              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-3 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="text-right py-2.5 px-2 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Acciones
               </th>
             </tr>
@@ -49,18 +49,18 @@ export default function SuppliersTable({
                 data-highlight-id={`sup-${supplier.id_proveedor}`}
                 className="table-row-accent border-b border-border transition-colors"
               >
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
-                      <Building2 className="h-4.5 w-4.5" />
+                <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 bg-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                      <Building2 className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                     </div>
                     <div>
-                      <p className="font-bold text-foreground text-sm">{supplier.nombre}</p>
+                      <p className="font-bold text-foreground text-xs sm:text-sm">{supplier.nombre}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-muted-foreground">ID #{supplier.id_proveedor}</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">ID #{supplier.id_proveedor}</span>
                         {supplier.factura_pdf && (
                           <span
-                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 bg-red-500/10 text-red-400 border border-red-500/20 rounded"
+                            className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.2 bg-red-500/10 text-red-400 border border-red-500/20 rounded"
                             title={typeof supplier.factura_pdf === "object" ? supplier.factura_pdf.nombre : "Factura PDF adjunta"}
                           >
                             <FileText className="h-2.5 w-2.5" /> PDF
@@ -70,65 +70,65 @@ export default function SuppliersTable({
                     </div>
                   </div>
                 </td>
-                <td className="py-3.5 px-4 text-xs font-mono font-medium text-foreground">
+                <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-[11px] sm:text-xs font-mono font-medium text-foreground">
                   {supplier.nit || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-[11px] sm:text-xs text-muted-foreground">
                   {supplier.telefono || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-xs text-muted-foreground">
+                <td className="hidden sm:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 text-xs text-muted-foreground">
                   {supplier.correo || "—"}
                 </td>
-                <td className="py-3.5 px-4 text-xs text-muted-foreground max-w-[200px] truncate">
+                <td className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 text-xs text-muted-foreground max-w-[200px] truncate">
                   {supplier.direccion || "—"}
                 </td>
-                <td className="py-3.5 px-4">
+                <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                    className={`inline-flex items-center px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full border ${
                       supplier.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"
                     }`}
                   >
                     {supplier.estado === 1 ? "Activo" : "Inactivo"}
                   </span>
                 </td>
-                <td className="py-3.5 px-4">
-                  <div className="flex items-center justify-end gap-1">
+                <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                     <button
                       onClick={() => onDetail(supplier)}
-                      className="p-1.5 hover:bg-secondary rounded-md text-foreground transition-colors"
+                      className="p-1 sm:p-1.5 hover:bg-secondary rounded-md text-foreground transition-colors"
                       title="Ver Detalle"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                     {onToggleStatus && (
                       <button
                         onClick={() => onToggleStatus(supplier)}
-                        className={`p-1.5 hover:bg-secondary rounded-md transition-colors ${
+                        className={`p-1 sm:p-1.5 hover:bg-secondary rounded-md transition-colors ${
                           supplier.estado === 1
                             ? "text-warning hover:text-warning/80"
                             : "text-success hover:text-success/80"
                         }`}
                         title={supplier.estado === 1 ? "Desactivar" : "Activar"}
                       >
-                        <Power className="h-4 w-4" />
+                        <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                     )}
                     {onEdit && (
                       <button
                         onClick={() => onEdit(supplier)}
-                        className="p-1.5 hover:bg-secondary rounded-md text-primary transition-colors"
+                        className="p-1 sm:p-1.5 hover:bg-secondary rounded-md text-primary transition-colors"
                         title="Editar"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                     )}
                     {onDelete && (
                       <button
                         onClick={() => onDelete(supplier)}
-                        className="p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
+                        className="p-1 sm:p-1.5 hover:bg-destructive/10 rounded-md text-destructive transition-colors"
                         title="Eliminar"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                     )}
                   </div>

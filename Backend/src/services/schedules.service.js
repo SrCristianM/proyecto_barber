@@ -1,3 +1,15 @@
+
+function formatNotificationDate(dateStr) {
+  if (!dateStr) return "";
+  const str = String(dateStr).trim().substring(0, 10);
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return str;
+  const [_, y, m, d] = match;
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const monthName = months[parseInt(m, 10) - 1] || m;
+  return `${d} ${monthName} ${y}`;
+}
+
 import { SchedulesRepository } from "../models/schedules.model.js";
 import { BarbersRepository } from "../models/barbers.model.js";
 import { executeQuery, isDatabaseConnected } from "../config/db.js";
@@ -160,14 +172,14 @@ export class SchedulesService {
       NotificationsService.createCustomNotification({
         type: "schedule",
         title: "Nueva novedad de horario solicitada",
-        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${noveltyData.fecha}.`,
+        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${formatNotificationDate(noveltyData.fecha)}.`,
         id_rol: ROLES.ADMIN,
         route: "/admin/horarios"
       });
       NotificationsService.createCustomNotification({
         type: "schedule",
         title: "Nueva novedad de horario solicitada",
-        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${noveltyData.fecha}.`,
+        description: `El barbero ${barber.nombre} solicitó ${noveltyData.tipo} para el ${formatNotificationDate(noveltyData.fecha)}.`,
         id_rol: ROLES.RECEPCIONISTA,
         route: "/admin/horarios"
       });
@@ -193,7 +205,7 @@ export class SchedulesService {
           NotificationsService.createCustomNotification({
             type: "schedule",
             title: `Novedad de horario ${newStatus}`,
-            description: `Tu solicitud de ${nov.tipo} para el día ${nov.fecha} ha sido ${newStatus} por la administración.`,
+            description: `Tu solicitud de ${nov.tipo} para el día ${formatNotificationDate(nov.fecha)} ha sido ${newStatus} por la administración.`,
             id_usuario: barber.id_usuario,
             route: "/barbero/novedades"
           });

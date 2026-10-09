@@ -50,6 +50,14 @@ export function validateRegisterForm(formData) {
   const emailErr = validateEmail(formData.correo, true);
   if (emailErr) errors.correo = emailErr;
 
+  // Tipo de Documento (Opcional o por defecto CC, si se proporciona debe ser válido)
+  if (formData.tipo_documento && formData.tipo_documento.trim() !== "") {
+    const validTypes = ["CC", "TI", "CE", "NIT", "PAS", "PEP", "DNI"];
+    if (!validTypes.includes(formData.tipo_documento.trim().toUpperCase())) {
+      errors.tipo_documento = "Selecciona un tipo de documento válido.";
+    }
+  }
+
   // Documento (Opcional, min 5 max 20)
   if (formData.documento && formData.documento.trim() !== "") {
     const docClean = formData.documento.trim();

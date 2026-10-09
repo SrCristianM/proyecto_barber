@@ -93,7 +93,7 @@ const GLOBAL_DATABASE = [
     id: "bar-1",
     category: "Barberos",
     title: "Carlos Rodríguez",
-    subtitle: "Especialidad: Corte Clásico • carlos@example.com",
+    subtitle: "Especialidad: Corte Clásico & Fade • barbero@tuturnobarber.com",
     route: "/dashboard/barbers?highlight=bar-1",
     icon: "barber",
     keywords: ["carlos", "rodriguez", "barbero", "degradados", "fade", "clasico"]
@@ -101,29 +101,20 @@ const GLOBAL_DATABASE = [
   {
     id: "bar-2",
     category: "Barberos",
-    title: "Miguel Ángel",
-    subtitle: "Especialidad: Diseño y Color • miguel@example.com",
+    title: "Esteban Mejía",
+    subtitle: "Especialidad: Corte Clásico, Diseño y Color • esteban1235@gmail.com",
     route: "/dashboard/barbers?highlight=bar-2",
     icon: "barber",
-    keywords: ["miguel", "angel", "barbero", "barbas", "navaja", "color"]
+    keywords: ["esteban", "mejia", "barbero", "diseño", "color"]
   },
   {
     id: "bar-3",
     category: "Barberos",
-    title: "Javier Torres",
-    subtitle: "Especialidad: Barba Premium • javier@example.com",
+    title: "Mateo Gómez",
+    subtitle: "Especialidad: Corte Clásico • mateo@tuturno.com",
     route: "/dashboard/barbers?highlight=bar-3",
     icon: "barber",
-    keywords: ["javier", "torres", "barbero", "diseños", "urbanos", "barba"]
-  },
-  {
-    id: "bar-4",
-    category: "Barberos",
-    title: "Luis Martínez",
-    subtitle: "Especialidad: Corte Moderno • luis@example.com",
-    route: "/dashboard/barbers?highlight=bar-4",
-    icon: "barber",
-    keywords: ["luis", "martinez", "barbero", "tratamientos", "moderno"]
+    keywords: ["mateo", "gomez", "barbero", "corte", "clasico"]
   },
 
   // Servicios

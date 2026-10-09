@@ -20,6 +20,7 @@ import {
 import { createGoogleCalendarUrl, downloadIcsFile, createWhatsAppShareUrl } from "../utils/calendarUtils";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import { toast } from "sonner";
+import { getLocalDateString } from "../../../shared/utils/dateUtils";
 
 export default function UpcomingAppointmentTimeline({
   appointment,
@@ -36,7 +37,7 @@ export default function UpcomingAppointmentTimeline({
       const aptDate = new Date(`${appointment.fecha}T${appointment.hora.substring(0, 5)}:00`);
       const now = new Date();
       const diffMs = aptDate - now;
-      const todayStr = now.toISOString().split("T")[0];
+      const todayStr = getLocalDateString(now);
       setIsToday(appointment.fecha === todayStr);
 
       if (diffMs <= 0) {
