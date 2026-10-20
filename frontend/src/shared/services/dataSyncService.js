@@ -21,10 +21,24 @@ export const SYNC_ENTITIES = {
   SALES: "sales",
   PURCHASES: "purchases",
   USERS: "users",
-  ROLES: "roles"
+  ROLES: "roles",
+  SUPPLIES: "supplies"
 };
 
 const SYNC_EVENT_NAME = "barber_data_sync";
+
+const syncChannel =
+  typeof window !== "undefined" && typeof BroadcastChannel !== "undefined"
+    ? new BroadcastChannel("barber_sync_bus")
+    : null;
+
+if (syncChannel && typeof window !== "undefined") {
+  syncChannel.onmessage = (event) => {
+    if (event?.data?.entity) {
+      window.dispatchEvent(new CustomEvent(SYNC_EVENT_NAME, { detail: event.data }));
+    }
+  };
+}
 
 /**
  * Emite una notificación global de cambio en una entidad para que todos los hooks suscritos
@@ -42,6 +56,9 @@ export function notifyDataChange(entity, payload = null) {
         timestamp: Date.now()
       };
       window.dispatchEvent(new CustomEvent(SYNC_EVENT_NAME, { detail }));
+      if (syncChannel) {
+        syncChannel.postMessage(detail);
+      }
     } catch (err) {
       console.warn("[dataSyncService] Error al notificar cambio:", err);
     }

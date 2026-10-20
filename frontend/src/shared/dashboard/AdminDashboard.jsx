@@ -18,7 +18,9 @@ import {
   AlertTriangle,
   Boxes,
   PackageCheck,
-  Layers
+  Layers,
+  User,
+  X
 } from "lucide-react";
 import {
   BarChart,
@@ -39,7 +41,9 @@ import {
 } from "recharts";
 import { motion } from "motion/react";
 import SpotlightCard from "../../features/admin/shared/components/SpotlightCard";
+import SearchableSelect from "../../features/admin/shared/components/SearchableSelect";
 import { usePermissions } from "../../features/auth/hooks/usePermissions";
+import { useDataSync, SYNC_ENTITIES } from "../services/dataSyncService";
 
 const COLORS = ["#C9A24A", "#10b981", "#f59e0b", "#8b5cf6"];
 
@@ -305,6 +309,42 @@ export default function AdminDashboard() {
     fetchSuppliesMetrics();
   }, [suppliesPeriod, suppliesBarberId]);
 
+  // Sincronización reactiva instantánea con cambios de insumos y catálogo de productos
+  useDataSync([SYNC_ENTITIES.PRODUCTS, SYNC_ENTITIES.SUPPLIES], () => {
+    // 1. Recargar métricas de abastecimiento
+    fetch(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` }
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json && json.data) setSuppliesMetrics(json.data);
+      })
+      .catch(() => {});
+
+    // 2. Recargar inventario crítico y KPIs
+    fetch("/api/products")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json && Array.isArray(json.data)) {
+          const crit = json.data
+            .filter((p) => p.stock !== undefined && Number(p.stock) <= 5 && p.estado === 1)
+            .map((p) => ({
+              name: p.nombre,
+              stock: Number(p.stock),
+              min: 10,
+              category: p.categoria || "Insumo",
+              percent: Math.min(Math.round((Number(p.stock) / 10) * 100), 100)
+            }));
+          setCriticalInventory(crit);
+          setKpis((prev) => ({ ...prev, stockCriticoCount: crit.length }));
+          try {
+            localStorage.setItem("barber_products_db", JSON.stringify(json.data));
+          } catch {}
+        }
+      })
+      .catch(() => {});
+  });
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -547,84 +587,135 @@ export default function AdminDashboard() {
       </div>
 
       {/* NUEVA MÉTRICA: CONSUMO DE INSUMOS POR BARBERO (SEMANA / MES) */}
-      <motion.div
-        variants={itemVariants}
-        className="bg-card border border-border rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow space-y-5"
-      >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Boxes className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-foreground">
-                  Consumo de Insumos por Barbero
-                </h3>
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                  Gasto en Servicios
-                </span>
+      {(() => {
+        const selectedSuppliesBarber = (barbersList || []).find((b) => String(b.id_barbero) === String(suppliesBarberId));
+        const dashboardBarberOptions = [
+          {
+            value: "all",
+            label: "Todos los Barberos (Consumo Global)",
+            subtitle: "Consolidado total de la barbería"
+          },
+          ...(barbersList || []).map((b) => ({
+            value: String(b.id_barbero),
+            label: `${b.nombre} ${b.apellido || ""}`.trim(),
+            subtitle: b.especialidad || "Barbero Profesional"
+          }))
+        ];
+
+        return (
+          <motion.div
+            variants={itemVariants}
+            className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-shadow space-y-5"
+          >
+            {/* Encabezado y Link al Módulo */}
+            <div className="flex items-center justify-between flex-wrap gap-4 border-b border-border/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shrink-0">
+                  <Boxes className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-foreground">
+                      Consumo de Insumos por Barbero
+                    </h3>
+                    <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                      Gasto en Servicios
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Monitoreo de consumibles utilizados en servicios para control de costo y rendimiento
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Insumos y consumibles gastados en cabina según el barbero y período seleccionado
-              </p>
-            </div>
-          </div>
 
-          {/* Controles interactivos dentro de la misma métrica */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Selector de Barbero */}
-            <div className="flex items-center gap-1.5 bg-secondary/50 border border-border rounded-xl px-2.5 py-1">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase">Barbero:</span>
-              <select
-                value={suppliesBarberId}
-                onChange={(e) => setSuppliesBarberId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-foreground focus:outline-hidden cursor-pointer"
+              <Link
+                to="/dashboard/abastecimiento"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 hover:bg-secondary text-xs font-bold text-primary border border-border transition-colors cursor-pointer"
               >
-                <option value="all">💈 Todos los Barberos</option>
-                {barbersList.map((b) => (
-                  <option key={b.id_barbero} value={b.id_barbero}>
-                    {b.nombre} {b.apellido || ""}
-                  </option>
-                ))}
-              </select>
+                Módulo de Abastecimiento <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
 
-            {/* Toggle de Período (Semana / Mes) */}
-            <div className="flex items-center gap-1 p-1 bg-secondary/50 border border-border rounded-xl">
-              <button
-                type="button"
-                onClick={() => setSuppliesPeriod("week")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  suppliesPeriod === "week"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Esta Semana
-              </button>
-              <button
-                type="button"
-                onClick={() => setSuppliesPeriod("month")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  suppliesPeriod === "month"
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Este Mes
-              </button>
-            </div>
+            {/* Recuadros de los Filtros de la Métrica */}
+            <div className="p-4 rounded-xl bg-secondary/25 border border-border/70 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-end">
+                {/* Recuadro 1: Selector de Barbero */}
+                <div className="sm:col-span-7 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Scissors className="w-3 h-3 text-primary" />
+                      Barbero a Consultar
+                    </label>
+                    {suppliesBarberId !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setSuppliesBarberId("all")}
+                        className="text-[10px] text-primary hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                        Ver todos
+                      </button>
+                    )}
+                  </div>
+                  <SearchableSelect
+                    value={String(suppliesBarberId)}
+                    onChange={(val) => setSuppliesBarberId(val)}
+                    options={dashboardBarberOptions}
+                    placeholder="Seleccionar barbero..."
+                    searchPlaceholder="Buscar por nombre o especialidad..."
+                    icon={<User className="w-3.5 h-3.5 text-primary" />}
+                    size="md"
+                    searchable={true}
+                    className="w-full"
+                  />
+                </div>
 
-            {/* Acceso Rápido al Módulo */}
-            <Link
-              to="/dashboard/abastecimiento"
-              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline ml-1"
-            >
-              Ver Módulo <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
+                {/* Recuadro 2: Período de Tiempo */}
+                <div className="sm:col-span-5 space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3 text-amber-500" />
+                    Ventana de Tiempo
+                  </label>
+                  <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-xl h-[42px]">
+                    <button
+                      type="button"
+                      onClick={() => setSuppliesPeriod("week")}
+                      className={`flex-1 h-full rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                        suppliesPeriod === "week"
+                          ? "bg-primary text-primary-foreground shadow-xs font-extrabold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                      }`}
+                    >
+                      Esta Semana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSuppliesPeriod("month")}
+                      className={`flex-1 h-full rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                        suppliesPeriod === "month"
+                          ? "bg-primary text-primary-foreground shadow-xs font-extrabold"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                      }`}
+                    >
+                      Este Mes
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ficha rápida si hay barbero seleccionado */}
+              {selectedSuppliesBarber && (
+                <div className="pt-2.5 border-t border-border/50 flex items-center justify-between flex-wrap gap-2 text-xs">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Viendo consumo de: <strong className="text-foreground">{selectedSuppliesBarber.nombre} {selectedSuppliesBarber.apellido || ""}</strong> ({selectedSuppliesBarber.especialidad || "Estilista"})
+                  </span>
+                  <span className="text-[11px] text-amber-500 font-bold font-mono">
+                    Costo estimado: ${Number(suppliesMetrics.total_costo_estimado || 0).toLocaleString("es-CO")}
+                  </span>
+                </div>
+              )}
+            </div>
 
         {/* Resumen de Valores de la Métrica */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -701,6 +792,8 @@ export default function AdminDashboard() {
           </div>
         )}
       </motion.div>
+    );
+  })()}
 
       {/* FILA: Citas de Hoy en Vivo & Semáforo de Inventario Crítico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

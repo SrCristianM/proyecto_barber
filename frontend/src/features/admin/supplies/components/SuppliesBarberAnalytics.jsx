@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { User, Calendar, Boxes, DollarSign, TrendingUp, Layers, PackageCheck, Award } from "lucide-react";
+import { User, Calendar, Boxes, DollarSign, TrendingUp, Layers, PackageCheck, Award, Scissors, Sparkles, X } from "lucide-react";
 import { motion } from "motion/react";
+import SearchableSelect from "../../shared/components/SearchableSelect";
 
 export default function SuppliesBarberAnalytics({
   metrics,
@@ -25,68 +26,130 @@ export default function SuppliesBarberAnalytics({
   const selectedBarber = barbers.find((b) => String(b.id_barbero) === String(selectedBarberId));
   const maxProductQty = top_consumibles.length > 0 ? top_consumibles[0].total_cantidad : 1;
 
+  // Opciones de barbero con subtítulo y descripción para SearchableSelect
+  const barberOptions = [
+    {
+      value: "all",
+      label: "Todos los Barberos (Consumo Global)",
+      subtitle: "Consumo consolidado de todo el equipo de trabajo"
+    },
+    ...barbers.map((b) => ({
+      value: String(b.id_barbero),
+      label: `${b.nombre} ${b.apellido || ""}`.trim(),
+      subtitle: b.especialidad || "Barbero Profesional"
+    }))
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Barra de Filtros Integrada */}
-      <div className="p-4 rounded-2xl bg-card border border-border flex items-center justify-between flex-wrap gap-4 shadow-xs">
-        {/* Selector de Barbero */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Barbero:
-            </span>
+      {/* Barra de Filtros Organizada en Recuadros */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border space-y-4 shadow-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+          {/* Recuadro 1: Selector de Barbero */}
+          <div className="lg:col-span-7 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Scissors className="w-3.5 h-3.5 text-primary" />
+                Barbero a Auditar
+              </label>
+              {selectedBarberId !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => onBarberChange("all")}
+                  className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  Ver todos los barberos
+                </button>
+              )}
+            </div>
+            <SearchableSelect
+              value={String(selectedBarberId)}
+              onChange={(val) => onBarberChange(val)}
+              options={barberOptions}
+              placeholder="Seleccionar barbero a consultar..."
+              searchPlaceholder="Buscar por nombre o especialidad..."
+              icon={<User className="w-4 h-4 text-primary" />}
+              size="md"
+              searchable={true}
+              className="w-full"
+            />
           </div>
-          <select
-            value={selectedBarberId}
-            onChange={(e) => onBarberChange(e.target.value)}
-            className="px-3.5 py-2 bg-secondary/60 border border-border rounded-xl text-xs sm:text-sm font-bold text-foreground focus:outline-hidden focus:border-primary transition-colors cursor-pointer"
-          >
-            <option value="all">💈 Todos los Barberos (Consumo Global)</option>
-            {barbers.map((b) => (
-              <option key={b.id_barbero} value={b.id_barbero}>
-                {b.nombre} {b.apellido || ""} — {b.especialidad || "Barbero"}
-              </option>
-            ))}
-          </select>
+
+          {/* Recuadro 2: Ventana de Tiempo (Período) */}
+          <div className="lg:col-span-5 space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-amber-500" />
+              Período de Análisis
+            </label>
+            <div className="flex items-center gap-1.5 p-1 bg-secondary/50 border border-border rounded-xl">
+              <button
+                type="button"
+                onClick={() => onPeriodChange("week")}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                  period === "week"
+                    ? "bg-primary text-primary-foreground shadow-xs font-extrabold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                }`}
+              >
+                Esta Semana
+              </button>
+              <button
+                type="button"
+                onClick={() => onPeriodChange("month")}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                  period === "month"
+                    ? "bg-primary text-primary-foreground shadow-xs font-extrabold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                }`}
+              >
+                Este Mes
+              </button>
+              <button
+                type="button"
+                onClick={() => onPeriodChange("all")}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                  period === "all"
+                    ? "bg-primary text-primary-foreground shadow-xs font-extrabold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                }`}
+              >
+                Histórico
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Selector de Período (Semana / Mes / Histórico) */}
-        <div className="flex items-center gap-1.5 p-1 bg-secondary/60 border border-border rounded-xl">
-          <button
-            type="button"
-            onClick={() => onPeriodChange("week")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              period === "week"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Esta Semana
-          </button>
-          <button
-            type="button"
-            onClick={() => onPeriodChange("month")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              period === "month"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Este Mes
-          </button>
-          <button
-            type="button"
-            onClick={() => onPeriodChange("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              period === "all"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Histórico Total
-          </button>
-        </div>
+        {/* Ficha Resumen del Barbero Seleccionado */}
+        {selectedBarber && (
+          <div className="pt-3 border-t border-border/60 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center font-bold text-primary text-sm shadow-2xs">
+                💈
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-extrabold text-foreground flex items-center gap-2">
+                  {selectedBarber.nombre} {selectedBarber.apellido || ""}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
+                    {selectedBarber.especialidad || "Estilista"}
+                  </span>
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Auditando insumos gastados durante los servicios realizados en {period === "week" ? "esta semana" : period === "month" ? "este mes" : "el histórico total"}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-foreground font-bold">
+                {total_despachos} {total_despachos === 1 ? "despacho" : "despachos"}
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-500 font-bold font-mono">
+                ${Number(total_costo_estimado).toLocaleString("es-CO")}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tarjetas de Métricas del Barbero y Período Seleccionado */}

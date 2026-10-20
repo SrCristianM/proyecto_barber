@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSupplies, createSupply, cancelSupply, getSuppliesMetrics } from "../services/suppliesService.js";
 import { getCurrentUser } from "../../../auth/services/authService.js";
+import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
+import { dispatchNotificationUpdate } from "../../../../shared/services/notificationService";
 
 export function useSupplies() {
   const [supplies, setSupplies] = useState(() => {
@@ -82,12 +84,14 @@ export function useSupplies() {
         endDate
       });
 
-      if (suppliesRes && Array.isArray(suppliesRes.data)) {
-        setSupplies(suppliesRes.data);
-        try {
-          localStorage.setItem("barber_supplies_db", JSON.stringify(suppliesRes.data));
-        } catch {}
-      }
+      const suppliesList = Array.isArray(suppliesRes)
+        ? suppliesRes
+        : (Array.isArray(suppliesRes?.data) ? suppliesRes.data : []);
+
+      setSupplies(suppliesList);
+      try {
+        localStorage.setItem("barber_supplies_db", JSON.stringify(suppliesList));
+      } catch {}
 
       // 2. Cargar barberos si no están en memoria
       fetch("/api/barbers")
@@ -130,8 +134,9 @@ export function useSupplies() {
     try {
       setLoadingMetrics(true);
       const res = await getSuppliesMetrics({ period, barberId });
-      if (res && res.data) {
-        setMetrics(res.data);
+      const metricsData = (res && typeof res === "object" && "data" in res) ? res.data : res;
+      if (metricsData) {
+        setMetrics(metricsData);
       }
     } catch {
       // Ignorar fallback
@@ -215,29 +220,94 @@ export function useSupplies() {
     });
   };
 
-  // Mutación: Crear Abastecimiento
+  // Recarga automática del catálogo de productos cuando se modifique desde cualquier parte del sistema
+  const reloadProducts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/products");
+      if (res.ok) {
+        const json = await res.json();
+        if (json && Array.isArray(json.data)) {
+          setProducts(json.data);
+          try {
+            localStorage.setItem("barber_products_db", JSON.stringify(json.data));
+          } catch {}
+        }
+      }
+    } catch {}
+  }, []);
+
+  useDataSync([SYNC_ENTITIES.PRODUCTS], reloadProducts);
+
+  // Mutación: Crear Abastecimiento (Descontar stock en todo el proyecto)
   const handleCreateSupply = async () => {
     try {
       setLoading(true);
       const res = await createSupply(formData);
-      if (res && res.data) {
-        setSupplies((prev) => [res.data, ...prev]);
+      const newSupply = (res && typeof res === "object" && "data" in res) ? res.data : res;
+      if (newSupply && (newSupply.id_abastecimiento || newSupply.id)) {
+        setSupplies((prev) => [newSupply, ...prev]);
 
-        // Actualizar stock local de los productos para reflejo inmediato en UI
-        setProducts((prevProds) =>
-          prevProds.map((prod) => {
-            const used = formData.detalles.find((d) => d.id_producto === prod.id_producto);
+        // Guardar lista actualizada en localStorage
+        try {
+          const rawStored = localStorage.getItem("barber_supplies_db");
+          const currentList = rawStored ? JSON.parse(rawStored) : supplies;
+          localStorage.setItem(
+            "barber_supplies_db",
+            JSON.stringify([newSupply, ...currentList.filter((s) => s.id_abastecimiento !== newSupply.id_abastecimiento)])
+          );
+        } catch {}
+
+        // 1. Descontar inmediatamente en memoria y en localStorage para reflejo instantáneo
+        let updatedProds = [];
+        try {
+          const rawStored = localStorage.getItem("barber_products_db");
+          const currentList = rawStored ? JSON.parse(rawStored) : products;
+          updatedProds = currentList.map((prod) => {
+            const used = (formData.detalles || []).find((d) => Number(d.id_producto) === Number(prod.id_producto));
             if (used) {
-              return { ...prod, stock: Math.max(0, (prod.stock || 0) - used.cantidad) };
+              const currentStock = Number(prod.stock ?? 0);
+              const deduct = Number(used.cantidad ?? 0);
+              return { ...prod, stock: Math.max(0, currentStock - deduct) };
             }
             return prod;
+          });
+          setProducts(updatedProds);
+          localStorage.setItem("barber_products_db", JSON.stringify(updatedProds));
+        } catch {
+          updatedProds = products.map((prod) => {
+            const used = (formData.detalles || []).find((d) => Number(d.id_producto) === Number(prod.id_producto));
+            if (used) {
+              return { ...prod, stock: Math.max(0, Number(prod.stock || 0) - Number(used.cantidad)) };
+            }
+            return prod;
+          });
+          setProducts(updatedProds);
+        }
+
+        // 2. Traer la versión definitiva desde la base de datos
+        fetch("/api/products")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((json) => {
+            if (json && Array.isArray(json.data)) {
+              setProducts(json.data);
+              try {
+                localStorage.setItem("barber_products_db", JSON.stringify(json.data));
+              } catch {}
+            }
           })
-        );
+          .catch(() => {});
+
+        // 3. Notificar a todos los módulos que escuchan cambios en productos e inventario
+        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_dispatch", supply: newSupply });
+        notifyDataChange(SYNC_ENTITIES.SUPPLIES, newSupply);
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new CustomEvent("barber_products_updated", { detail: updatedProds }));
+        dispatchNotificationUpdate();
 
         resetForm();
         setShowCreateModal(false);
         fetchMetrics(metricsPeriod, metricsBarber);
-        return res.data;
+        return newSupply;
       }
     } catch (err) {
       throw err;
@@ -246,34 +316,81 @@ export function useSupplies() {
     }
   };
 
-  // Mutación: Anular Abastecimiento
+  // Mutación: Anular Abastecimiento (Restituir stock en todo el proyecto)
   const handleCancelSupply = async (id) => {
     try {
       setLoading(true);
       const targetId = id || selectedSupply?.id_abastecimiento;
       const res = await cancelSupply(targetId);
-      if (res && res.data) {
+      const cancelledSupply = (res && typeof res === "object" && "data" in res) ? res.data : res;
+      if (cancelledSupply) {
         setSupplies((prev) =>
-          prev.map((item) => (item.id_abastecimiento === targetId ? res.data : item))
+          prev.map((item) => (item.id_abastecimiento === targetId ? cancelledSupply : item))
         );
 
-        // Restaurar stock en UI
-        if (selectedSupply && selectedSupply.detalles) {
-          setProducts((prevProds) =>
-            prevProds.map((prod) => {
-              const restored = selectedSupply.detalles.find((d) => d.id_producto === prod.id_producto);
+        // Actualizar en localStorage
+        try {
+          const rawStored = localStorage.getItem("barber_supplies_db");
+          if (rawStored) {
+            const list = JSON.parse(rawStored).map((item) =>
+              item.id_abastecimiento === targetId ? cancelledSupply : item
+            );
+            localStorage.setItem("barber_supplies_db", JSON.stringify(list));
+          }
+        } catch {}
+
+        // 1. Restituir stock en memoria y en localStorage
+        let updatedProds = [];
+        const supplyToRestore = selectedSupply || cancelledSupply;
+        if (supplyToRestore && supplyToRestore.detalles) {
+          try {
+            const rawStored = localStorage.getItem("barber_products_db");
+            const currentList = rawStored ? JSON.parse(rawStored) : products;
+            updatedProds = currentList.map((prod) => {
+              const restored = supplyToRestore.detalles.find((d) => Number(d.id_producto) === Number(prod.id_producto));
               if (restored) {
-                return { ...prod, stock: (prod.stock || 0) + Number(restored.cantidad) };
+                return { ...prod, stock: Number(prod.stock || 0) + Number(restored.cantidad || 0) };
               }
               return prod;
-            })
-          );
+            });
+            setProducts(updatedProds);
+            localStorage.setItem("barber_products_db", JSON.stringify(updatedProds));
+          } catch {
+            updatedProds = products.map((prod) => {
+              const restored = supplyToRestore.detalles.find((d) => Number(d.id_producto) === Number(prod.id_producto));
+              if (restored) {
+                return { ...prod, stock: Number(prod.stock || 0) + Number(restored.cantidad || 0) };
+              }
+              return prod;
+            });
+            setProducts(updatedProds);
+          }
         }
+
+        // 2. Refrescar catálogo con la BD
+        fetch("/api/products")
+          .then((r) => (r.ok ? r.json() : null))
+          .then((json) => {
+            if (json && Array.isArray(json.data)) {
+              setProducts(json.data);
+              try {
+                localStorage.setItem("barber_products_db", JSON.stringify(json.data));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+
+        // 3. Notificar a todo el sistema la restitución de inventario
+        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_cancel", supply: cancelledSupply });
+        notifyDataChange(SYNC_ENTITIES.SUPPLIES, cancelledSupply);
+        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new CustomEvent("barber_products_updated", { detail: updatedProds }));
+        dispatchNotificationUpdate();
 
         setShowCancelModal(false);
         setSelectedSupply(null);
         fetchMetrics(metricsPeriod, metricsBarber);
-        return res.data;
+        return cancelledSupply;
       }
     } catch (err) {
       throw err;

@@ -1180,7 +1180,7 @@
       "nombre": "Pomada Matte Fijación Fuerte",
       "id_categoria_producto": 1,
       "precio": 32000,
-      "stock": 91,
+      "stock": 93,
       "imagen_url": "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=600&q=80",
       "estado": 1,
       "descripcion": "Pomada base agua con fijación de alto rendimiento durante todo el día y acabado mate sin brillo. No deja residuos blancos ni sensación pegajosa, y se enjuaga fácilmente con agua.",
@@ -1196,7 +1196,7 @@
       "nombre": "Aceite Nutritivo para Barba",
       "id_categoria_producto": 2,
       "precio": 25000,
-      "stock": 33,
+      "stock": 34,
       "imagen_url": "https://images.unsplash.com/photo-1608248597358-1e428c0353c7?auto=format&fit=crop&w=600&q=80",
       "estado": 1,
       "descripcion": "Fórmula hidratante enriquecida con aceites naturales prensados en frío para acondicionar la barba áspera, suavizar la cutícula y calmar la piel debajo previniendo picazón y descamación.",
@@ -1212,7 +1212,7 @@
       "nombre": "Bálsamo Aftershave Calmante",
       "id_categoria_producto": 2,
       "precio": 28000,
-      "stock": 24,
+      "stock": 27,
       "imagen_url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80",
       "estado": 1,
       "descripcion": "Bálsamo post-afeitado libre de alcohol formulado con aloe vera orgánico y extracto de hamamelis que alivia al instante el enrojecimiento, cierra los poros y brinda una frescura revitalizante.",
@@ -1914,50 +1914,6 @@
       "subtotal": 30000
     }
   ],
-  "abastecimientos": [
-    {
-      "id_abastecimiento": 1,
-      "id_barbero": 1,
-      "id_usuario": 1,
-      "fecha": "2026-10-19 20:01:59",
-      "observaciones": "Dotación semanal para afeitado y acabados en estación 1",
-      "total_estimado": 89000,
-      "estado": "Registrado"
-    },
-    {
-      "id_abastecimiento": 2,
-      "id_barbero": 1,
-      "id_usuario": 3,
-      "fecha": "2026-10-19 20:01:59",
-      "observaciones": "Insumos complementarios para cortes y barbería",
-      "total_estimado": 84000,
-      "estado": "Registrado"
-    }
-  ],
-  "abastecimiento_detalles": [
-    {
-      "id_abastecimiento_detalle": 1,
-      "id_abastecimiento": 1,
-      "id_producto": 1,
-      "cantidad": 2,
-      "precio_unitario": 32000,
-      "subtotal": 64000
-    },
-    {
-      "id_abastecimiento_detalle": 2,
-      "id_abastecimiento": 1,
-      "id_producto": 2,
-      "cantidad": 1,
-      "precio_unitario": 25000,
-      "subtotal": 25000
-    },
-    {
-      "id_abastecimiento_detalle": 3,
-      "id_abastecimiento": 2,
-      "id_producto": 3,
-      "cantidad": 3,
-      "precio_unitario": 28000,
-      "subtotal": 84000
-    }
-  ]
+  "abastecimientos": [],
+  "abastecimiento_detalles": []
 }

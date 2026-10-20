@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Boxes, BarChart3, History, RotateCcw, Download, Sparkles } from "lucide-react";
+import { Plus, Boxes, BarChart3, History, RotateCcw, Download, Sparkles, User } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
@@ -14,6 +14,7 @@ import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
 import ConfirmModal from "../../shared/components/ConfirmModal";
+import { toast } from "sonner";
 
 export default function SuppliesPage() {
   const [activeTab, setActiveTab] = useState("history"); // 'history' | 'analytics'
@@ -80,18 +81,22 @@ export default function SuppliesPage() {
 
   const onSubmitCreate = async () => {
     try {
-      await handleCreateSupply();
-      triggerGoldenConfetti();
+      const created = await handleCreateSupply();
+      if (created) {
+        triggerGoldenConfetti();
+        toast.success(`Despacho registrado correctamente (#AB-${String(created.id_abastecimiento || "").padStart(5, "0")})`);
+      }
     } catch (err) {
-      alert(err.message || "Error al registrar abastecimiento");
+      toast.error(err.message || "Error al registrar abastecimiento");
     }
   };
 
   const onConfirmCancel = async () => {
     try {
       await handleCancelSupply();
+      toast.success("Abastecimiento anulado y stock restituido al inventario con éxito");
     } catch (err) {
-      alert(err.message || "Error al anular abastecimiento");
+      toast.error(err.message || "Error al anular abastecimiento");
     }
   };
 
@@ -201,68 +206,71 @@ export default function SuppliesPage() {
           {/* Tarjetas de Estadísticas Rápidas */}
           <SuppliesStats stats={quickStats} />
 
-          {/* Barra de Filtros y Búsqueda */}
-          <div className="p-4 rounded-2xl bg-card border border-border space-y-3.5 shadow-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-              <div className="sm:col-span-4">
+          {/* Barra de Filtros y Búsqueda Estandarizada */}
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3 flex-1">
+                {/* Buscador */}
                 <SearchBar
                   value={searchTerm}
                   onChange={setSearchTerm}
                   placeholder="Buscar por barbero, insumo, folio..."
+                  maxWidthClass="w-full sm:w-64"
                 />
-              </div>
 
-              <div className="sm:col-span-3">
-                <FilterSelect
-                  label="Barbero"
-                  value={barberFilter}
-                  onChange={setBarberFilter}
-                  options={[
-                    { value: "all", label: "Todos los barberos" },
-                    ...barbers.map((b) => ({
-                      value: b.id_barbero,
-                      label: `${b.nombre} ${b.apellido || ""}`.trim()
-                    }))
-                  ]}
-                />
-              </div>
-
-              <div className="sm:col-span-5 flex items-center gap-2 flex-wrap sm:justify-end">
+                {/* Filtro de Estado con Pills */}
                 <StatusFilterPills
                   value={statusFilter}
                   onChange={setStatusFilter}
                   options={[
-                    { value: "all", label: "Todos" },
-                    { value: "Registrado", label: "Registrado" },
-                    { value: "Anulado", label: "Anulado" }
+                    { key: "all", label: "Todos" },
+                    { key: "Registrado", label: "Registrados" },
+                    { key: "Anulado", label: "Anulados" }
                   ]}
                 />
 
+                {/* Filtro FK Barbero con SearchableSelect */}
+                <FilterSelect
+                  label="Barbero"
+                  value={barberFilter}
+                  onChange={setBarberFilter}
+                  placeholder="Todos los barberos"
+                  icon={<User className="h-3.5 w-3.5 text-primary" />}
+                  options={(barbers || []).map((b) => ({
+                    value: b.id_barbero,
+                    label: `${b.nombre} ${b.apellido || ""}`.trim(),
+                    subtitle: b.especialidad || "Barbero Profesional"
+                  }))}
+                  className="min-w-[190px]"
+                />
+
+                {/* Rango de Fechas */}
+                <DateRangeFilter
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                  onClear={() => { setStartDate(""); setEndDate(""); }}
+                />
+
+                {/* Limpiar Filtros */}
                 {hasActiveFilters && (
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary border border-border text-xs flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Limpiar filtros"
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground py-2 px-3 rounded-xl border border-border hover:bg-secondary transition-colors cursor-pointer"
+                    title="Limpiar todos los filtros"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span className="hidden md:inline">Limpiar</span>
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Limpiar</span>
                   </button>
                 )}
               </div>
-            </div>
 
-            {/* Rango de fechas */}
-            <div className="flex items-center gap-3 pt-2 border-t border-border/50 flex-wrap">
-              <DateRangeFilter
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-              />
-              <span className="text-xs text-muted-foreground">
-                Mostrando <strong className="text-foreground">{filteredSupplies.length}</strong> vales de abastecimiento
-              </span>
+              {/* Contador de Registros */}
+              <div className="text-xs text-muted-foreground shrink-0 pl-1 lg:pl-0">
+                Mostrando <strong className="text-foreground font-mono font-bold">{filteredSupplies.length}</strong> vales
+              </div>
             </div>
           </div>
 
