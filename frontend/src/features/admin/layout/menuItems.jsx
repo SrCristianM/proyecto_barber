@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Scissors, Calendar, Package,
   DollarSign, Clock, UserCog, Shield, ClipboardList,
-  Building2, ShoppingBag
+  Building2, ShoppingBag, Boxes
 } from "lucide-react";
 
 export const menuSections = [
@@ -35,6 +35,7 @@ export const menuSections = [
     items: [
       { path: "/dashboard/sales", icon: <DollarSign className="h-5 w-5 shrink-0" />, label: "Ventas" },
       { path: "/dashboard/products", icon: <Package className="h-5 w-5 shrink-0" />, label: "Productos" },
+      { path: "/dashboard/abastecimiento", icon: <Boxes className="h-5 w-5 shrink-0" />, label: "Abastecimiento" },
       { path: "/dashboard/purchases", icon: <ShoppingBag className="h-5 w-5 shrink-0" />, label: "Compras" },
       { path: "/dashboard/suppliers", icon: <Building2 className="h-5 w-5 shrink-0" />, label: "Proveedores" }
     ]

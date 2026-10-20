@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Building2,
   Sparkles,
+  Boxes,
   ArrowRight
 } from "lucide-react";
 import {
@@ -130,6 +131,22 @@ export default function CommandPaletteModal({ open, onOpenChange }) {
               <span className="text-[10px] text-muted-foreground">Armar paquete con descuento promocional</span>
             </div>
           </CommandItem>
+
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate("/dashboard/abastecimiento?new=1"))}
+            className="flex items-center gap-2.5 py-2 px-3 rounded-xl cursor-pointer hover:bg-amber-500/10 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Boxes className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-col flex-1">
+              <span className="font-semibold text-foreground text-xs sm:text-sm">Registrar Abastecimiento</span>
+              <span className="text-[10px] text-muted-foreground">Despachar productos o insumos a barbero</span>
+            </div>
+            <CommandShortcut className="text-[10px] font-mono bg-secondary px-1.5 py-0.5 rounded border border-border">
+              NA
+            </CommandShortcut>
+          </CommandItem>
         </CommandGroup>
 
         <CommandSeparator className="my-1.5" />
@@ -142,6 +159,13 @@ export default function CommandPaletteModal({ open, onOpenChange }) {
           >
             <LayoutDashboard className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Dashboard Principal</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => handleSelect(() => navigate("/dashboard/abastecimiento"))}
+            className="py-1.5 px-3 rounded-lg text-xs cursor-pointer flex items-center gap-2"
+          >
+            <Boxes className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Abastecimiento e Insumos</span>
           </CommandItem>
           <CommandItem
             onSelect={() => handleSelect(() => navigate("/dashboard/schedules"))}

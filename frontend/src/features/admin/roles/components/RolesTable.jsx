@@ -18,23 +18,23 @@ export default function RolesTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] sm:min-w-[650px] text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[700px] text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border text-[10px] sm:text-xs">
-              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Rol" field="nombre_rol" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Descripción" field="descripcion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4 font-medium text-muted-foreground uppercase tracking-wide">Permisos</th>
-              <th className="hidden md:table-cell text-left py-2.5 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3 font-medium text-muted-foreground uppercase tracking-wide">Permisos</th>
+              <th className="hidden xl:table-cell text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Creación" field="fecha_creacion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2.5 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2.5 px-2 sm:py-3 sm:px-4 font-medium text-muted-foreground uppercase tracking-wide">Acciones</th>
+              <th className="text-right py-2.5 px-2 md:px-3 lg:px-4 sm:py-3 font-medium text-muted-foreground uppercase tracking-wide">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -52,11 +52,11 @@ export default function RolesTable({
                   data-highlight-id={`rol-${role.id_rol}`}
                   className="border-b border-border hover:bg-accent/40 transition-colors"
                 >
-                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                     <span className="font-semibold text-foreground text-xs sm:text-sm">{role.nombre_rol}</span>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3 sm:px-4 text-muted-foreground text-xs sm:text-sm max-w-[160px] truncate">{role.descripcion || "—"}</td>
-                  <td className="py-2.5 px-2 sm:py-3 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3 text-muted-foreground text-xs sm:text-sm max-w-[160px] truncate">{role.descripcion || "—"}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3">
                     {(() => {
                       const count = (role.permisos || []).length;
                       const totalPossible = 23;
@@ -85,7 +85,7 @@ export default function RolesTable({
                       );
                     })()}
                   </td>
-                  <td className="hidden md:table-cell py-2.5 px-2 sm:py-3 sm:px-4 text-muted-foreground text-xs">{role.fecha_creacion?.split(" ")[0]}</td>
+                  <td className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3 text-muted-foreground text-xs">{role.fecha_creacion?.split(" ")[0]}</td>
                   <td className="py-2.5 px-2 sm:py-3 sm:px-4">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 text-[10px] sm:text-xs font-bold rounded-full border ${role.estado === 1 ? "badge-glow-success" : "badge-glow-destructive"

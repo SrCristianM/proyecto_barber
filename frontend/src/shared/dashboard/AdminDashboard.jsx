@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import {
   Calendar,
   Users,
@@ -14,7 +15,10 @@ import {
   TrendingDown,
   ArrowUpRight,
   ShieldCheck,
-  AlertTriangle
+  AlertTriangle,
+  Boxes,
+  PackageCheck,
+  Layers
 } from "lucide-react";
 import {
   BarChart,
@@ -84,6 +88,18 @@ export default function AdminDashboard() {
   const [salesHistoryData, setSalesHistoryData] = useState([]);
   const [serviceDemandData, setServiceDemandData] = useState([]);
 
+  // Estado para la nueva métrica interactiva de Abastecimiento / Insumos por Barbero
+  const [barbersList, setBarbersList] = useState([]);
+  const [suppliesPeriod, setSuppliesPeriod] = useState("week"); // 'week' | 'month'
+  const [suppliesBarberId, setSuppliesBarberId] = useState("all");
+  const [suppliesMetrics, setSuppliesMetrics] = useState({
+    total_despachos: 0,
+    total_articulos: 0,
+    total_costo_estimado: 0,
+    top_consumibles: [],
+    por_barbero: []
+  });
+
   useEffect(() => {
     try {
       const colombiaNow = new Date().toLocaleString("en-CA", { timeZone: "America/Bogota", hour12: false });
@@ -103,6 +119,7 @@ export default function AdminDashboard() {
       const barbers = rawBarbers ? JSON.parse(rawBarbers) : [
         { id_barbero: 1, nombre: "Carlos", apellido: "Rodríguez", especialidad: "Corte Clásico & Fade" }
       ];
+      setBarbersList(barbers);
 
       const getBarberName = (id_barbero) => {
         const found = barbers.find((b) => Number(b.id_barbero) === Number(id_barbero));
@@ -267,6 +284,26 @@ export default function AdminDashboard() {
       window.removeEventListener("focus", onWindowFocus);
     };
   }, []);
+
+  // Carga de la métrica de consumo de insumos por barbero
+  useEffect(() => {
+    const fetchSuppliesMetrics = () => {
+      fetch(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
+        }
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json && json.data) {
+            setSuppliesMetrics(json.data);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchSuppliesMetrics();
+  }, [suppliesPeriod, suppliesBarberId]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -508,6 +545,162 @@ export default function AdminDashboard() {
           )}
         </motion.div>
       </div>
+
+      {/* NUEVA MÉTRICA: CONSUMO DE INSUMOS POR BARBERO (SEMANA / MES) */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-card border border-border rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow space-y-5"
+      >
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Boxes className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-foreground">
+                  Consumo de Insumos por Barbero
+                </h3>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                  Gasto en Servicios
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Insumos y consumibles gastados en cabina según el barbero y período seleccionado
+              </p>
+            </div>
+          </div>
+
+          {/* Controles interactivos dentro de la misma métrica */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Selector de Barbero */}
+            <div className="flex items-center gap-1.5 bg-secondary/50 border border-border rounded-xl px-2.5 py-1">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase">Barbero:</span>
+              <select
+                value={suppliesBarberId}
+                onChange={(e) => setSuppliesBarberId(e.target.value)}
+                className="bg-transparent text-xs font-bold text-foreground focus:outline-hidden cursor-pointer"
+              >
+                <option value="all">💈 Todos los Barberos</option>
+                {barbersList.map((b) => (
+                  <option key={b.id_barbero} value={b.id_barbero}>
+                    {b.nombre} {b.apellido || ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Toggle de Período (Semana / Mes) */}
+            <div className="flex items-center gap-1 p-1 bg-secondary/50 border border-border rounded-xl">
+              <button
+                type="button"
+                onClick={() => setSuppliesPeriod("week")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  suppliesPeriod === "week"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Esta Semana
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuppliesPeriod("month")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  suppliesPeriod === "month"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Este Mes
+              </button>
+            </div>
+
+            {/* Acceso Rápido al Módulo */}
+            <Link
+              to="/dashboard/abastecimiento"
+              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline ml-1"
+            >
+              Ver Módulo <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Resumen de Valores de la Métrica */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="p-3.5 rounded-xl bg-secondary/30 border border-border/70 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Insumos Gastados
+              </span>
+              <p className="text-xl font-black text-foreground">
+                {Number(suppliesMetrics.total_articulos || 0).toLocaleString("es-CO")}{" "}
+                <span className="text-xs font-medium text-muted-foreground">un.</span>
+              </p>
+            </div>
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+              <Boxes className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-secondary/30 border border-border/70 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Costo Operativo Estimado
+              </span>
+              <p className="text-xl font-black text-amber-500 font-mono">
+                ${Number(suppliesMetrics.total_costo_estimado || 0).toLocaleString("es-CO")}
+              </p>
+            </div>
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-secondary/30 border border-border/70 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Vales Despachados
+              </span>
+              <p className="text-xl font-black text-emerald-500">
+                {suppliesMetrics.total_despachos || 0}{" "}
+                <span className="text-xs font-medium text-muted-foreground">despacho(s)</span>
+              </p>
+            </div>
+            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
+              <PackageCheck className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Desglose de Top Insumos Consumidos por el Barbero */}
+        {suppliesMetrics.top_consumibles && suppliesMetrics.top_consumibles.length > 0 ? (
+          <div className="space-y-2.5 pt-2 border-t border-border/50">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+              Insumos más gastados en {suppliesPeriod === "week" ? "la semana" : "el mes"} por {suppliesBarberId === "all" ? "el equipo" : "este barbero"}:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              {suppliesMetrics.top_consumibles.slice(0, 6).map((prod, idx) => (
+                <div
+                  key={idx}
+                  className="p-2.5 bg-background border border-border rounded-xl flex items-center justify-between"
+                >
+                  <span className="text-xs font-bold text-foreground truncate pr-2">
+                    {prod.nombre}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-primary shrink-0">
+                    {prod.total_cantidad} un.
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="py-4 text-center rounded-xl bg-secondary/10 border border-dashed border-border/50 text-xs text-muted-foreground">
+            No hay insumos despachados registrados para {suppliesBarberId === "all" ? "ningún barbero" : "este barbero"} en {suppliesPeriod === "week" ? "la semana actual" : "el mes actual"}.
+          </div>
+        )}
+      </motion.div>
 
       {/* FILA: Citas de Hoy en Vivo & Semáforo de Inventario Crítico */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

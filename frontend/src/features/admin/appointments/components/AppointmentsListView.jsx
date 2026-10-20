@@ -28,16 +28,16 @@ export default function AppointmentsListView({ appointments, getClientName, getB
         <p className="text-center text-xs sm:text-sm text-muted-foreground py-10">No hay citas registradas</p>
       ) : viewMode === "table" ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[480px] sm:min-w-[700px] text-xs sm:text-sm text-left">
+          <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[800px] text-xs sm:text-sm text-left">
             <thead className="border-b border-border bg-muted/30 text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-semibold">
               <tr>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4">Hora</th>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4">Cliente</th>
-                <th className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4">Barbero</th>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4">Servicio</th>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4">Precio</th>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4">Estado</th>
-                <th className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-right">Acciones</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Hora</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Cliente</th>
+                <th className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Barbero</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Servicio</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Precio</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">Estado</th>
+                <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -54,16 +54,16 @@ export default function AppointmentsListView({ appointments, getClientName, getB
                     data-highlight-id={`app-${appointment.id_cita}`}
                     className="hover:bg-accent/40 transition-colors"
                   >
-                    <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-mono font-bold text-foreground">
+                    <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-mono font-bold text-foreground">
                       <div className="flex items-center gap-1 sm:gap-1.5">
                         <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
                         <span>{appointment.hora}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold text-foreground">
+                    <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold text-foreground">
                       {clientName}
                     </td>
-                    <td className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground">
+                    <td className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-muted-foreground">
                       {barberName}
                     </td>
                     <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground font-medium">

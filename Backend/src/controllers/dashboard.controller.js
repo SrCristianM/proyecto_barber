@@ -1,4 +1,5 @@
 import { DashboardService } from "../services/dashboard.service.js";
+import { SuppliesService } from "../services/supplies.service.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
 export class DashboardController {
@@ -15,6 +16,16 @@ export class DashboardController {
     try {
       const stats = await DashboardService.getBarberStats(req.user.id_usuario);
       return ApiResponse.success(res, stats, "Métricas del barbero obtenidas");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getSuppliesStats(req, res, next) {
+    try {
+      const { barberId = "all", period = "week" } = req.query;
+      const stats = await SuppliesService.getMetrics({ barberId, period });
+      return ApiResponse.success(res, stats, "Métricas de insumos consumidos obtenidas");
     } catch (error) {
       next(error);
     }

@@ -49,25 +49,25 @@ export default function ClientsTable({
   return (
     <>
       <div className="overflow-x-auto -mx-1 sm:mx-0">
-        <table className="w-full min-w-[480px] sm:min-w-[700px] text-left text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[850px] text-left text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/20 text-muted-foreground text-[11px] sm:text-xs uppercase tracking-wider">
-              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Cliente" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Correo" field="correo" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold hidden md:table-cell">
+              <th className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold hidden xl:table-cell">
                 <SortHeader label="Dirección" field="direccion" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Nivel Fidelidad" field="nivel_fidelidad" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2 px-2 sm:py-3.5 sm:px-4 font-bold whitespace-nowrap">Acciones</th>
+              <th className="text-right py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -83,14 +83,14 @@ export default function ClientsTable({
                   data-highlight-id={`cli-${client.id_cliente}`}
                   className="table-row-accent transition-colors"
                 >
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
-                    <div className="flex items-center gap-1.5 sm:gap-3">
-                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-md sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
-                        <User className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-3">
+                      <div className="w-7 h-7 sm:w-9 md:w-10 sm:h-9 md:h-10 bg-primary/10 rounded-md sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                        <User className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[110px] sm:max-w-none">{client.nombre} {client.apellido}</p>
-                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground truncate max-w-[110px] sm:max-w-none">
+                        <p className="font-bold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[110px] sm:max-w-[150px] md:max-w-[180px] lg:max-w-none">{client.nombre} {client.apellido}</p>
+                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground truncate max-w-[110px] sm:max-w-[150px] md:max-w-[180px] lg:max-w-none">
                           {client.documento && <span>Doc: {client.documento}</span>}
                           {client.documento && client.telefono && <span>•</span>}
                           <span>{client.telefono || ""}</span>
@@ -98,10 +98,10 @@ export default function ClientsTable({
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-none">{client.correo}</td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium hidden md:table-cell">{client.direccion || "—"}</td>
-                  <td className="py-2 px-2 sm:py-3.5 sm:px-4">
-                    <div className="space-y-1 min-w-[75px] sm:min-w-[120px]">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-muted-foreground text-xs sm:text-sm font-medium truncate max-w-[120px] sm:max-w-[160px] md:max-w-[190px] lg:max-w-none">{client.correo}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium hidden xl:table-cell">{client.direccion || "—"}</td>
+                  <td className="py-2 px-2 md:px-3 lg:px-4 sm:py-3.5">
+                    <div className="space-y-1 min-w-[75px] sm:min-w-[100px] md:min-w-[115px]">
                       <span
                         className={`inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-0.5 text-[10px] sm:text-xs font-bold rounded-full border whitespace-nowrap ${loyalty.badge}`}
                       >
@@ -109,12 +109,12 @@ export default function ClientsTable({
                         {client.nivel_fidelidad || "Nuevo"}
                       </span>
                       {/* Barra de progreso animada acorde a su color de rango */}
-                      <div className="w-14 sm:w-24 h-1 sm:h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
+                      <div className="w-14 sm:w-20 md:w-24 h-1 sm:h-1.5 bg-secondary/80 rounded-full overflow-hidden border border-border/50">
                         <div className={`h-full rounded-full ${loyalty.progressWidth} ${loyalty.progressClass}`} />
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <span
                       className={`inline-flex items-center px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold rounded-full border whitespace-nowrap ${
                         isActive ? "badge-glow-success" : "badge-glow-destructive"
@@ -123,46 +123,46 @@ export default function ClientsTable({
                       {isActive ? "Activo" : "Inactivo"}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-right">
+                    <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                       <button
                         type="button"
                         onClick={() => onDetail(client)}
-                        className="p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        className="p-1 sm:p-1.5 hover:bg-accent rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                         title="Ver detalle"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       {canToggle && (
                         <button
                           type="button"
                           onClick={() => onToggleStatus(client)}
-                          className={`p-1.5 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
+                          className={`p-1 sm:p-1.5 hover:bg-accent rounded-lg transition-colors cursor-pointer ${
                             isActive ? "text-emerald-500 hover:text-amber-500" : "text-muted-foreground hover:text-emerald-500"
                           }`}
                           title={isActive ? "Desactivar" : "Activar"}
                         >
-                          <Power className="h-4 w-4" />
+                          <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                       {canEdit && (
                         <button
                           type="button"
                           onClick={() => onEdit(client)}
-                          className="p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
+                          className="p-1 sm:p-1.5 hover:bg-accent text-primary rounded-lg transition-colors cursor-pointer"
                           title="Editar"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                       {canDelete && (
                         <button
                           type="button"
                           onClick={() => onDelete(client)}
-                          className="p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer"
+                          className="p-1 sm:p-1.5 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer"
                           title="Eliminar"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </button>
                       )}
                     </div>

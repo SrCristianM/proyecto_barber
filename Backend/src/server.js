@@ -63,7 +63,7 @@ async function startServer() {
       });
     }
 
-    if (process.env.DISABLE_TUNNEL !== "true") {
+    if (process.env.DISABLE_TUNNEL !== "true" && env.NODE_ENV !== "production") {
       await initGlobalTunnel(PORT);
     }
   });

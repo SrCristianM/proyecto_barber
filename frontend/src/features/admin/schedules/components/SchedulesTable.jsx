@@ -19,24 +19,24 @@ export default function SchedulesTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] sm:min-w-[700px] text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[800px] text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Barbero" field="id_barbero" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">Días</th>
-              <th className="text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">Días</th>
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Hora Inicio" field="hora_inicio" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Hora Fin" field="hora_fin" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="hidden md:table-cell text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">Vigencia</th>
-              <th className="text-left py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="hidden xl:table-cell text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">Vigencia</th>
+              <th className="text-left py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2.5 px-2 sm:py-3.5 sm:px-4 font-semibold">Acciones</th>
+              <th className="text-right py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -49,10 +49,10 @@ export default function SchedulesTable({
             ) : (
               schedules.map((schedule) => (
                 <tr key={schedule.id_horario} className="table-row-accent border-b border-border hover:bg-accent/40 transition-colors">
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <span className="font-semibold text-foreground text-xs sm:text-sm">{getBarberName(schedule.id_barbero)}</span>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <div className="flex flex-wrap gap-1">
                       {(schedule.dias_semana || []).map((dia) => (
                         <span
@@ -64,9 +64,9 @@ export default function SchedulesTable({
                       ))}
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground font-mono text-xs sm:text-sm font-medium">{schedule.hora_inicio}</td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground font-mono text-xs sm:text-sm font-medium">{schedule.hora_fin}</td>
-                  <td className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 text-xs">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground font-mono text-xs sm:text-sm font-medium">{schedule.hora_inicio}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground font-mono text-xs sm:text-sm font-medium">{schedule.hora_fin}</td>
+                  <td className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-xs">
                     {schedule.fecha_inicio || schedule.fecha_fin ? (
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground text-xs">

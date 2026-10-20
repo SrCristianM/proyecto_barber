@@ -12,6 +12,7 @@ import SuppliersPage from "./admin/suppliers/pages/SuppliersPage";
 import PurchasesPage from "./admin/purchases/pages/PurchasesPage";
 import AppointmentsPage from "./admin/appointments/pages/AppointmentsPage";
 import SalesPage from "./admin/sales/pages/SalesPage";
+import SuppliesPage from "./admin/supplies/pages/SuppliesPage";
 import SettingsPage from "./admin/settings/pages/SettingsPage";
 
 import LandingPage from "./landing/pages/LandingPage";
@@ -87,7 +88,9 @@ function ModuleGuard({ moduleName, children }) {
       appointments: "Citas",
       citas: "Citas",
       sales: "Ventas",
-      ventas: "Ventas"
+      ventas: "Ventas",
+      abastecimiento: "Abastecimiento de Insumos",
+      supplies: "Abastecimiento de Insumos"
     };
     return <AccessDenied moduleName={labels[moduleName.toLowerCase()] || moduleName} />;
   }
@@ -243,6 +246,8 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin,
           <Route path="compras" element={<ModuleGuard moduleName="compras"><PurchasesPage /></ModuleGuard>} />
           <Route path="appointments" element={<ModuleGuard moduleName="appointments"><AppointmentsPage /></ModuleGuard>} />
           <Route path="sales" element={<ModuleGuard moduleName="sales"><SalesPage /></ModuleGuard>} />
+          <Route path="abastecimiento" element={<ModuleGuard moduleName="abastecimiento"><SuppliesPage /></ModuleGuard>} />
+          <Route path="supplies" element={<ModuleGuard moduleName="abastecimiento"><SuppliesPage /></ModuleGuard>} />
           <Route path="settings" element={<ModuleGuard moduleName="settings"><SettingsPage isDark={isDark} setIsDark={setIsDark} /></ModuleGuard>} />
         </Route>
 

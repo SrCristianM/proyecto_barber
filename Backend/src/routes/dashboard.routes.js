@@ -15,4 +15,7 @@ router.get("/admin", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONIS
 // Métricas para el portal del barbero
 router.get("/barber", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.BARBERO), DashboardController.getBarberStats);
 
+// Métricas de consumo de insumos por barbero para widgets interactivos del dashboard
+router.get("/supplies", authenticate, authorizeRoles(ROLES.ADMIN, ROLES.RECEPCIONISTA), DashboardController.getSuppliesStats);
+
 export default router;

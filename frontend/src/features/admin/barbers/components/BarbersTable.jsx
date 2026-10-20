@@ -18,23 +18,23 @@ export default function BarbersTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[480px] sm:min-w-[700px] text-left text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[750px] text-left text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/20 text-muted-foreground text-[10px] sm:text-xs uppercase tracking-wider">
-              <th className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Barbero" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Especialidad" field="especialidad" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Correo" field="correo" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">Ocupación Hoy</th>
-              <th className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">
+              <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">Ocupación Hoy</th>
+              <th className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2.5 px-2 sm:py-3.5 sm:px-4 font-bold">Acciones</th>
+              <th className="text-right py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-bold">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -50,22 +50,22 @@ export default function BarbersTable({
                   data-highlight-id={`bar-${barber.id_barbero}`}
                   className="table-row-accent transition-colors"
                 >
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <div className="flex items-center gap-2 sm:gap-3">
                       {barber.imagen_url ? (
                         <img
                           src={barber.imagen_url}
                           alt={`${barber.nombre} ${barber.apellido}`}
-                          className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl object-cover border border-primary/30 shadow-xs shrink-0"
+                          className="w-7 h-7 sm:w-9 md:w-10 sm:h-9 md:h-10 rounded-lg sm:rounded-xl object-cover border border-primary/30 shadow-xs shrink-0"
                         />
                       ) : (
-                        <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
-                          <User className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
+                        <div className="w-7 h-7 sm:w-9 md:w-10 sm:h-9 md:h-10 bg-primary/10 rounded-lg sm:rounded-xl flex items-center justify-center text-primary font-bold border border-primary/20 shrink-0">
+                          <User className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-primary" />
                         </div>
                       )}
-                      <div>
-                        <p className="font-bold text-foreground text-xs sm:text-sm">{barber.nombre} {barber.apellido}</p>
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
+                      <div className="min-w-0">
+                        <p className="font-bold text-foreground text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-none">{barber.nombre} {barber.apellido}</p>
+                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[160px] md:max-w-[180px] lg:max-w-none">
                           {barber.documento && <span>Doc: {barber.documento}</span>}
                           {barber.documento && barber.telefono && <span>•</span>}
                           <span>{barber.telefono || "Sin teléfono"}</span>
@@ -73,9 +73,9 @@ export default function BarbersTable({
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium">{barber.especialidad || "—"}</td>
-                  <td className="hidden md:table-cell py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground text-xs">{barber.correo}</td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium">{barber.especialidad || "—"}</td>
+                  <td className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-muted-foreground text-xs">{barber.correo}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <div className="space-y-1 min-w-[90px] sm:min-w-[125px]">
                       <div className="flex items-center justify-between text-[11px] sm:text-xs">
                         <span className="font-bold text-foreground">{occPct}%</span>

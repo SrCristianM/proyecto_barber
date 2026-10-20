@@ -21,25 +21,25 @@ export default function ServicesTable({
   return (
     <>
       <div className="overflow-x-auto -mx-1 sm:mx-0">
-        <table className="w-full min-w-[500px] sm:min-w-[680px]">
+        <table className="w-full min-w-[500px] md:min-w-0 md:w-full lg:min-w-[680px]">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Servicio" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Categoría" field="id_categoria_servicio" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Duración" field="duracion_minutos" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Precio" field="precio" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2 px-2 sm:py-3 sm:px-4 text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Acciones</th>
+              <th className="text-right py-2 px-2 md:px-3 lg:px-4 sm:py-3 text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody>

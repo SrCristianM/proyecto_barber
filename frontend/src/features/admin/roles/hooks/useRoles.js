@@ -26,7 +26,12 @@ export function useRoles() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((r) => {
             const defs = DEFAULT_ROLE_PERMISSIONS[r.nombre_rol];
-            const perms = r.permisos && r.permisos.length > 0 ? r.permisos : (defs?.permisos || []);
+            let perms = r.permisos && r.permisos.length > 0 ? r.permisos : (defs?.permisos || []);
+            if (Number(r.id_rol) === 1 || (r.nombre_rol && r.nombre_rol?.toLowerCase().trim() === "administrador")) {
+              perms = Array.from(new Set([...perms, ...(defs?.permisos || [])]));
+            } else if (Number(r.id_rol) === 2 || (r.nombre_rol && r.nombre_rol?.toLowerCase().trim() === "recepcionista")) {
+              perms = Array.from(new Set([...perms, "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular"]));
+            }
             return {
               ...r,
               permisos: perms,
@@ -69,11 +74,21 @@ export function useRoles() {
               perms = Array.from(
                 new Set([
                   ...(perms.length > 0 ? perms : defs?.permisos || []),
+                  ...(defs?.permisos || []),
                   "roles_ver",
                   "roles_crear",
                   "roles_editar",
                   "roles_eliminar",
                   "roles_asignar"
+                ])
+              );
+            } else if (Number(r.id_rol) === 2 || (r.nombre_rol && r.nombre_rol.toLowerCase().trim() === "recepcionista")) {
+              perms = Array.from(
+                new Set([
+                  ...(perms.length > 0 ? perms : defs?.permisos || []),
+                  "abastecimiento_ver",
+                  "abastecimiento_crear",
+                  "abastecimiento_anular"
                 ])
               );
             } else if (!perms || perms.length === 0) {

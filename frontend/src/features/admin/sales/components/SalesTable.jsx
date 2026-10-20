@@ -24,27 +24,27 @@ export default function SalesTable({
   return (
     <>
       <div className="overflow-x-auto -mx-1 sm:mx-0">
-        <table className="w-full min-w-[500px] sm:min-w-[700px] text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full xl:min-w-[850px] text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border text-[11px] sm:text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="ID" field="id_venta" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Fecha" field="fecha" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Cliente" field="id_cliente" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold hidden md:table-cell">Cobrado por</th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold hidden sm:table-cell">Artículos</th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold hidden xl:table-cell">Cobrado por</th>
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold hidden lg:table-cell">Artículos</th>
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Total" field="total" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3.5 sm:px-4 font-semibold">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2 px-2 sm:py-3.5 sm:px-4 font-semibold whitespace-nowrap">Acciones</th>
+              <th className="text-right py-2 px-2 md:px-3 lg:px-4 sm:py-3.5 font-semibold whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -57,20 +57,20 @@ export default function SalesTable({
                   data-highlight-id={`sal-${sale.id_venta}`}
                   className="table-row-accent border-b border-border transition-colors"
                 >
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 font-mono text-xs sm:text-sm text-muted-foreground font-bold">#{sale.id_venta}</td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium whitespace-nowrap">{sale.fecha}</td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 font-mono text-xs sm:text-sm text-muted-foreground font-bold">#{sale.id_venta}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium whitespace-nowrap">{sale.fecha}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <div className="flex items-center gap-1.5 sm:gap-2.5">
                       <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 border border-primary/20">
                         <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                       </div>
-                      <span className="font-semibold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[100px] sm:max-w-none">{getClientName(sale.id_cliente, sale)}</span>
+                      <span className="font-semibold text-foreground text-xs sm:text-sm line-clamp-1 max-w-[100px] sm:max-w-[140px] md:max-w-[180px] lg:max-w-none">{getClientName(sale.id_cliente, sale)}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-foreground text-xs sm:text-sm font-medium hidden md:table-cell">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium hidden xl:table-cell">
                     {sale.cobrado_por || sale.usuario_nombre || "Personal de Caja"}
                   </td>
-                  <td className="py-2.5 px-2 sm:py-3.5 sm:px-4 text-muted-foreground text-xs sm:text-sm max-w-[180px] truncate font-medium hidden sm:table-cell">
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-muted-foreground text-xs sm:text-sm max-w-[180px] truncate font-medium hidden lg:table-cell">
                     {(sale.detalles || []).map((d) => d.nombre).join(", ") || "—"}
                   </td>
                   <td className="py-2 px-2 sm:py-3.5 sm:px-4">

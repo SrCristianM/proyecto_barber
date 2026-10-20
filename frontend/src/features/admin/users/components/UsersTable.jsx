@@ -24,22 +24,22 @@ export default function UsersTable({
   return (
     <>
       <div className="overflow-x-auto -mx-1 sm:mx-0">
-        <table className="w-full min-w-[480px] sm:min-w-[650px] text-xs sm:text-sm">
+        <table className="w-full min-w-[480px] md:min-w-0 md:w-full lg:min-w-[650px] text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Usuario" field="nombre" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Rol" field="id_rol" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Fecha Registro" field="fecha_registro" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-left py-2 px-2 sm:py-3 sm:px-4">
+              <th className="text-left py-2 px-2 md:px-3 lg:px-4 sm:py-3">
                 <SortHeader label="Estado" field="estado" current={sortField} dir={sortDir} onSort={onSort} />
               </th>
-              <th className="text-right py-2 px-2 sm:py-3 sm:px-4 text-[11px] sm:text-xs font-medium text-muted-foreground whitespace-nowrap">Acciones</th>
+              <th className="text-right py-2 px-2 md:px-3 lg:px-4 sm:py-3 text-[11px] sm:text-xs font-medium text-muted-foreground whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
           <tbody>

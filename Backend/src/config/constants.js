@@ -22,7 +22,9 @@ export const ESTADOS_CITA = ["Programada", "Completada", "Cancelada", "Reprogram
 
 export const ESTADOS_VENTA = ["Activa", "Anulada"];
 
-export const ESTADOS_COMPRA = ["Registrada", "Anulada"];
+export const ESTADOS_COMPRA = ["Registrada", "Anulado", "Anulada"];
+
+export const ESTADOS_ABASTECIMIENTO = ["Registrado", "Anulado"];
 
 export const ESTADOS_NOVEDAD = ["Pendiente", "Aprobado", "Rechazado"];
 
@@ -50,7 +52,8 @@ export const MODULOS = [
   "horarios",
   "clientes",
   "proveedores",
-  "compras"
+  "compras",
+  "abastecimiento"
 ];
 
 export const PERMISOS_ACCIONES = [

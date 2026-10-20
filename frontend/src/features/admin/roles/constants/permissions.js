@@ -22,7 +22,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
       "proveedores_ver", "proveedores_crear", "proveedores_editar", "proveedores_eliminar", "proveedores_activar",
       "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
       "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
-      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar"
+      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar",
+      "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular", "abastecimiento_editar", "abastecimiento_eliminar"
     ],
     alcancePorPermiso: {}
   },
@@ -37,7 +38,8 @@ export const DEFAULT_ROLE_PERMISSIONS = {
       "proveedores_ver", "proveedores_eliminar",
       "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
       "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
-      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar"
+      "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar",
+      "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular"
     ],
     alcancePorPermiso: {}
   },
@@ -238,6 +240,18 @@ export const SYSTEM_MODULES = [
       { key: "paquetes_crear", label: "Crear Paquetes", accion: "Crear" },
       { key: "paquetes_editar", label: "Editar Paquetes", accion: "Editar" },
       { key: "paquetes_eliminar", label: "Eliminar Paquetes", accion: "Eliminar" }
+    ]
+  },
+  {
+    id: "abastecimiento",
+    label: "Abastecimiento",
+    iconName: "Boxes",
+    acciones: [
+      { key: "abastecimiento_ver", label: "Ver Abastecimiento", accion: "Ver" },
+      { key: "abastecimiento_crear", label: "Registrar Abastecimiento", accion: "Crear" },
+      { key: "abastecimiento_anular", label: "Anular Abastecimiento", accion: "Anular" },
+      { key: "abastecimiento_editar", label: "Editar Abastecimiento", accion: "Editar" },
+      { key: "abastecimiento_eliminar", label: "Eliminar Abastecimiento", accion: "Eliminar" }
     ]
   }
 ];

@@ -16,21 +16,42 @@ export async function initializeDatabase() {
   }
 
   logger.info(`📄 Leyendo esquema desde: ${sqlPath}`);
-  const sqlContent = fs.readFileSync(sqlPath, "utf8");
+  let sqlContent = fs.readFileSync(sqlPath, "utf8");
+
+  // Si la base de datos en la nube tiene otro nombre (por ejemplo 'railway' en Railway)
+  if (env.DB.NAME && env.DB.NAME !== "barberia_db") {
+    sqlContent = sqlContent.replace(/`barberia_db`/g, `\`${env.DB.NAME}\``);
+  }
 
   try {
-    const connection = await mysql.createConnection({
-      host: env.DB.HOST,
-      port: env.DB.PORT,
-      user: env.DB.USER,
-      password: env.DB.PASSWORD,
-      multipleStatements: true
-    });
+    let connection;
+    try {
+      connection = await mysql.createConnection({
+        host: env.DB.HOST,
+        port: env.DB.PORT,
+        user: env.DB.USER,
+        password: env.DB.PASSWORD,
+        database: env.DB.NAME,
+        multipleStatements: true
+      });
+    } catch (connErr) {
+      if (connErr.code === "ER_BAD_DB_ERROR" || connErr.errno === 1049) {
+        connection = await mysql.createConnection({
+          host: env.DB.HOST,
+          port: env.DB.PORT,
+          user: env.DB.USER,
+          password: env.DB.PASSWORD,
+          multipleStatements: true
+        });
+      } else {
+        throw connErr;
+      }
+    }
 
-    logger.info(`🚀 Ejecutando script Database.sql en MySQL...`);
+    logger.info(`🚀 Ejecutando script Database.sql en MySQL [${env.DB.HOST}:${env.DB.PORT}/${env.DB.NAME}]...`);
     await connection.query(sqlContent);
     await connection.end();
-    logger.info(`✅ Base de datos barberia_db inicializada correctamente.`);
+    logger.info(`✅ Base de datos ${env.DB.NAME} inicializada y sincronizada correctamente.`);
     return true;
   } catch (error) {
     logger.error(`❌ Error al inicializar base de datos: ${error.message}`);

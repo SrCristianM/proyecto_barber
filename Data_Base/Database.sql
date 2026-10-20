@@ -682,6 +682,55 @@ LOCK TABLES `venta_detalle` WRITE;
 /*!40000 ALTER TABLE `venta_detalle` DISABLE KEYS */;
 /*!40000 ALTER TABLE `venta_detalle` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `abastecimiento`
+--
+
+DROP TABLE IF EXISTS `abastecimiento`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `abastecimiento` (
+  `id_abastecimiento` int NOT NULL AUTO_INCREMENT,
+  `id_barbero` int NOT NULL,
+  `id_usuario` int NOT NULL,
+  `fecha` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `observaciones` text COLLATE utf8mb4_spanish_ci,
+  `total_estimado` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `estado` enum('Registrado','Anulado') COLLATE utf8mb4_spanish_ci NOT NULL DEFAULT 'Registrado',
+  PRIMARY KEY (`id_abastecimiento`),
+  KEY `fk_abastecimiento_barbero` (`id_barbero`),
+  KEY `fk_abastecimiento_usuario` (`id_usuario`),
+  KEY `idx_abastecimiento_fecha` (`fecha`),
+  CONSTRAINT `fk_abastecimiento_barbero` FOREIGN KEY (`id_barbero`) REFERENCES `barbero` (`id_barbero`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_abastecimiento_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `chk_abastecimiento_total` CHECK ((`total_estimado` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `abastecimiento_detalle`
+--
+
+DROP TABLE IF EXISTS `abastecimiento_detalle`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `abastecimiento_detalle` (
+  `id_abastecimiento_detalle` int NOT NULL AUTO_INCREMENT,
+  `id_abastecimiento` int NOT NULL,
+  `id_producto` int NOT NULL,
+  `cantidad` int NOT NULL,
+  `precio_unitario` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `subtotal` decimal(12,2) NOT NULL DEFAULT '0.00',
+  PRIMARY KEY (`id_abastecimiento_detalle`),
+  KEY `fk_abastecimiento_detalle_abastecimiento` (`id_abastecimiento`),
+  KEY `fk_abastecimiento_detalle_producto` (`id_producto`),
+  CONSTRAINT `fk_abastecimiento_detalle_abastecimiento` FOREIGN KEY (`id_abastecimiento`) REFERENCES `abastecimiento` (`id_abastecimiento`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_abastecimiento_detalle_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `chk_abastecimiento_detalle_cantidad` CHECK ((`cantidad` > 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

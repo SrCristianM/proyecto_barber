@@ -40,7 +40,8 @@ export class MockDataStore {
       { id_modulo: 9, nombre_modulo: "proveedores" },
       { id_modulo: 10, nombre_modulo: "compras" },
       { id_modulo: 11, nombre_modulo: "barberos" },
-      { id_modulo: 12, nombre_modulo: "paquetes" }
+      { id_modulo: 12, nombre_modulo: "paquetes" },
+      { id_modulo: 13, nombre_modulo: "abastecimiento" }
     ];
 
     this.permisos = [
@@ -99,7 +100,12 @@ export class MockDataStore {
       { id_permiso: 53, id_modulo: 7, accion: "activar" },
       { id_permiso: 54, id_modulo: 8, accion: "activar" },
       { id_permiso: 55, id_modulo: 9, accion: "activar" },
-      { id_permiso: 56, id_modulo: 11, accion: "activar" }
+      { id_permiso: 56, id_modulo: 11, accion: "activar" },
+      { id_permiso: 58, id_modulo: 13, accion: "ver" },
+      { id_permiso: 59, id_modulo: 13, accion: "crear" },
+      { id_permiso: 60, id_modulo: 13, accion: "anular" },
+      { id_permiso: 61, id_modulo: 13, accion: "editar" },
+      { id_permiso: 62, id_modulo: 13, accion: "eliminar" }
     ];
 
     this.rol_permisos = [
@@ -116,6 +122,7 @@ export class MockDataStore {
       { id_rol: 2, id_permiso: 37 }, { id_rol: 2, id_permiso: 38 }, { id_rol: 2, id_permiso: 39 }, { id_rol: 2, id_permiso: 40 }, { id_rol: 2, id_permiso: 41 },
       { id_rol: 2, id_permiso: 42 }, { id_rol: 2, id_permiso: 43 }, { id_rol: 2, id_permiso: 44 }, { id_rol: 2, id_permiso: 45 }, { id_rol: 2, id_permiso: 56 },
       { id_rol: 2, id_permiso: 46 }, { id_rol: 2, id_permiso: 47 }, { id_rol: 2, id_permiso: 48 }, { id_rol: 2, id_permiso: 49 },
+      { id_rol: 2, id_permiso: 58 }, { id_rol: 2, id_permiso: 59 }, { id_rol: 2, id_permiso: 60 },
       // Barbero (rol 3): Citas (ver, crear, editar, cancelar), Horarios (ver, crear, editar, eliminar, activar), Servicios (ver), Paquetes (ver), Productos (ver), Clientes (ver), Ventas (ver)
       { id_rol: 3, id_permiso: 9 }, { id_rol: 3, id_permiso: 10 }, { id_rol: 3, id_permiso: 11 }, { id_rol: 3, id_permiso: 12 },
       { id_rol: 3, id_permiso: 25 }, { id_rol: 3, id_permiso: 26 }, { id_rol: 3, id_permiso: 27 }, { id_rol: 3, id_permiso: 28 }, { id_rol: 3, id_permiso: 53 },
@@ -239,6 +246,8 @@ export class MockDataStore {
     this.detalle_compras = [];
     this.ventas = [];
     this.venta_detalles = [];
+    this.abastecimientos = [];
+    this.abastecimiento_detalles = [];
 
     // 2. Cargar datos persistidos en disco si existen
     this.loadFromFile();
@@ -252,7 +261,25 @@ export class MockDataStore {
         if (parsed && typeof parsed === "object") {
           for (const key of Object.keys(parsed)) {
             if (Array.isArray(parsed[key]) && Array.isArray(this[key])) {
-              this[key] = parsed[key];
+              if (key === "modulos") {
+                const defaultModulos = [...this.modulos];
+                this.modulos = parsed.modulos;
+                for (const dm of defaultModulos) {
+                  if (!this.modulos.some((m) => m.id_modulo === dm.id_modulo)) {
+                    this.modulos.push(dm);
+                  }
+                }
+              } else if (key === "permisos") {
+                const defaultPermisos = [...this.permisos];
+                this.permisos = parsed.permisos;
+                for (const dp of defaultPermisos) {
+                  if (!this.permisos.some((p) => p.id_modulo === dp.id_modulo && p.accion === dp.accion)) {
+                    this.permisos.push(dp);
+                  }
+                }
+              } else {
+                this[key] = parsed[key];
+              }
             }
           }
           logger.info(`💾 Datos cargados exitosamente desde persistencia local: ${this.storageFile}`);
@@ -277,6 +304,7 @@ export class MockDataStore {
       { id_rol: 2, id_permiso: 37 }, { id_rol: 2, id_permiso: 38 }, { id_rol: 2, id_permiso: 39 }, { id_rol: 2, id_permiso: 40 }, { id_rol: 2, id_permiso: 41 },
       { id_rol: 2, id_permiso: 42 }, { id_rol: 2, id_permiso: 43 }, { id_rol: 2, id_permiso: 44 }, { id_rol: 2, id_permiso: 45 }, { id_rol: 2, id_permiso: 56 },
       { id_rol: 2, id_permiso: 46 }, { id_rol: 2, id_permiso: 47 }, { id_rol: 2, id_permiso: 48 }, { id_rol: 2, id_permiso: 49 },
+      { id_rol: 2, id_permiso: 57 }, { id_rol: 2, id_permiso: 58 }, { id_rol: 2, id_permiso: 59 },
       { id_rol: 3, id_permiso: 9 }, { id_rol: 3, id_permiso: 10 }, { id_rol: 3, id_permiso: 11 }, { id_rol: 3, id_permiso: 12 },
       { id_rol: 3, id_permiso: 25 }, { id_rol: 3, id_permiso: 26 }, { id_rol: 3, id_permiso: 27 }, { id_rol: 3, id_permiso: 28 }, { id_rol: 3, id_permiso: 53 },
       { id_rol: 3, id_permiso: 13 },
@@ -360,7 +388,9 @@ export class MockDataStore {
         compras: this.compras,
         detalle_compras: this.detalle_compras,
         ventas: this.ventas,
-        venta_detalles: this.venta_detalles
+        venta_detalles: this.venta_detalles,
+        abastecimientos: this.abastecimientos,
+        abastecimiento_detalles: this.abastecimiento_detalles
       };
 
       fs.writeFileSync(this.storageFile, JSON.stringify(snapshot, null, 2), "utf8");

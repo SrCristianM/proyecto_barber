@@ -51,11 +51,55 @@ export function usePermissions() {
       const storedRolesRaw = localStorage.getItem("barber_roles_db");
       if (storedRolesRaw) {
         const storedRoles = JSON.parse(storedRolesRaw);
+        let updatedStorage = false;
+
+        // Auto-sincronizar permisos de nuevos módulos del sistema (como abastecimiento) en la base de datos local
+        storedRoles.forEach((role) => {
+          if (Number(role.id_rol) === 1 || (role.nombre_rol && role.nombre_rol.toLowerCase().trim() === "administrador")) {
+            const adminSupplyPerms = [
+              "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular", "abastecimiento_editar", "abastecimiento_eliminar"
+            ];
+            const missing = adminSupplyPerms.filter((p) => !role.permisos?.includes(p));
+            if (missing.length > 0) {
+              role.permisos = Array.from(new Set([...(role.permisos || []), ...adminSupplyPerms]));
+              updatedStorage = true;
+            }
+          } else if (Number(role.id_rol) === 2 || (role.nombre_rol && role.nombre_rol.toLowerCase().trim() === "recepcionista")) {
+            const recepSupplyPerms = [
+              "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular"
+            ];
+            const missing = recepSupplyPerms.filter((p) => !role.permisos?.includes(p));
+            if (missing.length > 0) {
+              role.permisos = Array.from(new Set([...(role.permisos || []), ...recepSupplyPerms]));
+              updatedStorage = true;
+            }
+          }
+        });
+
+        if (updatedStorage) {
+          try {
+            localStorage.setItem("barber_roles_db", JSON.stringify(storedRoles));
+          } catch {
+            // ignore
+          }
+        }
+
         const currentRole = storedRoles.find((r) => Number(r.id_rol) === Number(roleId));
         if (currentRole && Array.isArray(currentRole.permisos) && currentRole.permisos.length > 0) {
           if (isAdmin) {
-            // Regla de seguridad anti-lockout: Administrador SIEMPRE conserva los permisos de gestión de roles
-            return Array.from(new Set([...currentRole.permisos, ...SYSTEM_ROLES_PERMISSIONS]));
+            // Regla de seguridad anti-lockout: Administrador SIEMPRE conserva los permisos globales y todos los módulos
+            return Array.from(new Set([
+              "*",
+              ...currentRole.permisos,
+              ...SYSTEM_ROLES_PERMISSIONS,
+              "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular", "abastecimiento_editar", "abastecimiento_eliminar"
+            ]));
+          }
+          if (isRecepcionista) {
+            return Array.from(new Set([
+              ...currentRole.permisos,
+              "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular"
+            ]));
           }
           return currentRole.permisos;
         }
@@ -88,7 +132,8 @@ export function usePermissions() {
         "compras_ver", "compras_crear", "compras_editar", "compras_anular", "compras_eliminar",
         "barberos_ver", "barberos_crear", "barberos_editar", "barberos_eliminar", "barberos_activar",
         "paquetes_ver", "paquetes_crear", "paquetes_editar", "paquetes_eliminar",
-        "proveedores_ver", "proveedores_eliminar"
+        "proveedores_ver", "proveedores_eliminar",
+        "abastecimiento_ver", "abastecimiento_crear", "abastecimiento_anular"
       ];
     }
 
@@ -160,6 +205,10 @@ export function usePermissions() {
       compras: "compras",
       sales: "ventas",
       ventas: "ventas",
+      abastecimiento: "abastecimiento",
+      abastecimientos: "abastecimiento",
+      supplies: "abastecimiento",
+      suministros: "abastecimiento",
       reportes: "ventas",
       reports: "ventas",
       users: "usuarios",
@@ -192,8 +241,8 @@ export function usePermissions() {
       return true;
     }
 
-    // El Administrador SIEMPRE tiene acceso al módulo de roles y configuración (regla anti-lockout)
-    if (isAdmin && (mod === "roles" || mod === "configuracion")) {
+    // El Administrador SIEMPRE tiene acceso pleno a todos los módulos del panel administrativo
+    if (isAdmin) {
       return true;
     }
 
@@ -228,12 +277,8 @@ export function usePermissions() {
    * @param {string} action - Acción ('crear', 'editar', 'eliminar', 'ver', 'anular', 'activar', etc.)
    */
   const hasPermission = useCallback((moduleName, action) => {
-    const mod = normalizeModule(moduleName);
-    const act = (action || "").toLowerCase().trim();
-    const permissions = getRolePermissions();
-
-    // El Administrador SIEMPRE tiene permiso pleno sobre el módulo de roles
-    if (isAdmin && mod === "roles") {
+    // El Administrador SIEMPRE tiene permiso pleno para cualquier acción en cualquier módulo
+    if (isAdmin) {
       return true;
     }
 

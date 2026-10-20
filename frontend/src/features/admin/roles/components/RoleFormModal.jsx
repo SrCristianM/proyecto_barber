@@ -137,6 +137,17 @@ const SYSTEM_MODULES = [
       { key: "paquetes_editar", label: "Editar" },
       { key: "paquetes_eliminar", label: "Eliminar" }
     ]
+  },
+  {
+    id: "abastecimiento",
+    label: "Abastecimiento",
+    acciones: [
+      { key: "abastecimiento_ver", label: "Ver" },
+      { key: "abastecimiento_crear", label: "Crear" },
+      { key: "abastecimiento_anular", label: "Anular" },
+      { key: "abastecimiento_editar", label: "Editar" },
+      { key: "abastecimiento_eliminar", label: "Eliminar" }
+    ]
   }
 ];
 

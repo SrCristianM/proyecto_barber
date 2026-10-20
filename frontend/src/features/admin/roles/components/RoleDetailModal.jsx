@@ -18,7 +18,8 @@ import {
   Search,
   Lock,
   CalendarCheck,
-  AlertCircle
+  AlertCircle,
+  Boxes
 } from "lucide-react";
 import Modal from "../../shared/components/Modal";
 import { groupPermissionsByModule, SYSTEM_MODULES } from "../constants/permissions";
@@ -36,6 +37,7 @@ const MODULE_ICONS = {
   compras: ShoppingCart,
   barberos: Scissors,
   paquetes: Layers,
+  abastecimiento: Boxes,
   general: Shield
 };
 
