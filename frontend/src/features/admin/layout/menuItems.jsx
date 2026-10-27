@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Scissors, Calendar, Package,
   DollarSign, Clock, UserCog, Shield, ClipboardList,
-  Building2, ShoppingBag, Boxes
+  Building2, ShoppingBag, Boxes, Layers
 } from "lucide-react";
 
 export const menuSections = [

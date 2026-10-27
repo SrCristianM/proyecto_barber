@@ -160,10 +160,10 @@ export class MockDataStore {
       { id_barbero: 1, id_usuario: 4, especialidad: "Corte Clásico & Fade", imagen_url: null, estado: 1 }
     ];
 
-    // Clientes por defecto
+    // Clientes por defecto (Inician en nivel Nuevo con 0 puntos)
     this.clientes = [
-      { id_cliente: 1, id_usuario: 5, nivel_fidelidad: "Plata", direccion: "Calle 10 # 40-20, Medellín", estado: 1 },
-      { id_cliente: 2, id_usuario: 6, nivel_fidelidad: "Nuevo", direccion: "Carrera 43A # 1-50, Medellín", estado: 1 }
+      { id_cliente: 1, id_usuario: 5, nivel_fidelidad: "Nuevo", puntos_fidelidad: 0, direccion: "Calle 10 # 40-20, Medellín", estado: 1 },
+      { id_cliente: 2, id_usuario: 6, nivel_fidelidad: "Nuevo", puntos_fidelidad: 0, direccion: "Carrera 43A # 1-50, Medellín", estado: 1 }
     ];
 
     this.categoria_servicios = [
@@ -187,8 +187,8 @@ export class MockDataStore {
       { id_categoria_producto: 2, nombre: "Cuidado Barba", estado: 2 },
       { id_categoria_producto: 3, nombre: "Herramientas & Accesorios", estado: 1 }
     ];
-        this.productos = [
-    {
+    this.productos = [
+      {
         "id_producto": 1,
         "nombre": "Pomada Matte Fijación Fuerte",
         "id_categoria_producto": 1,
@@ -203,8 +203,8 @@ export class MockDataStore {
         "presentacion": "Lata metálica de 100g / 3.5 oz",
         "fijacion": "Fuerte (4/5)",
         "acabado": "Mate natural sin brillo"
-    },
-    {
+      },
+      {
         "id_producto": 2,
         "nombre": "Aceite Nutritivo para Barba",
         "id_categoria_producto": 2,
@@ -219,8 +219,8 @@ export class MockDataStore {
         "presentacion": "Frasco de vidrio ámbar con gotero 50ml / 1.7 fl oz",
         "fijacion": "Nutritivo / Suavizante",
         "acabado": "Brillo sutil sedoso"
-    },
-    {
+      },
+      {
         "id_producto": 3,
         "nombre": "Bálsamo Aftershave Calmante",
         "id_categoria_producto": 2,
@@ -235,8 +235,8 @@ export class MockDataStore {
         "presentacion": "Envase ergonómico con dosificador 120ml / 4.0 fl oz",
         "fijacion": "Calmante & Anti-irritación",
         "acabado": "Sensación fresca no grasa"
-    }
-];
+      }
+    ];
     this.proveedores = [];
     this.horarios = [];
     this.novedades = [];
@@ -248,6 +248,11 @@ export class MockDataStore {
     this.venta_detalles = [];
     this.abastecimientos = [];
     this.abastecimiento_detalles = [];
+    this.insumos_bodega = [];
+    this.movimientos_bodega = [];
+    this.entradas_mercancia = [];
+    this.estaciones_barberos = [];
+    this.historial_reposiciones = [];
 
     // 2. Cargar datos persistidos en disco si existen
     this.loadFromFile();
@@ -355,6 +360,263 @@ export class MockDataStore {
       changed = true;
     }
 
+    // Seed de Proveedores si está vacío
+    if (!this.proveedores || this.proveedores.length === 0) {
+      this.proveedores = [
+        {
+          id_proveedor: 1,
+          nombre: "Distribuidora Barber Pro",
+          contacto: "Álvaro Gómez",
+          telefono: "+57 312 456 7890",
+          email: "ventas@barberpro.co",
+          notas: "Distribuidor oficial de cuchillas Derby, desinfectantes y toallas desechables.",
+          estado: 1
+        },
+        {
+          id_proveedor: 2,
+          nombre: "Elegance Cosmetics Co.",
+          contacto: "Laura Restrepo",
+          telefono: "+57 320 654 3210",
+          email: "contacto@elegancecolombia.com",
+          notas: "Proveedor de geles para afeitar, aceites de barba y talcos mentolados.",
+          estado: 1
+        }
+      ];
+      changed = true;
+    }
+
+    // Seed de Insumos de Bodega General si está vacío
+    if (!this.insumos_bodega || this.insumos_bodega.length === 0) {
+      this.insumos_bodega = [
+        {
+          id_insumo: 1,
+          nombre: "Cuchillas Derby Premium (Caja x 100)",
+          categoria: "Afeitado y Corte",
+          stock_actual: 45,
+          stock_minimo: 10,
+          unidad_medida: "Caja",
+          proveedor_id: 1,
+          estado: 1,
+          fecha_creacion: "2026-09-01 10:00:00"
+        },
+        {
+          id_insumo: 2,
+          nombre: "Gel para Afeitar Elegance 500ml",
+          categoria: "Afeitado y Cuidado",
+          stock_actual: 14,
+          stock_minimo: 5,
+          unidad_medida: "Bote 500ml",
+          proveedor_id: 2,
+          estado: 1,
+          fecha_creacion: "2026-09-01 10:00:00"
+        },
+        {
+          id_insumo: 3,
+          nombre: "Alcohol Antiséptico 70% 1000ml",
+          categoria: "Higiene y Desinfección",
+          stock_actual: 9,
+          stock_minimo: 4,
+          unidad_medida: "Frasco 1L",
+          proveedor_id: 1,
+          estado: 1,
+          fecha_creacion: "2026-09-01 10:00:00"
+        },
+        {
+          id_insumo: 4,
+          nombre: "Talco Mentolado Clubman 255g",
+          categoria: "Cuidado Facial",
+          stock_actual: 18,
+          stock_minimo: 6,
+          unidad_medida: "Frasco",
+          proveedor_id: 2,
+          estado: 1,
+          fecha_creacion: "2026-09-01 10:00:00"
+        },
+        {
+          id_insumo: 5,
+          nombre: "Papel Cuello Protector Barbero",
+          categoria: "Protección y Bioseguridad",
+          stock_actual: 3, // ALERTA: <= stock_minimo (5)
+          stock_minimo: 5,
+          unidad_medida: "Paquete x 5 rollos",
+          proveedor_id: 1,
+          estado: 1,
+          fecha_creacion: "2026-09-01 10:00:00"
+        }
+      ];
+      changed = true;
+    }
+
+    // Seed de Estación Barbero (Carlos Rodríguez: id_barbero: 1)
+    if (!this.estaciones_barberos || this.estaciones_barberos.length === 0) {
+      this.estaciones_barberos = [
+        {
+          id_estacion_insumo: 1,
+          id_estacion_item: 1,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 1, // Cuchillas Derby
+          insumo_id: 1,
+          cantidad_asignada: 1,
+          estado_semaforo: "ROJO", // Agotado / requiere reposición urgente
+          fecha_ultima_reposicion: "2026-10-06 10:00:00", // Hace 15 días
+          fecha_cambio_estado: "2026-10-21 08:30:00",
+          notas: "Cuchillas Derby agotadas, solicitando reposición"
+        },
+        {
+          id_estacion_insumo: 2,
+          id_estacion_item: 2,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 2, // Gel Elegance
+          insumo_id: 2,
+          cantidad_asignada: 1,
+          estado_semaforo: "AMARILLO", // Por agotarse
+          fecha_ultima_reposicion: "2026-10-12 11:00:00", // Hace 9 días
+          fecha_cambio_estado: "2026-10-20 16:15:00",
+          notas: "Queda poco gel de afeitar"
+        },
+        {
+          id_estacion_insumo: 3,
+          id_estacion_item: 3,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 3, // Alcohol 70%
+          insumo_id: 3,
+          cantidad_asignada: 1,
+          estado_semaforo: "VERDE", // Lleno
+          fecha_ultima_reposicion: "2026-10-18 09:00:00", // Hace 3 días
+          fecha_cambio_estado: "2026-10-18 09:00:00",
+          notas: "En uso activo"
+        },
+        {
+          id_estacion_insumo: 4,
+          id_estacion_item: 4,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 4, // Talco Mentolado
+          insumo_id: 4,
+          cantidad_asignada: 1,
+          estado_semaforo: "VERDE", // Lleno
+          fecha_ultima_reposicion: "2026-10-14 14:00:00", // Hace 7 días
+          fecha_cambio_estado: "2026-10-14 14:00:00",
+          notas: "En uso activo"
+        }
+      ];
+      changed = true;
+    }
+
+    // Seed de Historial de Reposiciones
+    if (!this.historial_reposiciones || this.historial_reposiciones.length === 0) {
+      this.historial_reposiciones = [
+        {
+          id_historial: 1,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 1,
+          insumo_id: 1,
+          cantidad_entregada: 1,
+          fecha_reposicion: "2026-10-06 10:00:00",
+          dias_duracion_anterior: 14
+        },
+        {
+          id_historial: 2,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 1,
+          insumo_id: 1,
+          cantidad_entregada: 1,
+          fecha_reposicion: "2026-09-22 10:00:00",
+          dias_duracion_anterior: 13
+        },
+        {
+          id_historial: 3,
+          id_barbero: 1,
+          barbero_id: 1,
+          id_insumo: 2,
+          insumo_id: 2,
+          cantidad_entregada: 1,
+          fecha_reposicion: "2026-10-12 11:00:00",
+          dias_duracion_anterior: 18
+        }
+      ];
+      changed = true;
+    }
+
+    // Asegurar costo_unitario en insumos_bodega
+    const defaultCosts = {
+      1: 12000, // Cuchillas Derby Premium (Caja x 100)
+      2: 18000, // Gel para Afeitar Elegance 500ml
+      3: 9500,  // Alcohol Antiséptico 70% 1000ml
+      4: 22000, // Talco Mentolado Clubman 255g
+      5: 14000  // Papel Cuello Protector Barbero
+    };
+    (this.insumos_bodega || []).forEach((item) => {
+      if (!item.costo_unitario || Number(item.costo_unitario) === 0) {
+        item.costo_unitario = defaultCosts[item.id_insumo] || 15000;
+        changed = true;
+      }
+    });
+
+    // Seed de Abastecimientos (Vales de Despacho) si está vacío
+    if (!this.abastecimientos || this.abastecimientos.length === 0) {
+      this.abastecimientos = [
+        {
+          id_abastecimiento: 1,
+          id_barbero: 1,
+          id_usuario: 1,
+          fecha: "2026-10-06 10:00:00",
+          observaciones: "Reposición aprobada: 1 un. de Cuchillas Derby Premium",
+          total_estimado: 12000,
+          estado: "Registrado"
+        },
+        {
+          id_abastecimiento: 2,
+          id_barbero: 1,
+          id_usuario: 1,
+          fecha: "2026-10-12 11:00:00",
+          observaciones: "Reposición aprobada: 1 un. de Gel para Afeitar Elegance 500ml",
+          total_estimado: 18000,
+          estado: "Registrado"
+        },
+        {
+          id_abastecimiento: 3,
+          id_barbero: 1,
+          id_usuario: 1,
+          fecha: "2026-10-14 14:00:00",
+          observaciones: "Reposición aprobada: 1 un. de Talco Mentolado Clubman 255g",
+          total_estimado: 22000,
+          estado: "Registrado"
+        },
+        {
+          id_abastecimiento: 4,
+          id_barbero: 1,
+          id_usuario: 1,
+          fecha: "2026-10-18 09:00:00",
+          observaciones: "Reposición aprobada: 1 un. de Alcohol Antiséptico 70% 1000ml",
+          total_estimado: 9500,
+          estado: "Registrado"
+        },
+        {
+          id_abastecimiento: 5,
+          id_barbero: 1,
+          id_usuario: 1,
+          fecha: "2026-10-21 19:31:15",
+          observaciones: "Reposición aprobada: 1 un. de Cuchillas Derby Premium",
+          total_estimado: 12000,
+          estado: "Registrado"
+        }
+      ];
+      this.abastecimiento_detalles = [
+        { id_abastecimiento_detalle: 1, id_abastecimiento: 1, id_producto: 1, cantidad: 1, precio_unitario: 12000, subtotal: 12000 },
+        { id_abastecimiento_detalle: 2, id_abastecimiento: 2, id_producto: 2, cantidad: 1, precio_unitario: 18000, subtotal: 18000 },
+        { id_abastecimiento_detalle: 3, id_abastecimiento: 3, id_producto: 4, cantidad: 1, precio_unitario: 22000, subtotal: 22000 },
+        { id_abastecimiento_detalle: 4, id_abastecimiento: 4, id_producto: 3, cantidad: 1, precio_unitario: 9500, subtotal: 9500 },
+        { id_abastecimiento_detalle: 5, id_abastecimiento: 5, id_producto: 1, cantidad: 1, precio_unitario: 12000, subtotal: 12000 }
+      ];
+      changed = true;
+    }
+
     if (changed) {
       this.saveToFile();
     }
@@ -390,7 +652,12 @@ export class MockDataStore {
         ventas: this.ventas,
         venta_detalles: this.venta_detalles,
         abastecimientos: this.abastecimientos,
-        abastecimiento_detalles: this.abastecimiento_detalles
+        abastecimiento_detalles: this.abastecimiento_detalles,
+        insumos_bodega: this.insumos_bodega,
+        movimientos_bodega: this.movimientos_bodega || [],
+        entradas_mercancia: this.entradas_mercancia,
+        estaciones_barberos: this.estaciones_barberos,
+        historial_reposiciones: this.historial_reposiciones
       };
 
       fs.writeFileSync(this.storageFile, JSON.stringify(snapshot, null, 2), "utf8");

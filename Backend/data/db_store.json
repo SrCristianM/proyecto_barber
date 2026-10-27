@@ -943,7 +943,7 @@
       "nombre": "Cristian",
       "apellido": "Mazo",
       "correo": "cristianmazo957@gmail.com",
-      "contrasena": "$2a$10$E/4s35v5czZtfSBhOLIFDuqQTlhWLfdetgU34S5vAQDw1s1QGhyPG",
+      "contrasena": "$2a$10$SArstW6ylaUvq4eenYC7eu5WIYlJSFhnYKC7LqChNAb7UvOa4wWV6",
       "telefono": "+57 300 987 6543",
       "id_rol": 1,
       "estado": 1,
@@ -973,7 +973,8 @@
       "estado": 1,
       "fecha_registro": "2026-03-10 09:00:00",
       "documento": "1000000003",
-      "avatar_url": ""
+      "imagen_url": null,
+      "avatar_url": null
     },
     {
       "id_usuario": 7,
@@ -1014,18 +1015,6 @@
       "fecha_registro": "2026-10-06 00:43:12"
     },
     {
-      "id_usuario": 5,
-      "nombre": "Juan",
-      "apellido": "Pérez",
-      "documento": "1000000005",
-      "correo": "cliente@example.com",
-      "contrasena": "$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.",
-      "telefono": "+57 310 123 4567",
-      "id_rol": 4,
-      "estado": 1,
-      "fecha_registro": "2026-04-05 10:00:00"
-    },
-    {
       "id_usuario": 13,
       "nombre": "cristian",
       "apellido": "meidna",
@@ -1036,6 +1025,18 @@
       "id_rol": 3,
       "estado": 1,
       "fecha_registro": "2026-10-19 23:25:39"
+    },
+    {
+      "id_usuario": 5,
+      "nombre": "Juan",
+      "apellido": "Pérez",
+      "documento": "1000000005",
+      "correo": "cliente@example.com",
+      "contrasena": "$2a$10$lumBsO42oC1EdmksF1JhreBeDcE5VffsLgTD0UHqM9gyuKX3kTy9.",
+      "telefono": "+57 310 123 4567",
+      "id_rol": 4,
+      "estado": 1,
+      "fecha_registro": "2026-04-05 10:00:00"
     }
   ],
   "barberos": [
@@ -1043,7 +1044,7 @@
       "id_barbero": 1,
       "id_usuario": 4,
       "especialidad": "Corte Clásico & Fade",
-      "imagen_url": "",
+      "imagen_url": null,
       "estado": 1
     },
     {
@@ -1138,7 +1139,8 @@
       "id_categoria_servicio": 3,
       "duracion_minutos": 60,
       "precio": 30000,
-      "estado": 1
+      "estado": 1,
+      "imagen_url": ""
     },
     {
       "id_servicio": 6,
@@ -1150,8 +1152,26 @@
       "estado": 1
     }
   ],
-  "paquete_servicios": [],
-  "paquete_servicio_detalles": [],
+  "paquete_servicios": [
+    {
+      "id_paquete": 1,
+      "nombre": "combo premium",
+      "descuento_porcentaje": 10,
+      "estado": 1
+    }
+  ],
+  "paquete_servicio_detalles": [
+    {
+      "id_paquete_detalle": 1,
+      "id_paquete": 1,
+      "id_servicio": 2
+    },
+    {
+      "id_paquete_detalle": 2,
+      "id_paquete": 1,
+      "id_servicio": 4
+    }
+  ],
   "categoria_productos": [
     {
       "id_categoria_producto": 1,
@@ -1270,26 +1290,66 @@
   ],
   "horarios": [
     {
-      "id_horario": 1,
-      "id_barbero": 1,
+      "id_horario": 11,
+      "id_barbero": 2,
+      "dia_semana": "Viernes",
+      "hora_inicio": "08:00:00",
+      "hora_fin": "18:00:00",
+      "estado": 1
+    },
+    {
+      "id_horario": 12,
+      "id_barbero": 2,
+      "dia_semana": "Sabado",
+      "hora_inicio": "08:00:00",
+      "hora_fin": "18:00:00",
+      "estado": 1
+    },
+    {
+      "id_horario": 13,
+      "id_barbero": 3,
       "dia_semana": "Lunes",
       "hora_inicio": "08:00:00",
       "hora_fin": "18:00:00",
       "estado": 1
     },
     {
-      "id_horario": 2,
-      "id_barbero": 1,
+      "id_horario": 14,
+      "id_barbero": 3,
       "dia_semana": "Martes",
-      "hora_inicio": "09:00:00",
+      "hora_inicio": "08:00:00",
       "hora_fin": "18:00:00",
       "estado": 1
     },
     {
-      "id_horario": 3,
-      "id_barbero": 1,
+      "id_horario": 15,
+      "id_barbero": 3,
       "dia_semana": "Miercoles",
-      "hora_inicio": "09:00:00",
+      "hora_inicio": "08:00:00",
+      "hora_fin": "18:00:00",
+      "estado": 1
+    },
+    {
+      "id_horario": 16,
+      "id_barbero": 3,
+      "dia_semana": "Jueves",
+      "hora_inicio": "08:00:00",
+      "hora_fin": "18:00:00",
+      "estado": 1
+    },
+    {
+      "id_horario": 17,
+      "id_barbero": 3,
+      "dia_semana": "Viernes",
+      "hora_inicio": "08:00:00",
+      "hora_fin": "18:00:00",
+      "estado": 1
+    },
+    {
+      "id_horario": 18,
+      "id_barbero": 3,
+      "dia_semana": "Sabado",
+      "hora_inicio": "08:00:00",
       "hora_fin": "18:00:00",
       "estado": 1
     }
@@ -1422,6 +1482,33 @@
       "hora": "09:30:00",
       "estado": "Programada",
       "fecha_registro": "2026-10-19 23:46:03"
+    },
+    {
+      "id_cita": 18,
+      "id_cliente": 6,
+      "id_barbero": 1,
+      "fecha": "2026-10-26",
+      "hora": "17:00:00",
+      "estado": "Programada",
+      "fecha_registro": "2026-10-24 04:34:54"
+    },
+    {
+      "id_cita": 19,
+      "id_cliente": 6,
+      "id_barbero": 1,
+      "fecha": "2026-10-27",
+      "hora": "16:00:00",
+      "estado": "Cancelada",
+      "fecha_registro": "2026-10-24 04:41:48"
+    },
+    {
+      "id_cita": 20,
+      "id_cliente": 6,
+      "id_barbero": 2,
+      "fecha": "2026-10-26",
+      "hora": "15:00:00",
+      "estado": "Programada",
+      "fecha_registro": "2026-10-24 04:47:57"
     }
   ],
   "cita_detalles": [
@@ -1536,6 +1623,24 @@
     {
       "id_cita_detalle": 25,
       "id_cita": 17,
+      "id_servicio": 1,
+      "precio": 15000
+    },
+    {
+      "id_cita_detalle": 26,
+      "id_cita": 18,
+      "id_servicio": 1,
+      "precio": 15000
+    },
+    {
+      "id_cita_detalle": 27,
+      "id_cita": 19,
+      "id_servicio": 1,
+      "precio": 15000
+    },
+    {
+      "id_cita_detalle": 28,
+      "id_cita": 20,
       "id_servicio": 1,
       "precio": 15000
     }
@@ -1780,6 +1885,24 @@
       "fecha": "2026-10-07 21:06:20",
       "total": 30000,
       "estado": "Activa"
+    },
+    {
+      "id_venta": 13,
+      "id_cita": null,
+      "id_cliente": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-23 23:49:59",
+      "total": 15000,
+      "estado": "Anulada"
+    },
+    {
+      "id_venta": 14,
+      "id_cita": null,
+      "id_cliente": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-23 23:57:01",
+      "total": 15000,
+      "estado": "Anulada"
     }
   ],
   "venta_detalles": [
@@ -1912,8 +2035,477 @@
       "cantidad": 2,
       "precio_unitario": 15000,
       "subtotal": 30000
+    },
+    {
+      "id_venta_detalle": 14,
+      "id_venta": 13,
+      "tipo_item": "Servicio",
+      "id_producto": null,
+      "id_servicio": 1,
+      "cantidad": 1,
+      "precio_unitario": 15000,
+      "subtotal": 15000
+    },
+    {
+      "id_venta_detalle": 15,
+      "id_venta": 14,
+      "tipo_item": "Servicio",
+      "id_producto": null,
+      "id_servicio": 1,
+      "cantidad": 1,
+      "precio_unitario": 15000,
+      "subtotal": 15000
     }
   ],
-  "abastecimientos": [],
-  "abastecimiento_detalles": []
+  "abastecimientos": [
+    {
+      "id_abastecimiento": 1,
+      "id_barbero": 3,
+      "id_usuario": 1,
+      "fecha": "2026-10-21 18:44:02",
+      "observaciones": "Despacho de consumibles e insumos para servicios",
+      "total_estimado": 32000,
+      "estado": "Anulado"
+    },
+    {
+      "id_abastecimiento": 2,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-22 15:08:50",
+      "observaciones": "Despacho por viaje del administrador (cobertura extendida)",
+      "total_estimado": 0,
+      "estado": "Anulado"
+    },
+    {
+      "id_abastecimiento": 3,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-22 15:36:43",
+      "observaciones": "Aprobación de solicitud con 2 unidades para turno",
+      "total_estimado": 24000,
+      "estado": "Registrado"
+    },
+    {
+      "id_abastecimiento": 4,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-22 15:46:00",
+      "observaciones": "Test restock approval",
+      "total_estimado": 36000,
+      "estado": "Registrado"
+    },
+    {
+      "id_abastecimiento": 5,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-23 23:52:52",
+      "observaciones": "Reposición aprobada: 1 un. de Talco Mentolado Clubman 255g",
+      "total_estimado": 22000,
+      "estado": "Registrado"
+    },
+    {
+      "id_abastecimiento": 6,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-23 23:53:10",
+      "observaciones": "Despacho de reposición aprobado para Carlos Rodríguez",
+      "total_estimado": 18000,
+      "estado": "Registrado"
+    },
+    {
+      "id_abastecimiento": 7,
+      "id_barbero": 1,
+      "id_usuario": 1,
+      "fecha": "2026-10-23 23:53:10",
+      "observaciones": "Despacho de reposición aprobado para Carlos Rodríguez",
+      "total_estimado": 1000,
+      "estado": "Registrado"
+    }
+  ],
+  "abastecimiento_detalles": [
+    {
+      "id_abastecimiento_detalle": 1,
+      "id_abastecimiento": 1,
+      "id_producto": 1,
+      "cantidad": 1,
+      "precio_unitario": 32000,
+      "subtotal": 32000
+    },
+    {
+      "id_abastecimiento_detalle": 2,
+      "id_abastecimiento": 2,
+      "id_producto": 1,
+      "cantidad": 2,
+      "precio_unitario": 0,
+      "subtotal": 0
+    },
+    {
+      "id_abastecimiento_detalle": 3,
+      "id_abastecimiento": 3,
+      "id_producto": 1,
+      "cantidad": 2,
+      "precio_unitario": 12000,
+      "subtotal": 24000
+    },
+    {
+      "id_abastecimiento_detalle": 4,
+      "id_abastecimiento": 4,
+      "id_producto": 1,
+      "cantidad": 3,
+      "precio_unitario": 12000,
+      "subtotal": 36000
+    },
+    {
+      "id_abastecimiento_detalle": 5,
+      "id_abastecimiento": 5,
+      "id_producto": 4,
+      "cantidad": 1,
+      "precio_unitario": 22000,
+      "subtotal": 22000
+    },
+    {
+      "id_abastecimiento_detalle": 6,
+      "id_abastecimiento": 6,
+      "id_producto": 2,
+      "cantidad": 1,
+      "precio_unitario": 18000,
+      "subtotal": 18000
+    },
+    {
+      "id_abastecimiento_detalle": 7,
+      "id_abastecimiento": 7,
+      "id_producto": 3,
+      "cantidad": 1,
+      "precio_unitario": 1000,
+      "subtotal": 1000
+    }
+  ],
+  "insumos_bodega": [
+    {
+      "id_insumo": 1,
+      "nombre": "Cuchillas Derby Premium (Caja x 100)",
+      "categoria": "Afeitado y Corte",
+      "stock_actual": 38,
+      "stock_minimo": 10,
+      "unidad_medida": "Caja",
+      "proveedor_id": 1,
+      "estado": 1,
+      "fecha_creacion": "2026-09-01 10:00:00",
+      "costo_unitario": 12000
+    },
+    {
+      "id_insumo": 2,
+      "nombre": "Gel para Afeitar Elegance 500ml",
+      "categoria": "Afeitado y Cuidado",
+      "stock_actual": 12,
+      "stock_minimo": 5,
+      "unidad_medida": "Bote 500ml",
+      "proveedor_id": 2,
+      "estado": 1,
+      "fecha_creacion": "2026-09-01 10:00:00",
+      "costo_unitario": 18000
+    },
+    {
+      "id_insumo": 3,
+      "nombre": "Alcohol Antiséptico 70% 1000ml",
+      "categoria": "Higiene y Desinfección",
+      "stock_actual": 9,
+      "stock_minimo": 4,
+      "unidad_medida": "Frasco 1L",
+      "proveedor_id": 1,
+      "estado": 1,
+      "fecha_creacion": "2026-09-01 10:00:00",
+      "costo_unitario": 1000,
+      "id_proveedor": 1
+    },
+    {
+      "id_insumo": 4,
+      "nombre": "Talco Mentolado Clubman 255g",
+      "categoria": "Cuidado Facial",
+      "stock_actual": 17,
+      "stock_minimo": 6,
+      "unidad_medida": "Frasco",
+      "proveedor_id": 2,
+      "estado": 1,
+      "fecha_creacion": "2026-09-01 10:00:00",
+      "costo_unitario": 22000
+    },
+    {
+      "id_insumo": 5,
+      "nombre": "Papel Cuello Protector Barbero",
+      "categoria": "Protección y Bioseguridad",
+      "stock_actual": 13,
+      "stock_minimo": 5,
+      "unidad_medida": "Paquete x 5 rollos",
+      "proveedor_id": 1,
+      "estado": 1,
+      "fecha_creacion": "2026-09-01 10:00:00",
+      "costo_unitario": 5000
+    }
+  ],
+  "movimientos_bodega": [
+    {
+      "id_movimiento": 1,
+      "id_insumo": 3,
+      "tipo_movimiento": "Cargo por ajuste",
+      "cantidad": 1,
+      "stock_anterior": 9,
+      "stock_nuevo": 10,
+      "observaciones": "ejemplo",
+      "fecha_movimiento": "2026-10-23 22:32:07"
+    },
+    {
+      "id_movimiento": 2,
+      "id_insumo": 3,
+      "tipo_movimiento": "Cargo por ajuste",
+      "cantidad": 1,
+      "stock_anterior": 9,
+      "stock_nuevo": 10,
+      "observaciones": "ejemplo 2",
+      "fecha_movimiento": "2026-10-23 23:58:26"
+    },
+    {
+      "id_movimiento": 3,
+      "id_insumo": 3,
+      "tipo_movimiento": "Descargo por ajuste",
+      "cantidad": 1,
+      "stock_anterior": 10,
+      "stock_nuevo": 9,
+      "observaciones": "ejemplo 2",
+      "fecha_movimiento": "2026-10-24 00:03:09"
+    }
+  ],
+  "entradas_mercancia": [
+    {
+      "id_entrada": 1,
+      "id_insumo": 5,
+      "id_proveedor": 1,
+      "cantidad_ingresada": 10,
+      "costo_unitario": 5000,
+      "fecha_ingreso": "2026-10-23 18:36:56",
+      "observaciones": "Carga de mercancía desde proveedor"
+    },
+    {
+      "id_entrada": 2,
+      "id_insumo": 3,
+      "id_proveedor": 1,
+      "cantidad_ingresada": 1,
+      "costo_unitario": 1000,
+      "fecha_ingreso": "2026-10-23 18:39:28",
+      "observaciones": "Carga de mercancía desde proveedor",
+      "estado": 0,
+      "fecha_anulacion": "2026-10-24 00:01:19",
+      "motivo_anulacion": "Mercancía en mal estado devuelta al proveedor"
+    },
+    {
+      "id_entrada": 3,
+      "id_insumo": 3,
+      "id_proveedor": 1,
+      "cantidad_ingresada": 10,
+      "costo_unitario": 1000,
+      "fecha_ingreso": "2026-10-23 19:30:41",
+      "observaciones": "Carga de mercancía desde proveedor",
+      "estado": 0,
+      "fecha_anulacion": "2026-10-24 00:31:03",
+      "motivo_anulacion": "error de cargue"
+    }
+  ],
+  "estaciones_barberos": [
+    {
+      "id_estacion_item": 1,
+      "barbero_id": 1,
+      "insumo_id": 1,
+      "cantidad_asignada": 3,
+      "estado_semaforo": "VERDE",
+      "fecha_ultima_reposicion": "2026-10-22 15:46:00",
+      "fecha_cambio_estado": "2026-10-22 15:46:00",
+      "notas": "Repuesto (3 un.) el 2026-10-22. Duración ciclo anterior: 0 días.",
+      "id_estacion_insumo": 1,
+      "id_barbero": 1,
+      "id_insumo": 1
+    },
+    {
+      "id_estacion_item": 2,
+      "barbero_id": 1,
+      "insumo_id": 2,
+      "cantidad_asignada": 1,
+      "estado_semaforo": "VERDE",
+      "fecha_ultima_reposicion": "2026-10-23 23:53:10",
+      "fecha_cambio_estado": "2026-10-24 09:13:59",
+      "notas": "En uso óptimo",
+      "id_estacion_insumo": 2,
+      "id_barbero": 1,
+      "id_insumo": 2
+    },
+    {
+      "id_estacion_item": 3,
+      "barbero_id": 1,
+      "insumo_id": 3,
+      "cantidad_asignada": 1,
+      "estado_semaforo": "VERDE",
+      "fecha_ultima_reposicion": "2026-10-23 23:53:10",
+      "fecha_cambio_estado": "2026-10-23 23:53:10",
+      "id_estacion_insumo": 3,
+      "id_barbero": 1,
+      "id_insumo": 3,
+      "notas": "Repuesto (1 un.) el 2026-10-23. Duración ciclo anterior: 5 días."
+    },
+    {
+      "id_estacion_item": 4,
+      "barbero_id": 1,
+      "insumo_id": 4,
+      "cantidad_asignada": 1,
+      "estado_semaforo": "VERDE",
+      "fecha_ultima_reposicion": "2026-10-23 23:52:52",
+      "fecha_cambio_estado": "2026-10-23 23:52:52",
+      "id_estacion_insumo": 4,
+      "id_barbero": 1,
+      "id_insumo": 4,
+      "notas": "Repuesto (1 un.) el 2026-10-23. Duración ciclo anterior: 9 días."
+    },
+    {
+      "id_estacion_insumo": 5,
+      "id_barbero": 2,
+      "id_insumo": 1,
+      "cantidad_asignada": 1,
+      "estado_semaforo": "VERDE",
+      "fecha_ultima_reposicion": "2026-10-21 20:02:19",
+      "fecha_cambio_estado": "2026-10-21 20:02:19",
+      "notas": "Estación de Esteban Mejía",
+      "id_estacion_item": 5,
+      "barbero_id": 2,
+      "insumo_id": 1
+    }
+  ],
+  "historial_reposiciones": [
+    {
+      "id_historial": 1,
+      "barbero_id": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-06 10:00:00",
+      "dias_duracion_anterior": 14,
+      "id_barbero": 1,
+      "id_insumo": 1
+    },
+    {
+      "id_historial": 2,
+      "barbero_id": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-09-22 10:00:00",
+      "dias_duracion_anterior": 13,
+      "id_barbero": 1,
+      "id_insumo": 1
+    },
+    {
+      "id_historial": 3,
+      "barbero_id": 1,
+      "insumo_id": 2,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-12 11:00:00",
+      "dias_duracion_anterior": 18,
+      "id_barbero": 1,
+      "id_insumo": 2
+    },
+    {
+      "id_historial": 4,
+      "id_barbero": 1,
+      "id_insumo": 1,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-21 19:31:15",
+      "dias_duracion_anterior": 15,
+      "observaciones": "Reposición aprobada. Ciclo de uso anterior: 15 días.",
+      "barbero_id": 1,
+      "insumo_id": 1
+    },
+    {
+      "id_historial": 5,
+      "id_barbero": 1,
+      "id_insumo": 1,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-21 20:01:57",
+      "dias_duracion_anterior": 9,
+      "observaciones": "Reposición aprobada. Ciclo de uso anterior: 9 días.",
+      "barbero_id": 1,
+      "insumo_id": 1
+    },
+    {
+      "id_historial": 6,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-21 20:07:36",
+      "dias_duracion_anterior": 0,
+      "observaciones": "Entrega de caja de cuchillas a puesto principal"
+    },
+    {
+      "id_historial": 7,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 2,
+      "fecha_reposicion": "2026-10-22 15:08:50",
+      "dias_duracion_anterior": 0,
+      "observaciones": "Despacho manual registrado (2 un. asignadas para cubrir período). Duración ciclo anterior: 0 días."
+    },
+    {
+      "id_historial": 8,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 2,
+      "fecha_reposicion": "2026-10-22 15:36:43",
+      "dias_duracion_anterior": 0,
+      "observaciones": "Aprobación de solicitud con 2 unidades para turno"
+    },
+    {
+      "id_historial": 9,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 1,
+      "insumo_id": 1,
+      "cantidad_entregada": 3,
+      "fecha_reposicion": "2026-10-22 15:46:00",
+      "dias_duracion_anterior": 0,
+      "observaciones": "Test restock approval"
+    },
+    {
+      "id_historial": 10,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 4,
+      "insumo_id": 4,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-23 23:52:52",
+      "dias_duracion_anterior": 9,
+      "observaciones": "Reposición aprobada (1 un.). Ciclo de uso anterior: 9 días."
+    },
+    {
+      "id_historial": 11,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 2,
+      "insumo_id": 2,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-23 23:53:10",
+      "dias_duracion_anterior": 2,
+      "observaciones": "Despacho de reposición aprobado para Carlos Rodríguez"
+    },
+    {
+      "id_historial": 12,
+      "id_barbero": 1,
+      "barbero_id": 1,
+      "id_insumo": 3,
+      "insumo_id": 3,
+      "cantidad_entregada": 1,
+      "fecha_reposicion": "2026-10-23 23:53:10",
+      "dias_duracion_anterior": 5,
+      "observaciones": "Despacho de reposición aprobado para Carlos Rodríguez"
+    }
+  ]
 }

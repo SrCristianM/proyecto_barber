@@ -12,86 +12,27 @@ import ViewModeToggle from "../../shared/components/ViewModeToggle";
 import { useServicePackages } from "../hooks/useServicePackages";
 import { validateServicePackageForm } from "../validations/serviceValidation";
 
-export default function ServicePackagesView() {
-  const [viewMode, setViewMode] = useState("cards");
-
-  const {
-    packages = [],
-    filteredPackages,
-    searchTerm,
-    setSearchTerm,
-    statusFilter,
-    setStatusFilter,
-    formData,
-    setFormData,
-    showCreateModal,
-    setShowCreateModal,
-    showEditModal,
-    setShowEditModal,
-    showDeactivateModal,
-    setShowDeactivateModal,
-    showDeleteModal,
-    setShowDeleteModal,
-    selectedPackage,
-    setSelectedPackage,
-    resetForm,
-    handleCreate,
-    handleEdit,
-    handleDelete,
-    toggleStatus,
-    openEditModal,
-    openDeactivateModal,
-    openDeleteModal,
-    toggleServiceInForm,
-    getServiceNames,
-    availableServicesList
-  } = useServicePackages();
-
-  const [formErrors, setFormErrors] = useState({});
-
-  const onHandleDelete = () => {
-    if (selectedPackage) {
-      handleDelete(selectedPackage.id_paquete);
-    }
-  };
-
-  const onHandleCreate = () => {
-    const result = validateServicePackageForm(formData);
-    if (!result.isValid) {
-      setFormErrors(result.errors);
-      return;
-    }
-    setFormErrors({});
-    handleCreate();
-  };
-
-  const onHandleEdit = () => {
-    const result = validateServicePackageForm(formData);
-    if (!result.isValid) {
-      setFormErrors(result.errors);
-      return;
-    }
-    setFormErrors({});
-    handleEdit();
-  };
-
-  const onToggleStatus = () => {
-    toggleStatus(selectedPackage?.id_paquete);
-    setShowDeactivateModal(false);
-    setSelectedPackage(null);
-  };
-
-  // Cálculo de valor acumulado y precio con descuento
+function PackageForm({
+  formData,
+  setFormData,
+  formErrors,
+  setFormErrors,
+  availableServicesList = [],
+  toggleServiceInForm,
+  onSubmit,
+  onCancel,
+  isEdit = false
+}) {
   const selectedServices = availableServicesList.filter((s) =>
     (formData.servicios_ids || []).includes(s.id_servicio)
   );
-  const basePrice = selectedServices.reduce((sum, s) => sum + Number(s.precio), 0);
+  const basePrice = selectedServices.reduce((sum, s) => sum + Number(s.precio || 0), 0);
   const totalDurationMin = selectedServices.reduce((sum, s) => sum + Number(s.duracion_minutos || 0), 0);
   const discountRate = Number(formData.descuento_porcentaje) || 0;
   const finalPrice = Math.max(0, basePrice * (1 - discountRate / 100));
   const savedAmount = Math.max(0, basePrice - finalPrice);
 
-  const PackageForm = ({ onSubmit, onCancel, isEdit = false }) => (
+  return (
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-6" noValidate>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Columna Izquierda: Formulario de Configuración (7 cols) */}
@@ -118,7 +59,6 @@ export default function ServicePackagesView() {
               }`}
               placeholder="Ej: Combo Ejecutivo (Corte + Barba + Exfoliación)..."
               required
-              autoFocus
             />
             <FormFieldError error={formErrors.nombre} />
           </div>
@@ -307,6 +247,78 @@ export default function ServicePackagesView() {
       </div>
     </form>
   );
+}
+
+export default function ServicePackagesView() {
+  const [viewMode, setViewMode] = useState("cards");
+
+  const {
+    packages = [],
+    filteredPackages,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    formData,
+    setFormData,
+    showCreateModal,
+    setShowCreateModal,
+    showEditModal,
+    setShowEditModal,
+    showDeactivateModal,
+    setShowDeactivateModal,
+    showDeleteModal,
+    setShowDeleteModal,
+    selectedPackage,
+    setSelectedPackage,
+    resetForm,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    toggleStatus,
+    openEditModal,
+    openDeactivateModal,
+    openDeleteModal,
+    toggleServiceInForm,
+    getServiceNames,
+    availableServicesList
+  } = useServicePackages();
+
+  const [formErrors, setFormErrors] = useState({});
+
+  const onHandleDelete = () => {
+    if (selectedPackage) {
+      handleDelete(selectedPackage.id_paquete);
+    }
+  };
+
+  const onHandleCreate = () => {
+    const result = validateServicePackageForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
+    handleCreate();
+  };
+
+  const onHandleEdit = () => {
+    const result = validateServicePackageForm(formData);
+    if (!result.isValid) {
+      setFormErrors(result.errors);
+      return;
+    }
+    setFormErrors({});
+    handleEdit();
+  };
+
+  const onToggleStatus = () => {
+    toggleStatus(selectedPackage?.id_paquete);
+    setShowDeactivateModal(false);
+    setSelectedPackage(null);
+  };
+
+
 
   return (
     <div className="space-y-4">
@@ -524,14 +536,33 @@ export default function ServicePackagesView() {
       {/* Modal Crear */}
       {showCreateModal && (
         <Modal title="Crear Nuevo Paquete de Servicios" onClose={() => setShowCreateModal(false)} maxWidthClass="max-w-4xl">
-          <PackageForm onSubmit={onHandleCreate} onCancel={() => setShowCreateModal(false)} />
+          <PackageForm
+            formData={formData}
+            setFormData={setFormData}
+            formErrors={formErrors}
+            setFormErrors={setFormErrors}
+            availableServicesList={availableServicesList}
+            toggleServiceInForm={toggleServiceInForm}
+            onSubmit={onHandleCreate}
+            onCancel={() => setShowCreateModal(false)}
+          />
         </Modal>
       )}
 
       {/* Modal Editar */}
       {showEditModal && selectedPackage && (
         <Modal title="Editar Paquete de Servicios" onClose={() => setShowEditModal(false)} maxWidthClass="max-w-4xl">
-          <PackageForm onSubmit={onHandleEdit} onCancel={() => setShowEditModal(false)} isEdit />
+          <PackageForm
+            formData={formData}
+            setFormData={setFormData}
+            formErrors={formErrors}
+            setFormErrors={setFormErrors}
+            availableServicesList={availableServicesList}
+            toggleServiceInForm={toggleServiceInForm}
+            onSubmit={onHandleEdit}
+            onCancel={() => setShowEditModal(false)}
+            isEdit
+          />
         </Modal>
       )}
 

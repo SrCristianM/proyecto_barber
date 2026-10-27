@@ -1,5 +1,5 @@
 import { BrowserRouter } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useLayoutEffect } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./AppRoutes.jsx";
 import { SalonAudioProvider } from "./client/context/SalonAudioContext.jsx";
@@ -47,10 +47,15 @@ try {
     ];
     localStorage.setItem("barber_schedules_db", JSON.stringify(initialRealSchedules));
 
-    // 4. Módulo de Servicios, Categorías y Paquetes: paquetes sin datos fantasma
+    // 4. Módulo de Servicios, Categorías y Paquetes: catálogo inicial de paquetes
     localStorage.setItem("barber_services_db", JSON.stringify([]));
     localStorage.setItem("barber_service_categories_db", JSON.stringify([]));
-    localStorage.setItem("barber_packages_db", JSON.stringify([]));
+    const initialDefaultPackages = [
+      { id_paquete: 1, nombre: "Paquete Básico", descuento_porcentaje: 10, estado: 1, servicios_ids: [1, 3] },
+      { id_paquete: 2, nombre: "Paquete Premium", descuento_porcentaje: 20, estado: 1, servicios_ids: [2, 4] },
+      { id_paquete: 3, nombre: "Paquete Especial", descuento_porcentaje: 15, estado: 1, servicios_ids: [1, 2] }
+    ];
+    localStorage.setItem("barber_packages_db", JSON.stringify(initialDefaultPackages));
 
     // 5. Módulo de Productos y Categorías de Producto: completamente vacíos
     localStorage.setItem("barber_products_db", JSON.stringify([]));
@@ -66,7 +71,7 @@ try {
         correo: "barbero@tuturnobarber.com",
         telefono: "+57 302 345 6789",
         especialidad: "Corte Clásico & Fade",
-        imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+        imagen_url: null,
         estado: 1
       }
     ];
@@ -144,21 +149,60 @@ export default function App() {
     }
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("barber_theme_mode", isDark ? "dark" : "light");
-      const raw = localStorage.getItem("barber_settings");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.system) {
-          parsed.system.modo_oscuro = isDark;
-          localStorage.setItem("barber_settings", JSON.stringify(parsed));
-        }
+  // Sincronizar clases DOM inmediatamente antes del primer pintado (evita saltos/flashes)
+  useLayoutEffect(() => {
+    if (typeof document !== "undefined") {
+      const root = document.documentElement;
+      if (isDark) {
+        root.classList.add("dark");
+        document.body.classList.add("dark");
+        root.style.colorScheme = "dark";
+      } else {
+        root.classList.remove("dark");
+        document.body.classList.remove("dark");
+        root.style.colorScheme = "light";
       }
-    } catch {
-      // Ignorar error de storage
     }
   }, [isDark]);
+
+  // Manejo de cambio de tema instantáneo y limpio (cero bloqueos ni pausas en el navegador)
+  const handleSetIsDark = useCallback((valueOrUpdater) => {
+    setIsDark((prev) => {
+      const nextDark = typeof valueOrUpdater === "function" ? valueOrUpdater(prev) : valueOrUpdater;
+      if (nextDark === prev) return prev;
+
+      // Sincronizar clases en el DOM de forma inmediata (1 único frame, cero parpadeo)
+      if (typeof document !== "undefined") {
+        const root = document.documentElement;
+        if (nextDark) {
+          root.classList.add("dark");
+          document.body.classList.add("dark");
+          root.style.colorScheme = "dark";
+        } else {
+          root.classList.remove("dark");
+          document.body.classList.remove("dark");
+          root.style.colorScheme = "light";
+        }
+      }
+
+      // Guardar en Storage en microtarea en segundo plano para no demorar la respuesta de la UI
+      setTimeout(() => {
+        try {
+          localStorage.setItem("barber_theme_mode", nextDark ? "dark" : "light");
+          const raw = localStorage.getItem("barber_settings");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.system) {
+              parsed.system.modo_oscuro = nextDark;
+              localStorage.setItem("barber_settings", JSON.stringify(parsed));
+            }
+          }
+        } catch {}
+      }, 0);
+
+      return nextDark;
+    });
+  }, []);
 
   useEffect(() => {
     syncCatalogsFromApi().catch(() => {});
@@ -170,7 +214,7 @@ export default function App() {
         <SalonAudioProvider>
           <AppRoutes
             isDark={isDark}
-            setIsDark={setIsDark}
+            setIsDark={handleSetIsDark}
             isAuthenticated={isAuthenticated}
             onLogin={() => setIsAuthenticated(true)}
             onLogout={() => setIsAuthenticated(false)}

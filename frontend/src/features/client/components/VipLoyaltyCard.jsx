@@ -7,6 +7,24 @@ export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cliente V
   const [isFlipped, setIsFlipped] = useState(false);
   const frontRef = useRef(null);
   const [cardHeight, setCardHeight] = useState(null);
+  const [glare, setGlare] = useState({ x: 50, y: 50, opacity: 0 });
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
+
+  const handleMouseMove = (e) => {
+    if (!frontRef.current) return;
+    const rect = frontRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setGlare({ x, y, opacity: 0.35 });
+    const rotX = ((y - 50) / 50) * -6;
+    const rotY = ((x - 50) / 50) * 6;
+    setTilt({ rotateX: rotX, rotateY: rotY });
+  };
+
+  const handleMouseLeave = () => {
+    setGlare({ x: 50, y: 50, opacity: 0 });
+    setTilt({ rotateX: 0, rotateY: 0 });
+  };
 
   // Medir la altura exacta del frente para que ambas caras tengan idéntica dimensión
   useEffect(() => {
@@ -40,16 +58,29 @@ export default function VipLoyaltyCard({ loyaltyDetails, clientName = "Cliente V
           <motion.div
             ref={frontRef}
             key="front"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             initial={{ rotateY: -90, opacity: 0 }}
             animate={{ rotateY: 0, opacity: 1 }}
             exit={{ rotateY: 90, opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.23, 1, 0.32, 1] }}
             style={{
               minHeight: cardHeight ? `${cardHeight}px` : "460px",
-              transformOrigin: "center center"
+              transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`,
+              transformOrigin: "center center",
+              transition: "transform 0.1s ease-out"
             }}
             className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#242424] via-[#16140E] to-[#0A0A0A] border border-[#C9A24A]/50 p-6 sm:p-7 shadow-[0_20px_50px_rgba(201,162,74,0.28)] text-white select-none transition-shadow hover:shadow-[0_25px_60px_rgba(201,162,74,0.38)] space-y-5 group antialiased flex flex-col justify-between"
           >
+            {/* Capa de reflejo holográfico dinámico que sigue al ratón */}
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300 rounded-3xl z-20"
+              style={{
+                opacity: glare.opacity,
+                background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(223, 183, 85, 0.35) 0%, rgba(255, 255, 255, 0.12) 30%, transparent 65%)`
+              }}
+            />
+
             {/* Brillo dorado de esquina con gradiente radial nativo (sin filtros borrosos) */}
             <div
               className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"

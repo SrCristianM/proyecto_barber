@@ -87,7 +87,7 @@ export function validateRegisterForm(formData) {
 }
 
 /**
- * Valida formulario de recuperación de contraseña.
+ * Valida formulario de recuperación de contraseña (solicitud inicial de código).
  */
 export function validateForgotPasswordForm(formData) {
   const errors = {};
@@ -99,3 +99,33 @@ export function validateForgotPasswordForm(formData) {
     errors
   };
 }
+
+/**
+ * Valida formulario para confirmar restablecimiento de contraseña (código + nueva contraseña).
+ */
+export function validateResetPasswordForm(formData) {
+  const errors = {};
+
+  const codigo = (formData.codigo || "").trim();
+  if (!codigo) {
+    errors.codigo = "El código de verificación de 6 dígitos es obligatorio.";
+  } else if (!/^\d{6}$/.test(codigo)) {
+    errors.codigo = "El código debe tener exactamente 6 números.";
+  }
+
+  const passErr = validatePassword(formData.nuevaContrasena, true);
+  if (passErr) {
+    errors.nuevaContrasena = passErr;
+  }
+
+  const matchErr = validatePasswordMatch(formData.nuevaContrasena, formData.confirmarContrasena);
+  if (matchErr) {
+    errors.confirmarContrasena = matchErr;
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+

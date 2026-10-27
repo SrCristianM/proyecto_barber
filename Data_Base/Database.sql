@@ -731,6 +731,90 @@ CREATE TABLE `abastecimiento_detalle` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+
+--
+-- Table structure for table `insumo_bodega`
+--
+
+DROP TABLE IF EXISTS `insumo_bodega`;
+CREATE TABLE `insumo_bodega` (
+  `id_insumo` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(120) COLLATE utf8mb4_spanish_ci NOT NULL,
+  `categoria` varchar(80) COLLATE utf8mb4_spanish_ci NOT NULL DEFAULT 'General',
+  `stock_actual` int NOT NULL DEFAULT '0',
+  `stock_minimo` int NOT NULL DEFAULT '5',
+  `unidad_medida` varchar(50) COLLATE utf8mb4_spanish_ci NOT NULL DEFAULT 'Unidad',
+  `id_proveedor` int DEFAULT NULL,
+  `costo_unitario` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `estado` tinyint(1) NOT NULL DEFAULT '1',
+  `fecha_registro` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_insumo`),
+  KEY `fk_insumobodega_proveedor` (`id_proveedor`),
+  CONSTRAINT `fk_insumobodega_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedor` (`id_proveedor`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Table structure for table `entrada_mercancia`
+--
+
+DROP TABLE IF EXISTS `entrada_mercancia`;
+CREATE TABLE `entrada_mercancia` (
+  `id_entrada` int NOT NULL AUTO_INCREMENT,
+  `id_insumo` int NOT NULL,
+  `id_proveedor` int NOT NULL,
+  `cantidad_ingresada` int NOT NULL,
+  `costo_unitario` decimal(10,2) NOT NULL DEFAULT '0.00',
+  `fecha_ingreso` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `observaciones` text COLLATE utf8mb4_spanish_ci,
+  PRIMARY KEY (`id_entrada`),
+  KEY `fk_entradamercancia_insumo` (`id_insumo`),
+  KEY `fk_entradamercancia_proveedor` (`id_proveedor`),
+  CONSTRAINT `fk_entradamercancia_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumo_bodega` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_entradamercancia_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedor` (`id_proveedor`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Table structure for table `estacion_barbero`
+--
+
+DROP TABLE IF EXISTS `estacion_barbero`;
+CREATE TABLE `estacion_barbero` (
+  `id_estacion_insumo` int NOT NULL AUTO_INCREMENT,
+  `id_barbero` int NOT NULL,
+  `id_insumo` int NOT NULL,
+  `cantidad_asignada` int NOT NULL DEFAULT '1',
+  `estado_semaforo` enum('VERDE','AMARILLO','ROJO') COLLATE utf8mb4_spanish_ci NOT NULL DEFAULT 'VERDE',
+  `fecha_ultima_reposicion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `fecha_cambio_estado` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `notas` text COLLATE utf8mb4_spanish_ci,
+  PRIMARY KEY (`id_estacion_insumo`),
+  UNIQUE KEY `uq_barbero_insumo` (`id_barbero`,`id_insumo`),
+  KEY `fk_estacion_barbero` (`id_barbero`),
+  KEY `fk_estacion_insumo` (`id_insumo`),
+  CONSTRAINT `fk_estacion_barbero` FOREIGN KEY (`id_barbero`) REFERENCES `barbero` (`id_barbero`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_estacion_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumo_bodega` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+--
+-- Table structure for table `historial_reposicion`
+--
+
+DROP TABLE IF EXISTS `historial_reposicion`;
+CREATE TABLE `historial_reposicion` (
+  `id_historial` int NOT NULL AUTO_INCREMENT,
+  `id_barbero` int NOT NULL,
+  `id_insumo` int NOT NULL,
+  `cantidad_entregada` int NOT NULL DEFAULT '1',
+  `fecha_reposicion` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `dias_duracion_anterior` int NOT NULL DEFAULT '0',
+  `observaciones` text COLLATE utf8mb4_spanish_ci,
+  PRIMARY KEY (`id_historial`),
+  KEY `fk_historial_barbero` (`id_barbero`),
+  KEY `fk_historial_insumo` (`id_insumo`),
+  CONSTRAINT `fk_historial_barbero` FOREIGN KEY (`id_barbero`) REFERENCES `barbero` (`id_barbero`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_historial_insumo` FOREIGN KEY (`id_insumo`) REFERENCES `insumo_bodega` (`id_insumo`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

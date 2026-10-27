@@ -14,7 +14,8 @@ import {
   User,
   CheckCircle2,
   FileText,
-  MessageSquare
+  MessageSquare,
+  FileSpreadsheet
 } from "lucide-react";
 import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 import Modal from "../../admin/shared/components/Modal";
@@ -29,6 +30,7 @@ import {
   fetchBarberNovelties,
   fetchBarberAppointments
 } from "../services/barberStorageService";
+import { exportToStyledExcel } from "../../../shared/utils/excelExporter";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { getLocalDateString } from "../../../shared/utils/dateUtils";
 
@@ -261,6 +263,42 @@ export default function BarberNoveltiesPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!filteredNovelties || filteredNovelties.length === 0) {
+      toast.error("No hay solicitudes de novedades para exportar.");
+      return;
+    }
+
+    const barberFullName = barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero";
+
+    exportToStyledExcel({
+      title: "SOLICITUDES DE NOVEDADES Y PERMISOS DEL BARBERO",
+      subtitle: `Profesional: ${barberFullName} | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      sheetName: "Novedades",
+      filename: `novedades_${(barber?.nombre || "barbero").toLowerCase()}`,
+      columns: [
+        { header: "ID Solicitud", key: "id_novedad", type: "code", width: 95, align: "center" },
+        { header: "Tipo de Novedad", key: "tipo", width: 200 },
+        { header: "Fecha Solicitud", key: "fecha", type: "date", width: 120, align: "center" },
+        { header: "Motivo", key: "motivo", width: 220 },
+        { header: "Cita Relacionada", key: "cita_relacionada", width: 170, align: "center" },
+        { header: "Descripción Detallada", key: "descripcion", width: 260 },
+        { header: "Estado", key: "estado", type: "status", width: 110, align: "center" }
+      ],
+      data: filteredNovelties.map((nov) => ({
+        id_novedad: `#NOV-${nov.id_novedad}`,
+        tipo: nov.tipo,
+        fecha: nov.fecha || "—",
+        motivo: nov.motivo || "—",
+        cita_relacionada: nov.cita_relacionada || "Ninguna",
+        descripcion: nov.descripcion || "Sin descripción",
+        estado: nov.estado || "Pendiente"
+      }))
+    });
+
+    toast.success("Solicitudes de novedades exportadas a Excel");
+  };
+
   return (
     <div className="space-y-6">
       {/* HEADER DEL MÓDULO */}
@@ -279,20 +317,31 @@ export default function BarberNoveltiesPage() {
           </p>
         </div>
 
-        {canCreateNovelty && (
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={handleOpenCreate}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 rounded-xl bg-card hover:bg-accent border border-[#DFB755]/40 text-foreground hover:text-[#DFB755] font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            <span>Nueva Solicitud</span>
+            <FileSpreadsheet className="w-4 h-4 text-[#DFB755]" />
+            <span>Exportar Excel</span>
           </button>
-        )}
+
+          {canCreateNovelty && (
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nueva Solicitud</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* FILTROS CON SEARCHABLE SELECT */}
-      <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
+      <div className="p-4 rounded-2xl bg-card/60 border border-border/40 shadow-sm backdrop-blur-md space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Búsqueda por texto */}
           <div className="relative">
@@ -302,7 +351,7 @@ export default function BarberNoveltiesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por motivo o descripción..."
-              className="w-full pl-9 pr-3 py-2 bg-input-background border border-input rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full pl-9 pr-3 py-2 bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 transition-colors shadow-none"
             />
           </div>
 

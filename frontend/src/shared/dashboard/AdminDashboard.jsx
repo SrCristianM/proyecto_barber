@@ -44,6 +44,7 @@ import SpotlightCard from "../../features/admin/shared/components/SpotlightCard"
 import SearchableSelect from "../../features/admin/shared/components/SearchableSelect";
 import { usePermissions } from "../../features/auth/hooks/usePermissions";
 import { useDataSync, SYNC_ENTITIES } from "../services/dataSyncService";
+import { apiRequest } from "../api/apiClient";
 
 const COLORS = ["#C9A24A", "#10b981", "#f59e0b", "#8b5cf6"];
 
@@ -235,33 +236,22 @@ export default function AdminDashboard() {
 
     // Sondeo en tiempo real del dashboard y caja cada 4 segundos
     const syncRealtime = () => {
-      fetch("/api/dashboard/admin", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
-        }
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json && json.data) {
+      apiRequest("/api/dashboard/admin")
+        .then((data) => {
+          if (data) {
             setKpis((prev) => ({
               ...prev,
-              ingresosHoy: json.data.ventas_hoy !== undefined ? Number(json.data.ventas_hoy) : prev.ingresosHoy,
-              citasHoy: json.data.citas_hoy !== undefined ? Number(json.data.citas_hoy) : prev.citasHoy,
-              stockCriticoCount: json.data.productos_bajo_stock !== undefined ? Number(json.data.productos_bajo_stock) : prev.stockCriticoCount
+              ingresosHoy: data.ventas_hoy !== undefined ? Number(data.ventas_hoy) : prev.ingresosHoy,
+              citasHoy: data.citas_hoy !== undefined ? Number(data.citas_hoy) : prev.citasHoy,
+              stockCriticoCount: data.productos_bajo_stock !== undefined ? Number(data.productos_bajo_stock) : prev.stockCriticoCount
             }));
           }
         })
         .catch(() => {});
 
-      fetch("/api/sales", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
-        }
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json && Array.isArray(json.data)) {
-            const freshSales = json.data;
+      apiRequest("/api/sales")
+        .then((freshSales) => {
+          if (Array.isArray(freshSales)) {
             try {
               localStorage.setItem("barber_sales_db", JSON.stringify(freshSales));
             } catch {}
@@ -292,15 +282,10 @@ export default function AdminDashboard() {
   // Carga de la métrica de consumo de insumos por barbero
   useEffect(() => {
     const fetchSuppliesMetrics = () => {
-      fetch(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`
-        }
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json && json.data) {
-            setSuppliesMetrics(json.data);
+      apiRequest(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`)
+        .then((data) => {
+          if (data) {
+            setSuppliesMetrics(data);
           }
         })
         .catch(() => {});
@@ -310,23 +295,20 @@ export default function AdminDashboard() {
   }, [suppliesPeriod, suppliesBarberId]);
 
   // Sincronización reactiva instantánea con cambios de insumos y catálogo de productos
-  useDataSync([SYNC_ENTITIES.PRODUCTS, SYNC_ENTITIES.SUPPLIES], () => {
+  useDataSync([SYNC_ENTITIES.PRODUCTS, SYNC_ENTITIES.SUPPLIES, SYNC_ENTITIES.STATION_SUPPLIES, SYNC_ENTITIES.WAREHOUSE_ITEMS], () => {
     // 1. Recargar métricas de abastecimiento
-    fetch(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` }
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json && json.data) setSuppliesMetrics(json.data);
+    apiRequest(`/api/dashboard/supplies?period=${suppliesPeriod}&barberId=${suppliesBarberId}`)
+      .then((data) => {
+        if (data) setSuppliesMetrics(data);
       })
       .catch(() => {});
 
     // 2. Recargar inventario crítico y KPIs
-    fetch("/api/products")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (json && Array.isArray(json.data)) {
-          const crit = json.data
+    apiRequest("/api/products")
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+        if (list && list.length > 0) {
+          const crit = list
             .filter((p) => p.stock !== undefined && Number(p.stock) <= 5 && p.estado === 1)
             .map((p) => ({
               name: p.nombre,

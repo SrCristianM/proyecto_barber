@@ -90,7 +90,8 @@ export const updateProfileValidation = [
     .trim()
     .isLength({ min: 5, max: 20 })
     .withMessage("El documento debe tener entre 5 y 20 caracteres."),
-  body("telefono").optional().trim(),
-  body("avatar_url").optional().trim(),
-  body("foto").optional().trim()
+  body("telefono").optional({ nullable: true }).trim(),
+  body("imagen_url").optional({ nullable: true }),
+  body("avatar_url").optional({ nullable: true }),
+  body("foto").optional({ nullable: true })
 ];

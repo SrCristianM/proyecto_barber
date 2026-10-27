@@ -13,10 +13,20 @@ export class AuthController {
   }
 
 
+  static async verifyGoogleEmail(req, res, next) {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.verifyGoogleAccount(email);
+      return ApiResponse.success(res, result, "Cuenta de Google verificada con éxito");
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async googleLogin(req, res, next) {
     try {
-      const { email, name, avatarUrl } = req.body;
-      const result = await AuthService.googleLogin({ email, name, avatarUrl });
+      const { email, name, avatarUrl, contrasena, isExistingDeviceAccount } = req.body;
+      const result = await AuthService.googleLogin({ email, name, avatarUrl, contrasena, isExistingDeviceAccount });
       return ApiResponse.success(res, result, "Inicio de sesión con Google exitoso");
     } catch (error) {
       next(error);

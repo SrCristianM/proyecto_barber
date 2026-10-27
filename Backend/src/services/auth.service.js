@@ -1,3 +1,5 @@
+import dns from "dns/promises";
+import net from "net";
 import { EmailService } from "./email.service.js";
 import { PasswordResetRepository } from "../models/passwordReset.model.js";
 import { AuthRepository } from "../models/auth.model.js";
@@ -7,6 +9,106 @@ import { signToken } from "../utils/jwt.js";
 import { ApiError } from "../errors/apiError.js";
 import { ROLES } from "../config/constants.js";
 
+/**
+ * Valida de forma estricta si un correo electrónico es una cuenta real de Google a nivel general:
+ * 1. Comprueba si el dominio es @gmail.com, @googlemail.com o un dominio corporativo con servidores MX de Google.
+ * 2. Consulta en tiempo real a los servidores de correo de Google (gmail-smtp-in.l.google.com).
+ *    Si Google responde que la cuenta no existe ('550 NoSuchUser'), se rechaza inmediatamente.
+ */
+async function validateGlobalGoogleAccount(email) {
+  const cleanEmail = (email || "").trim().toLowerCase();
+  const domain = cleanEmail.split("@")[1];
+
+  if (!domain) {
+    throw ApiError.badRequest("El formato del correo electrónico es inválido.");
+  }
+
+  let isGoogle = domain === "gmail.com" || domain === "googlemail.com";
+  let targetMx = "gmail-smtp-in.l.google.com";
+
+  if (!isGoogle) {
+    try {
+      const records = await dns.resolveMx(domain);
+      const googleMx = records.find(
+        (r) =>
+          r.exchange.toLowerCase().includes("google.com") ||
+          r.exchange.toLowerCase().includes("googlemail.com")
+      );
+      if (googleMx) {
+        isGoogle = true;
+        targetMx = googleMx.exchange;
+      }
+    } catch (_) {
+      isGoogle = false;
+    }
+  }
+
+  if (!isGoogle) {
+    throw ApiError.badRequest(
+      "No se ha encontrado tu cuenta de Google. El correo ingresado no pertenece a una cuenta de Google."
+    );
+  }
+
+  // Comprobar existencia real en servidores de Google vía handshake SMTP
+  const existence = await checkGoogleSmtpExistence(cleanEmail, targetMx);
+  if (!existence.exists) {
+    throw ApiError.notFound(
+      "No se ha encontrado tu cuenta de Google. Esta dirección de correo no existe en los servidores de Google."
+    );
+  }
+}
+
+function checkGoogleSmtpExistence(email, host = "gmail-smtp-in.l.google.com") {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port: 25 });
+    socket.setEncoding("utf8");
+    socket.setTimeout(4500);
+
+    let stage = 0;
+    let finished = false;
+
+    const done = (res) => {
+      if (!finished) {
+        finished = true;
+        try { socket.write("QUIT\r\n"); } catch (_) {}
+        try { socket.end(); } catch (_) {}
+        try { socket.destroy(); } catch (_) {}
+        resolve(res);
+      }
+    };
+
+    socket.on("data", (data) => {
+      const text = data.toString();
+      if (text.includes("220 ") || text.includes("220-")) {
+        stage = 1;
+        socket.write("EHLO mail.google.com\r\n");
+      } else if (stage === 1 && (text.includes("250 ") || text.includes("250-"))) {
+        stage = 2;
+        socket.write("MAIL FROM:<verify@gmail.com>\r\n");
+      } else if (stage === 2 && text.includes("250")) {
+        stage = 3;
+        socket.write(`RCPT TO:<${email}>\r\n`);
+      } else if (stage === 3) {
+        if (text.includes("250 2.1.5")) {
+          done({ exists: true });
+        } else if (
+          text.includes("550") ||
+          text.includes("NoSuchUser") ||
+          text.includes("does not exist")
+        ) {
+          done({ exists: false, reason: "NOT_FOUND_IN_GOOGLE" });
+        } else {
+          // Si el servidor de Google aplica greylisting o respuesta no terminal, se acepta
+          done({ exists: true });
+        }
+      }
+    });
+
+    socket.on("timeout", () => done({ exists: true, fallback: true }));
+    socket.on("error", () => done({ exists: true, fallback: true }));
+  });
+}
+
 export class AuthService {
 
   static async getAvailableAccounts() {
@@ -14,7 +116,7 @@ export class AuthService {
   }
 
 
-  static async googleLogin({ email, name, avatarUrl }) {
+  static async verifyGoogleAccount(email) {
     if (!email || typeof email !== "string" || !email.trim()) {
       throw ApiError.badRequest("El correo electrónico de Google es requerido.");
     }
@@ -25,16 +127,71 @@ export class AuthService {
       throw ApiError.badRequest("El formato del correo electrónico es inválido.");
     }
 
-    let user = await AuthRepository.findByEmail(cleanEmail);
+    // 1. Validar estrictamente que sea una cuenta real existente en Google a nivel global
+    await validateGlobalGoogleAccount(cleanEmail);
+
+    // 2. Validar que la cuenta de Google esté registrada en Tu Turno Barber
+    const user = await AuthRepository.findByEmail(cleanEmail);
     if (!user) {
       throw ApiError.notFound(
-        "No existe ninguna cuenta registrada con este correo de Google. Por favor regístrate primero o verifica tu correo.",
-        "USER_NOT_FOUND"
+        "Esta cuenta de Google no se encuentra registrada en Tu Turno Barber. Por favor crea una cuenta o regístrate primero.",
+        "USER_NOT_REGISTERED"
       );
     }
 
     if (user.estado === 0) {
-      throw ApiError.forbidden("Tu cuenta se encuentra inactiva. Comunícate con el administrador.");
+      throw ApiError.forbidden("Tu cuenta se encuentra inactiva. Comunícate con el administrador.", "USER_INACTIVE");
+    }
+
+    return {
+      exists: true,
+      email: cleanEmail,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      imagen_url: user.imagen_url || null
+    };
+  }
+
+  static async googleLogin({ email, name, avatarUrl, contrasena, isExistingDeviceAccount }) {
+    if (!email || typeof email !== "string" || !email.trim()) {
+      throw ApiError.badRequest("El correo electrónico de Google es requerido.");
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      throw ApiError.badRequest("El formato del correo electrónico es inválido.");
+    }
+
+    // 1. Validar estrictamente que sea una cuenta real existente en Google a nivel global
+    await validateGlobalGoogleAccount(cleanEmail);
+
+    // 2. Validar que la cuenta de Google esté registrada en Tu Turno Barber
+    let user = await AuthRepository.findByEmail(cleanEmail);
+    if (!user) {
+      throw ApiError.notFound(
+        "Esta cuenta de Google no se encuentra registrada en Tu Turno Barber. Por favor crea una cuenta o regístrate primero.",
+        "USER_NOT_REGISTERED"
+      );
+    }
+
+    if (user.estado === 0) {
+      throw ApiError.forbidden("Tu cuenta se encuentra inactiva. Comunícate con el administrador.", "USER_INACTIVE");
+    }
+
+    // Solo si NO es una cuenta recordada en el dispositivo (o sea, nueva cuenta que se agrega), exigir contraseña
+    if (!isExistingDeviceAccount) {
+      if (!contrasena || typeof contrasena !== "string" || !contrasena.trim()) {
+        throw ApiError.badRequest("Por favor introduce la contraseña de tu cuenta.", "BAD_REQUEST");
+      }
+
+      const isMatch = await comparePassword(contrasena, user.contrasena);
+      if (!isMatch) {
+        throw ApiError.badRequest(
+          "Contraseña incorrecta. Introduce la contraseña correcta de tu cuenta para acceder con Google.",
+          "INVALID_CREDENTIALS"
+        );
+      }
     }
 
     const permisos = await AuthRepository.getUserPermissions(user.id_rol);
@@ -56,7 +213,7 @@ export class AuthService {
     };
 
     const token = signToken(tokenPayload);
-    const { contrasena, ...safeUser } = user;
+    const { contrasena: _userPassword, ...safeUser } = user;
 
     return {
       token,
@@ -317,7 +474,7 @@ export class AuthService {
     EmailService.sendPasswordChangedNotification({
       to: user.correo,
       name: user.nombre
-    }).catch(() => {});
+    }).catch(() => { });
 
     try {
       NotificationsService.createCustomNotification({

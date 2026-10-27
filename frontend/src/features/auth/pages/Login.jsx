@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useLocation } from "react-router";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -16,7 +16,11 @@ import {
   KeyRound,
   Trash2,
   MinusCircle,
-  Laptop
+  Laptop,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from "lucide-react";
 import AuthCard from "../components/AuthCard";
 import AuthHeader from "../components/AuthHeader";
@@ -27,6 +31,7 @@ import { validateLoginForm } from "../validations/authValidation";
 import {
   loginWithCredentials,
   loginWithGoogle,
+  verifyGoogleAccountEmail,
   getDeviceGoogleAccounts,
   removeDeviceGoogleAccount
 } from "../services/authService";
@@ -40,7 +45,11 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [isAddingNewGoogleAccount, setIsAddingNewGoogleAccount] = useState(false);
+  const [googleStep, setGoogleStep] = useState("select"); // "select" | "email" | "password"
+  const [selectedGoogleAccount, setSelectedGoogleAccount] = useState(null);
+  const [googlePassword, setGooglePassword] = useState("");
+  const [showGooglePassword, setShowGooglePassword] = useState(false);
+  const [googleError, setGoogleError] = useState("");
   const [isRemovingGoogleAccount, setIsRemovingGoogleAccount] = useState(false);
   const [newGoogleEmail, setNewGoogleEmail] = useState("");
 
@@ -49,6 +58,13 @@ export default function Login({ onLogin }) {
   const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.emailPreload) {
+      setCorreo(location.state.emailPreload);
+    }
+  }, [location.state]);
 
   // Carga las cuentas guardadas en este dispositivo al montar y al abrir el modal
   const fetchAccounts = () => {
@@ -68,9 +84,19 @@ export default function Login({ onLogin }) {
   }, []);
 
   const handleOpenGoogleModal = () => {
-    setIsAddingNewGoogleAccount(false);
     setIsRemovingGoogleAccount(false);
     setNewGoogleEmail("");
+    setGooglePassword("");
+    setGoogleError("");
+    setShowGooglePassword(false);
+    setSelectedGoogleAccount(null);
+    const deviceAccounts = getDeviceGoogleAccounts() || [];
+    setAccounts(deviceAccounts);
+    if (deviceAccounts.length > 0) {
+      setGoogleStep("select");
+    } else {
+      setGoogleStep("email");
+    }
     setShowGoogleModal(true);
     fetchAccounts();
   };
@@ -82,7 +108,7 @@ export default function Login({ onLogin }) {
     toast.success("Cuenta retirada de este dispositivo.");
     if (updated.length === 0) {
       setIsRemovingGoogleAccount(false);
-      setIsAddingNewGoogleAccount(true);
+      setGoogleStep("email");
     }
   };
 
@@ -121,81 +147,184 @@ export default function Login({ onLogin }) {
       toast.success(`¡Bienvenido, ${authResult.user.nombre}!`);
       if (onLogin) onLogin(authResult.user);
 
+      try {
+        sessionStorage.setItem("tu_turno_ribbon_intro", "true");
+        sessionStorage.setItem("tu_turno_show_welcome_modal", "true");
+      } catch { }
+
       let targetPath = "/dashboard";
       if (Number(authResult.user.id_rol) === 4 || Number(authResult.user.id_rol) === 2) {
         targetPath = "/portal";
       } else if (Number(authResult.user.id_rol) === 3) {
         targetPath = "/barbero";
+        try {
+          sessionStorage.setItem("play_barber_intro", "true");
+          sessionStorage.removeItem("barber_intro_shown");
+        } catch { }
       }
       navigate(targetPath, { replace: true });
     }, 400);
   };
 
-  const handleSelectGoogleAccount = async (account) => {
-    setGoogleLoading(true);
-    setLoading(true);
+  // Helper para completar acceso exitoso con Google
+  const completeGoogleLogin = (user) => {
+    setShowGoogleModal(false);
+    setGooglePassword("");
+    setNewGoogleEmail("");
+    setSelectedGoogleAccount(null);
+
+    if (onLogin) onLogin(user);
 
     try {
-      const email = account.email || account.correo;
-      const result = await loginWithGoogle({
-        email,
-        name: account.nombre || account.name,
-        avatarUrl: account.imagen_url || null,
-      });
+      sessionStorage.setItem("tu_turno_ribbon_intro", "true");
+      sessionStorage.setItem("tu_turno_show_welcome_modal", "true");
+    } catch { }
 
-      setLoading(false);
-      setGoogleLoading(false);
-
-      if (!result.success) {
-        toast.error(result.error || "No existe ninguna cuenta registrada con este correo de Google.");
-        return;
-      }
-
-      setShowGoogleModal(false);
-      setNewGoogleEmail("");
-      setIsAddingNewGoogleAccount(false);
-
-      const user = result.user;
-      if (onLogin) onLogin(user);
-
-      if (Number(user.id_rol) === 4) {
-        toast.success(`¡Bienvenido de vuelta, ${user.nombre}!`);
-        navigate("/portal", { replace: true });
-      } else if (Number(user.id_rol) === 3) {
-        toast.success(`¡Bienvenido, ${user.nombre}! (Panel de Barbero)`);
-        navigate("/barbero", { replace: true });
-      } else if (Number(user.id_rol) === 1) {
-        toast.success(`¡Bienvenido, ${user.nombre}! (Administrador)`);
-        navigate("/dashboard", { replace: true });
-      } else {
-        toast.success(`¡Bienvenido, ${user.nombre}!`);
-        navigate("/portal", { replace: true });
-      }
-    } catch (err) {
-      setLoading(false);
-      setGoogleLoading(false);
-      toast.error("Ocurrió un error al procesar el acceso con Google.");
+    if (Number(user.id_rol) === 4) {
+      toast.success(`¡Bienvenido de vuelta, ${user.nombre}!`);
+      navigate("/portal", { replace: true });
+    } else if (Number(user.id_rol) === 3) {
+      try {
+        sessionStorage.setItem("play_barber_intro", "true");
+        sessionStorage.removeItem("barber_intro_shown");
+      } catch { }
+      toast.success(`¡Bienvenido, ${user.nombre}! (Panel de Barbero)`);
+      navigate("/barbero", { replace: true });
+    } else if (Number(user.id_rol) === 1) {
+      toast.success(`¡Bienvenido, ${user.nombre}! (Administrador)`);
+      navigate("/dashboard", { replace: true });
+    } else {
+      toast.success(`¡Bienvenido, ${user.nombre}!`);
+      navigate("/portal", { replace: true });
     }
   };
 
-  const handleAddNewGoogleAccount = (e) => {
-    e.preventDefault();
-    if (!newGoogleEmail.trim()) {
-      toast.error("Por favor ingresa un correo de Google.");
-      return;
+  // Paso 1: Elegir cuenta existente registrada en el dispositivo -> Acceder directamente sin pedir contraseña
+  const handleChooseGoogleAccount = async (acc) => {
+    setSelectedGoogleAccount(acc);
+    setGoogleError("");
+    setGoogleLoading(true);
+
+    try {
+      const email = acc.email || acc.correo;
+      const result = await loginWithGoogle({
+        email,
+        name: acc.nombre || acc.name,
+        avatarUrl: acc.imagen_url || acc.avatarUrl || null,
+        isExistingDeviceAccount: true
+      });
+
+      setGoogleLoading(false);
+
+      if (!result.success) {
+        setGoogleError(result.error || "No se pudo iniciar sesión con la cuenta seleccionada.");
+        return;
+      }
+
+      completeGoogleLogin(result.user);
+    } catch (err) {
+      setGoogleLoading(false);
+      setGoogleError("Ocurrió un error al acceder con la cuenta de Google.");
     }
-    const cleanEmail = newGoogleEmail.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      toast.error("Por favor ingresa un formato de correo electrónico válido.");
+  };
+
+  // Paso 2: Introducir y verificar correo nuevo -> Validar existencia real en backend antes de pedir contraseña
+  const handleVerifyNewEmail = async (e) => {
+    if (e) e.preventDefault();
+    setGoogleError("");
+
+    const cleanEmail = (newGoogleEmail || "").trim().toLowerCase();
+    if (!cleanEmail) {
+      setGoogleError("Por favor ingresa un correo electrónico.");
       return;
     }
 
-    handleSelectGoogleAccount({
-      email: cleanEmail,
-      nombre: cleanEmail.split("@")[0],
-      imagen_url: null,
-    });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setGoogleError("Por favor ingresa un formato de correo electrónico válido.");
+      return;
+    }
+
+    const domain = cleanEmail.split("@")[1];
+    const nonGoogleDomains = [
+      "tuturnobarber.com",
+      "example.com",
+      "hotmail.com",
+      "outlook.com",
+      "live.com",
+      "yahoo.com",
+      "icloud.com"
+    ];
+    if (nonGoogleDomains.includes(domain)) {
+      setGoogleError("No se ha encontrado tu cuenta de Google. El correo ingresado no pertenece a una cuenta de Google.");
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      const res = await verifyGoogleAccountEmail(cleanEmail);
+      setGoogleLoading(false);
+
+      if (!res.success) {
+        setGoogleError(res.error || "No se ha encontrado ninguna cuenta de Google con este correo o no está registrada en Tu Turno Barber.");
+        return;
+      }
+
+      // Cuenta verificada con éxito: preparar paso de contraseña
+      setSelectedGoogleAccount({
+        email: cleanEmail,
+        nombre: res.data?.nombre ? `${res.data.nombre} ${res.data.apellido || ""}`.trim() : cleanEmail.split("@")[0],
+        imagen_url: res.data?.imagen_url || null
+      });
+      setGooglePassword("");
+      setShowGooglePassword(false);
+      setGoogleStep("password");
+    } catch (err) {
+      setGoogleLoading(false);
+      setGoogleError("Ocurrió un error al verificar la cuenta de Google. Inténtalo de nuevo.");
+    }
+  };
+
+  // Paso 3: Validar contraseña de Google para acceder (solo aplica cuando se agrega una nueva cuenta)
+  const handleGooglePasswordSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setGoogleError("");
+
+    if (!googlePassword || !googlePassword.trim()) {
+      setGoogleError("Introduce tu contraseña");
+      return;
+    }
+
+    const email = selectedGoogleAccount?.email || selectedGoogleAccount?.correo;
+    if (!email) {
+      setGoogleError("Error al identificar la cuenta. Vuelve a intentarlo.");
+      setGoogleStep("select");
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle({
+        email,
+        name: selectedGoogleAccount.nombre || selectedGoogleAccount.name,
+        avatarUrl: selectedGoogleAccount.imagen_url || null,
+        contrasena: googlePassword,
+        isExistingDeviceAccount: false
+      });
+
+      setGoogleLoading(false);
+
+      if (!result.success) {
+        setGoogleError(result.error || "Contraseña incorrecta. Vuelve a intentarlo.");
+        return;
+      }
+
+      // Éxito: cerrar modal y entrar
+      completeGoogleLogin(result.user);
+    } catch (err) {
+      setGoogleLoading(false);
+      setGoogleError("Ocurrió un error al procesar el acceso con Google.");
+    }
   };
 
   const getInitials = (name) => {
@@ -330,7 +459,7 @@ export default function Login({ onLogin }) {
               />
               <span className="text-xs text-[#A0A0A0] group-hover:text-white transition-colors">Recordarme</span>
             </label>
-            
+
             <Link
               to="/forgot-password"
               className="text-xs text-[#C9A24A] hover:text-[#E0B85C] hover:underline font-semibold transition-colors"
@@ -419,7 +548,7 @@ export default function Login({ onLogin }) {
 
               {/* Contenido en 2 columnas estilo oficial Google OAuth */}
               <div className="p-7 sm:p-9 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                {/* Columna Izquierda: Logo + Elige una cuenta + Destino */}
+                {/* Columna Izquierda: Logo + Título + Destino / Cuenta Seleccionada */}
                 <div className="md:col-span-5 flex flex-col justify-start">
                   <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2.5 shadow-md">
                     <img
@@ -432,26 +561,175 @@ export default function Login({ onLogin }) {
                       }}
                     />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-normal text-[#e8eaed] mt-5 leading-tight">
-                    {accounts.length > 0 && !isAddingNewGoogleAccount
-                      ? isRemovingGoogleAccount
-                        ? "Quitar una cuenta"
-                        : "Elige una cuenta"
-                      : "Acceder"}
-                  </h2>
-                  <p className="text-sm text-[#8ab4f8] mt-2 font-normal">
-                    Ir a Tu Turno Barber
-                  </p>
+
+                  {googleStep === "password" ? (
+                    <>
+                      <h2 className="text-2xl sm:text-3xl font-normal text-[#e8eaed] mt-5 leading-tight">
+                        Te damos la bienvenida
+                      </h2>
+                      {/* Chip de la cuenta con opción para cambiar de cuenta */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGoogleError("");
+                          setGooglePassword("");
+                          if (accounts.length > 0) {
+                            setGoogleStep("select");
+                          } else {
+                            setGoogleStep("email");
+                          }
+                        }}
+                        className="mt-3.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#5f6368] hover:bg-white/[0.06] transition-colors max-w-full text-left group cursor-pointer"
+                        title="Cambiar de cuenta"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-[#7b1fa2] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {selectedGoogleAccount?.nombre ? selectedGoogleAccount.nombre[0].toUpperCase() : "G"}
+                        </div>
+                        <span className="text-xs text-[#e8eaed] font-medium truncate max-w-[170px]">
+                          {selectedGoogleAccount?.email}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-[#9aa0a6] group-hover:text-[#e8eaed] shrink-0" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl sm:text-3xl font-normal text-[#e8eaed] mt-5 leading-tight">
+                        {googleStep === "select" && accounts.length > 0
+                          ? isRemovingGoogleAccount
+                            ? "Quitar una cuenta"
+                            : "Elige una cuenta"
+                          : "Acceder"}
+                      </h2>
+                      <p className="text-sm text-[#8ab4f8] mt-2 font-normal">
+                        Ir a Tu Turno Barber
+                      </p>
+                    </>
+                  )}
                 </div>
 
-                {/* Columna Derecha: Cuentas directas o formulario */}
+                {/* Columna Derecha: Paso actual (Cuentas, Email o Contraseña) */}
                 <div className="md:col-span-7 flex flex-col">
-                  {accounts.length > 0 && !isAddingNewGoogleAccount ? (
+                  {/* PASO 1: INTRODUCIR CONTRASEÑA */}
+                  {googleStep === "password" ? (
+                    <form onSubmit={handleGooglePasswordSubmit} className="space-y-4">
+                      <p className="text-sm text-[#e8eaed] font-normal">
+                        Para continuar, primero verifica tu identidad
+                      </p>
+
+                      <div className="space-y-1.5">
+                        <div className="relative">
+                          <input
+                            type={showGooglePassword ? "text" : "password"}
+                            value={googlePassword}
+                            onChange={(e) => {
+                              setGooglePassword(e.target.value);
+                              if (googleError) setGoogleError("");
+                            }}
+                            placeholder="Introduce tu contraseña"
+                            autoFocus
+                            className={`w-full px-3.5 py-3 pr-10 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${
+                              googleError
+                                ? "border-[#f28b82] focus:border-[#f28b82] focus:ring-1 focus:ring-[#f28b82]"
+                                : "border-[#5f6368] focus:border-[#8ab4f8] focus:ring-1 focus:ring-[#8ab4f8]"
+                            }`}
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowGooglePassword(!showGooglePassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9aa0a6] hover:text-[#e8eaed] transition-colors p-1"
+                          >
+                            {showGooglePassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Mensaje de error estilo oficial Google */}
+                        {googleError && (
+                          <div className="flex items-start gap-1.5 pt-1 text-xs text-[#f28b82]">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                            <span>{googleError}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Checkbox Mostrar contraseña */}
+                      <div className="flex items-center gap-2.5 pt-1">
+                        <input
+                          type="checkbox"
+                          id="showGooglePwdCheck"
+                          checked={showGooglePassword}
+                          onChange={(e) => setShowGooglePassword(e.target.checked)}
+                          className="w-4 h-4 rounded border-[#5f6368] bg-transparent text-[#8ab4f8] focus:ring-0 cursor-pointer accent-[#8ab4f8]"
+                        />
+                        <label
+                          htmlFor="showGooglePwdCheck"
+                          className="text-xs text-[#e8eaed] cursor-pointer select-none"
+                        >
+                          Mostrar contraseña
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4">
+                        <Link
+                          to="/forgot-password"
+                          state={{ emailPreload: selectedGoogleAccount?.email }}
+                          onClick={() => setShowGoogleModal(false)}
+                          className="text-xs text-[#8ab4f8] hover:underline font-medium"
+                        >
+                          ¿Has olvidado tu contraseña?
+                        </Link>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGoogleError("");
+                              setGooglePassword("");
+                              if (accounts.length > 0) {
+                                setGoogleStep("select");
+                              } else {
+                                setGoogleStep("email");
+                              }
+                            }}
+                            className="text-sm text-[#8ab4f8] hover:underline font-medium px-3 py-2 cursor-pointer"
+                          >
+                            Atrás
+                          </button>
+
+                          <button
+                            type="submit"
+                            disabled={googleLoading}
+                            className="px-6 py-2.5 rounded-full bg-[#8ab4f8] text-[#001d35] font-medium text-sm hover:brightness-105 transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+                          >
+                            {googleLoading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Verificando...</span>
+                              </>
+                            ) : (
+                              <span>Siguiente</span>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : googleStep === "select" && accounts.length > 0 ? (
+                    /* PASO 2: LISTA DE CUENTAS GUARDADAS EN EL DISPOSITIVO */
                     <>
-                      {/* Lista de Cuentas estilo Google */}
+                      {googleError && (
+                        <div className="flex items-start gap-1.5 mb-3 text-xs text-[#f28b82]">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          <span>{googleError}</span>
+                        </div>
+                      )}
                       <div className="divide-y divide-[#303134] border-t border-b border-[#303134]">
                         {accounts.map((acc) => {
                           const isBarberGold = (acc.email || "").toLowerCase().includes("barbergoldenapp");
+                          const isSelectedLoading = googleLoading && selectedGoogleAccount?.email === acc.email;
                           return (
                             <div
                               key={acc.email}
@@ -460,10 +738,9 @@ export default function Login({ onLogin }) {
                               <button
                                 type="button"
                                 disabled={googleLoading || isRemovingGoogleAccount}
-                                onClick={() => !isRemovingGoogleAccount && handleSelectGoogleAccount(acc)}
+                                onClick={() => !isRemovingGoogleAccount && handleChooseGoogleAccount(acc)}
                                 className="flex items-center gap-3.5 min-w-0 flex-1 text-left cursor-pointer disabled:cursor-default"
                               >
-                                {/* Avatar */}
                                 {isBarberGold ? (
                                   <div className="w-8 h-8 rounded-full bg-[#7b1fa2] text-white flex items-center justify-center text-sm font-medium shrink-0">
                                     b
@@ -482,7 +759,7 @@ export default function Login({ onLogin }) {
                                   </div>
                                 )}
 
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <div className="text-sm font-medium text-[#e8eaed] group-hover:text-white transition-colors truncate">
                                     {acc.nombre}
                                   </div>
@@ -490,6 +767,10 @@ export default function Login({ onLogin }) {
                                     {acc.email}
                                   </div>
                                 </div>
+
+                                {isSelectedLoading && (
+                                  <Loader2 className="w-4 h-4 animate-spin text-[#8ab4f8] shrink-0 ml-2" />
+                                )}
                               </button>
 
                               {isRemovingGoogleAccount && (
@@ -512,7 +793,11 @@ export default function Login({ onLogin }) {
                             <button
                               type="button"
                               disabled={googleLoading}
-                              onClick={() => setIsAddingNewGoogleAccount(true)}
+                              onClick={() => {
+                                setNewGoogleEmail("");
+                                setGoogleError("");
+                                setGoogleStep("email");
+                              }}
                               className="w-full py-3.5 px-2 flex items-center gap-3.5 text-left hover:bg-white/[0.04] transition-colors cursor-pointer group"
                             >
                               <div className="w-8 h-8 rounded-full border border-[#5f6368] flex items-center justify-center text-[#9aa0a6] group-hover:text-[#e8eaed] group-hover:border-[#8ab4f8] transition-colors shrink-0">
@@ -554,7 +839,6 @@ export default function Login({ onLogin }) {
                         )}
                       </div>
 
-                      {/* Footer legal de Google */}
                       <p className="text-xs text-[#9aa0a6] mt-6 leading-relaxed">
                         Antes de usar Tu Turno Barber, revisa su{" "}
                         <span className="text-[#8ab4f8] hover:underline cursor-pointer">
@@ -568,21 +852,36 @@ export default function Login({ onLogin }) {
                       </p>
                     </>
                   ) : (
-                    /* Formulario para ingresar otra cuenta de Google o si no hay cuentas en el dispositivo */
-                    <form onSubmit={handleAddNewGoogleAccount} className="space-y-5">
-                      <div className="space-y-1">
+                    /* PASO 3: INGRESAR OTRA CUENTA (VERIFICACIÓN 100% REAL DE CORREO) */
+                    <form onSubmit={handleVerifyNewEmail} className="space-y-4">
+                      <div className="space-y-1.5">
                         <label className="block text-xs text-[#9aa0a6] font-medium">
                           Correo electrónico o teléfono
                         </label>
                         <input
                           type="email"
                           value={newGoogleEmail}
-                          onChange={(e) => setNewGoogleEmail(e.target.value)}
+                          onChange={(e) => {
+                            setNewGoogleEmail(e.target.value);
+                            if (googleError) setGoogleError("");
+                          }}
                           placeholder="ejemplo@gmail.com"
                           autoFocus
-                          className="w-full px-3.5 py-3 text-sm rounded-lg bg-transparent border border-[#5f6368] text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none focus:border-[#8ab4f8] focus:ring-1 focus:ring-[#8ab4f8] transition-all"
+                          className={`w-full px-3.5 py-3 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${
+                            googleError
+                              ? "border-[#f28b82] focus:border-[#f28b82] focus:ring-1 focus:ring-[#f28b82]"
+                              : "border-[#5f6368] focus:border-[#8ab4f8] focus:ring-1 focus:ring-[#8ab4f8]"
+                          }`}
                           required
                         />
+
+                        {/* Mensaje de error estilo Google */}
+                        {googleError && (
+                          <div className="flex items-start gap-1.5 pt-1 text-xs text-[#f28b82]">
+                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                            <span>{googleError}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center justify-between pt-4">
@@ -590,8 +889,8 @@ export default function Login({ onLogin }) {
                           <button
                             type="button"
                             onClick={() => {
-                              setIsAddingNewGoogleAccount(false);
-                              setIsRemovingGoogleAccount(false);
+                              setGoogleError("");
+                              setGoogleStep("select");
                             }}
                             className="text-sm text-[#8ab4f8] hover:underline font-medium cursor-pointer"
                           >
@@ -603,7 +902,7 @@ export default function Login({ onLogin }) {
                         <button
                           type="submit"
                           disabled={googleLoading}
-                          className="px-6 py-2.5 rounded-full bg-[#8ab4f8] text-[#001d35] font-medium text-sm hover:brightness-105 transition-all cursor-pointer flex items-center gap-2"
+                          className="px-6 py-2.5 rounded-full bg-[#8ab4f8] text-[#001d35] font-medium text-sm hover:brightness-105 transition-all cursor-pointer flex items-center gap-2 shadow-sm"
                         >
                           {googleLoading ? (
                             <>

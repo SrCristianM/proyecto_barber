@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Package,
   FileText,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet
 } from "lucide-react";
 import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 import Modal from "../../admin/shared/components/Modal";
@@ -28,6 +29,7 @@ import {
 } from "../services/barberStorageService";
 import { usePermissions } from "../../auth/hooks/usePermissions";
 import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
+import { exportToStyledExcel } from "../../../shared/utils/excelExporter";
 
 const getLoyaltyBadge = (tier) => {
   switch (tier) {
@@ -55,13 +57,7 @@ export default function BarberAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadAppointments();
-  }, []);
-
-  useDataSync([SYNC_ENTITIES.APPOINTMENTS], loadAppointments);
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
     setLoading(true);
     const profile = getCurrentBarberProfile();
     setBarber(profile);
@@ -75,7 +71,13 @@ export default function BarberAppointmentsPage() {
     } catch {
       // offline fallback
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
+
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS], loadAppointments);
 
   const handleCompleteAppointment = (id_cita) => {
     const res = completeBarberAppointment(id_cita);
@@ -87,7 +89,9 @@ export default function BarberAppointmentsPage() {
         colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
       });
       toast.success(`¡Cita #${id_cita} marcada como Completada!`, {
-        description: "Servicio registrado correctamente."
+        description: res.pointsAwarded
+          ? `Servicio finalizado. Se acreditaron +${res.pointsAwarded} pts de fidelidad al cliente (Total: ${res.newPoints} pts).`
+          : "Servicio registrado correctamente."
       });
       loadAppointments();
       setSelectedAppointment(null);
@@ -145,6 +149,46 @@ export default function BarberAppointmentsPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (!filteredAppointments || filteredAppointments.length === 0) {
+      toast.error("No hay citas asignadas para exportar con el filtro actual.");
+      return;
+    }
+
+    const barberFullName = barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero";
+
+    exportToStyledExcel({
+      title: "AGENDA PERSONAL DE CITAS ASIGNADAS",
+      subtitle: `Profesional: ${barberFullName} | Total: ${filteredAppointments.length} citas`,
+      sheetName: "Mis Citas",
+      filename: `mis_citas_${(barber?.nombre || "barbero").toLowerCase()}`,
+      columns: [
+        { header: "ID Cita", key: "id_cita", type: "code", width: 85, align: "center" },
+        { header: "Fecha", key: "fecha", type: "date", width: 115, align: "center" },
+        { header: "Hora", key: "hora", type: "time", width: 95, align: "center" },
+        { header: "Cliente", key: "cliente_nombre", width: 170 },
+        { header: "Teléfono", key: "cliente_telefono", width: 130, align: "center" },
+        { header: "Servicio", key: "servicio_nombre", width: 180 },
+        { header: "Paquete", key: "paquete_nombre", width: 160 },
+        { header: "Precio", key: "precio", type: "currency", width: 125, align: "right" },
+        { header: "Estado", key: "estado", type: "status", width: 120, align: "center" }
+      ],
+      data: filteredAppointments.map((apt) => ({
+        id_cita: `#${apt.id_cita || ""}`,
+        fecha: apt.fecha || "—",
+        hora: apt.hora || "—",
+        cliente_nombre: apt.cliente_nombre || "Cliente General",
+        cliente_telefono: apt.cliente_telefono || "—",
+        servicio_nombre: apt.servicio_nombre || "Servicio General",
+        paquete_nombre: apt.paquete_nombre || "N/A",
+        precio: Number(apt.precio || apt.servicio_precio || 0),
+        estado: apt.estado || "Programada"
+      }))
+    });
+
+    toast.success("Listado de citas exportado a Excel");
+  };
+
   return (
     <div className="space-y-6">
       {/* HEADER DE MÓDULO */}
@@ -163,17 +207,28 @@ export default function BarberAppointmentsPage() {
           </p>
         </div>
 
-        <Link
-          to="/barbero/agenda"
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Ver en Calendario</span>
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 rounded-xl bg-card hover:bg-accent border border-[#DFB755]/40 text-foreground hover:text-[#DFB755] font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs shrink-0"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-[#DFB755]" />
+            <span>Exportar Excel</span>
+          </button>
+
+          <Link
+            to="/barbero/agenda"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Ver en Calendario</span>
+          </Link>
+        </div>
       </div>
 
       {/* FILTROS CON SEARCHABLE SELECT */}
-      <div className="p-4 rounded-2xl bg-card border border-border">
+      <div className="p-4 rounded-2xl bg-card/60 border border-border/40 shadow-sm backdrop-blur-md">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Búsqueda */}
           <div className="sm:col-span-2 relative">
@@ -183,7 +238,7 @@ export default function BarberAppointmentsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por cliente, servicio o número de cita (#101)..."
-              className="w-full pl-9 pr-3 py-2 bg-input-background border border-input rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="w-full pl-9 pr-3 py-2 bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 transition-colors shadow-none"
             />
           </div>
 

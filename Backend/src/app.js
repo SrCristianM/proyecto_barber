@@ -31,6 +31,7 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import uploadsRoutes from "./routes/uploads.routes.js";
 import notificationsRoutes from "./routes/notifications.routes.js";
 import suppliesRoutes from "./routes/supplies.routes.js";
+import inventoryStationRoutes from "./routes/inventoryStation.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,6 +143,7 @@ app.use("/api/uploads", uploadsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/supplies", suppliesRoutes);
 app.use("/api/abastecimientos", suppliesRoutes);
+app.use("/api/inventory-stations", inventoryStationRoutes);
 
 // Ruta no encontrada (404)
 app.use((req, res, next) => {

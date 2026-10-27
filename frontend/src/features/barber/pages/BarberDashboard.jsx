@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import confetti from "canvas-confetti";
@@ -21,6 +21,7 @@ import {
 import Modal from "../../admin/shared/components/Modal";
 import SalonAmbienceWidget from "../../client/components/SalonAmbienceWidget";
 import BarberPoleIndicator from "../components/BarberPoleIndicator";
+import CelestialAtmosphereCanvas, { useCelestialTime } from "../../../shared/components/animations/CelestialAtmosphereCanvas";
 import AnimatedCounter from "../components/AnimatedCounter";
 import { toast } from "sonner";
 import {
@@ -74,9 +75,19 @@ export default function BarberDashboard() {
 
   useEffect(() => {
     loadDashboardData();
+
+    const handleProfileUpdate = () => {
+      loadDashboardData();
+    };
+    window.addEventListener("barber_profile_updated", handleProfileUpdate);
+    window.addEventListener("auth_user_updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("barber_profile_updated", handleProfileUpdate);
+      window.removeEventListener("auth_user_updated", handleProfileUpdate);
+    };
   }, []);
 
-  useDataSync([SYNC_ENTITIES.APPOINTMENTS, SYNC_ENTITIES.SCHEDULES], () => {
+  useDataSync([SYNC_ENTITIES.APPOINTMENTS, SYNC_ENTITIES.SCHEDULES, SYNC_ENTITIES.BARBERS, SYNC_ENTITIES.USERS], () => {
     loadDashboardData();
   });
 
@@ -118,7 +129,9 @@ export default function BarberDashboard() {
         colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
       });
       toast.success(`¡Cita #${id_cita} completada con éxito!`, {
-        description: "Cliente registrado como atendido en la jornada de hoy."
+        description: res.pointsAwarded
+          ? `Servicio finalizado. Se acreditaron +${res.pointsAwarded} pts de fidelidad al cliente (Total: ${res.newPoints} pts).`
+          : "Cliente registrado como atendido en la jornada de hoy."
       });
       loadDashboardData();
       if (selectedAppointment && selectedAppointment.id_cita === id_cita) {
@@ -142,37 +155,59 @@ export default function BarberDashboard() {
     }
   };
 
+  // Saludo dinámico celestial según la hora del día
+  const celestial = useCelestialTime();
+
   return (
     <div className="space-y-6">
-      {/* 1. BANNER DE BIENVENIDA PROFESIONAL */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-card via-card/90 to-card/50 border border-[#C9A24A]/30 p-6 sm:p-8 shadow-xl">
+      {/* 1. BANNER DE BIENVENIDA PROFESIONAL CON ATMÓSFERA CELESTIAL DINÁMICA */}
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} border border-[#DFB755]/35 p-6 sm:p-8 shadow-2xl shadow-indigo-950/25 transition-all duration-700`}>
+        {/* Lienzo Celestial con Sol / Atardecer / Luna 3D y Estrellas Interactivas */}
+        <CelestialAtmosphereCanvas isNight={celestial.isNight} phase={celestial.phase} />
+
+        {/* Luz radial reflectiva de fondo según hora */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-700"
+          style={{
+            background: celestial.radialGradient
+          }}
+        />
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[#DFB755]/10 blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 max-w-xl lg:max-w-2xl space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <BarberPoleIndicator variant="gold" label="Jornada Laboral Activa" showPulse={true} />
+              
+              {/* Pastilla de Horario Dinámico con Fase del Día */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black/40 border border-white/15 text-slate-200 backdrop-blur-md shadow-xs">
+                <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
+                <span>{celestial.periodName} • {celestial.timeFormatted}</span>
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
-              ¡Hola, {barber?.nombre || "Barbero"}!
+
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
+              <span>{celestial.saludo},</span>
+              <span className="bg-gradient-to-r from-[#FFE082] via-[#DFB755] to-[#DDAE41] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]">{barber?.nombre || "Carlos"}!</span>
+              <span className="text-2xl sm:text-3xl animate-bounce-subtle">{celestial.emoji}</span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl">
-              Bienvenido a tu panel de control profesional en <strong className="text-foreground">Tu Turno Barber</strong>. 
-              Consulta tu agenda, próximas atenciones del día y gestiona tus horarios con total precisión.
+            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-lg leading-relaxed">
+              {celestial.barberMessage}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Botones de acción alineados debajo del texto a la izquierda para no tapar los astros celestes */}
+          <div className="pt-1 flex flex-wrap items-center gap-3">
             <Link
               to="/barbero/agenda"
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-md shadow-[#DDAE41]/25 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs shadow-lg shadow-[#DDAE41]/30 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <Calendar className="w-4 h-4" />
               <span>Ver Agenda Completa</span>
             </Link>
             <Link
               to="/barbero/novedades"
-              className="px-4 py-2.5 rounded-xl border border-border hover:border-[#DFB755]/50 bg-accent/40 hover:bg-accent text-foreground font-bold text-xs transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-white/20 hover:border-[#DFB755]/60 bg-white/10 hover:bg-white/20 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-xs hover:scale-[1.02] active:scale-[0.98]"
             >
               <FileText className="w-4 h-4 text-[#DFB755]" />
               <span>Solicitar Novedad</span>

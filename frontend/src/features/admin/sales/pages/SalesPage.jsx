@@ -16,6 +16,7 @@ import StatusFilterPills from "../../shared/components/StatusFilterPills";
 import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
 import ViewModeToggle from "../../shared/components/ViewModeToggle";
+import StraightRazorFoamReveal from "../../../../shared/components/animations/StraightRazorFoamReveal";
 
 export default function SalesPage() {
   useSearchHighlight();
@@ -75,6 +76,7 @@ export default function SalesPage() {
 
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [revealSaleData, setRevealSaleData] = useState(null);
 
   const { hasPermission } = usePermissions();
   const canCreateSale = hasPermission("ventas", "crear");
@@ -95,7 +97,15 @@ export default function SalesPage() {
   };
 
   const onHandleCreate = () => {
-    handleCreate();
+    const saleResult = handleCreate();
+    setRevealSaleData({
+      id_venta: saleResult?.id_venta || (sales.length + 1),
+      total: formData?.total || 35000,
+      metodo_pago: formData?.metodo_pago || "Efectivo",
+      cliente_nombre: getClientName(formData?.id_cliente) || "Cliente General",
+      barbero_nombre: "Caja Principal",
+      fecha: new Date().toLocaleDateString("es-CO")
+    });
     triggerGoldenConfetti();
   };
   const onHandleEdit = () => { handleEdit(); };
@@ -309,6 +319,13 @@ export default function SalesPage() {
           onClose={() => { setShowDeactivateModal(false); setDeactivateTarget(null); }}
         />
       )}
+
+      {/* ANIMACIÓN DE NAVAJA BARBERA DESLIZANTE SOBRE ESPUMA */}
+      <StraightRazorFoamReveal
+        isOpen={!!revealSaleData}
+        onClose={() => setRevealSaleData(null)}
+        saleData={revealSaleData}
+      />
     </div>
   );
 }

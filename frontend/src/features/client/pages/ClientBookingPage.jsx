@@ -17,15 +17,21 @@ import {
   Check,
   Star,
   Share2,
-  Download
+  Download,
+  Sun,
+  Flame,
+  Sparkles
 } from "lucide-react";
 import ClientStarIcon from "../components/ClientStarIcon";
+import BarberPoleSuccessModal from "../../../shared/components/animations/BarberPoleSuccessModal";
 import {
   getClientServices,
   getClientPackages,
   getClientBarbers,
   getClientSchedules,
   getAvailableSlots,
+  getBarberWorkingDays,
+  isBarberWorkingOnDate,
   bookAppointment,
   getCurrentClientProfile,
   syncCatalogsFromApi
@@ -36,7 +42,8 @@ import {
   downloadIcsFile,
   createWhatsAppShareUrl
 } from "../utils/calendarUtils";
-import { getLocalDateString } from "../../../shared/utils/dateUtils";
+import { getLocalDateString, addDays } from "../../../shared/utils/dateUtils";
+import ClientBookingDatePicker from "../components/ClientBookingDatePicker";
 
 export default function ClientBookingPage() {
   const [searchParams] = useSearchParams();
@@ -53,6 +60,10 @@ export default function ClientBookingPage() {
   const clientProfile = useMemo(() => getCurrentClientProfile(), []);
 
   const refreshCatalogs = () => {
+    setServices(getClientServices());
+    setPackages(getClientPackages());
+    setBarbers(getClientBarbers());
+    setSchedules(getClientSchedules());
     syncCatalogsFromApi().then(() => {
       setServices(getClientServices());
       setPackages(getClientPackages());
@@ -82,13 +93,15 @@ export default function ClientBookingPage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [bookingNotes, setBookingNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successAppointmentData, setSuccessAppointmentData] = useState(null);
 
   // Búsqueda en Paso 1 y Paso 2
   const [serviceSearch, setServiceSearch] = useState("");
   const [barberSearch, setBarberSearch] = useState("");
 
-  // Slots calculados en Paso 4
+  // Slots calculados en Paso 4 y filtro de jornada (mañana/tarde)
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotPeriodFilter, setSlotPeriodFilter] = useState("all"); // 'all' | 'morning' | 'afternoon'
 
   // Inicializar selección si viene por URL (ej: ?servicio=2 o ?paquete=1)
   useEffect(() => {
@@ -114,18 +127,41 @@ export default function ClientBookingPage() {
     const bId = searchParams.get("barbero") || searchParams.get("barberoId");
     if (bId && barbers.some((b) => b.id_barbero === Number(bId))) {
       setSelectedBarberId(Number(bId));
-    } else if (barbers.length > 0 && !selectedBarberId) {
-      setSelectedBarberId(barbers[0].id_barbero);
+    } else if (barbers.length > 0) {
+      if (!selectedBarberId || !barbers.some((b) => b.id_barbero === Number(selectedBarberId))) {
+        setSelectedBarberId(barbers[0].id_barbero);
+      }
     }
   }, [searchParams, barbers, selectedBarberId]);
 
-  // Inicializar fecha mínima (mañana o hoy)
+  // Inicializar o ajustar fecha seleccionada según los días que realmente labora el barbero
   const todayStr = getLocalDateString();
   useEffect(() => {
-    if (!selectedDate) {
-      setSelectedDate(todayStr);
+    if (!selectedBarberId) return;
+
+    // Si la fecha actual ya es una jornada laboral activa con turnos para este barbero, mantenerla
+    if (selectedDate && isBarberWorkingOnDate(selectedBarberId, selectedDate).isWorking) {
+      const currentSlots = getAvailableSlots(selectedBarberId, selectedDate);
+      if (currentSlots.length > 0 && currentSlots.some((s) => s.disponible)) {
+        return;
+      }
     }
-  }, [selectedDate, todayStr]);
+
+    // De lo contrario, buscar el primer día laboral con turnos disponibles en los próximos 30 días
+    let found = null;
+    for (let i = 0; i <= 30; i++) {
+      const nextD = addDays(todayStr, i);
+      if (isBarberWorkingOnDate(selectedBarberId, nextD).isWorking) {
+        const slots = getAvailableSlots(selectedBarberId, nextD);
+        if (slots.length > 0 && slots.some((s) => s.disponible)) {
+          found = nextD;
+          break;
+        }
+      }
+    }
+
+    setSelectedDate(found || "");
+  }, [selectedBarberId, schedules, todayStr]);
 
   // Recalcular slots disponibles cuando cambia barbero o fecha
   useEffect(() => {
@@ -175,6 +211,44 @@ export default function ClientBookingPage() {
     return barbers.find((b) => b.id_barbero === Number(selectedBarberId)) || null;
   }, [selectedBarberId, barbers]);
 
+  // Verificar si un barbero es especialista en el servicio/paquete actual
+  const isBarberSpecialist = useMemo(() => {
+    return (barber) => {
+      if (!barber || !barber.especialidad) return false;
+      const spec = barber.especialidad.toLowerCase();
+      if (bookingType === "package" && selectedPackage) {
+        return spec.includes("corte") || spec.includes("fade") || spec.includes("diseño");
+      }
+      return selectedServices.some((s) => {
+        const name = (s.nombre || "").toLowerCase();
+        const cat = (s.categoria || "").toLowerCase();
+        if (cat.includes("barba") && spec.includes("barba")) return true;
+        if (cat.includes("corte") && (spec.includes("corte") || spec.includes("fade"))) return true;
+        if (name.includes("color") && spec.includes("color")) return true;
+        return spec.includes(name);
+      });
+    };
+  }, [bookingType, selectedPackage, selectedServices]);
+
+  // Filtrado de slots de Paso 4 por jornada (Mañana / Tarde)
+  const filteredSlots = useMemo(() => {
+    return availableSlots.filter((slot) => {
+      if (slotPeriodFilter === "all") return true;
+      const hour = parseInt(slot.hora.split(":")[0], 10);
+      if (slotPeriodFilter === "morning") return hour < 12;
+      if (slotPeriodFilter === "afternoon") return hour >= 12;
+      return true;
+    });
+  }, [availableSlots, slotPeriodFilter]);
+
+  const morningFreeCount = useMemo(() => {
+    return availableSlots.filter((s) => s.disponible && parseInt(s.hora.split(":")[0], 10) < 12).length;
+  }, [availableSlots]);
+
+  const afternoonFreeCount = useMemo(() => {
+    return availableSlots.filter((s) => s.disponible && parseInt(s.hora.split(":")[0], 10) >= 12).length;
+  }, [availableSlots]);
+
   // Disponibilidad de la fecha seleccionada
   const dateAvailability = useMemo(() => {
     if (!selectedBarberId || !selectedDate) return null;
@@ -201,7 +275,14 @@ export default function ClientBookingPage() {
     (bookingType === "package" && selectedPackageId !== null);
 
   const canAdvanceFromStep2 = Boolean(selectedBarberId);
-  const canAdvanceFromStep3 = Boolean(selectedDate) && (!dateAvailability || dateAvailability.valid);
+  const selectedBarberWorkingDays = useMemo(() => {
+    return selectedBarberId ? getBarberWorkingDays(selectedBarberId) : null;
+  }, [selectedBarberId, schedules]);
+
+  const canAdvanceFromStep3 =
+    Boolean(selectedDate) &&
+    Boolean(selectedBarberWorkingDays?.hasSchedules) &&
+    (!dateAvailability || dateAvailability.valid);
   const canAdvanceFromStep4 = Boolean(selectedTimeSlot);
 
   // Manejo de confirmación final
@@ -235,19 +316,20 @@ export default function ClientBookingPage() {
       return;
     }
 
-    // Efecto de celebración con destellos dorados
-    confetti({
-      particleCount: 120,
-      spread: 80,
-      origin: { y: 0.6 },
-      colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF"]
-    });
+    // Desplazar suavemente a una altura media equilibrada para apreciar la animación en el centro
+    window.scrollTo({ top: 140, behavior: "smooth" });
 
     toast.success("¡Cita reservada con éxito! Te esperamos en Tu Turno Barber.");
 
-    setTimeout(() => {
-      navigate("/portal/mis-citas");
-    }, 1000);
+    setSuccessAppointmentData({
+      id_cita: result.id_cita || 101,
+      cliente_nombre: clientProfile ? `${clientProfile.nombre} ${clientProfile.apellido || ""}`.trim() : "Cliente",
+      barbero_nombre: `${selectedBarber?.nombre} ${selectedBarber?.apellido || ""}`.trim(),
+      servicio_nombre: title,
+      fecha: selectedDate,
+      hora: selectedTimeSlot,
+      precio: totalPrice
+    });
   };
 
   const steps = [
@@ -566,66 +648,95 @@ export default function ClientBookingPage() {
               />
             </div>
 
-            {/* Tarjetas de barberos */}
+            {/* Tarjetas de barberos con diseño premium y detección de especialidad */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {barbers
                 .filter(
                   (b) =>
-                    b.nombre.toLowerCase().includes(barberSearch.toLowerCase()) ||
-                    b.especialidad.toLowerCase().includes(barberSearch.toLowerCase())
+                    (b.nombre || "").toLowerCase().includes(barberSearch.toLowerCase()) ||
+                    ((b.apellido || "") && `${b.nombre} ${b.apellido}`.toLowerCase().includes(barberSearch.toLowerCase())) ||
+                    (b.especialidad || "").toLowerCase().includes(barberSearch.toLowerCase())
                 )
                 .map((b) => {
                   const isSelected = Number(selectedBarberId) === b.id_barbero;
+                  const isMatch = isBarberSpecialist(b);
+                  const schedInfo = getBarberWorkingDays(b.id_barbero);
+
                   return (
-                    <div
+                    <motion.div
                       key={b.id_barbero}
+                      whileHover={{ y: -3, scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => setSelectedBarberId(b.id_barbero)}
-                      className={`p-5 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
+                      className={`p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden flex flex-col justify-between ${
                         isSelected
-                          ? "bg-[#DFB755]/10 border-[#DFB755] ring-2 ring-[#DFB755]/20 shadow-md"
-                          : "bg-card border-border hover:border-[#DFB755]/50"
+                          ? "bg-gradient-to-br from-[#DFB755]/15 via-card to-[#E8C466]/10 border-[#DFB755] ring-2 ring-[#DFB755]/30 shadow-lg shadow-[#DFB755]/15"
+                          : "bg-card border-border hover:border-[#DFB755]/60 hover:shadow-md"
                       }`}
                     >
-                      <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted shrink-0 border border-border">
-                        {b.imagen_url ? (
-                          <img
-                            src={b.imagen_url}
-                            alt={b.nombre}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-[#DFB755]/20 text-[#DFB755] font-bold text-base">
-                            {b.nombre.charAt(0)}
+                      {/* Badge recomendación de especialista */}
+                      {isMatch && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-gradient-to-r from-[#DFB755] to-[#DDAE41] text-zinc-950 shadow-xs">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Especialista</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4">
+                        <div className="relative shrink-0">
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-muted border border-border shadow-xs">
+                            {b.imagen_url ? (
+                              <img
+                                src={b.imagen_url}
+                                alt={b.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-[#DFB755]/20 text-[#DFB755] font-black text-lg">
+                                {b.nombre.charAt(0)}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          {/* Anillo de disponibilidad en vivo */}
+                          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-card flex items-center justify-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          </span>
+                        </div>
+
+                        <div className="flex-1 min-w-0 pr-12">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-sm font-black text-foreground truncate">{b.nombre}</h3>
+                            {isSelected && (
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="shrink-0">
+                                <CheckCircle2 className="w-4 h-4 text-[#DFB755]" />
+                              </motion.div>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">{b.especialidad}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-500">
+                              <Star className="w-3 h-3 fill-amber-500" />
+                              {b.rating || 4.9}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">({b.reviewsCount || 120}+ citas)</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h3 className="text-sm font-black text-foreground truncate">{b.nombre}</h3>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#DDAE41] dark:text-[#E8C466] shrink-0" />}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-500">
-                            <Star className="w-3 h-3 fill-amber-500" />
-                            {b.rating || 4.9}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">({b.reviewsCount || 100}+ reseñas)</span>
-                          <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-[#DFB755]/15 text-[#DFB755] border border-[#DFB755]/30">
-                            {b.badge || "Especialista"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/50">
-                          <span>{b.especialidad}</span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
-                            ⚡ {b.nextSlot || "Hoy disponible"}
-                          </span>
-                        </div>
+                      <div className="mt-3.5 pt-2.5 border-t border-border/60 flex items-center justify-between text-[11px] gap-2">
+                        <span className={`flex items-center gap-1 truncate ${schedInfo.hasSchedules ? "text-muted-foreground" : "text-amber-500 font-medium"}`}>
+                          {schedInfo.hasSchedules ? <Clock className="w-3 h-3 shrink-0" /> : <AlertCircle className="w-3 h-3 shrink-0" />}
+                          <span className="truncate">{schedInfo.summary}</span>
+                        </span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[10px] flex items-center gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {schedInfo.hasSchedules ? (b.nextSlot || "Agenda activa") : "Sin horario"}
+                        </span>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
             </div>
@@ -633,7 +744,7 @@ export default function ClientBookingPage() {
         )}
 
         {/* =========================================================================
-            PASO 3: SELECCIONAR FECHA
+            PASO 3: SELECCIONAR FECHA CON CALENDARIO INTERACTIVO Y ANIMACIONES
             ========================================================================= */}
         {currentStep === 3 && (
           <div className="space-y-6">
@@ -642,58 +753,41 @@ export default function ClientBookingPage() {
                 Paso 3: Selecciona la Fecha
               </h2>
               <p className="text-xs text-muted-foreground">
-                Indica el día en el que deseas asistir a tu cita en la barbería.
+                Explora el calendario interactivo con disponibilidad en vivo para agendar tu cita.
               </p>
             </div>
 
-            <div className="max-w-md mx-auto space-y-4">
-              <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
-                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Fecha de la Cita
-                </label>
-                <input
-                  type="date"
-                  min={todayStr}
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-input-background border border-input text-foreground text-base focus:ring-2 focus:ring-[#DFB755]"
-                  required
-                />
+            {!selectedBarberWorkingDays?.hasSchedules ? (
+              <div className="p-8 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto animate-bounce" />
+                <h3 className="text-base font-bold text-foreground">
+                  {selectedBarber?.nombre} aún no tiene horarios asignados
+                </h3>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  El administrador todavía no ha configurado las jornadas laborales para este barbero. Por favor regresa al paso 2 y selecciona otro barbero disponible.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="px-5 py-2.5 rounded-xl bg-[#DFB755] text-zinc-950 font-bold text-xs shadow-md hover:brightness-105 transition-all cursor-pointer"
+                >
+                  Elegir Otro Barbero
+                </button>
               </div>
-
-              {dateAvailability && !dateAvailability.valid && (
-                <div className="p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold">Fecha no disponible para reserva:</p>
-                    <p className="opacity-90">{dateAvailability.reason}</p>
-                    <p className="mt-1 font-semibold underline">Por favor selecciona otra fecha para continuar.</p>
-                  </div>
-                </div>
-              )}
-
-              {dateAvailability && dateAvailability.valid && (
-                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs flex items-center justify-between">
-                  <span className="font-bold flex items-center gap-1.5">
-                    <Check className="w-4 h-4" /> Fecha habilitada para atención
-                  </span>
-                  <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20">
-                    {dateAvailability.freeCount} turno(s) libre(s)
-                  </span>
-                </div>
-              )}
-
-              {selectedBarber && (
-                <div className="p-4 rounded-2xl bg-muted/40 border border-border text-xs space-y-1.5">
-                  <p className="font-bold text-foreground">
-                    Barbero seleccionado: {selectedBarber.nombre} ({selectedBarber.especialidad})
-                  </p>
-                  <p className="text-muted-foreground">
-                    Atención de Lunes a Sábado. Los días no laborables o feriados no permitirán selección de turnos en el siguiente paso.
-                  </p>
-                </div>
-              )}
-            </div>
+            ) : (
+              <ClientBookingDatePicker
+                selectedDate={selectedDate}
+                onDateChange={(newDate) => setSelectedDate(newDate)}
+                selectedBarber={selectedBarber}
+                schedules={schedules}
+                onContinue={() => {
+                  if (canAdvanceFromStep3) {
+                    setCurrentStep(4);
+                    window.scrollTo({ top: 120, behavior: "smooth" });
+                  }
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -731,61 +825,108 @@ export default function ClientBookingPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 text-xs">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-gradient-to-r from-[#E8C466] to-[#DDAE41]" />
-                      <span className="text-muted-foreground">Seleccionado</span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-card border border-border" />
-                      <span className="text-muted-foreground">Disponible</span>
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded-md bg-muted opacity-50" />
-                      <span className="text-muted-foreground">Ocupado / Novedad</span>
-                    </span>
+                  {/* SEGMENTACIÓN POR JORNADA: TODOS / MAÑANA / TARDE */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-muted/40 border border-border">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSlotPeriodFilter("all")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          slotPeriodFilter === "all"
+                            ? "bg-[#DFB755] text-zinc-950 shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Todos ({availableSlots.filter((s) => s.disponible).length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSlotPeriodFilter("morning")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
+                          slotPeriodFilter === "morning"
+                            ? "bg-[#DFB755] text-zinc-950 shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Sun className="w-3.5 h-3.5" />
+                        <span>Mañana ({morningFreeCount})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSlotPeriodFilter("afternoon")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer ${
+                          slotPeriodFilter === "afternoon"
+                            ? "bg-[#DFB755] text-zinc-950 shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Tarde ({afternoonFreeCount})</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#DFB755]" />
+                        <span>Seleccionado</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        <span>Libre</span>
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                    {availableSlots.map((slot) => {
-                      const isSelected = selectedTimeSlot === slot.hora;
-                      const isPopular = ["10:00", "11:00", "15:00", "16:00", "17:00"].includes(slot.hora);
-                      return (
-                        <motion.button
-                          key={slot.hora}
-                          type="button"
-                          disabled={!slot.disponible}
-                          whileHover={slot.disponible ? { scale: 1.05 } : {}}
-                          whileTap={slot.disponible ? { scale: 0.95 } : {}}
-                          onClick={() => setSelectedTimeSlot(slot.hora)}
-                          className={`py-3.5 px-2 rounded-2xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 relative cursor-pointer ${
-                            !slot.disponible
-                              ? "bg-muted text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
-                              : isSelected
-                              ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-lg shadow-[#DDAE41]/30 ring-2 ring-[#DFB755] scale-105 font-black"
-                              : "bg-card border border-border hover:border-[#DFB755] text-foreground hover:bg-accent"
-                          }`}
-                        >
-                          {isPopular && slot.disponible && !isSelected && (
-                            <span className="absolute -top-2 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-[#DFB755] text-black shadow-xs">
-                              Popular
-                            </span>
-                          )}
-                          <Clock className="w-3.5 h-3.5" />
-                          <span className="font-mono font-bold">{slot.hora}</span>
-                          {!slot.disponible ? (
-                            <span className="text-[9px] font-normal">
-                              {slot.bloqueadoPorNovedad ? "Permiso" : "Ocupado"}
-                            </span>
-                          ) : (
-                            <span className={`text-[8px] font-bold ${isSelected ? "text-black/80" : "text-emerald-500"}`}>
-                              {isSelected ? "Elegido" : "Libre"}
-                            </span>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
+                  {filteredSlots.length > 0 ? (
+                    <motion.div
+                      layout
+                      className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5"
+                    >
+                      {filteredSlots.map((slot) => {
+                        const isSelected = selectedTimeSlot === slot.hora;
+                        const isPopular = ["10:00", "11:00", "15:00", "16:00", "17:00"].includes(slot.hora);
+                        return (
+                          <motion.button
+                            key={slot.hora}
+                            type="button"
+                            disabled={!slot.disponible}
+                            whileHover={slot.disponible ? { scale: 1.05, y: -2 } : {}}
+                            whileTap={slot.disponible ? { scale: 0.95 } : {}}
+                            onClick={() => setSelectedTimeSlot(slot.hora)}
+                            className={`py-3.5 px-2 rounded-2xl text-xs font-black transition-all text-center flex flex-col items-center justify-center gap-0.5 relative cursor-pointer ${
+                              !slot.disponible
+                                ? "bg-muted/40 text-muted-foreground/30 border border-border cursor-not-allowed opacity-40"
+                                : isSelected
+                                ? "bg-gradient-to-r from-[#DFB755] to-[#DDAE41] text-zinc-950 shadow-lg shadow-[#DFB755]/30 ring-2 ring-[#DFB755] scale-105 font-black"
+                                : "bg-card border border-border/80 hover:border-[#DFB755] text-foreground hover:bg-accent/40 shadow-xs"
+                            }`}
+                          >
+                            {isPopular && slot.disponible && !isSelected && (
+                              <span className="absolute -top-2 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-gradient-to-r from-amber-500 to-[#DFB755] text-zinc-950 shadow-xs flex items-center gap-0.5">
+                                <Flame className="w-2.5 h-2.5 fill-zinc-950" />
+                                <span>Top</span>
+                              </span>
+                            )}
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="font-mono font-bold text-xs">{slot.hora}</span>
+                            {!slot.disponible ? (
+                              <span className="text-[9px] font-normal">
+                                {slot.bloqueadoPorNovedad ? "Permiso" : "Ocupado"}
+                              </span>
+                            ) : (
+                              <span className={`text-[8.5px] font-bold ${isSelected ? "text-zinc-950/80" : "text-emerald-500"}`}>
+                                {isSelected ? "Elegido" : "Libre"}
+                              </span>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </motion.div>
+                  ) : (
+                    <div className="p-8 rounded-2xl bg-card border border-border text-center text-xs text-muted-foreground">
+                      No hay turnos disponibles en esta jornada seleccionada. Prueba con la otra jornada.
+                    </div>
+                  )}
                 </div>
               )
             ) : (
@@ -955,6 +1096,16 @@ export default function ClientBookingPage() {
           )}
         </div>
       </div>
+
+      {/* MODAL ANIMADO DE CONFIRMACIÓN CON BARBER POLE 3D */}
+      <BarberPoleSuccessModal
+        isOpen={!!successAppointmentData}
+        onClose={() => {
+          setSuccessAppointmentData(null);
+          navigate("/portal/mis-citas");
+        }}
+        appointmentData={successAppointmentData}
+      />
     </div>
   );
 }

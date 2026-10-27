@@ -1,6 +1,7 @@
 import { SuppliesRepository } from "../models/supplies.model.js";
 import { BarbersRepository } from "../models/barbers.model.js";
 import { ProductsRepository } from "../models/products.model.js";
+import { InventoryStationRepository } from "../models/inventoryStation.model.js";
 import { ApiError } from "../errors/apiError.js";
 
 export class SuppliesService {
@@ -40,8 +41,9 @@ export class SuppliesService {
     let totalEstimated = 0;
 
     for (const item of supplyData.detalles) {
-      if (!item.id_producto) {
-        throw ApiError.badRequest("Cada ítem debe tener un 'id_producto' válido.");
+      const rawId = item.id_insumo || item.id_producto;
+      if (!rawId) {
+        throw ApiError.badRequest("Cada ítem debe tener un insumo válido.");
       }
 
       const qty = Number(item.cantidad);
@@ -49,28 +51,43 @@ export class SuppliesService {
         throw ApiError.badRequest("La cantidad de cada insumo debe ser mayor a cero.");
       }
 
-      const product = await ProductsRepository.findById(item.id_producto);
-      if (!product) {
-        throw ApiError.notFound(`Producto insumo con ID ${item.id_producto} no encontrado.`);
+      // 1. Buscar primero en insumos de bodega general (insumo_bodega)
+      let itemRecord = await InventoryStationRepository.findWarehouseItemById(rawId);
+      let isWarehouseItem = true;
+
+      // 2. Si no está en bodega, buscar en catálogo de productos regular
+      if (!itemRecord) {
+        itemRecord = await ProductsRepository.findById(rawId);
+        isWarehouseItem = false;
       }
 
-      if (Number(product.estado) === 0) {
-        throw ApiError.badRequest(`El producto '${product.nombre}' se encuentra inactivo.`);
+      if (!itemRecord) {
+        throw ApiError.notFound(`Insumo con ID ${rawId} no encontrado en almacén ni catálogo.`);
       }
 
-      // Verificación estricta de stock disponible en inventario
-      if (Number(product.stock) < qty) {
+      if (itemRecord.estado !== undefined && Number(itemRecord.estado) === 0) {
+        throw ApiError.badRequest(`El insumo '${itemRecord.nombre}' se encuentra inactivo.`);
+      }
+
+      // Verificación estricta de stock disponible en bodega o inventario
+      const availableStock = Number(isWarehouseItem ? itemRecord.stock_actual : itemRecord.stock);
+      if (availableStock < qty) {
         throw ApiError.conflict(
-          `Stock insuficiente para el insumo '${product.nombre}'. Stock disponible en bodega: ${product.stock}, solicitado: ${qty}.`
+          `Stock insuficiente para el insumo '${itemRecord.nombre}'. Stock disponible en bodega: ${availableStock}, solicitado: ${qty}.`
         );
       }
 
-      const unitPrice = item.precio_unitario !== undefined ? Number(item.precio_unitario) : Number(product.precio || 0);
+      const unitPrice = item.precio_unitario !== undefined
+        ? Number(item.precio_unitario)
+        : Number(isWarehouseItem ? (itemRecord.costo_unitario || 0) : (itemRecord.precio || 0));
       const subtotal = qty * unitPrice;
       totalEstimated += subtotal;
 
       detailsWithSubtotals.push({
-        id_producto: Number(product.id_producto),
+        id_producto: Number(isWarehouseItem ? itemRecord.id_insumo : itemRecord.id_producto),
+        id_insumo: Number(isWarehouseItem ? itemRecord.id_insumo : 0),
+        nombre_insumo: itemRecord.nombre,
+        isWarehouseItem,
         cantidad: qty,
         precio_unitario: unitPrice,
         subtotal

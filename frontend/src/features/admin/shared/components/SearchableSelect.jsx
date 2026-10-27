@@ -146,12 +146,12 @@ export default function SearchableSelect({
         }}
         className={`w-full flex items-center justify-between rounded-xl border transition-all select-none cursor-pointer ${sizeClasses} ${
           disabled
-            ? "bg-muted/40 border-border text-muted-foreground cursor-not-allowed opacity-60"
+            ? "bg-muted/40 border-border/30 text-muted-foreground cursor-not-allowed opacity-60"
             : error
-            ? "bg-input-background border-destructive text-foreground focus:ring-2 focus:ring-destructive/30"
+            ? "bg-card border-destructive text-foreground focus:ring-2 focus:ring-destructive/30"
             : isOpen
-            ? "bg-input-background border-primary ring-2 ring-primary/20 text-foreground"
-            : "bg-input-background border-input text-foreground hover:border-primary/50 hover:bg-accent/20"
+            ? "bg-card border-[#DFB755] ring-1 ring-[#DFB755]/30 text-foreground"
+            : "bg-card border-border/40 text-foreground hover:border-[#DFB755]/50 shadow-none"
         }`}
       >
         <div className="flex items-center gap-2 overflow-hidden flex-1 mr-1">

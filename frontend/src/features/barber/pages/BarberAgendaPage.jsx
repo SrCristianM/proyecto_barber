@@ -97,7 +97,9 @@ export default function BarberAgendaPage() {
         colors: ["#DFB755", "#E8C466", "#DDAE41", "#FFFFFF", "#10B981"]
       });
       toast.success(`¡Cita #${id_cita} completada y registrada!`, {
-        description: "El cliente ha sido atendido correctamente."
+        description: res.pointsAwarded
+          ? `Servicio finalizado. Se acreditaron +${res.pointsAwarded} pts de fidelidad al cliente (Total: ${res.newPoints} pts).`
+          : "El cliente ha sido atendido correctamente."
       });
       loadAgenda(selectedDate);
       setSelectedAppointment(null);

@@ -1,7 +1,7 @@
 import AvatarImageUploader from "../../admin/shared/components/AvatarImageUploader";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { User, Mail, Phone, MapPin, Award, Lock, Save, CheckCircle2, ShieldCheck } from "lucide-react";
+import { User, Mail, Phone, MapPin, Award, Lock, Save, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { getCurrentClientProfile, updateClientProfile } from "../services/clientStorageService";
 import FormFieldError from "../../admin/shared/components/FormFieldError";
 import NumericInput from "../../admin/shared/components/NumericInput";
@@ -161,9 +161,15 @@ export default function ClientProfilePage() {
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#DFB755]/15 border border-[#DFB755]/40 text-xs font-extrabold text-[#DDAE41] dark:text-[#E8C466] self-start sm:self-auto shadow-sm">
-          <Award className="w-4 h-4" />
-          <span>Nivel {loyaltyTier}</span>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#DFB755]/15 border border-[#DFB755]/40 text-xs font-extrabold text-[#DDAE41] dark:text-[#E8C466] shadow-sm">
+            <Award className="w-4 h-4" />
+            <span>Nivel {loyaltyTier}</span>
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-card border border-[#DFB755]/30 text-xs font-black text-foreground shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-[#DFB755]" />
+            <span>{Number(profile?.puntos_fidelidad ?? 0)} pts</span>
+          </div>
         </div>
       </div>
 

@@ -22,8 +22,18 @@ export class AuthRepository {
     const role = mockStore.roles.find((r) => r.id_rol === user.id_rol);
     const barber = mockStore.barberos.find((b) => b.id_usuario === user.id_usuario);
     const client = mockStore.clientes.find((c) => c.id_usuario === user.id_usuario);
-    const rawImg = user.imagen_url || user.avatar_url || barber?.imagen_url || client?.avatar_url || null;
-    const cleanImg = rawImg && !rawImg.includes("unsplash.com") ? rawImg : null;
+    
+    // Si el usuario tiene imagen_url explícita (incluso null/vacía tras eliminarla), respetarla
+    let cleanImg = null;
+    const userPhoto = user.imagen_url !== undefined ? user.imagen_url : user.avatar_url;
+    if (userPhoto && typeof userPhoto === "string" && userPhoto.trim() && !userPhoto.includes("unsplash.com")) {
+      cleanImg = userPhoto.trim();
+    } else if (userPhoto === undefined) {
+      const bPhoto = barber?.imagen_url;
+      if (bPhoto && typeof bPhoto === "string" && bPhoto.trim() && !bPhoto.includes("unsplash.com")) {
+        cleanImg = bPhoto.trim();
+      }
+    }
 
     return {
       ...user,
@@ -41,7 +51,7 @@ export class AuthRepository {
       const rows = await executeQuery(sql, [id]);
       if (rows && rows.length > 0) {
         const row = rows[0];
-        const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") ? row.imagen_url : null;
+        const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") && row.imagen_url.trim() ? row.imagen_url.trim() : null;
         return { ...row, imagen_url: img, avatar_url: img };
       }
       return null;
@@ -52,8 +62,18 @@ export class AuthRepository {
     const role = mockStore.roles.find((r) => r.id_rol === user.id_rol);
     const barber = mockStore.barberos.find((b) => b.id_usuario === id);
     const client = mockStore.clientes.find((c) => c.id_usuario === id);
-    const rawImg = user.imagen_url || user.avatar_url || barber?.imagen_url || client?.avatar_url || null;
-    const cleanImg = rawImg && !rawImg.includes("unsplash.com") ? rawImg : null;
+    
+    // Si el usuario tiene imagen_url explícita (incluso null/vacía tras eliminarla), respetarla
+    let cleanImg = null;
+    const userPhoto = user.imagen_url !== undefined ? user.imagen_url : user.avatar_url;
+    if (userPhoto && typeof userPhoto === "string" && userPhoto.trim() && !userPhoto.includes("unsplash.com")) {
+      cleanImg = userPhoto.trim();
+    } else if (userPhoto === undefined) {
+      const bPhoto = barber?.imagen_url;
+      if (bPhoto && typeof bPhoto === "string" && bPhoto.trim() && !bPhoto.includes("unsplash.com")) {
+        cleanImg = bPhoto.trim();
+      }
+    }
 
     const { contrasena, ...safeUser } = user;
     return {
@@ -203,12 +223,16 @@ export class AuthRepository {
 
   static async updateProfile(id_usuario, profileData) {
     const id = Number(id_usuario);
-    const photoUrl = profileData.imagen_url || profileData.avatar_url || profileData.foto;
-    const cleanPhoto = photoUrl && !photoUrl.includes("unsplash.com") ? photoUrl : null;
+    const hasPhoto = ("imagen_url" in profileData) || ("avatar_url" in profileData) || ("foto" in profileData);
+    const rawPhoto = profileData.imagen_url !== undefined
+      ? profileData.imagen_url
+      : (profileData.avatar_url !== undefined ? profileData.avatar_url : profileData.foto);
+    const cleanPhoto = (rawPhoto && typeof rawPhoto === "string" && !rawPhoto.includes("unsplash.com"))
+      ? rawPhoto.trim() || null
+      : null;
 
     if (isDatabaseConnected()) {
       const hasDoc = profileData.documento !== undefined;
-      const hasPhoto = photoUrl !== undefined;
 
       let sql = "UPDATE usuario SET nombre = ?, apellido = ?, telefono = ?";
       const params = [profileData.nombre, profileData.apellido, profileData.telefono || null];
@@ -243,17 +267,17 @@ export class AuthRepository {
       if (profileData.documento !== undefined) user.documento = profileData.documento || null;
       user.telefono = profileData.telefono || null;
       
-      if (photoUrl !== undefined) {
+      if (hasPhoto) {
         user.imagen_url = cleanPhoto;
         user.avatar_url = cleanPhoto;
       }
 
       const barber = mockStore.barberos.find((b) => b.id_usuario === id);
-      if (barber && photoUrl !== undefined) {
+      if (barber && hasPhoto) {
         barber.imagen_url = cleanPhoto;
       }
       const client = mockStore.clientes.find((c) => c.id_usuario === id);
-      if (client && photoUrl !== undefined) {
+      if (client && hasPhoto) {
         client.avatar_url = cleanPhoto;
         client.imagen_url = cleanPhoto;
       }
@@ -279,9 +303,17 @@ export class AuthRepository {
     if (isDatabaseConnected()) {
       const sql = "SELECT * FROM barbero WHERE id_usuario = ? LIMIT 1";
       const rows = await executeQuery(sql, [id]);
-      return rows && rows.length > 0 ? rows[0] : null;
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        const clean = row.imagen_url && !row.imagen_url.includes("unsplash.com") && row.imagen_url.trim() ? row.imagen_url.trim() : null;
+        return { ...row, imagen_url: clean };
+      }
+      return null;
     }
-    return mockStore.barberos.find((b) => b.id_usuario === id) || null;
+    const b = mockStore.barberos.find((barb) => barb.id_usuario === id);
+    if (!b) return null;
+    const clean = b.imagen_url && !b.imagen_url.includes("unsplash.com") && typeof b.imagen_url === "string" && b.imagen_url.trim() ? b.imagen_url.trim() : null;
+    return { ...b, imagen_url: clean };
   }
 
   static async getUserPermissions(id_rol) {

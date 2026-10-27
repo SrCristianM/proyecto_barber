@@ -54,6 +54,16 @@ const PROMOS = [
   }
 ];
 
+// Precarga preventiva en memoria de las imágenes de promociones para evitar recargas en scroll
+if (typeof window !== "undefined") {
+  PROMOS.forEach((p) => {
+    if (p.image) {
+      const img = new Image();
+      img.src = p.image;
+    }
+  });
+}
+
 export default function ClientPromoBanner() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -161,6 +171,7 @@ export default function ClientPromoBanner() {
               <img
                 src={activePromo.image}
                 alt={activePromo.title}
+                decoding="async"
                 className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />

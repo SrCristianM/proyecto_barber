@@ -22,7 +22,9 @@ export const SYNC_ENTITIES = {
   PURCHASES: "purchases",
   USERS: "users",
   ROLES: "roles",
-  SUPPLIES: "supplies"
+  SUPPLIES: "supplies",
+  STATION_SUPPLIES: "station_supplies",
+  WAREHOUSE_ITEMS: "warehouse_items"
 };
 
 const SYNC_EVENT_NAME = "barber_data_sync";

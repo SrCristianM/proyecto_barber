@@ -26,9 +26,12 @@ import ClientRouteProgressBar from "../components/ClientRouteProgressBar";
 import ClientSnipEffect from "../components/ClientSnipEffect";
 import SalonLiveRadar from "../components/SalonLiveRadar";
 import ClientMobileDock from "../components/ClientMobileDock";
+import HoloVIPCardModal from "../../../shared/components/animations/HoloVIPCardModal";
+import AmbientCelestialBackground from "../../../shared/components/animations/AmbientCelestialBackground";
 import { useSalonAudio } from "../context/SalonAudioContext";
 import { logoutUser, getCurrentUser } from "../../auth/services/authService";
 import { getCurrentClientProfile, getClientAppointments } from "../services/clientStorageService";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 import {
   getNotifications,
   markAsRead as serviceMarkAsRead,
@@ -55,6 +58,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   const [clientProfile, setClientProfile] = useState(null);
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [realNotifications, setRealNotifications] = useState([]);
+  const [showHoloVIPCard, setShowHoloVIPCard] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,6 +85,14 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
     return () => unsubscribe();
   }, [location.pathname]);
 
+  // Sincronización en tiempo real de puntos, nivel y citas cuando el barbero atiende
+  useDataSync([SYNC_ENTITIES.CLIENTS, SYNC_ENTITIES.APPOINTMENTS], () => {
+    setClientProfile(getCurrentClientProfile());
+    const appointments = getClientAppointments();
+    const upcoming = appointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada");
+    setUpcomingCount(upcoming.length);
+  });
+
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -90,6 +102,9 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   const handleLogout = () => {
     pauseAudio();
     logoutUser();
+    try {
+      sessionStorage.removeItem("tu_turno_show_welcome_modal");
+    } catch {}
     if (onLogout) onLogout();
     navigate("/login");
   };
@@ -124,7 +139,10 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background text-foreground relative">
+      {/* FONDO CELESTIAL AMBIENTAL DE LA PÁGINA (MAÑANA, TARDE, ATARDECER, NOCHE CON NUBES/NIEBLA) */}
+      <AmbientCelestialBackground isDark={isDark} />
+
       {/* BARRA DE PROGRESO DE RUTA DORADA */}
       <ClientRouteProgressBar />
 
@@ -152,9 +170,18 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                   </span>
                   <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase flex items-center gap-1.5">
                     Portal Cliente
-                    <span className={`px-2 py-0.2 rounded-full text-[9px] border font-bold ${getTierColor(loyaltyTier)}`}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowHoloVIPCard(true);
+                      }}
+                      title="Ver tu Tarjeta VIP 3D Holográfica"
+                      className={`px-2 py-0.2 rounded-full text-[9px] border font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all ${getTierColor(loyaltyTier)}`}
+                    >
                       {loyaltyTier}
-                    </span>
+                    </button>
                   </span>
                 </div>
               </NavLink>
@@ -206,22 +233,26 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                     />
                   )}
                   {isAudioActive && (
-                    <span className="flex items-end gap-0.5 h-3 px-0.5">
-                      <span
-                        className={`w-0.5 h-2 rounded-full animate-pulse ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
-                      <span
-                        className={`w-0.5 h-3 rounded-full animate-bounce ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
-                      <span
-                        className={`w-0.5 h-1.5 rounded-full animate-pulse ${
-                          soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
-                        }`}
-                      />
+                    <span className="flex items-end gap-0.5 h-3.5 px-0.5">
+                      {[
+                        { min: 3, max: 13, dur: 0.55 },
+                        { min: 7, max: 15, dur: 0.4 },
+                        { min: 2, max: 10, dur: 0.65 },
+                        { min: 5, max: 14, dur: 0.48 }
+                      ].map((bar, i) => (
+                        <motion.span
+                          key={i}
+                          animate={{ height: [bar.min, bar.max, bar.min] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: bar.dur,
+                            ease: "easeInOut"
+                          }}
+                          className={`w-0.5 rounded-full ${
+                            soundSource === "spotify" ? "bg-[#1DB954]" : "bg-[#DFB755]"
+                          }`}
+                        />
+                      ))}
                     </span>
                   )}
                 </button>
@@ -230,7 +261,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                 <button
                   type="button"
                   onClick={() => setIsDark(!isDark)}
-                  className="p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all duration-150 active:scale-90 cursor-pointer"
                   title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
                 >
                   {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
@@ -519,7 +550,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
       </header>
 
       {/* CONTENIDO PRINCIPAL CON TRANSICIONES SUAVES ENTRE MÓDULOS */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -535,7 +566,7 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
       </main>
 
       {/* FOOTER CLIENTE */}
-      <footer className="border-t border-border/80 bg-card/40 py-8 mt-auto pb-24 md:pb-8">
+      <footer className="relative z-10 border-t border-border/80 bg-card/40 py-8 mt-auto pb-24 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className="relative overflow-hidden rounded-lg border border-[#C9A24A]/35 bg-black/70 p-0.5 shrink-0">
@@ -543,6 +574,9 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
                 src="/logo.png"
                 alt="Tu Turno Barber"
                 className="h-6 w-auto object-contain"
+                width="24"
+                height="24"
+                decoding="async"
               />
             </div>
             <span className="font-bold text-foreground">Tu Turno Barber</span>
@@ -565,6 +599,25 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
 
       {/* BARRA DE NAVEGACIÓN INFERIOR FLOTANTE GLASSMORPHISM PARA CELULARES */}
       <ClientMobileDock upcomingCount={upcomingCount} />
+
+      {/* TARJETA VIP 3D HOLOGRÁFICA */}
+      <HoloVIPCardModal
+        isOpen={showHoloVIPCard}
+        onClose={() => setShowHoloVIPCard(false)}
+        client={{
+          nombre: clientProfile?.nombre ? `${clientProfile.nombre} ${clientProfile.apellido || ""}`.trim() : "Cliente VIP",
+          nivel: loyaltyTier,
+          puntos: Number(clientProfile?.puntos_fidelidad ?? 0),
+          descuento:
+            loyaltyTier === "Oro" || loyaltyTier === "Oro VIP"
+              ? "15% OFF en todos los cortes y barba"
+              : loyaltyTier === "Plata"
+              ? "10% OFF en servicios"
+              : loyaltyTier === "Bronce"
+              ? "5% OFF en productos y servicios"
+              : "Acumulación de puntos activos"
+        }}
+      />
     </div>
   );
 }

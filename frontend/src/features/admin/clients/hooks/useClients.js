@@ -124,6 +124,7 @@ export function useClients() {
               telefono: u.telefono || "",
               direccion: u.direccion || "No especificada",
               nivel_fidelidad: "Nuevo",
+              puntos_fidelidad: 0,
               estado: u.estado !== undefined ? u.estado : 1
             });
           }

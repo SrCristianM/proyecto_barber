@@ -116,7 +116,7 @@ export default function ScheduleNoveltiesView() {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-card border border-border rounded-xl p-5">
+      <div className="bg-card/60 border border-border/40 shadow-sm backdrop-blur-md rounded-2xl p-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
           <div className="flex flex-wrap items-center gap-3 flex-1 w-full sm:w-auto">
             {/* Buscador */}
@@ -127,7 +127,7 @@ export default function ScheduleNoveltiesView() {
                 placeholder="Buscar barbero, motivo o tipo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                className="w-full pl-9 pr-4 py-2 bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 text-foreground text-sm transition-colors shadow-none"
               />
             </div>
 

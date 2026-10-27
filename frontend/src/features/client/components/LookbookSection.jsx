@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparkles, Clock, ArrowRight, Eye, Check, Scissors, Tag } from "lucide-react";
+import { Sparkles, Clock, ArrowRight, Eye, Check, Scissors, Tag, Search } from "lucide-react";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import Modal from "../../admin/shared/components/Modal";
 import ClientImage from "./ClientImage";
@@ -71,16 +71,26 @@ export default function LookbookSection() {
             className="group rounded-3xl bg-card border border-border/80 hover:border-[#DFB755]/50 overflow-hidden shadow-sm hover:shadow-xl transition-all flex flex-col justify-between"
           >
             <div>
-              {/* Imagen con overlay interactivo */}
+              {/* Imagen con overlay interactivo y Lupa Espejo */}
               <div className="relative h-48 w-full overflow-hidden bg-muted">
                 <ClientImage
                   src={look.imagen}
                   alt={look.titulo}
                   type="service"
                   category={look.categoria}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+
+                {/* Lupa Espejo de Barbería: Destalle y Textura */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="w-16 h-16 rounded-full border-2 border-[#DFB755] bg-black/60 backdrop-blur-[2px] shadow-[0_0_25px_rgba(223,183,85,0.5)] flex flex-col items-center justify-center text-center p-1 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                    <Search className="w-4 h-4 text-[#DFB755] animate-pulse mb-0.5" />
+                    <span className="text-[7.5px] font-black uppercase tracking-wider text-white drop-shadow">
+                      Textura
+                    </span>
+                  </div>
+                </div>
 
                 <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase bg-[#DFB755] text-black shadow-md">
                   {look.categoria}

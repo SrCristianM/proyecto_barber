@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { Home, Calendar, Clock, AlertCircle, Scissors } from "lucide-react";
+import { Home, Calendar, Clock, AlertCircle, Scissors, Boxes } from "lucide-react";
 import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 
 export default function BarberMobileDock({ pendingNoveltiesCount = 0, todayAppointmentsCount = 0, canAccess }) {
@@ -7,6 +7,7 @@ export default function BarberMobileDock({ pendingNoveltiesCount = 0, todayAppoi
     { to: "/barbero", label: "Inicio", icon: Home, end: true },
     { to: "/barbero/agenda", label: "Mi Agenda", icon: Calendar },
     { to: "/barbero/citas", label: "Citas", icon: Scissors, highlight: true, badge: todayAppointmentsCount > 0 ? todayAppointmentsCount : null },
+    { to: "/barbero/estacion", label: "Puesto", icon: Boxes },
     { to: "/barbero/novedades", label: "Novedades", icon: AlertCircle, badge: pendingNoveltiesCount > 0 ? pendingNoveltiesCount : null },
     { to: "/barbero/horarios", label: "Horarios", icon: Clock }
   ];

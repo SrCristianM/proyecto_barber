@@ -37,11 +37,14 @@ export class BarbersRepository {
     return mockStore.barberos
       .map((b) => {
         const u = mockStore.usuarios.find((user) => user.id_usuario === b.id_usuario);
+        const rawPhoto = (b.imagen_url && typeof b.imagen_url === "string" && !b.imagen_url.includes("unsplash.com"))
+          ? b.imagen_url.trim()
+          : (u?.imagen_url && typeof u.imagen_url === "string" && !u.imagen_url.includes("unsplash.com") ? u.imagen_url.trim() : null);
         return {
           id_barbero: b.id_barbero,
           id_usuario: b.id_usuario,
           especialidad: b.especialidad,
-          imagen_url: b.imagen_url,
+          imagen_url: rawPhoto || null,
           estado: b.estado,
           nombre: u ? u.nombre : "Sin Nombre",
           apellido: u ? u.apellido : "",
@@ -91,11 +94,14 @@ export class BarbersRepository {
     const b = mockStore.barberos.find((barber) => barber.id_barbero === barberId);
     if (!b) return null;
     const u = mockStore.usuarios.find((user) => user.id_usuario === b.id_usuario);
+    const rawPhoto = (b.imagen_url && typeof b.imagen_url === "string" && !b.imagen_url.includes("unsplash.com"))
+      ? b.imagen_url.trim()
+      : (u?.imagen_url && typeof u.imagen_url === "string" && !u.imagen_url.includes("unsplash.com") ? u.imagen_url.trim() : null);
     return {
       id_barbero: b.id_barbero,
       id_usuario: b.id_usuario,
       especialidad: b.especialidad,
-      imagen_url: b.imagen_url,
+      imagen_url: rawPhoto || null,
       estado: b.estado,
       nombre: u ? u.nombre : "",
       apellido: u ? u.apellido : "",
@@ -171,16 +177,21 @@ export class BarbersRepository {
       const barber = await this.findById(barberId);
       if (!barber) return false;
 
+      const cleanPhoto = barberData.imagen_url !== undefined
+        ? (barberData.imagen_url && typeof barberData.imagen_url === "string" && !barberData.imagen_url.includes("unsplash.com") ? barberData.imagen_url.trim() || null : null)
+        : barber.imagen_url;
+
       if (isDatabaseConnected() && conn) {
         // Actualizar usuario
         await conn.execute(
-          `UPDATE usuario SET nombre = ?, apellido = ?, documento = ?, correo = ?, telefono = ? WHERE id_usuario = ?`,
+          `UPDATE usuario SET nombre = ?, apellido = ?, documento = ?, correo = ?, telefono = ?, imagen_url = ? WHERE id_usuario = ?`,
           [
             barberData.nombre !== undefined ? barberData.nombre : barber.nombre,
             barberData.apellido !== undefined ? barberData.apellido : barber.apellido,
             barberData.documento !== undefined ? barberData.documento : (barber.documento || null),
             barberData.correo !== undefined ? barberData.correo : barber.correo,
             barberData.telefono !== undefined ? barberData.telefono : barber.telefono,
+            cleanPhoto,
             barber.id_usuario
           ]
         );
@@ -190,7 +201,7 @@ export class BarbersRepository {
           `UPDATE barbero SET especialidad = ?, imagen_url = ?, estado = ? WHERE id_barbero = ?`,
           [
             barberData.especialidad !== undefined ? barberData.especialidad : barber.especialidad,
-            barberData.imagen_url !== undefined ? barberData.imagen_url : barber.imagen_url,
+            cleanPhoto,
             barberData.estado !== undefined ? barberData.estado : barber.estado,
             barberId
           ]
@@ -208,7 +219,11 @@ export class BarbersRepository {
         if (barberData.correo) uObj.correo = barberData.correo;
         if (barberData.telefono !== undefined) uObj.telefono = barberData.telefono;
         if (barberData.especialidad !== undefined) bObj.especialidad = barberData.especialidad;
-        if (barberData.imagen_url !== undefined) bObj.imagen_url = barberData.imagen_url;
+        if (barberData.imagen_url !== undefined) {
+          bObj.imagen_url = cleanPhoto;
+          uObj.imagen_url = cleanPhoto;
+          uObj.avatar_url = cleanPhoto;
+        }
         if (barberData.estado !== undefined) bObj.estado = barberData.estado;
         mockStore.saveToFile();
       }

@@ -18,6 +18,7 @@ import {
 import SearchableSelect from "../../admin/shared/components/SearchableSelect";
 import Modal from "../../admin/shared/components/Modal";
 import { getBarberReports, getCurrentBarberProfile } from "../services/barberStorageService";
+import { exportToStyledExcel } from "../../../shared/utils/excelExporter";
 
 export default function BarberReportsPage() {
   const [activeTab, setActiveTab] = useState("programadas"); // 'programadas' | 'completadas'
@@ -62,50 +63,46 @@ export default function BarberReportsPage() {
     );
   });
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     const listToExport = filteredList;
     if (!listToExport || listToExport.length === 0) {
       toast.error("No hay registros para exportar en este reporte.");
       return;
     }
 
-    const headers = [
-      "ID Cita",
-      "Cliente",
-      "Telefono",
-      "Fecha",
-      "Hora",
-      "Servicio",
-      "Paquete",
-      "Precio (COP)",
-      "Estado"
-    ];
+    const tabName = activeTab === "programadas" ? "Citas Programadas" : "Citas Completadas";
+    const barberFullName = barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero";
 
-    const rows = listToExport.map((apt) => [
-      `#${apt.id_cita || ""}`,
-      `"${String(apt.cliente_nombre || "Cliente").replace(/"/g, '""')}"`,
-      `"${String(apt.cliente_telefono || "N/A").replace(/"/g, '""')}"`,
-      apt.fecha || "",
-      apt.hora || "",
-      `"${String(apt.servicio_nombre || "Servicio").replace(/"/g, '""')}"`,
-      `"${String(apt.paquete_nombre || "N/A").replace(/"/g, '""')}"`,
-      Number(apt.precio || apt.servicio_precio || 0),
-      apt.estado || "Programada"
-    ]);
+    exportToStyledExcel({
+      title: `REPORTE OFICIAL DE CITAS — ${tabName.toUpperCase()}`,
+      subtitle: `Profesional: ${barberFullName} | Tu Turno Barber ERP`,
+      sheetName: activeTab === "programadas" ? "Programadas" : "Completadas",
+      filename: `reporte_citas_${activeTab}_${(barber?.nombre || "barbero").toLowerCase()}`,
+      columns: [
+        { header: "ID Cita", key: "id_cita", type: "code", width: 85, align: "center" },
+        { header: "Cliente", key: "cliente_nombre", width: 170 },
+        { header: "Teléfono", key: "cliente_telefono", width: 130, align: "center" },
+        { header: "Fecha", key: "fecha", type: "date", width: 115, align: "center" },
+        { header: "Hora", key: "hora", type: "time", width: 95, align: "center" },
+        { header: "Servicio", key: "servicio_nombre", width: 180 },
+        { header: "Paquete", key: "paquete_nombre", width: 160 },
+        { header: "Precio", key: "precio", type: "currency", width: 125, align: "right" },
+        { header: "Estado", key: "estado", type: "status", width: 120, align: "center" }
+      ],
+      data: listToExport.map((apt) => ({
+        id_cita: `#${apt.id_cita || ""}`,
+        cliente_nombre: apt.cliente_nombre || "Cliente General",
+        cliente_telefono: apt.cliente_telefono || "—",
+        fecha: apt.fecha || "—",
+        hora: apt.hora || "—",
+        servicio_nombre: apt.servicio_nombre || "Servicio General",
+        paquete_nombre: apt.paquete_nombre || "N/A",
+        precio: Number(apt.precio || apt.servicio_precio || 0),
+        estado: apt.estado || (activeTab === "programadas" ? "Programada" : "Completada")
+      }))
+    });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(";"), ...rows.map((e) => e.join(";"))].join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    const fileName = `reporte_citas_${activeTab}_${barber?.nombre || "barbero"}_${new Date().toISOString().split("T")[0]}.csv`;
-    link.setAttribute("download", fileName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Reporte descargado: ${fileName}`);
+    toast.success(`Reporte de ${tabName.toLowerCase()} exportado a Excel`);
   };
 
   const getStatusBadge = (estado) => {
@@ -141,11 +138,11 @@ export default function BarberReportsPage() {
 
         <button
           type="button"
-          onClick={handleExportCSV}
-          className="px-4 py-2.5 rounded-xl bg-card hover:bg-accent border border-border text-foreground hover:text-[#DFB755] font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs shrink-0"
+          onClick={handleExportExcel}
+          className="px-4 py-2.5 rounded-xl bg-card hover:bg-accent border border-[#DFB755]/40 text-foreground hover:text-[#DFB755] font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs shrink-0"
         >
-          <Download className="w-4 h-4 text-[#DFB755]" />
-          <span>Exportar a CSV (Excel)</span>
+          <FileSpreadsheet className="w-4 h-4 text-[#DFB755]" />
+          <span>Exportar a Excel</span>
         </button>
       </div>
 
@@ -255,7 +252,7 @@ export default function BarberReportsPage() {
       </div>
 
       {/* FILTRO DE BÚSQUEDA */}
-      <div className="p-4 rounded-2xl bg-card border border-border">
+      <div className="p-4 rounded-2xl bg-card/60 border border-border/40 shadow-sm backdrop-blur-md">
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -263,7 +260,7 @@ export default function BarberReportsPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={`Buscar en reporte de citas ${activeTab} por cliente, servicio o fecha...`}
-            className="w-full pl-9 pr-3 py-2 bg-input-background border border-input rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            className="w-full pl-9 pr-3 py-2 bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 transition-colors shadow-none"
           />
         </div>
       </div>

@@ -64,9 +64,13 @@ export default function SalonLiveRadar({ compact = false }) {
   useEffect(() => {
     const handleSync = () => updateRadar();
     window.addEventListener("barber_data_sync", handleSync);
+    window.addEventListener("barber_profile_updated", handleSync);
+    window.addEventListener("auth_user_updated", handleSync);
     window.addEventListener("storage", handleSync);
     return () => {
       window.removeEventListener("barber_data_sync", handleSync);
+      window.removeEventListener("barber_profile_updated", handleSync);
+      window.removeEventListener("auth_user_updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
   }, [updateRadar]);
@@ -189,7 +193,14 @@ export default function SalonLiveRadar({ compact = false }) {
                     <div className="relative shrink-0">
                       <div className="w-9 h-9 rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center font-bold text-[#DFB755]">
                         {b.imagen_url ? (
-                          <img src={b.imagen_url} alt={b.nombre} className="w-full h-full object-cover" />
+                          <img
+                            src={b.imagen_url}
+                            alt={b.nombre}
+                            width="36"
+                            height="36"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <span>{b.nombre[0]}</span>
                         )}

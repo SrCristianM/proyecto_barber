@@ -19,13 +19,15 @@ import {
   CheckCircle2,
   ChevronRight,
   Music2,
-  Sparkles
+  Sparkles,
+  Boxes
 } from "lucide-react";
 import SpotifyIcon from "../../../shared/ui/SpotifyIcon";
 import ClientRouteProgressBar from "../../client/components/ClientRouteProgressBar";
 import ClientSnipEffect from "../../client/components/ClientSnipEffect";
 import SalonLiveRadar from "../../client/components/SalonLiveRadar";
 import BarberMobileDock from "../components/BarberMobileDock";
+import AmbientCelestialBackground from "../../../shared/components/animations/AmbientCelestialBackground";
 import { useSalonAudio } from "../../client/context/SalonAudioContext";
 import { logoutUser, getCurrentUser } from "../../auth/services/authService";
 import {
@@ -42,13 +44,18 @@ import {
 } from "../../../shared/services/notificationService";
 import { timeAgo, formatExactDateTime } from "../../admin/shared/hooks/useNotifications";
 import ErrorBoundary from "../../../shared/components/ErrorBoundary";
+import LeatherStropBarberIntro from "../../../shared/components/animations/LeatherStropBarberIntro";
 import { usePermissions } from "../../auth/hooks/usePermissions";
+import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
 
 export default function BarberLayout({ isDark, setIsDark, onLogout }) {
   return <BarberLayoutContent isDark={isDark} setIsDark={setIsDark} onLogout={onLogout} />;
 }
 
 function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const {
     isAudioActive,
     soundSource,
@@ -62,8 +69,30 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
   const [todayAppointmentsCount, setTodayAppointmentsCount] = useState(0);
   const [pendingNoveltiesCount, setPendingNoveltiesCount] = useState(0);
   const [realNotifications, setRealNotifications] = useState([]);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [showBarberIntro, setShowBarberIntro] = useState(() => {
+    try {
+      const shouldPlay = sessionStorage.getItem("play_barber_intro") === "true";
+      const seen = sessionStorage.getItem("barber_intro_shown");
+      if (shouldPlay || !seen) {
+        sessionStorage.removeItem("play_barber_intro");
+        sessionStorage.setItem("barber_intro_shown", "true");
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("play_barber_intro") === "true") {
+        sessionStorage.removeItem("play_barber_intro");
+        sessionStorage.setItem("barber_intro_shown", "true");
+        setShowBarberIntro(true);
+      }
+    } catch { }
+  }, [location.pathname]);
 
   const todayStr = getLocalDateString();
 
@@ -75,9 +104,28 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
     } catch {}
   };
 
+  const refreshProfile = () => {
+    setBarberProfile(getCurrentBarberProfile());
+  };
+
+  useDataSync([SYNC_ENTITIES.BARBERS, SYNC_ENTITIES.USERS], refreshProfile);
+
   useEffect(() => {
-    const profile = getCurrentBarberProfile();
-    setBarberProfile(profile);
+    const handleProfileUpdate = () => {
+      refreshProfile();
+    };
+    window.addEventListener("barber_profile_updated", handleProfileUpdate);
+    window.addEventListener("auth_user_updated", handleProfileUpdate);
+    window.addEventListener("storage", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("barber_profile_updated", handleProfileUpdate);
+      window.removeEventListener("auth_user_updated", handleProfileUpdate);
+      window.removeEventListener("storage", handleProfileUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    refreshProfile();
 
     const appointments = getBarberAppointments();
     const todayApts = appointments.filter(
@@ -130,6 +178,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
       badge: todayAppointmentsCount > 0 ? todayAppointmentsCount : null,
       badgeColor: "bg-destructive text-white"
     },
+    { to: "/barbero/estacion", label: "Mi Puesto", icon: Boxes },
     { to: "/barbero/reportes", label: "Reportes", icon: BarChart3 }
   ];
 
@@ -142,7 +191,10 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
     : "BR";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-background text-foreground relative">
+      {/* FONDO CELESTIAL AMBIENTAL DE LA PÁGINA (MAÑANA, TARDE, ATARDECER, NOCHE CON NUBES/NIEBLA) */}
+      <AmbientCelestialBackground isDark={isDark} />
+
       {/* BARRA DE PROGRESO DE RUTA DORADA */}
       <ClientRouteProgressBar />
 
@@ -240,7 +292,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
                 <button
                   type="button"
                   onClick={() => setIsDark(!isDark)}
-                  className="p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  className="p-2 rounded-xl border border-border hover:bg-accent text-muted-foreground hover:text-foreground transition-all duration-150 active:scale-90 cursor-pointer"
                   title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
                 >
                   {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
@@ -400,8 +452,19 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
                     className="flex items-center gap-2.5 cursor-pointer p-1.5 rounded-xl hover:bg-accent/60 transition-colors"
                     title="Ver Perfil de Barbero"
                   >
-                    <div className="w-8 h-8 rounded-xl bg-[#DFB755]/20 border border-[#DFB755]/40 flex items-center justify-center text-xs font-bold text-[#DFB755] dark:text-[#E8C466]">
-                      {userInitials}
+                    <div className="w-8 h-8 rounded-xl bg-[#DFB755]/20 border border-[#DFB755]/40 flex items-center justify-center text-xs font-bold text-[#DFB755] dark:text-[#E8C466] overflow-hidden">
+                      {barberProfile?.imagen_url ? (
+                        <img
+                          src={barberProfile.imagen_url}
+                          alt={displayName}
+                          width="32"
+                          height="32"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        userInitials
+                      )}
                     </div>
                     <div className="hidden xl:flex flex-col text-left">
                       <span className="text-xs font-bold text-foreground leading-tight truncate max-w-[130px]">
@@ -498,12 +561,30 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
               className="lg:hidden border-t border-border bg-background px-4 pt-3 pb-6 space-y-3 overflow-hidden shadow-2xl"
             >
               <div className="p-3 rounded-2xl bg-card border border-border flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#DFB755]/20 border border-[#DFB755]/40 flex items-center justify-center text-sm font-bold text-[#DFB755]">
-                    {userInitials}
+                <div
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/barbero/perfil");
+                  }}
+                  className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                  title="Ver mi perfil"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#DFB755]/20 border border-[#DFB755]/40 flex items-center justify-center text-sm font-bold text-[#DFB755] overflow-hidden">
+                    {barberProfile?.imagen_url ? (
+                      <img
+                        src={barberProfile.imagen_url}
+                        alt={displayName}
+                        width="40"
+                        height="40"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      userInitials
+                    )}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">{displayName}</p>
+                    <p className="text-sm font-bold text-foreground hover:text-[#DFB755] transition-colors">{displayName}</p>
                     <p className="text-xs text-[#DFB755] font-semibold">Rol: Barbero Profesional</p>
                   </div>
                 </div>
@@ -552,7 +633,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
       </header>
 
       {/* CONTENIDO PRINCIPAL CON TRANSICIONES SUAVES */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 md:pb-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -570,7 +651,7 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
       </main>
 
       {/* FOOTER DEL BARBERO */}
-      <footer className="border-t border-border/80 bg-card/40 py-8 mt-auto pb-24 md:pb-8">
+      <footer className="relative z-10 border-t border-border/80 bg-card/40 py-8 mt-auto pb-24 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left text-xs text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className="relative overflow-hidden rounded-lg border border-[#C9A24A]/35 bg-black/70 p-0.5 shrink-0">
@@ -578,6 +659,9 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
                 src="/logo.png"
                 alt="Tu Turno Barber"
                 className="h-6 w-auto object-contain"
+                width="24"
+                height="24"
+                decoding="async"
               />
             </div>
             <span className="font-bold text-foreground">Tu Turno Barber</span>
@@ -606,6 +690,14 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
         todayAppointmentsCount={todayAppointmentsCount}
         canAccess={canAccess}
       />
+
+      {/* INTRO ANIMADA DEL ASENTADOR DE CUERO PARA EL BARBERO */}
+      {showBarberIntro && (
+        <LeatherStropBarberIntro
+          onComplete={() => setShowBarberIntro(false)}
+          barberName={barberProfile?.nombre || "Carlos"}
+        />
+      )}
     </div>
   );
 }

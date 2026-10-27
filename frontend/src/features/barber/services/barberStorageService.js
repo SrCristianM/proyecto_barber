@@ -13,7 +13,8 @@ import { getPackages as getPackagesApi } from "../../admin/services/services/pac
  * garantizando que el Barbero acceda únicamente a sus propios datos sin permisos administrativos.
  */
 
-import { getCurrentUser } from "../../auth/services/authService.js";
+import { getCurrentUser, updateUserProfile } from "../../auth/services/authService.js";
+import { updateBarber as updateBarberApi } from "../../admin/barbers/services/barbersService.js";
 import { createNotification } from "../../../shared/services/notificationService.js";
 import { notifyDataChange, SYNC_ENTITIES } from "../../../shared/services/dataSyncService.js";
 
@@ -130,6 +131,24 @@ export function getCurrentBarberProfile() {
     barber = INITIAL_BARBERS[0];
   }
 
+  // Resolver fotografía asegurando que si fue eliminada (null o ""), sea estrictamente null
+  const cleanPhoto = (() => {
+    // Si el usuario actual tiene imagen explícita
+    const uPhoto = user?.imagen_url !== undefined ? user.imagen_url : user?.avatar_url;
+    if (uPhoto && typeof uPhoto === "string" && uPhoto.trim() && !uPhoto.includes("unsplash.com")) {
+      return uPhoto.trim();
+    }
+    // Si el usuario tiene definida la propiedad pero es null/vacía (fue eliminada), respetar
+    if (user && ("imagen_url" in user || "avatar_url" in user)) {
+      return null;
+    }
+    const bPhoto = barber?.imagen_url || barber?.avatar_url;
+    if (bPhoto && typeof bPhoto === "string" && bPhoto.trim() && !bPhoto.includes("unsplash.com")) {
+      return bPhoto.trim();
+    }
+    return null;
+  })();
+
   return {
     ...barber,
     documento: user?.documento || barber.documento || "",
@@ -137,8 +156,200 @@ export function getCurrentBarberProfile() {
     apellido: user?.apellido || barber.apellido,
     correo: user?.correo || barber.correo,
     telefono: user?.telefono || barber.telefono,
+    especialidad: barber?.especialidad || "Corte Clásico & Fade",
+    imagen_url: cleanPhoto,
+    avatar_url: cleanPhoto,
     rol: "Barbero Profesional"
   };
+}
+
+/**
+ * Actualiza la fotografía del barbero actual y sincroniza en:
+ * - Backend /api/auth/profile
+ * - Backend /api/barbers/:id
+ * - localStorage (barber_current_user, barber_users_db, barber_barbers_db)
+ * - dataSyncService (BARBERS y USERS)
+ * - Eventos de ventana (barber_profile_updated y auth_user_updated)
+ */
+export async function updateCurrentBarberPhoto(newPhotoUrl) {
+  const cleanPhoto = (newPhotoUrl && typeof newPhotoUrl === "string" && !newPhotoUrl.includes("unsplash.com") && newPhotoUrl.trim())
+    ? newPhotoUrl.trim()
+    : null;
+
+  const currentProfile = getCurrentBarberProfile();
+  const currentUser = getCurrentUser();
+
+  // 1. Backend / Fallback authService
+  const authRes = await updateUserProfile({
+    nombre: currentProfile?.nombre || currentUser?.nombre || "",
+    apellido: currentProfile?.apellido || currentUser?.apellido || "",
+    documento: currentProfile?.documento || currentUser?.documento || null,
+    telefono: currentProfile?.telefono || currentUser?.telefono || null,
+    imagen_url: cleanPhoto,
+    avatar_url: cleanPhoto
+  });
+
+  // 2. Backend Barber API
+  const barberId = currentProfile?.id_barbero || currentUser?.id_barbero || 1;
+  try {
+    await updateBarberApi(barberId, {
+      nombre: currentProfile?.nombre || currentUser?.nombre || "",
+      apellido: currentProfile?.apellido || currentUser?.apellido || "",
+      documento: currentProfile?.documento || currentUser?.documento || null,
+      correo: currentProfile?.correo || currentUser?.correo || "",
+      telefono: currentProfile?.telefono || currentUser?.telefono || null,
+      especialidad: currentProfile?.especialidad || "Corte Clásico & Fade",
+      imagen_url: cleanPhoto,
+      estado: 1
+    });
+  } catch (err) {
+    console.warn("[barberStorageService] Error actualizando barbero vía API:", err.message);
+  }
+
+  // 3. Sincronizar en localStorage barber_current_user
+  try {
+    const rawUser = localStorage.getItem("barber_current_user");
+    if (rawUser) {
+      const u = JSON.parse(rawUser);
+      u.imagen_url = cleanPhoto;
+      u.avatar_url = cleanPhoto;
+      localStorage.setItem("barber_current_user", JSON.stringify(u));
+    }
+  } catch (_) {}
+
+  // 4. Sincronizar en localStorage barber_users_db
+  try {
+    const rawUsers = localStorage.getItem("barber_users_db");
+    if (rawUsers) {
+      const users = JSON.parse(rawUsers);
+      const updatedUsers = users.map((u) => {
+        if (
+          (currentProfile?.id_usuario && Number(u.id_usuario) === Number(currentProfile.id_usuario)) ||
+          (currentUser?.id_usuario && Number(u.id_usuario) === Number(currentUser.id_usuario)) ||
+          (u.correo && currentProfile?.correo && u.correo.toLowerCase() === currentProfile.correo.toLowerCase())
+        ) {
+          return { ...u, imagen_url: cleanPhoto, avatar_url: cleanPhoto };
+        }
+        return u;
+      });
+      localStorage.setItem("barber_users_db", JSON.stringify(updatedUsers));
+    }
+  } catch (_) {}
+
+  // 5. Sincronizar en localStorage barber_barbers_db
+  try {
+    const rawBarbers = localStorage.getItem("barber_barbers_db");
+    if (rawBarbers) {
+      const barbers = JSON.parse(rawBarbers);
+      const updatedBarbers = barbers.map((b) => {
+        if (
+          Number(b.id_barbero) === Number(barberId) ||
+          (currentProfile?.id_usuario && Number(b.id_usuario) === Number(currentProfile.id_usuario)) ||
+          (b.correo && currentProfile?.correo && b.correo.toLowerCase() === currentProfile.correo.toLowerCase())
+        ) {
+          return { ...b, imagen_url: cleanPhoto, avatar_url: cleanPhoto };
+        }
+        return b;
+      });
+      localStorage.setItem("barber_barbers_db", JSON.stringify(updatedBarbers));
+    }
+  } catch (_) {}
+
+  // 6. Notificar a través de dataSyncService
+  notifyDataChange(SYNC_ENTITIES.BARBERS, {
+    id_barbero: barberId,
+    id_usuario: currentProfile?.id_usuario || currentUser?.id_usuario,
+    imagen_url: cleanPhoto
+  });
+  notifyDataChange(SYNC_ENTITIES.USERS, {
+    id_usuario: currentProfile?.id_usuario || currentUser?.id_usuario,
+    imagen_url: cleanPhoto,
+    avatar_url: cleanPhoto
+  });
+
+  // 7. Eventos de ventana para actualización reactiva inmediata
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("barber_profile_updated", {
+        detail: { id_barbero: barberId, imagen_url: cleanPhoto }
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent("auth_user_updated", {
+        detail: { ...currentUser, imagen_url: cleanPhoto, avatar_url: cleanPhoto }
+      })
+    );
+  }
+
+  return { success: true, imagen_url: cleanPhoto, authRes };
+}
+
+/**
+ * Actualiza los datos personales del barbero y sincroniza en todos los módulos.
+ */
+export async function updateCurrentBarberProfileData(data) {
+  const currentProfile = getCurrentBarberProfile();
+  const currentUser = getCurrentUser();
+
+  const authRes = await updateUserProfile({
+    nombre: data.nombre.trim(),
+    apellido: data.apellido.trim(),
+    documento: data.documento ? data.documento.trim() : null,
+    telefono: data.telefono ? data.telefono.trim() : null,
+    imagen_url: currentProfile?.imagen_url || null,
+    avatar_url: currentProfile?.avatar_url || null
+  });
+
+  const barberId = currentProfile?.id_barbero || currentUser?.id_barbero || 1;
+  try {
+    await updateBarberApi(barberId, {
+      nombre: data.nombre.trim(),
+      apellido: data.apellido.trim(),
+      documento: data.documento ? data.documento.trim() : null,
+      correo: currentProfile?.correo || currentUser?.correo || "",
+      telefono: data.telefono ? data.telefono.trim() : null,
+      especialidad: data.especialidad ? data.especialidad.trim() : currentProfile?.especialidad || "Corte Clásico & Fade",
+      imagen_url: currentProfile?.imagen_url || null,
+      estado: 1
+    });
+  } catch (err) {
+    console.warn("[barberStorageService] Error actualizando barbero vía API:", err.message);
+  }
+
+  // Sincronizar en localStorage barber_barbers_db
+  try {
+    const rawBarbers = localStorage.getItem("barber_barbers_db");
+    if (rawBarbers) {
+      const barbers = JSON.parse(rawBarbers);
+      const updatedBarbers = barbers.map((b) => {
+        if (
+          Number(b.id_barbero) === Number(barberId) ||
+          (currentProfile?.id_usuario && Number(b.id_usuario) === Number(currentProfile.id_usuario)) ||
+          (b.correo && currentProfile?.correo && b.correo.toLowerCase() === currentProfile.correo.toLowerCase())
+        ) {
+          return {
+            ...b,
+            nombre: data.nombre.trim(),
+            apellido: data.apellido.trim(),
+            telefono: data.telefono ? data.telefono.trim() : b.telefono,
+            documento: data.documento ? data.documento.trim() : b.documento,
+            especialidad: data.especialidad ? data.especialidad.trim() : b.especialidad
+          };
+        }
+        return b;
+      });
+      localStorage.setItem("barber_barbers_db", JSON.stringify(updatedBarbers));
+    }
+  } catch (_) {}
+
+  notifyDataChange(SYNC_ENTITIES.BARBERS, { id_barbero: barberId, ...data });
+  notifyDataChange(SYNC_ENTITIES.USERS, { id_usuario: currentProfile?.id_usuario || currentUser?.id_usuario, ...data });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("barber_profile_updated", { detail: { id_barbero: barberId, ...data } }));
+  }
+
+  return { success: true, authRes };
 }
 
 // ==========================================
@@ -251,6 +462,7 @@ export function getBarberAppointments() {
 
 /**
  * Marca una cita como Completada/Atendida en la base de datos local
+ * y acredita los puntos de fidelidad (+50 pts) al cliente atendido.
  */
 export function completeBarberAppointment(id_cita) {
   const barber = getCurrentBarberProfile();
@@ -264,14 +476,125 @@ export function completeBarberAppointment(id_cita) {
     return { success: false, error: "Cita no encontrada o no pertenece a tu perfil." };
   }
 
+  const apt = appointments[index];
+  const wasAlreadyCompleted = apt.estado === "Completada";
+
+  // 1. Actualizar estado de la cita
   appointments[index] = {
-    ...appointments[index],
-    estado: "Completada"
+    ...apt,
+    estado: "Completada",
+    fecha_completada: apt.fecha_completada || new Date().toISOString()
   };
 
   save(STORAGE_KEYS.APPOINTMENTS, appointments);
   notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
-  return { success: true, appointment: appointments[index] };
+
+  let pointsAwarded = 0;
+  let newPoints = 0;
+  let newTier = "Nuevo";
+
+  // 2. ACREDITACIÓN DE PUNTOS: Solo se aumentan cuando el barbero da por finalizada y completada la cita
+  if (!wasAlreadyCompleted) {
+    const POINTS_PER_COMPLETED_SERVICE = 50;
+    pointsAwarded = POINTS_PER_COMPLETED_SERVICE;
+
+    try {
+      const rawClients = localStorage.getItem(STORAGE_KEYS.CLIENTS);
+      const clients = rawClients ? JSON.parse(rawClients) : [];
+
+      const cleanClientEmail = (apt.cliente_correo || "").trim().toLowerCase();
+      const cleanClientName = (apt.cliente_nombre || "").trim().toLowerCase();
+
+      const clientIndex = clients.findIndex((c) =>
+        (apt.id_cliente && Number(c.id_cliente) === Number(apt.id_cliente)) ||
+        (apt.id_usuario && Number(c.id_usuario) === Number(apt.id_usuario)) ||
+        (cleanClientEmail && c.correo && c.correo.toLowerCase() === cleanClientEmail) ||
+        (cleanClientName && `${c.nombre || ""} ${c.apellido || ""}`.trim().toLowerCase() === cleanClientName)
+      );
+
+      if (clientIndex >= 0) {
+        const currentPts = Number(clients[clientIndex].puntos_fidelidad ?? 0);
+        newPoints = currentPts + pointsAwarded;
+
+        // Progresión de nivel de fidelidad según puntos acumulados:
+        // < 150 pts: Nuevo
+        // 150 - 349 pts: Bronce (3 visitas)
+        // 350 - 749 pts: Plata (7 visitas)
+        // >= 750 pts: Oro (15 visitas)
+        if (newPoints >= 750) newTier = "Oro";
+        else if (newPoints >= 350) newTier = "Plata";
+        else if (newPoints >= 150) newTier = "Bronce";
+        else newTier = "Nuevo";
+
+        clients[clientIndex] = {
+          ...clients[clientIndex],
+          puntos_fidelidad: newPoints,
+          nivel_fidelidad: newTier
+        };
+
+        localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients));
+        notifyDataChange(SYNC_ENTITIES.CLIENTS);
+
+        // Sincronizar usuario en sesión activa si coincide con el cliente atendido
+        try {
+          const rawCurr = localStorage.getItem("barber_current_user") || sessionStorage.getItem("barber_current_user");
+          if (rawCurr) {
+            const currUser = JSON.parse(rawCurr);
+            const isMatch =
+              (currUser.id_usuario && Number(currUser.id_usuario) === Number(clients[clientIndex].id_usuario)) ||
+              (currUser.correo && currUser.correo.toLowerCase() === clients[clientIndex].correo?.toLowerCase());
+
+            if (isMatch) {
+              currUser.puntos_fidelidad = newPoints;
+              currUser.nivel_fidelidad = newTier;
+              localStorage.setItem("barber_current_user", JSON.stringify(currUser));
+              sessionStorage.setItem("barber_current_user", JSON.stringify(currUser));
+            }
+          }
+        } catch {}
+
+        // Sincronizar en barber_users_db
+        try {
+          const rawUsers = localStorage.getItem("barber_users_db");
+          if (rawUsers) {
+            const users = JSON.parse(rawUsers);
+            const uIdx = users.findIndex(
+              (u) =>
+                (clients[clientIndex].id_usuario && Number(u.id_usuario) === Number(clients[clientIndex].id_usuario)) ||
+                (u.correo && u.correo.toLowerCase() === clients[clientIndex].correo?.toLowerCase())
+            );
+            if (uIdx >= 0) {
+              users[uIdx].puntos_fidelidad = newPoints;
+              users[uIdx].nivel_fidelidad = newTier;
+              localStorage.setItem("barber_users_db", JSON.stringify(users));
+            }
+          }
+        } catch {}
+
+        // Despachar notificación para el cliente
+        try {
+          createNotification({
+            type: "promotion",
+            title: "¡Puntos ganados en tu servicio!",
+            description: `Tu barbero finalizó la cita #${id_cita}. ¡Has recibido +${pointsAwarded} pts! Saldo acumulado: ${newPoints} pts.`,
+            targetRole: 4,
+            targetUser: clients[clientIndex].id_usuario,
+            route: "/portal/perfil"
+          });
+        } catch {}
+      }
+    } catch (err) {
+      console.warn("[completeBarberAppointment] Error acreditando puntos:", err);
+    }
+  }
+
+  return {
+    success: true,
+    appointment: appointments[index],
+    pointsAwarded,
+    newPoints,
+    newTier
+  };
 }
 
 // ==========================================
@@ -351,7 +674,7 @@ export function getBarberAgendaForDate(targetDate = TODAY) {
 export function getBarberWeeklySchedule(customSchedules = null) {
   const barber = getCurrentBarberProfile();
   const allSchedules = customSchedules || getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
-  
+
   // Filtrar exclusivamente turnos activos de este barbero
   const barberSchedules = (Array.isArray(allSchedules) ? allSchedules : []).filter(
     (s) => Number(s.id_barbero) === Number(barber?.id_barbero) && (s.estado === undefined || Number(s.estado) === 1)
@@ -409,12 +732,15 @@ export function getBarberWeeklySchedule(customSchedules = null) {
   const firstScheduleWithVigencia = barberSchedules.find((s) => s.fecha_inicio_vigencia);
   const vigenciaInicio = firstScheduleWithVigencia?.fecha_inicio_vigencia || "01/01/2026";
   const vigenciaFin = firstScheduleWithVigencia?.fecha_fin_vigencia || "31/12/2026";
+  const diasLaborales = weeklySchedule.filter((d) => !d.descanso);
 
   return {
     barberoNombre: barber ? `${barber.nombre || ""} ${barber.apellido || ""}`.trim() : "Barbero",
     vigenciaInicio,
     vigenciaFin,
     dias: weeklySchedule,
+    diasLaborales,
+    totalDiasLaborales: diasLaborales.length,
     estadoHorario: barberSchedules.length > 0 ? "Activo" : "Sin Turnos Asignados"
   };
 }

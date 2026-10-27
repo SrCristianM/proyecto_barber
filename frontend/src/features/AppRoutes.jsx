@@ -13,6 +13,7 @@ import PurchasesPage from "./admin/purchases/pages/PurchasesPage";
 import AppointmentsPage from "./admin/appointments/pages/AppointmentsPage";
 import SalesPage from "./admin/sales/pages/SalesPage";
 import SuppliesPage from "./admin/supplies/pages/SuppliesPage";
+import AdminStationSuppliesPage from "./admin/inventoryStation/pages/AdminStationSuppliesPage";
 import SettingsPage from "./admin/settings/pages/SettingsPage";
 
 import LandingPage from "./landing/pages/LandingPage";
@@ -45,6 +46,7 @@ import BarberPackagesPage from "./barber/pages/BarberPackagesPage";
 import BarberAppointmentsPage from "./barber/pages/BarberAppointmentsPage";
 import BarberReportsPage from "./barber/pages/BarberReportsPage";
 import BarberProfilePage from "./barber/pages/BarberProfilePage";
+import BarberStationPage from "./barber/pages/BarberStationPage";
 
 import { getCurrentUser } from "./auth/services/authService";
 
@@ -226,6 +228,7 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin,
         <Route path="/login" element={<Login onLogin={onLogin} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ForgotPassword />} />
 
         {/* RUTA ADMINISTRATIVA (ROL: ADMINISTRADOR Y RECEPCIONISTA SEGÚN PERMISOS) */}
         <Route
@@ -246,8 +249,10 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin,
           <Route path="compras" element={<ModuleGuard moduleName="compras"><PurchasesPage /></ModuleGuard>} />
           <Route path="appointments" element={<ModuleGuard moduleName="appointments"><AppointmentsPage /></ModuleGuard>} />
           <Route path="sales" element={<ModuleGuard moduleName="sales"><SalesPage /></ModuleGuard>} />
-          <Route path="abastecimiento" element={<ModuleGuard moduleName="abastecimiento"><SuppliesPage /></ModuleGuard>} />
-          <Route path="supplies" element={<ModuleGuard moduleName="abastecimiento"><SuppliesPage /></ModuleGuard>} />
+          <Route path="abastecimiento" element={<ModuleGuard moduleName="abastecimiento"><AdminStationSuppliesPage /></ModuleGuard>} />
+          <Route path="supplies" element={<ModuleGuard moduleName="abastecimiento"><AdminStationSuppliesPage /></ModuleGuard>} />
+          <Route path="estaciones" element={<ModuleGuard moduleName="abastecimiento"><AdminStationSuppliesPage /></ModuleGuard>} />
+          <Route path="bodega" element={<ModuleGuard moduleName="abastecimiento"><AdminStationSuppliesPage /></ModuleGuard>} />
           <Route path="settings" element={<ModuleGuard moduleName="settings"><SettingsPage isDark={isDark} setIsDark={setIsDark} /></ModuleGuard>} />
         </Route>
 
@@ -335,6 +340,8 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin,
             }
           />
           <Route path="perfil" element={<BarberProfilePage />} />
+          <Route path="estacion" element={<BarberStationPage />} />
+          <Route path="insumos" element={<BarberStationPage />} />
         </Route>
 
         {/* Redirecciones de conveniencia y compatibilidad */}
@@ -348,6 +355,8 @@ export default function AppRoutes({ isDark, setIsDark, isAuthenticated, onLogin,
         <Route path="/productos" element={<AdminManualRedirect targetAdminPath="/dashboard/products" />} />
         <Route path="/clientes" element={<AdminManualRedirect targetAdminPath="/dashboard/clients" />} />
         <Route path="/ventas" element={<AdminManualRedirect targetAdminPath="/dashboard/sales" />} />
+        <Route path="/estaciones" element={<AdminManualRedirect targetAdminPath="/dashboard/abastecimiento" />} />
+        <Route path="/abastecimiento" element={<AdminManualRedirect targetAdminPath="/dashboard/abastecimiento" />} />
         <Route path="/configuracion" element={<AdminManualRedirect targetAdminPath="/dashboard/settings" />} />
       </Routes>
     </ErrorBoundary>

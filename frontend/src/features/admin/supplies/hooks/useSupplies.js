@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getSupplies, createSupply, cancelSupply, getSuppliesMetrics } from "../services/suppliesService.js";
+import { apiRequest } from "../../../../shared/api/apiClient.js";
 import { getCurrentUser } from "../../../auth/services/authService.js";
 import { notifyDataChange, useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
 import { dispatchNotificationUpdate } from "../../../../shared/services/notificationService";
@@ -27,7 +28,7 @@ export function useSupplies() {
 
   const [products, setProducts] = useState(() => {
     try {
-      const stored = localStorage.getItem("barber_products_db");
+      const stored = localStorage.getItem("barber_warehouse_supplies_cache");
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -94,26 +95,40 @@ export function useSupplies() {
       } catch {}
 
       // 2. Cargar barberos si no están en memoria
-      fetch("/api/barbers")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json && Array.isArray(json.data)) {
-            setBarbers(json.data);
+      apiRequest("/api/barbers")
+        .then((data) => {
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+          if (list.length > 0) {
+            setBarbers(list);
             try {
-              localStorage.setItem("barber_barbers_db", JSON.stringify(json.data));
+              localStorage.setItem("barber_barbers_db", JSON.stringify(list));
             } catch {}
           }
         })
         .catch(() => {});
 
-      // 3. Cargar catálogo de productos/insumos
-      fetch("/api/products")
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json && Array.isArray(json.data)) {
-            setProducts(json.data);
+      // 3. Cargar catálogo EXCLUSIVO de insumos de bodega general (insumo_bodega)
+      apiRequest("/api/inventory-stations/warehouse")
+        .then((data) => {
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+          if (list && list.length > 0) {
+            const mapped = list.map((item) => ({
+              ...item,
+              id_producto: item.id_insumo,
+              id_insumo: item.id_insumo,
+              nombre: item.nombre,
+              presentacion: item.unidad_medida || item.categoria || "",
+              categoria: item.categoria || "Insumo",
+              stock: Number(item.stock_actual ?? 0),
+              stock_actual: Number(item.stock_actual ?? 0),
+              precio: Number(item.costo_unitario ?? 0),
+              costo_unitario: Number(item.costo_unitario ?? 0),
+              unidad_medida: item.unidad_medida || "Unidad",
+              estado: item.estado ?? 1
+            }));
+            setProducts(mapped);
             try {
-              localStorage.setItem("barber_products_db", JSON.stringify(json.data));
+              localStorage.setItem("barber_warehouse_supplies_cache", JSON.stringify(mapped));
             } catch {}
           }
         })
@@ -152,12 +167,15 @@ export function useSupplies() {
   // Helpers de Carrito / Detalle de Insumos
   const addItemToSupply = (product, quantity = 1) => {
     if (!product) return;
+    const rawId = product.id_insumo || product.id_producto;
     const qty = Number(quantity) || 1;
-    const unitPrice = Number(product.precio ?? product.precio_unitario ?? 0);
-    const availableStock = Number(product.stock ?? 999);
+    const unitPrice = Number(product.costo_unitario ?? product.precio ?? product.precio_unitario ?? 0);
+    const availableStock = Number(product.stock_actual ?? product.stock ?? 999);
 
     setFormData((prev) => {
-      const existingIdx = prev.detalles.findIndex((d) => d.id_producto === product.id_producto);
+      const existingIdx = prev.detalles.findIndex(
+        (d) => Number(d.id_producto) === Number(rawId) || Number(d.id_insumo) === Number(rawId)
+      );
       let updated = [...prev.detalles];
 
       if (existingIdx >= 0) {
@@ -171,10 +189,13 @@ export function useSupplies() {
       } else {
         const initialQty = Math.min(qty, availableStock);
         updated.push({
-          id_producto: product.id_producto,
+          id_producto: rawId,
+          id_insumo: rawId,
           nombre: product.nombre,
-          presentacion: product.presentacion || "",
-          marca: product.marca || "",
+          presentacion: product.unidad_medida || product.presentacion || "",
+          unidad_medida: product.unidad_medida || "Unidad",
+          categoria: product.categoria || "Insumo",
+          marca: product.categoria || product.marca || "Bodega",
           stockMax: availableStock,
           precio_unitario: unitPrice,
           cantidad: initialQty,
@@ -220,23 +241,40 @@ export function useSupplies() {
     });
   };
 
-  // Recarga automática del catálogo de productos cuando se modifique desde cualquier parte del sistema
+  // Recarga automática de insumos de bodega cuando se modifiquen desde cualquier módulo
   const reloadProducts = useCallback(async () => {
     try {
-      const res = await fetch("/api/products");
-      if (res.ok) {
-        const json = await res.json();
-        if (json && Array.isArray(json.data)) {
-          setProducts(json.data);
-          try {
-            localStorage.setItem("barber_products_db", JSON.stringify(json.data));
-          } catch {}
-        }
+      const data = await apiRequest("/api/inventory-stations/warehouse");
+      const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      if (list && list.length > 0) {
+        const mapped = list.map((item) => ({
+          ...item,
+          id_producto: item.id_insumo,
+          id_insumo: item.id_insumo,
+          nombre: item.nombre,
+          presentacion: item.unidad_medida || item.categoria || "",
+          categoria: item.categoria || "Insumo",
+          stock: Number(item.stock_actual ?? 0),
+          stock_actual: Number(item.stock_actual ?? 0),
+          precio: Number(item.costo_unitario ?? 0),
+          costo_unitario: Number(item.costo_unitario ?? 0),
+          unidad_medida: item.unidad_medida || "Unidad",
+          estado: item.estado ?? 1
+        }));
+        setProducts(mapped);
+        try {
+          localStorage.setItem("barber_warehouse_supplies_cache", JSON.stringify(mapped));
+        } catch {}
       }
     } catch {}
   }, []);
 
-  useDataSync([SYNC_ENTITIES.PRODUCTS], reloadProducts);
+  // Sincronización en tiempo real: al aprobar reposiciones o registrar despachos, recargar vales, métricas y bodega
+  useDataSync([SYNC_ENTITIES.SUPPLIES, SYNC_ENTITIES.STATION_SUPPLIES, SYNC_ENTITIES.WAREHOUSE_ITEMS], () => {
+    loadData();
+    fetchMetrics(metricsPeriod, metricsBarber);
+    reloadProducts();
+  });
 
   // Mutación: Crear Abastecimiento (Descontar stock en todo el proyecto)
   const handleCreateSupply = async () => {
@@ -284,22 +322,14 @@ export function useSupplies() {
           setProducts(updatedProds);
         }
 
-        // 2. Traer la versión definitiva desde la base de datos
-        fetch("/api/products")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((json) => {
-            if (json && Array.isArray(json.data)) {
-              setProducts(json.data);
-              try {
-                localStorage.setItem("barber_products_db", JSON.stringify(json.data));
-              } catch {}
-            }
-          })
-          .catch(() => {});
+        // 2. Traer la versión definitiva desde la bodega general
+        reloadProducts();
 
-        // 3. Notificar a todos los módulos que escuchan cambios en productos e inventario
-        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_dispatch", supply: newSupply });
+        // 3. Notificar a todos los módulos que escuchan cambios en insumos, estaciones y bodega general
         notifyDataChange(SYNC_ENTITIES.SUPPLIES, newSupply);
+        notifyDataChange(SYNC_ENTITIES.STATION_SUPPLIES, newSupply);
+        notifyDataChange(SYNC_ENTITIES.WAREHOUSE_ITEMS, newSupply);
+        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_dispatch", supply: newSupply });
         window.dispatchEvent(new Event("storage"));
         window.dispatchEvent(new CustomEvent("barber_products_updated", { detail: updatedProds }));
         dispatchNotificationUpdate();
@@ -367,22 +397,14 @@ export function useSupplies() {
           }
         }
 
-        // 2. Refrescar catálogo con la BD
-        fetch("/api/products")
-          .then((r) => (r.ok ? r.json() : null))
-          .then((json) => {
-            if (json && Array.isArray(json.data)) {
-              setProducts(json.data);
-              try {
-                localStorage.setItem("barber_products_db", JSON.stringify(json.data));
-              } catch {}
-            }
-          })
-          .catch(() => {});
+        // 2. Refrescar catálogo con la bodega general
+        reloadProducts();
 
         // 3. Notificar a todo el sistema la restitución de inventario
-        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_cancel", supply: cancelledSupply });
         notifyDataChange(SYNC_ENTITIES.SUPPLIES, cancelledSupply);
+        notifyDataChange(SYNC_ENTITIES.STATION_SUPPLIES, cancelledSupply);
+        notifyDataChange(SYNC_ENTITIES.WAREHOUSE_ITEMS, cancelledSupply);
+        notifyDataChange(SYNC_ENTITIES.PRODUCTS, { source: "supplies_cancel", supply: cancelledSupply });
         window.dispatchEvent(new Event("storage"));
         window.dispatchEvent(new CustomEvent("barber_products_updated", { detail: updatedProds }));
         dispatchNotificationUpdate();
@@ -474,13 +496,27 @@ export function useSupplies() {
     const barberCounts = {};
 
     monthList.forEach((s) => {
-      monthCost += Number(s.total_estimado || 0);
+      let supplyCost = Number(s.total_estimado || 0);
+      let supplyUnits = 0;
+
+      if (Array.isArray(s.detalles) && s.detalles.length > 0) {
+        s.detalles.forEach((d) => {
+          const q = Number(d.cantidad || 0);
+          supplyUnits += q;
+          if (supplyCost === 0) {
+            const unitPrice = Number(d.precio_unitario || 0) > 0 ? Number(d.precio_unitario) : 15000;
+            supplyCost += Number(d.subtotal || (q * unitPrice));
+          }
+        });
+      } else if (Number(s.cantidad || s.total_articulos || 0) > 0) {
+        supplyUnits += Number(s.cantidad || s.total_articulos || 0);
+      }
+
+      monthCost += supplyCost;
+      monthUnits += supplyUnits;
+
       const bName = s.barbero_nombre || "Barbero";
       barberCounts[bName] = (barberCounts[bName] || 0) + 1;
-
-      (s.detalles || []).forEach((d) => {
-        monthUnits += Number(d.cantidad || 0);
-      });
     });
 
     let topBarber = "—";

@@ -13,14 +13,40 @@
   <style>
     html,
     body {
-      height: 100%;
+      min-height: 100%;
       margin: 0;
+      overflow-x: hidden;
     }
 
     #root {
-      height: 100%;
+      min-height: 100%;
     }
   </style>
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem("barber_settings");
+        var isDark = false;
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          if (typeof parsed?.system?.modo_oscuro === "boolean") {
+            isDark = parsed.system.modo_oscuro;
+          }
+        }
+        if (!isDark) {
+          var stored = localStorage.getItem("barber_theme_mode");
+          if (stored === "dark") isDark = true;
+        }
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = "dark";
+        } else {
+          document.documentElement.classList.remove("dark");
+          document.documentElement.style.colorScheme = "light";
+        }
+      } catch (e) {}
+    })();
+  </script>
 
 </head>
 

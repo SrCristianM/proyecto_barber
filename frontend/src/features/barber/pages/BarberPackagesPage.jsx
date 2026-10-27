@@ -58,7 +58,7 @@ export default function BarberPackagesPage() {
       </div>
 
       {/* BUSCADOR DE PAQUETES */}
-      <div className="p-4 rounded-2xl bg-card border border-border">
+      <div className="p-4 rounded-2xl bg-card/60 border border-border/40 shadow-sm backdrop-blur-md">
         <div className="relative">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -66,7 +66,7 @@ export default function BarberPackagesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por nombre de paquete o servicio incluido (ej. Corte, Barba, Spa)..."
-            className="w-full pl-9 pr-4 py-2 bg-input-background border border-input rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            className="w-full pl-9 pr-4 py-2 bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] rounded-xl text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 transition-colors shadow-none"
           />
         </div>
       </div>

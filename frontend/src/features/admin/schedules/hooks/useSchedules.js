@@ -61,9 +61,14 @@ export function useSchedules() {
       const data = await getSchedules();
       if (Array.isArray(data)) {
         setSchedules(data);
+        try { localStorage.setItem("barber_schedules_db", JSON.stringify(data)); } catch (_) {}
       }
     } catch (err) {
       console.warn("[Schedules] Usando horarios locales por fallback:", err.message);
+      try {
+        const raw = localStorage.getItem("barber_schedules_db");
+        if (raw) setSchedules(JSON.parse(raw));
+      } catch (_) {}
     }
   }, []);
 
@@ -173,12 +178,17 @@ export function useSchedules() {
       const res = await createSchedule(payload);
       const newSchedule = {
         ...payload,
-        id_horario: res?.id_horario || Math.max(...schedules.map((s) => s.id_horario), 0) + 1
+        id_horario: res?.id_horario || (Array.isArray(res) ? res[0]?.id_horario : null) || Math.max(...schedules.map((s) => s.id_horario || 0), 0) + 1
       };
-      setSchedules((prev) => [newSchedule, ...prev]);
+      setSchedules((prev) => {
+        const next = [newSchedule, ...prev];
+        try { localStorage.setItem("barber_schedules_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
+      fetchSchedulesList();
       setShowCreateModal(false);
       resetForm();
-      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES, newSchedule);
       toast.success("Horario asignado exitosamente.");
     } catch (err) {
       toast.error(err.message || "Error al crear el horario.");
@@ -198,17 +208,20 @@ export function useSchedules() {
 
     try {
       await updateSchedule(selectedSchedule.id_horario, payload);
-      setSchedules((prev) =>
-        prev.map((schedule) =>
+      setSchedules((prev) => {
+        const next = prev.map((schedule) =>
           schedule.id_horario === selectedSchedule.id_horario
             ? { ...schedule, ...payload }
             : schedule
-        )
-      );
+        );
+        try { localStorage.setItem("barber_schedules_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
+      fetchSchedulesList();
       setShowEditModal(false);
       setSelectedSchedule(null);
       resetForm();
-      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES, { ...selectedSchedule, ...payload });
       toast.success("Horario modificado correctamente.");
     } catch (err) {
       toast.error(err.message || "Error al actualizar el horario.");
@@ -219,10 +232,14 @@ export function useSchedules() {
     if (!selectedSchedule) return;
     try {
       await deleteSchedule(selectedSchedule.id_horario);
-      setSchedules((prev) => prev.filter((schedule) => schedule.id_horario !== selectedSchedule.id_horario));
+      setSchedules((prev) => {
+        const next = prev.filter((schedule) => schedule.id_horario !== selectedSchedule.id_horario);
+        try { localStorage.setItem("barber_schedules_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       setShowDeleteModal(false);
       setSelectedSchedule(null);
-      notifyDataChange(SYNC_ENTITIES.SCHEDULES);
+      notifyDataChange(SYNC_ENTITIES.SCHEDULES, { id_horario: selectedSchedule.id_horario, deleted: true });
       toast.success("Horario eliminado con éxito.");
     } catch (err) {
       toast.error(err.message || "Error al eliminar el horario.");
@@ -232,11 +249,13 @@ export function useSchedules() {
   const toggleStatus = async (scheduleId) => {
     try {
       await toggleScheduleStatus(scheduleId);
-      setSchedules((prev) =>
-        prev.map((schedule) =>
+      setSchedules((prev) => {
+        const next = prev.map((schedule) =>
           schedule.id_horario === scheduleId ? { ...schedule, estado: schedule.estado === 1 ? 0 : 1 } : schedule
-        )
-      );
+        );
+        try { localStorage.setItem("barber_schedules_db", JSON.stringify(next)); } catch (_) {}
+        return next;
+      });
       notifyDataChange(SYNC_ENTITIES.SCHEDULES);
       toast.success("Estado de horario actualizado.");
     } catch (err) {

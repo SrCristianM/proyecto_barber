@@ -19,7 +19,7 @@ const mockBarbers = [
     correo: "barbero@tuturnobarber.com",
     telefono: "+57 302 345 6789",
     especialidad: "Corte Clásico & Fade",
-    imagen_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    imagen_url: null,
     estado: 1
   }
 ];
@@ -150,7 +150,7 @@ export function useBarbers() {
       });
       setShowCreateModal(false);
       resetForm();
-      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.BARBERS, newBarber);
       notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Barbero registrado exitosamente.");
     } catch (err) {
@@ -183,10 +183,63 @@ export function useBarbers() {
         try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
         return next;
       });
+      // Sincronizar usuario activo y base de usuarios si coincide
+      try {
+        const rawCurr = localStorage.getItem("barber_current_user");
+        if (rawCurr) {
+          const curr = JSON.parse(rawCurr);
+          if (
+            curr &&
+            (curr.id_usuario === selectedBarber.id_usuario ||
+              curr.correo?.toLowerCase() === selectedBarber.correo?.toLowerCase())
+          ) {
+            const updatedCurr = {
+              ...curr,
+              nombre: payload.nombre,
+              apellido: payload.apellido,
+              telefono: payload.telefono,
+              imagen_url: payload.imagen_url || null,
+              avatar_url: payload.imagen_url || null
+            };
+            localStorage.setItem("barber_current_user", JSON.stringify(updatedCurr));
+            window.dispatchEvent(new CustomEvent("auth_user_updated", { detail: updatedCurr }));
+          }
+        }
+        const rawUsers = localStorage.getItem("barber_users_db");
+        if (rawUsers) {
+          const users = JSON.parse(rawUsers);
+          if (Array.isArray(users)) {
+            const updatedUsers = users.map((u) => {
+              if (
+                u.id_usuario === selectedBarber.id_usuario ||
+                u.correo?.toLowerCase() === selectedBarber.correo?.toLowerCase()
+              ) {
+                return {
+                  ...u,
+                  nombre: payload.nombre,
+                  apellido: payload.apellido,
+                  telefono: payload.telefono,
+                  imagen_url: payload.imagen_url || null,
+                  avatar_url: payload.imagen_url || null
+                };
+              }
+              return u;
+            });
+            localStorage.setItem("barber_users_db", JSON.stringify(updatedUsers));
+          }
+        }
+      } catch (_) {}
+
+      window.dispatchEvent(
+        new CustomEvent("barber_profile_updated", {
+          detail: { id_barbero: selectedBarber.id_barbero, ...payload }
+        })
+      );
+
       setShowEditModal(false);
       setSelectedBarber(null);
       resetForm();
-      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.BARBERS, { ...selectedBarber, ...payload });
       notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Perfil de barbero actualizado correctamente.");
     } catch (err) {
@@ -217,7 +270,7 @@ export function useBarbers() {
       } catch {}
       setShowDeleteModal(false);
       setSelectedBarber(null);
-      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      notifyDataChange(SYNC_ENTITIES.BARBERS, { id_barbero: selectedBarber.id_barbero, deleted: true });
       notifyDataChange(SYNC_ENTITIES.USERS);
       toast.success("Barbero eliminado.");
     } catch (err) {
@@ -235,7 +288,8 @@ export function useBarbers() {
         try { localStorage.setItem("barber_barbers_db", JSON.stringify(next)); } catch (_) {}
         return next;
       });
-      notifyDataChange(SYNC_ENTITIES.BARBERS);
+      const updatedBarber = prev.find((b) => b.id_barbero === barberId);
+      notifyDataChange(SYNC_ENTITIES.BARBERS, updatedBarber || { id_barbero: barberId });
       toast.success("Estado del barbero actualizado.");
     } catch (err) {
       toast.error(err.message || "Error al cambiar estado del barbero.");

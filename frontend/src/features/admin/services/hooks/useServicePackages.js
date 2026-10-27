@@ -77,7 +77,7 @@ export function useServicePackages() {
         setPackages(pkgsData.value);
         try {
           localStorage.setItem("barber_packages_db", JSON.stringify(pkgsData.value));
-        } catch (_) {}
+        } catch (_) { }
       }
 
       if (srvsData.status === "fulfilled" && Array.isArray(srvsData.value) && srvsData.value.length > 0) {
@@ -131,7 +131,7 @@ export function useServicePackages() {
       };
       setPackages((prev) => {
         const next = [newPkg, ...prev];
-        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) {}
+        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) { }
         return next;
       });
       setShowCreateModal(false);
@@ -147,7 +147,7 @@ export function useServicePackages() {
       };
       setPackages((prev) => {
         const next = [newPkg, ...prev];
-        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) {}
+        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) { }
         return next;
       });
       setShowCreateModal(false);
@@ -177,7 +177,7 @@ export function useServicePackages() {
           ? { ...p, ...payload }
           : p
       );
-      try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) {}
+      try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) { }
       return next;
     });
     setShowEditModal(false);
@@ -198,7 +198,7 @@ export function useServicePackages() {
       const next = prev.map((p) =>
         p.id_paquete === id ? { ...p, estado: p.estado === 1 ? 0 : 1 } : p
       );
-      try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) {}
+      try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) { }
       return next;
     });
     setShowDeactivateModal(false);
@@ -244,7 +244,7 @@ export function useServicePackages() {
       await deletePackage(targetId);
       setPackages((prev) => {
         const next = prev.filter((p) => p.id_paquete !== targetId);
-        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) {}
+        try { localStorage.setItem("barber_packages_db", JSON.stringify(next)); } catch (_) { }
         return next;
       });
       setShowDeleteModal(false);

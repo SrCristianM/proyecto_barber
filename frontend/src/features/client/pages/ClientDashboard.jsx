@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import SearchableSelect from "../../admin/shared/components/SearchableSelect";
@@ -30,15 +30,17 @@ import BarberScissorsIcon from "../../../shared/ui/BarberScissorsIcon";
 import VipLoyaltyCard from "../components/VipLoyaltyCard";
 import ReviewModal from "../components/ReviewModal";
 import AnimatedCounter from "../components/AnimatedCounter";
-import BarberPole from "../components/BarberPole";
+import CelestialAtmosphereCanvas, { useCelestialTime } from "../../../shared/components/animations/CelestialAtmosphereCanvas";
 import StyleQuizModal from "../components/StyleQuizModal";
 import BarberRewardsModal from "../components/BarberRewardsModal";
 import SalonAmbienceWidget from "../components/SalonAmbienceWidget";
 import UpcomingAppointmentTimeline from "../components/UpcomingAppointmentTimeline";
 import ClientPromoBanner from "../components/ClientPromoBanner";
 import SalonLiveRadar from "../components/SalonLiveRadar";
+import ClientWelcomeModal from "../components/ClientWelcomeModal";
+import RibbonCuttingIntro from "../components/RibbonCuttingIntro";
 import { createGoogleCalendarUrl, downloadIcsFile, createWhatsAppShareUrl } from "../utils/calendarUtils";
-import { Gift, Share2, Compass, Download } from "lucide-react";
+import { Gift, Share2, Compass, Download, Sun } from "lucide-react";
 import {
   getCurrentClientProfile,
   getClientAppointments,
@@ -73,6 +75,59 @@ export default function ClientDashboard() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showStyleQuizModal, setShowStyleQuizModal] = useState(false);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [showRibbonIntro, setShowRibbonIntro] = useState(() => {
+    try {
+      const isFreshLogin = sessionStorage.getItem("tu_turno_ribbon_intro") === "true";
+      if (isFreshLogin) {
+        sessionStorage.removeItem("tu_turno_ribbon_intro");
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  });
+
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  const handleRibbonIntroComplete = () => {
+    setShowRibbonIntro(false);
+    document.body.style.overflow = "";
+    try {
+      const shouldWelcome = sessionStorage.getItem("tu_turno_show_welcome_modal") === "true";
+      if (shouldWelcome) {
+        sessionStorage.removeItem("tu_turno_show_welcome_modal");
+        setShowWelcomeModal(true);
+      }
+    } catch {
+      // noop
+    }
+  };
+
+  // Seguro de desbloqueo total: si no hay ceremonia ni modales abiertos, restablece el scroll inmediatamente
+  useEffect(() => {
+    if (
+      !showRibbonIntro &&
+      !showWelcomeModal &&
+      !showDetailModal &&
+      !showCancelModal &&
+      !showRescheduleModal &&
+      !showReviewModal &&
+      !showStyleQuizModal &&
+      !showRewardsModal
+    ) {
+      document.body.style.overflow = "";
+    }
+  }, [
+    showRibbonIntro,
+    showWelcomeModal,
+    showDetailModal,
+    showCancelModal,
+    showRescheduleModal,
+    showReviewModal,
+    showStyleQuizModal,
+    showRewardsModal
+  ]);
   const [cancelReason, setCancelReason] = useState("Cambio de planes personales");
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleSlot, setRescheduleSlot] = useState("");
@@ -178,27 +233,60 @@ export default function ClientDashboard() {
   const fullClientName = profile ? `${profile.nombre || ""} ${profile.apellido || ""}`.trim() : (displayName !== "Amigo" ? displayName : "Cliente VIP");
   const loyaltyTier = loyaltyDetails?.tier || profile?.nivel_fidelidad || "Nuevo";
 
+  // Saludo dinámico celestial según la hora del día
+  const celestial = useCelestialTime();
+
   return (
     <div className="space-y-8">
-      {/* BANNER DE BIENVENIDA Y ACCIÓN RÁPIDA */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-card via-card/90 to-[#DFB755]/10 border border-[#DFB755]/30 p-6 sm:p-10 shadow-xl">
+      {/* BANNER DE BIENVENIDA CON ATMÓSFERA CELESTIAL DINÁMICA (SOL / ATARDECER / LUNA / ESTRELLAS) */}
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} border border-[#DFB755]/35 p-6 sm:p-10 shadow-2xl shadow-indigo-950/25 transition-all duration-700`}>
+        {/* Lienzo Celestial con Sol / Atardecer / Luna 3D y Estrellas Interactivas */}
+        <CelestialAtmosphereCanvas isNight={celestial.isNight} phase={celestial.phase} />
+
+        {/* Luz radial reflectiva de fondo según hora */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-opacity duration-700"
+          style={{
+            background: celestial.radialGradient
+          }}
+        />
+
         <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#DFB755]/15 text-[#DFB755] dark:text-[#E8C466] border border-[#DFB755]/40">
-            <Award className="w-3.5 h-3.5" /> Cliente {loyaltyTier}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#DFB755]/20 text-[#FFE082] border border-[#DFB755]/50 backdrop-blur-md shadow-xs">
+              <Award className="w-3.5 h-3.5" /> Cliente {loyaltyTier}
+            </div>
+
+            {/* Pastilla de Horario Dinámico con Fase del Día */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black/40 border border-white/15 text-slate-200 backdrop-blur-md shadow-xs">
+              <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
+              <span>{celestial.periodName} • {celestial.timeFormatted}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowWelcomeModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-md transition-all cursor-pointer shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#DFB755]" />
+              <span>Abrir Resumen VIP</span>
+            </button>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
-            ¡Hola, <span className="text-[#DFB755] dark:text-[#E8C466]">{displayName}</span>!
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-2 flex-wrap">
+            <span>{celestial.saludo},</span>
+            <span className="bg-gradient-to-r from-[#FFE082] via-[#DFB755] to-[#DDAE41] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]">{displayName}!</span>
+            <span className="text-2xl sm:text-3xl animate-bounce-subtle">{celestial.emoji}</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            ¿Qué servicio deseas reservar hoy? Nuestro equipo de barberos profesionales está listo para brindarte el mejor estilo, atención y comodidad.
+          <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed max-w-2xl">
+            {celestial.clientMessage}
           </p>
 
           <div className="pt-2 flex flex-wrap gap-3 sm:gap-4">
             <Link
               to="/portal/agendar"
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-sm shadow-lg shadow-[#DDAE41]/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#DFB755] to-[#DDAE41] hover:brightness-110 active:scale-95 text-zinc-950 font-black text-sm shadow-lg shadow-[#DFB755]/30 transition-all flex items-center gap-2 cursor-pointer"
             >
               <Calendar className="w-4 h-4" />
               <span>AGENDAR NUEVA CITA</span>
@@ -208,7 +296,7 @@ export default function ClientDashboard() {
             <button
               type="button"
               onClick={() => setShowStyleQuizModal(true)}
-              className="px-5 py-3.5 rounded-2xl bg-[#DFB755]/15 hover:bg-[#DFB755]/25 border border-[#DFB755]/40 text-[#DFB755] dark:text-[#E8C466] font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-[#DFB755]/50 text-[#FFE082] font-bold text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-xs"
               title="Descubre qué corte se adapta mejor a tu estructura facial"
             >
               <Compass className="w-4 h-4" />
@@ -218,7 +306,7 @@ export default function ClientDashboard() {
             <button
               type="button"
               onClick={() => setShowRewardsModal(true)}
-              className="px-5 py-3.5 rounded-2xl bg-card border border-border hover:bg-accent text-foreground font-bold text-sm transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+              className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer shadow-xs"
               title="Ver tarjeta de sellos y recompensas por cortes acumulados"
             >
               <Gift className="w-4 h-4 text-[#DFB755]" />
@@ -227,7 +315,7 @@ export default function ClientDashboard() {
 
             <Link
               to="/portal/servicios"
-              className="px-5 py-3.5 rounded-2xl bg-card border border-border hover:bg-accent text-foreground font-semibold text-sm transition-colors flex items-center gap-2"
+              className="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 hover:text-white font-semibold text-sm backdrop-blur-md transition-colors flex items-center gap-2"
             >
               <BarberScissorsIcon className="w-4 h-4 text-[#DFB755]" strokeWidth={2} />
               <span>Explorar Servicios</span>
@@ -235,10 +323,6 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* BarberPole clásico animado e iluminación dorada */}
-        <div className="absolute right-8 top-8 bottom-8 flex items-center justify-center pointer-events-none hidden lg:flex">
-          <BarberPole className="w-10 h-24 drop-shadow-xl" />
-        </div>
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[#DFB755]/10 to-transparent pointer-events-none hidden md:block" />
       </div>
 
@@ -780,6 +864,28 @@ export default function ClientDashboard() {
           onRewardClaimed={() => loadDashboardData()}
         />
       )}
+
+      {/* SUPER ANIMACIÓN INAUGURAL DE TIJERA Y LISTÓN A PANTALLA COMPLETA */}
+      {showRibbonIntro && (
+        <RibbonCuttingIntro
+          clientName={displayName}
+          onComplete={handleRibbonIntroComplete}
+        />
+      )}
+
+      {/* POP-UP / MODAL CENTRAL DE BIENVENIDA (VIP CONCIERGE & FLASH BRIEFING) */}
+      <ClientWelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+        profile={profile}
+        loyaltyDetails={loyaltyDetails}
+        upcomingAppointment={upcomingAppointment}
+        favoriteBarber={favoriteBarber}
+        onOpenDetailModal={() => {
+          setShowWelcomeModal(false);
+          setShowDetailModal(true);
+        }}
+      />
     </div>
   );
 }

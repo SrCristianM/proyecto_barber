@@ -1,7 +1,24 @@
 import { useState } from "react";
-import { User, Calendar, Boxes, DollarSign, TrendingUp, Layers, PackageCheck, Award, Scissors, Sparkles, X } from "lucide-react";
+import {
+  User,
+  Calendar,
+  Boxes,
+  DollarSign,
+  TrendingUp,
+  Layers,
+  PackageCheck,
+  Award,
+  Scissors,
+  Sparkles,
+  X,
+  Gauge,
+  Zap,
+  CheckCircle2,
+  AlertTriangle
+} from "lucide-react";
 import { motion } from "motion/react";
 import SearchableSelect from "../../shared/components/SearchableSelect";
+import RollingNumber from "../../../../shared/components/RollingNumber";
 
 export default function SuppliesBarberAnalytics({
   metrics,
@@ -12,19 +29,38 @@ export default function SuppliesBarberAnalytics({
   onBarberChange,
   loading = false
 }) {
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'comparison'
-
   const {
     total_despachos = 0,
     total_articulos = 0,
     total_costo_estimado = 0,
+    total_servicios_periodo = 0,
+    costo_promedio_por_servicio = 0,
+    insumos_promedio_por_servicio = 0,
     top_consumibles = [],
     por_barbero = [],
     despachos_recientes = []
   } = metrics || {};
 
   const selectedBarber = barbers.find((b) => String(b.id_barbero) === String(selectedBarberId));
+  const currentBarberStats = por_barbero.find((b) => String(b.id_barbero) === String(selectedBarberId));
   const maxProductQty = top_consumibles.length > 0 ? top_consumibles[0].total_cantidad : 1;
+
+  // Datos específicos del barbero o globales para rendimiento operativo
+  const activeServicios = selectedBarberId === "all"
+    ? total_servicios_periodo
+    : (currentBarberStats?.servicios_realizados ?? 0);
+
+  const activeCostoPorServicio = selectedBarberId === "all"
+    ? costo_promedio_por_servicio
+    : (currentBarberStats?.costo_por_servicio ?? 0);
+
+  const activeInsumosPorServicio = selectedBarberId === "all"
+    ? insumos_promedio_por_servicio
+    : (currentBarberStats?.insumos_por_servicio ?? 0);
+
+  const activeCalificacion = selectedBarberId === "all"
+    ? (total_articulos > 0 ? "Consumo Global" : "Sin Registro")
+    : (currentBarberStats?.calificacion_eficiencia || "Uso Estándar");
 
   // Opciones de barbero con subtítulo y descripción para SearchableSelect
   const barberOptions = [
@@ -39,6 +75,19 @@ export default function SuppliesBarberAnalytics({
       subtitle: b.especialidad || "Barbero Profesional"
     }))
   ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.07 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 14 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } }
+  };
 
   return (
     <div className="space-y-6">
@@ -152,17 +201,21 @@ export default function SuppliesBarberAnalytics({
         )}
       </div>
 
-      {/* Tarjetas de Métricas del Barbero y Período Seleccionado */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Tarjetas de Métricas del Barbero y Período Seleccionado con RollingNumber y Gold Metallic Card */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+      >
         {/* Total Insumos */}
-        <div className="gold-card p-5 flex items-center justify-between">
+        <motion.div variants={itemVariants} className="gold-metallic-card p-5 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Insumos Gastados
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-foreground">
-              {Number(total_articulos).toLocaleString("es-CO")}{" "}
-              <span className="text-sm font-medium text-muted-foreground">un.</span>
+              <RollingNumber value={total_articulos} suffix="un." />
             </h3>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
               {selectedBarberId === "all"
@@ -173,16 +226,16 @@ export default function SuppliesBarberAnalytics({
           <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 shrink-0">
             <Boxes className="w-6 h-6 text-primary" />
           </div>
-        </div>
+        </motion.div>
 
         {/* Costo Operativo Estimado */}
-        <div className="gold-card p-5 flex items-center justify-between">
+        <motion.div variants={itemVariants} className="gold-metallic-card p-5 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Costo Operativo Estimado
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-amber-500 font-mono">
-              ${Number(total_costo_estimado).toLocaleString("es-CO")}
+              <RollingNumber value={total_costo_estimado} prefix="$" />
             </h3>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
               Valorización de insumos usados en servicios
@@ -191,17 +244,16 @@ export default function SuppliesBarberAnalytics({
           <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 shrink-0">
             <DollarSign className="w-6 h-6 text-amber-500" />
           </div>
-        </div>
+        </motion.div>
 
         {/* Despachos Realizados */}
-        <div className="gold-card p-5 flex items-center justify-between">
+        <motion.div variants={itemVariants} className="gold-metallic-card p-5 rounded-2xl flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
               Despachos Realizados
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-emerald-500">
-              {total_despachos}{" "}
-              <span className="text-sm font-medium text-muted-foreground">vales</span>
+              <RollingNumber value={total_despachos} suffix="vales" />
             </h3>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
               En el período ({period === "week" ? "Últimos 7 días" : period === "month" ? "Últimos 30 días" : "Histórico"})
@@ -210,8 +262,94 @@ export default function SuppliesBarberAnalytics({
           <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shrink-0">
             <PackageCheck className="w-6 h-6 text-emerald-500" />
           </div>
+        </motion.div>
+      </motion.div>
+
+      {/* =========================================================================
+          NUEVA SECCIÓN (PROPUESTA 1.A): RENDIMIENTO OPERATIVO (SERVICIOS VS CONSUMO)
+          ========================================================================= */}
+      <motion.div
+        variants={itemVariants}
+        initial="hidden"
+        animate="show"
+        className="p-5 sm:p-6 rounded-2xl bg-card border border-[#DFB755]/30 shadow-sm space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Gauge className="w-5 h-5 text-amber-500" />
+              <h3 className="text-base font-black text-foreground">
+                Rendimiento Operativo: Consumo de Insumos vs Servicios Realizados
+              </h3>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Métricas de Eficiencia
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Auditoría comparativa entre citas/servicios ejecutados y el material consumido por puesto.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-bold text-muted-foreground uppercase">Calificación:</span>
+            <span
+              className={`text-xs font-black px-2.5 py-1 rounded-xl border flex items-center gap-1.5 ${
+                activeCalificacion.includes("Excelente")
+                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 glow-pulse-green"
+                  : activeCalificacion.includes("Revisar")
+                  ? "bg-rose-500/15 text-rose-400 border-rose-500/40 glow-pulse-red"
+                  : "bg-amber-500/15 text-amber-400 border-amber-500/40 glow-pulse-amber"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {activeCalificacion}
+            </span>
+          </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+          {/* Tarjeta 1: Servicios Atendidos */}
+          <div className="p-4 rounded-xl bg-secondary/30 border border-border/70 space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Servicios Atendidos
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              <RollingNumber value={activeServicios} suffix="cortes/citas" />
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {activeServicios > 0
+                ? "Total de atenciones registradas en el período"
+                : "Aún no hay citas registradas en este período"}
+            </p>
+          </div>
+
+          {/* Tarjeta 2: Costo Promedio por Servicio */}
+          <div className="p-4 rounded-xl bg-secondary/30 border border-border/70 space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Costo de Insumos por Servicio
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-amber-400 font-mono">
+              <RollingNumber value={activeCostoPorServicio} prefix="$" suffix="/ serv." />
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Gasto en consumibles (cuchillas, gel, etc.) por cliente atendido
+            </p>
+          </div>
+
+          {/* Tarjeta 3: Insumos Usados por Servicio */}
+          <div className="p-4 rounded-xl bg-secondary/30 border border-border/70 space-y-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Tasa de Uso de Insumos
+            </span>
+            <p className="text-xl sm:text-2xl font-black text-foreground font-mono">
+              <RollingNumber value={activeInsumosPorServicio} decimals={1} suffix="un. / serv." />
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Promedio de unidades gastadas por cada servicio completado
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Gráfica y Desglose de Consumo de Productos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -274,16 +412,16 @@ export default function SuppliesBarberAnalytics({
           )}
         </div>
 
-        {/* Comparativa por Barbero o Despachos Recientes */}
+        {/* Comparativa por Barbero con Métricas de Eficiencia por Servicio */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
-                Comparativa de Consumo por Barbero
+                Comparativa y Eficiencia por Barbero
               </h3>
               <p className="text-xs text-muted-foreground">
-                Insumos utilizados por cada barbero en el período
+                Insumos utilizados y relación costo/servicio de cada profesional
               </p>
             </div>
           </div>
@@ -303,6 +441,7 @@ export default function SuppliesBarberAnalytics({
                       <p className="text-xs font-bold text-foreground">{barb.nombre_barbero}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {barb.especialidad} · {barb.total_despachos} despachos
+                        {barb.servicios_realizados > 0 && ` · ${barb.servicios_realizados} servicios`}
                       </p>
                     </div>
                   </div>
@@ -314,6 +453,11 @@ export default function SuppliesBarberAnalytics({
                     <span className="text-[11px] text-amber-500 font-mono font-bold">
                       ${Number(barb.total_costo).toLocaleString("es-CO")}
                     </span>
+                    {barb.calificacion_eficiencia && (
+                      <span className="block text-[9px] font-bold text-emerald-400 mt-0.5">
+                        {barb.calificacion_eficiencia}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}

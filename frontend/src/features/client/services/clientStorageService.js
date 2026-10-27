@@ -104,25 +104,22 @@ const INITIAL_BARBERS = [
 ];
 
 const INITIAL_SCHEDULES = [
-  {
-    id_horario: 1,
-    id_barbero: 1,
-    dia_semana: "Lunes",
-    hora_inicio: "09:00:00",
-    hora_fin: "18:00:00",
-    estado: 1,
-    barbero_nombre: "Carlos Rodríguez"
-  },
-  {
-    id_horario: 2,
-    id_barbero: 1,
-    dia_semana: "Martes",
-    hora_inicio: "09:00:00",
-    hora_fin: "18:00:00",
-    estado: 1,
-    barbero_nombre: "Carlos Rodríguez"
-  }
+  // Carlos Rodríguez (1)
+  { id_horario: 1, id_barbero: 1, dia_semana: "Lunes", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  { id_horario: 2, id_barbero: 1, dia_semana: "Martes", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  { id_horario: 3, id_barbero: 1, dia_semana: "Miercoles", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  { id_horario: 4, id_barbero: 1, dia_semana: "Jueves", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  { id_horario: 5, id_barbero: 1, dia_semana: "Viernes", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  { id_horario: 6, id_barbero: 1, dia_semana: "Sabado", hora_inicio: "08:00:00", hora_fin: "18:00:00", estado: 1, barbero_nombre: "Carlos Rodríguez" },
+  // Esteban Gómez (2)
+  { id_horario: 7, id_barbero: 2, dia_semana: "Lunes", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" },
+  { id_horario: 8, id_barbero: 2, dia_semana: "Martes", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" },
+  { id_horario: 9, id_barbero: 2, dia_semana: "Miercoles", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" },
+  { id_horario: 10, id_barbero: 2, dia_semana: "Jueves", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" },
+  { id_horario: 11, id_barbero: 2, dia_semana: "Viernes", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" },
+  { id_horario: 12, id_barbero: 2, dia_semana: "Sabado", hora_inicio: "09:00:00", hora_fin: "19:00:00", estado: 1, barbero_nombre: "Esteban Gómez" }
 ];
+
 
 const INITIAL_CLIENTS = [];
 
@@ -174,10 +171,32 @@ export async function syncCatalogsFromApi() {
       save(STORAGE_KEYS.PACKAGES, packRes.value);
     }
     if (barbRes.status === "fulfilled" && Array.isArray(barbRes.value)) {
-      save(STORAGE_KEYS.BARBERS, barbRes.value);
+      const current = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+      const map = new Map();
+      current.forEach((b) => {
+        if (b && b.id_barbero) map.set(Number(b.id_barbero), b);
+      });
+      barbRes.value.forEach((b) => {
+        if (b && b.id_barbero) {
+          const prev = map.get(Number(b.id_barbero)) || {};
+          map.set(Number(b.id_barbero), { ...prev, ...b });
+        }
+      });
+      save(STORAGE_KEYS.BARBERS, Array.from(map.values()));
     }
     if (schedRes.status === "fulfilled" && Array.isArray(schedRes.value)) {
-      save(STORAGE_KEYS.SCHEDULES, schedRes.value);
+      const current = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+      const map = new Map();
+      current.forEach((s) => {
+        if (s && s.id_horario) map.set(Number(s.id_horario), s);
+      });
+      schedRes.value.forEach((s) => {
+        if (s && s.id_horario) {
+          const prev = map.get(Number(s.id_horario)) || {};
+          map.set(Number(s.id_horario), { ...prev, ...s });
+        }
+      });
+      save(STORAGE_KEYS.SCHEDULES, Array.from(map.values()));
     }
     if (prodRes.status === "fulfilled" && Array.isArray(prodRes.value)) {
       save(STORAGE_KEYS.PRODUCTS, prodRes.value);
@@ -212,7 +231,7 @@ if (typeof window !== "undefined") {
         } else {
           getPackages().then((pkgs) => {
             if (Array.isArray(pkgs)) save(STORAGE_KEYS.PACKAGES, pkgs);
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } else if (detail.entity === "services") {
         if (detail.payload?.deleted && detail.payload.id_servicio) {
@@ -222,7 +241,7 @@ if (typeof window !== "undefined") {
         } else {
           getServices().then((srvs) => {
             if (Array.isArray(srvs)) save(STORAGE_KEYS.SERVICES, srvs);
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } else if (detail.entity === "products") {
         if (detail.payload?.deleted && detail.payload.id_producto) {
@@ -232,7 +251,7 @@ if (typeof window !== "undefined") {
         } else {
           getProducts().then((prods) => {
             if (Array.isArray(prods)) save(STORAGE_KEYS.PRODUCTS, prods);
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } else if (detail.entity === "appointments") {
         getAppointments().then((apts) => {
@@ -247,7 +266,63 @@ if (typeof window !== "undefined") {
             });
             save(STORAGE_KEYS.APPOINTMENTS, Array.from(map.values()));
           }
-        }).catch(() => {});
+        }).catch(() => { });
+      } else if (detail.entity === "barbers") {
+        if (detail.payload?.deleted && detail.payload.id_barbero) {
+          const current = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+          const updated = current.filter((b) => b.id_barbero !== detail.payload.id_barbero);
+          save(STORAGE_KEYS.BARBERS, updated);
+        } else if (detail.payload && detail.payload.id_barbero) {
+          const current = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+          const map = new Map();
+          current.forEach((b) => map.set(Number(b.id_barbero), b));
+          map.set(Number(detail.payload.id_barbero), {
+            ...(map.get(Number(detail.payload.id_barbero)) || {}),
+            ...detail.payload
+          });
+          save(STORAGE_KEYS.BARBERS, Array.from(map.values()));
+        }
+        getBarbers().then((barbs) => {
+          if (Array.isArray(barbs)) {
+            const current = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+            const map = new Map();
+            current.forEach((b) => map.set(Number(b.id_barbero), b));
+            barbs.forEach((b) => {
+              if (b && b.id_barbero) {
+                map.set(Number(b.id_barbero), { ...(map.get(Number(b.id_barbero)) || {}), ...b });
+              }
+            });
+            save(STORAGE_KEYS.BARBERS, Array.from(map.values()));
+          }
+        }).catch(() => { });
+      } else if (detail.entity === "schedules") {
+        if (detail.payload?.deleted && detail.payload.id_horario) {
+          const current = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+          const updated = current.filter((s) => s.id_horario !== detail.payload.id_horario);
+          save(STORAGE_KEYS.SCHEDULES, updated);
+        } else if (detail.payload && detail.payload.id_horario) {
+          const current = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+          const map = new Map();
+          current.forEach((s) => map.set(Number(s.id_horario), s));
+          map.set(Number(detail.payload.id_horario), {
+            ...(map.get(Number(detail.payload.id_horario)) || {}),
+            ...detail.payload
+          });
+          save(STORAGE_KEYS.SCHEDULES, Array.from(map.values()));
+        }
+        getSchedules().then((scheds) => {
+          if (Array.isArray(scheds)) {
+            const current = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+            const map = new Map();
+            current.forEach((s) => map.set(Number(s.id_horario), s));
+            scheds.forEach((s) => {
+              if (s && s.id_horario) {
+                map.set(Number(s.id_horario), { ...(map.get(Number(s.id_horario)) || {}), ...s });
+              }
+            });
+            save(STORAGE_KEYS.SCHEDULES, Array.from(map.values()));
+          }
+        }).catch(() => { });
       }
     } catch (e) {
       console.warn("[ClientStorage] Error procesando evento reactivo de sincronización:", e);
@@ -330,8 +405,8 @@ export function getClientPackages() {
     const includedServices = (Array.isArray(pkg.servicios) && pkg.servicios.length > 0)
       ? pkg.servicios
       : (pkg.servicios_ids || []).map((id) =>
-          services.find((s) => s.id_servicio === Number(id))
-        ).filter(Boolean);
+        services.find((s) => s.id_servicio === Number(id))
+      ).filter(Boolean);
 
     const originalPrice = pkg.precio_base
       ? Number(pkg.precio_base)
@@ -384,43 +459,59 @@ export function getClientProducts() {
 
 export function getClientBarbers() {
   const stored = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
-  // Asegurar que solo existan los barberos registrados en el sistema (limpiar residuos de pruebas)
-  const barbers = stored.filter((b) => b.id_barbero !== 3 && b.correo !== "mateo@tuturno.com");
+  // Asegurar que solo existan los barberos registrados en el sistema (limpiar solo posibles cuentas de pruebas ficticias)
+  const barbers = stored.filter((b) => b.correo !== "mateo@tuturno.com");
   if (barbers.length !== stored.length) {
     save(STORAGE_KEYS.BARBERS, barbers);
   }
-
-  const barberFallbacks = [
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80"
-  ];
 
   const barberMetadata = {
     1: { rating: 4.9, reviewsCount: 148, badge: "Master Fade", nextSlot: "Hoy 16:00" },
     2: { rating: 4.8, reviewsCount: 112, badge: "Color & Tendencias", nextSlot: "Hoy 17:30" }
   };
 
-  let changed = false;
-  const healed = barbers.map((b, idx) => {
-    let img = b.imagen_url;
-    if (!img || img.trim() === "") {
-      changed = true;
-      img = barberFallbacks[idx % barberFallbacks.length];
+  const cleanPhoto = (url) => {
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    if (trimmed === "" || trimmed === "null" || trimmed === "undefined") return null;
+    if (
+      trimmed.includes("images.unsplash.com/photo-1534528741775-53994a69daeb") ||
+      trimmed.includes("images.unsplash.com/photo-1507003211169-0a1dd7228f2d") ||
+      trimmed.includes("images.unsplash.com/photo-1585747860715-2ba37e788b70")
+    ) {
+      return null;
     }
-    const meta = barberMetadata[b.id_barbero] || { rating: 4.9, reviewsCount: 50, badge: "Especialista", nextSlot: "Disponible" };
+    return trimmed;
+  };
+
+  let changed = false;
+  const healed = barbers.map((b) => {
+    const cleanedImg = cleanPhoto(b.imagen_url);
+    if (cleanedImg !== b.imagen_url) {
+      changed = true;
+    }
+    const meta = barberMetadata[b.id_barbero] || {
+      rating: 4.9,
+      reviewsCount: 24,
+      badge: b.especialidad ? b.especialidad.split(",")[0].trim() : "Barbero Profesional",
+      nextSlot: "Disponible"
+    };
     return {
       ...b,
-      imagen_url: img,
-      rating: meta.rating,
-      reviewsCount: meta.reviewsCount,
-      badge: meta.badge,
+      nombre: b.nombre || "Barbero",
+      apellido: b.apellido || "",
+      especialidad: b.especialidad || "Cortes & Barba Profesional",
+      imagen_url: cleanedImg,
+      rating: b.rating || meta.rating,
+      reviewsCount: b.reviewsCount || meta.reviewsCount,
+      badge: b.badge || meta.badge,
       nextSlot: meta.nextSlot
     };
   });
   if (changed) {
     save(STORAGE_KEYS.BARBERS, healed);
   }
-  return healed.filter((b) => b.estado === 1);
+  return healed.filter((b) => Number(b.estado) === 1 || b.estado === undefined || b.estado === "1");
 }
 
 /**
@@ -504,7 +595,12 @@ export function getLiveBarbersStatus() {
 }
 
 export function getClientSchedules() {
-  return getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES).filter((s) => s.estado === 1);
+  const current = getOrInit(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+  if (!Array.isArray(current)) {
+    save(STORAGE_KEYS.SCHEDULES, INITIAL_SCHEDULES);
+    return INITIAL_SCHEDULES;
+  }
+  return current.filter((s) => Number(s.estado) === 1 || s.estado === undefined || s.estado === "1");
 }
 
 // ==========================================
@@ -535,12 +631,26 @@ export function getCurrentClientProfile() {
       telefono: user.telefono || "",
       direccion: "No especificada",
       nivel_fidelidad: "Nuevo",
+      puntos_fidelidad: 0,
       estado: 1
     };
     save(STORAGE_KEYS.CLIENTS, [...clients, client]);
   } else {
     // Sincronizar en caso de que los datos del usuario hayan sido actualizados
     let needsUpdate = false;
+    if (client.puntos_fidelidad === undefined) {
+      // Todo cliente nuevo inicia con 0 puntos; si tiene citas completadas previas se calculan
+      const allAppointments = getOrInit(STORAGE_KEYS.APPOINTMENTS, []);
+      const completedCount = allAppointments.filter(
+        (a) =>
+          a.estado === "Completada" &&
+          ((a.id_cliente && Number(a.id_cliente) === Number(client.id_cliente)) ||
+            (a.id_usuario && Number(a.id_usuario) === Number(user.id_usuario)) ||
+            (a.cliente_correo && a.cliente_correo.toLowerCase() === cleanEmail))
+      ).length;
+      client.puntos_fidelidad = completedCount * 50;
+      needsUpdate = true;
+    }
     if (user.documento && client.documento !== user.documento.trim()) {
       client.documento = user.documento.trim();
       needsUpdate = true;
@@ -568,6 +678,8 @@ export function getCurrentClientProfile() {
 
   return {
     ...client,
+    puntos_fidelidad: Number(client.puntos_fidelidad ?? 0),
+    nivel_fidelidad: client.nivel_fidelidad || "Nuevo",
     documento: user.documento || client.documento || "",
     nombre: user.nombre || client.nombre,
     apellido: user.apellido || client.apellido,
@@ -697,6 +809,7 @@ export function getAvailableSlots(id_barbero, isoDate) {
 
   const barberSchedule = schedules.find((s) => {
     if (Number(s.id_barbero) !== Number(id_barbero)) return false;
+    if (Number(s.estado) === 0) return false;
     if (s.dia_semana && norm(s.dia_semana) === norm(dayName)) return true;
     if (Array.isArray(s.dias_semana) && s.dias_semana.some((d) => norm(d) === norm(dayName))) return true;
     return false;
@@ -777,6 +890,119 @@ export function checkBarberApprovedNovelty(id_barbero, isoDate) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Normaliza nombres de días (elimina tildes, minúsculas, espacios)
+ */
+function normalizeDayName(d) {
+  return String(d || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+/**
+ * Determina si un barbero tiene jornada laboral configurada y activa en una fecha específica.
+ * @param {number|string} id_barbero
+ * @param {string} isoDate - formato YYYY-MM-DD
+ * @returns {{ isWorking: boolean, schedule: object|null }}
+ */
+export function isBarberWorkingOnDate(id_barbero, isoDate) {
+  if (!id_barbero || !isoDate) return { isWorking: false, schedule: null };
+
+  const dateObj = new Date(isoDate + "T12:00:00");
+  const daysMap = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+  const targetDay = daysMap[dateObj.getDay()];
+
+  const schedules = getClientSchedules();
+  const schedule = schedules.find((s) => {
+    if (Number(s.id_barbero) !== Number(id_barbero)) return false;
+    if (Number(s.estado) === 0) return false;
+    if (s.dia_semana && normalizeDayName(s.dia_semana) === targetDay) return true;
+    if (Array.isArray(s.dias_semana) && s.dias_semana.some((d) => normalizeDayName(d) === targetDay)) return true;
+    return false;
+  });
+
+  return {
+    isWorking: Boolean(schedule),
+    schedule: schedule || null
+  };
+}
+
+/**
+ * Obtiene los días y horario laboral configurados por el administrador para un barbero.
+ * Genera un resumen legible como "Lun, Mar, Mié • 08:00 - 18:00" o "Lun a Sáb • 09:00 - 18:00".
+ * @param {number|string} id_barbero
+ */
+export function getBarberWorkingDays(id_barbero) {
+  if (!id_barbero) {
+    return { days: [], summary: "Sin horario asignado", hours: "", hasSchedules: false };
+  }
+
+  const schedules = getClientSchedules().filter(
+    (s) => Number(s.id_barbero) === Number(id_barbero) && (Number(s.estado) === 1 || s.estado === undefined || s.estado === "1")
+  );
+
+  if (schedules.length === 0) {
+    return { days: [], summary: "Sin horario asignado", hours: "", hasSchedules: false };
+  }
+
+  const dayOrder = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+  const dayNamesDisplay = {
+    lunes: "Lun",
+    martes: "Mar",
+    miercoles: "Mié",
+    jueves: "Jue",
+    viernes: "Vie",
+    sabado: "Sáb",
+    domingo: "Dom"
+  };
+
+  const presentDays = new Set();
+  let minStart = null;
+  let maxEnd = null;
+
+  schedules.forEach((s) => {
+    if (s.dia_semana) presentDays.add(normalizeDayName(s.dia_semana));
+    if (Array.isArray(s.dias_semana)) s.dias_semana.forEach((d) => presentDays.add(normalizeDayName(d)));
+
+    if (s.hora_inicio) {
+      const h = String(s.hora_inicio).substring(0, 5);
+      if (!minStart || h < minStart) minStart = h;
+    }
+    if (s.hora_fin) {
+      const h = String(s.hora_fin).substring(0, 5);
+      if (!maxEnd || h > maxEnd) maxEnd = h;
+    }
+  });
+
+  const sortedDays = dayOrder.filter((d) => presentDays.has(d));
+  if (sortedDays.length === 0) {
+    return { days: [], summary: "Sin horario asignado", hours: "", hasSchedules: false };
+  }
+
+  let daysSummary = "";
+  if (sortedDays.length === 6 && !presentDays.has("domingo")) {
+    daysSummary = "Lun a Sáb";
+  } else if (sortedDays.length === 5 && !presentDays.has("sabado") && !presentDays.has("domingo")) {
+    daysSummary = "Lun a Vie";
+  } else if (sortedDays.length === 7) {
+    daysSummary = "Todos los días";
+  } else {
+    daysSummary = sortedDays.map((d) => dayNamesDisplay[d] || d).join(", ");
+  }
+
+  const hoursSummary = minStart && maxEnd ? `${minStart} - ${maxEnd}` : "";
+  const fullSummary = hoursSummary ? `${daysSummary} • ${hoursSummary}` : daysSummary;
+
+  return {
+    days: sortedDays,
+    summary: fullSummary,
+    hours: hoursSummary,
+    hasSchedules: true
+  };
 }
 
 /**
@@ -1300,19 +1526,20 @@ export function getClientLoyaltyDetails() {
     nextBenefitText = `Te faltan ${cortesFaltantes} cortes para tu 5° Corte Gratis.`;
   }
 
-  // Nivel de fidelidad: todo cliente recién registrado inicia en 'Nuevo' (mínimo)
+  // Nivel de fidelidad: todo cliente recién registrado inicia en 'Nuevo' (con 0 puntos)
+  const currentPoints = Number(profile?.puntos_fidelidad ?? (completed * 50));
   let currentTier = profile?.nivel_fidelidad || "Nuevo";
   if (!profile?.nivel_fidelidad || profile.nivel_fidelidad === "Nuevo") {
-    if (completed >= 15) currentTier = "Oro";
-    else if (completed >= 8) currentTier = "Plata";
-    else if (completed >= 3) currentTier = "Bronce";
+    if (currentPoints >= 750 || completed >= 15) currentTier = "Oro";
+    else if (currentPoints >= 350 || completed >= 8) currentTier = "Plata";
+    else if (currentPoints >= 150 || completed >= 3) currentTier = "Bronce";
     else currentTier = "Nuevo";
   }
 
   const perksByTier = {
     Nuevo: [
-      "Registro inicial en el Club de Fidelidad Tu Turno",
-      "Suma sellos automáticos por cada corte realizado",
+      "Registro inicial en el Club de Fidelidad Tu Turno (0 pts)",
+      "Suma sellos y +50 puntos automáticos por cada corte completado",
       "Tu 5° corte del ciclo con beneficio especial"
     ],
     Bronce: [
@@ -1335,6 +1562,7 @@ export function getClientLoyaltyDetails() {
 
   return {
     tier: currentTier,
+    puntos: currentPoints,
     serviciosRealizados: completed,
     targetCortes,
     sellosCiclo,

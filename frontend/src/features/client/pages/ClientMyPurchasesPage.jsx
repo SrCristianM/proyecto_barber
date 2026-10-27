@@ -151,85 +151,122 @@ export default function ClientMyPurchasesPage() {
         </div>
       )}
 
-      {/* MODAL DETALLE DE COMPRA */}
+      {/* MODAL DETALLE DE COMPRA: MINI FACTURA TÉRMICA */}
       {selectedSale && (
         <Modal
-          title={`Comprobante de Venta #VENTA-${String(selectedSale.id_venta).padStart(4, "0")}`}
+          title={`Comprobante de Venta • #VENTA-${String(selectedSale.id_venta).padStart(4, "0")}`}
           onClose={() => setSelectedSale(null)}
-          maxWidthClass="max-w-xl"
+          maxWidthClass="max-w-md"
         >
           <div className="space-y-5">
-            <div className="p-5 sm:p-6 rounded-2xl bg-muted/40 border border-border space-y-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-medium">Fecha de Emisión:</span>
-                <span className="font-bold text-foreground">{selectedSale.fecha}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-medium">Cliente:</span>
-                <span className="font-bold text-foreground">{client?.nombre} {client?.apellido}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground font-medium">Estado:</span>
-                <span className="font-bold text-emerald-500">{selectedSale.estado || "Activa"}</span>
-              </div>
-              {selectedSale.metodo_pago && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Método de Pago:</span>
-                  <span className="font-bold text-foreground">{selectedSale.metodo_pago}</span>
-                </div>
-              )}
-              {selectedSale.metodo_entrega && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Modalidad de Entrega:</span>
-                  <span className="font-bold text-foreground">{selectedSale.metodo_entrega}</span>
-                </div>
-              )}
-              {selectedSale.direccion_envio && !selectedSale.direccion_envio.toLowerCase().includes("salón") && !selectedSale.direccion_envio.toLowerCase().includes("salon") && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground font-medium">Dirección:</span>
-                  <span className="font-bold text-foreground text-right max-w-xs truncate">{selectedSale.direccion_envio}</span>
-                </div>
-              )}
-            </div>
+            {/* TICKET / FACTURA TÉRMICA ESTILIZADA */}
+            <div className="rounded-3xl bg-card border border-border/80 shadow-2xl p-6 relative overflow-hidden font-mono text-xs">
+              {/* Franja superior decorativa Barber Pole */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-white to-blue-600 absolute top-0 left-0" />
 
-            {/* Desglose de ítems */}
-            <div className="space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                Artículos Facturados
-              </span>
-              <div className="space-y-2">
+              {/* Encabezado de la factura */}
+              <div className="text-center pb-4 border-b border-dashed border-border/80 space-y-1 mt-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#DFB755] block">
+                  TU TURNO BARBER
+                </span>
+                <h4 className="text-sm font-black text-foreground">COMPROBANTE DE PAGO</h4>
+                <p className="text-[10px] text-muted-foreground">NIT: 901.458.239-1 • Salón Principal</p>
+                <p className="text-[11px] font-bold text-foreground">
+                  #FACTURA-{String(selectedSale.id_venta).padStart(4, "0")}
+                </p>
+              </div>
+
+              {/* Metadatos */}
+              <div className="py-3 border-b border-dashed border-border/80 space-y-1.5 text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fecha:</span>
+                  <span className="font-bold text-foreground">{selectedSale.fecha}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cliente:</span>
+                  <span className="font-bold text-foreground">{client?.nombre} {client?.apellido}</span>
+                </div>
+                {selectedSale.metodo_pago && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Método Pago:</span>
+                    <span className="font-bold text-[#DFB755]">{selectedSale.metodo_pago}</span>
+                  </div>
+                )}
+                {selectedSale.metodo_entrega && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Modalidad:</span>
+                    <span className="font-bold text-foreground">{selectedSale.metodo_entrega}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Estado:</span>
+                  <span className="font-bold text-emerald-500">{selectedSale.estado || "Aprobada"}</span>
+                </div>
+              </div>
+
+              {/* Desglose de ítems */}
+              <div className="py-3 border-b border-dashed border-border/80 space-y-2">
+                <div className="flex justify-between font-bold text-muted-foreground text-[10px] uppercase">
+                  <span>Cant. / Artículo</span>
+                  <span>Total</span>
+                </div>
+
                 {(selectedSale.detalles || []).map((d, index) => (
-                  <div
-                    key={index}
-                    className="p-3.5 rounded-xl bg-card border border-border flex items-center justify-between text-sm"
-                  >
-                    <div>
+                  <div key={index} className="flex justify-between items-start text-xs">
+                    <div className="pr-2">
                       <p className="font-bold text-foreground">{d.nombre}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground">
                         {d.cantidad} x ${Number(d.precio_unitario).toLocaleString("es-CO")}
                       </p>
                     </div>
-                    <span className="font-mono font-bold text-foreground">
+                    <span className="font-bold text-foreground whitespace-nowrap">
                       ${Number(d.subtotal).toLocaleString("es-CO")}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Total */}
-            <div className="p-5 rounded-2xl bg-[#DFB755]/10 border border-[#DFB755]/30 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold uppercase text-foreground block">Total de la Compra</span>
-                <span className="text-xs text-muted-foreground">IVA incluido</span>
+              {/* Total Final */}
+              <div className="pt-3 space-y-1.5">
+                <div className="flex justify-between text-muted-foreground text-[11px]">
+                  <span>Subtotal:</span>
+                  <span>${Number(selectedSale.total).toLocaleString("es-CO")}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground text-[11px]">
+                  <span>Impuestos (IVA):</span>
+                  <span>Incluido</span>
+                </div>
+                <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-border/60">
+                  <span className="text-foreground">TOTAL FACTURADO:</span>
+                  <span className="text-lg text-[#DFB755] dark:text-[#E8C466]">
+                    ${Number(selectedSale.total).toLocaleString("es-CO")}
+                  </span>
+                </div>
               </div>
-              <span className="text-2xl font-black text-[#DDAE41] dark:text-[#E8C466]">
-                ${Number(selectedSale.total).toLocaleString("es-CO")}
-              </span>
+
+              {/* Código de barras decorativo tipo recibo */}
+              <div className="mt-4 pt-3 border-t border-dashed border-border/60 text-center space-y-1">
+                <div className="flex justify-center items-center gap-0.5 h-7 opacity-75">
+                  {Array.from({ length: 36 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-full inline-block bg-foreground ${
+                        i % 3 === 0 ? "w-1" : i % 5 === 0 ? "w-0.5" : "w-1.5"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-[9px] text-muted-foreground tracking-widest block">
+                  * {selectedSale.id_venta}-CO-BARBER *
+                </span>
+                <p className="text-[9.5px] text-muted-foreground italic mt-1">
+                  ¡Gracias por tu preferencia en Tu Turno Barber!
+                </p>
+              </div>
             </div>
 
-            {/* Botones de acción */}
-            <div className="pt-2 border-t border-border flex justify-between items-center">
+            {/* Acciones */}
+            <div className="pt-2 flex justify-between items-center">
               <button
                 type="button"
                 onClick={() => setSelectedSale(null)}
@@ -241,10 +278,10 @@ export default function ClientMyPurchasesPage() {
               <button
                 type="button"
                 onClick={() => handleDownload(selectedSale)}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold text-xs hover:from-[#F0CF78] hover:to-[#E8C466] transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-[#DDAE41]/20"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#DFB755] to-[#DDAE41] text-zinc-950 font-black text-xs hover:brightness-105 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-[#DFB755]/20"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Descargar Comprobante (PDF)</span>
+                <span>Descargar Comprobante PDF</span>
               </button>
             </div>
           </div>

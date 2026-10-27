@@ -82,9 +82,12 @@ export default function BarberRewardsModal({ onClose, onRewardClaimed }) {
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-card via-card/90 to-[#DFB755]/15 border border-[#DFB755]/30 p-5 sm:p-6 shadow-md">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#DFB755]/20 text-[#DFB755] border border-[#DFB755]/30">
                   Nivel {loyalty?.tier || "Nuevo"}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-card border border-[#DFB755]/30 text-foreground">
+                  {Number(loyalty?.puntos ?? 0)} pts
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {serviciosRealizados} {serviciosRealizados === 1 ? "corte completado" : "cortes completados"} en total

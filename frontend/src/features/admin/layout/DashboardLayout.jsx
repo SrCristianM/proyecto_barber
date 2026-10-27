@@ -36,7 +36,7 @@ const DashboardLayout = ({ isDark, setIsDark }) => {
   }, [location.pathname, isMobile]);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden">
+    <div className="min-h-screen bg-background relative">
       {/* Backdrop overlay para pantallas móviles */}
       <AnimatePresence>
         {isMobile && sidebarOpen && (
@@ -59,7 +59,7 @@ const DashboardLayout = ({ isDark, setIsDark }) => {
       />
 
       <div
-        className={`transition-all duration-300 min-w-0 ${
+        className={`transition-all duration-300 min-w-0 flex flex-col min-h-screen ${
           isMobile ? "ml-0" : sidebarOpen ? "ml-64" : "ml-20"
         }`}
       >

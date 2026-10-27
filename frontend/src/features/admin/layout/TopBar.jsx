@@ -17,7 +17,18 @@ const TopBar = ({ isDark, setIsDark, sidebarOpen, setSidebarOpen, isMobile }) =>
   const navigate = useNavigate();
 
   useEffect(() => {
-    setCurrentUser(getCurrentUser());
+    const handleUserUpdate = () => {
+      setCurrentUser(getCurrentUser());
+    };
+    handleUserUpdate();
+    window.addEventListener("auth_user_updated", handleUserUpdate);
+    window.addEventListener("barber_profile_updated", handleUserUpdate);
+    window.addEventListener("storage", handleUserUpdate);
+    return () => {
+      window.removeEventListener("auth_user_updated", handleUserUpdate);
+      window.removeEventListener("barber_profile_updated", handleUserUpdate);
+      window.removeEventListener("storage", handleUserUpdate);
+    };
   }, []);
 
   // Atajo global Ctrl + K / Cmd + K
@@ -53,7 +64,7 @@ const TopBar = ({ isDark, setIsDark, sidebarOpen, setSidebarOpen, isMobile }) =>
   };
 
   return (
-    <header className="h-16 bg-card border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 gap-2 sm:gap-4">
+    <header className="h-16 bg-card/95 backdrop-blur-md border-b border-border px-3 sm:px-6 flex items-center justify-between sticky top-0 z-35 gap-2 sm:gap-4 shadow-xs shrink-0 transition-colors">
       {/* Botón de menú móvil + Disparador de Command Palette Global (Ctrl + K) */}
       <div className="flex items-center gap-2 flex-1 max-w-md min-w-0">
         <button
@@ -140,23 +151,14 @@ const TopBar = ({ isDark, setIsDark, sidebarOpen, setSidebarOpen, isMobile }) =>
         </AnimatePresence>
 
         {/* Toggle dark mode */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.9 }}
+        <button
+          type="button"
           onClick={() => setIsDark(!isDark)}
-          className="p-2 hover:bg-accent rounded-xl text-foreground transition-colors cursor-pointer"
+          className="p-2 hover:bg-accent rounded-xl text-foreground transition-all duration-150 active:scale-90 cursor-pointer"
           title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
         >
-          <motion.div
-            key={isDark ? "dark" : "light"}
-            initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-            animate={{ rotate: 0, opacity: 1, scale: 1 }}
-            exit={{ rotate: 90, opacity: 0, scale: 0.6 }}
-            transition={{ type: "spring", stiffness: 300, damping: 15 }}
-          >
-            {isDark ? <Sun className="h-5 w-5 text-warning" /> : <Moon className="h-5 w-5 text-foreground" />}
-          </motion.div>
-        </motion.button>
+          {isDark ? <Sun className="h-5 w-5 text-warning" /> : <Moon className="h-5 w-5 text-foreground" />}
+        </button>
 
         {/* Avatar usuario y Perfil */}
         <div className="flex items-center gap-1.5 sm:gap-3 pl-2 sm:pl-4 border-l border-border">

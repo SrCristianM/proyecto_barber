@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus, Sparkles } from "lucide-react";
+import { ShoppingBag, Search, CheckCircle2, XCircle, Info, Tag, Plus, Minus, Sparkles, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import confetti from "canvas-confetti";
 import ClientImage from "../components/ClientImage";
@@ -282,7 +282,7 @@ export default function ClientProductsPage() {
             placeholder="Buscar por gel, cera, shampoo, aceite..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border text-foreground text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#DFB755]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border/40 hover:border-[#DFB755]/50 focus:border-[#DFB755] text-foreground text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#DFB755]/30 transition-colors shadow-none"
           />
         </div>
 
@@ -296,7 +296,7 @@ export default function ClientProductsPage() {
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
                   ? "bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black shadow-sm"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+                  : "bg-card border border-border/40 hover:border-[#DFB755]/50 text-muted-foreground hover:text-foreground hover:bg-accent shadow-none"
               }`}
             >
               {cat === "all" ? "Todos los Productos" : cat}
@@ -334,13 +334,24 @@ export default function ClientProductsPage() {
                       </span>
                     </div>
 
-                    {/* Badge Disponibilidad */}
+                    {/* Badge Disponibilidad / Stock Crítico */}
                     <div className="absolute top-3 right-3">
                       {isAvailable ? (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/90 text-white shadow-sm">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Disponible</span>
-                        </span>
+                        prod.stock <= 5 ? (
+                          <motion.span
+                            animate={{ scale: [1, 1.06, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.8 }}
+                            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-amber-500/30"
+                          >
+                            <Flame className="w-3 h-3 fill-white" />
+                            <span>¡Solo {prod.stock}!</span>
+                          </motion.span>
+                        ) : (
+                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-500/90 text-white shadow-sm">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Disponible</span>
+                          </span>
+                        )
                       ) : (
                         <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-destructive/90 text-white shadow-sm">
                           <XCircle className="w-3 h-3" />
@@ -433,8 +444,19 @@ export default function ClientProductsPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground font-medium">Disponibilidad:</span>
-                <span className={`font-bold ${selectedProduct.stock > 0 ? "text-emerald-500" : "text-destructive"}`}>
-                  {selectedProduct.stock > 0 ? `Disponible (${selectedProduct.stock} unidades)` : "Agotado temporalmente"}
+                <span className={`font-bold ${selectedProduct.stock > 0 ? (selectedProduct.stock <= 5 ? "text-amber-500 animate-pulse font-black flex items-center gap-1" : "text-emerald-500") : "text-destructive"}`}>
+                  {selectedProduct.stock > 0 ? (
+                    selectedProduct.stock <= 5 ? (
+                      <>
+                        <Flame className="w-4 h-4 fill-amber-500" />
+                        <span>¡Últimas {selectedProduct.stock} unidades disponibles!</span>
+                      </>
+                    ) : (
+                      `Disponible (${selectedProduct.stock} unidades)`
+                    )
+                  ) : (
+                    "Agotado temporalmente"
+                  )}
                 </span>
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-border">

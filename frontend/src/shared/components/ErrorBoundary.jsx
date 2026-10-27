@@ -51,23 +51,49 @@ export default class ErrorBoundary extends React.Component {
               </div>
             )}
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={this.handleReset}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent hover:bg-accent/80 text-foreground font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Recargar Módulo</span>
-              </button>
-              <a
-                href="/barbero"
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#DDAE41]/25 transition-all"
-              >
-                <Home className="w-3.5 h-3.5" />
-                <span>Ir al Inicio del Barbero</span>
-              </a>
-            </div>
+            {(() => {
+              let homePath = "/";
+              let homeLabel = "Ir al Inicio";
+              try {
+                const raw = localStorage.getItem("barber_current_user");
+                if (raw) {
+                  const user = JSON.parse(raw);
+                  const rol = Number(user?.id_rol);
+                  if (rol === 3) {
+                    homePath = "/barbero";
+                    homeLabel = "Ir al Inicio del Barbero";
+                  } else if (rol === 4 || rol === 2) {
+                    homePath = "/portal";
+                    homeLabel = "Ir a Mi Portal";
+                  } else if (rol === 1) {
+                    homePath = "/dashboard";
+                    homeLabel = "Ir al Panel Principal";
+                  }
+                }
+              } catch {
+                // fallback
+              }
+
+              return (
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={this.handleReset}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-accent hover:bg-accent/80 text-foreground font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Recargar Módulo</span>
+                  </button>
+                  <a
+                    href={homePath}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] text-black font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#DDAE41]/25 transition-all"
+                  >
+                    <Home className="w-3.5 h-3.5" />
+                    <span>{homeLabel}</span>
+                  </a>
+                </div>
+              );
+            })()}
           </div>
         </div>
       );

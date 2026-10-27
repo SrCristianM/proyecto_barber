@@ -16,13 +16,24 @@ const scrollStyles = `
   }
   
   [data-slot="scroll-area-thumb"] {
-    background-color: rgba(107, 114, 128, 0.2) !important;
-    border-radius: 1px !important;
-    width: 4px !important;
+    background-color: rgba(107, 114, 128, 0.28) !important;
+    border-radius: 9999px !important;
+    width: 5px !important;
+    transition: background-color 0.2s ease !important;
   }
   
   [data-slot="scroll-area-thumb"]:hover {
-    background-color: rgba(107, 114, 128, 0.35) !important;
+    background-color: rgba(107, 114, 128, 0.5) !important;
+  }
+
+  .dark [data-slot="scroll-area-thumb"],
+  html.dark [data-slot="scroll-area-thumb"] {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .dark [data-slot="scroll-area-thumb"]:hover,
+  html.dark [data-slot="scroll-area-thumb"]:hover {
+    background-color: rgba(212, 175, 55, 0.75) !important;
   }
 `;
 

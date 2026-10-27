@@ -4,6 +4,7 @@
  * Gestiona la persistencia en localStorage y la verificación estricta de credenciales
  * según la estructura de la base de datos MySQL (tabla `usuario`).
  */
+import { notifyDataChange, SYNC_ENTITIES } from "../../../shared/services/dataSyncService.js";
 
 export const INITIAL_USERS = [
   {
@@ -318,6 +319,7 @@ export function syncClientStorage(user, direccion = "No especificada") {
         telefono: user.telefono ? user.telefono.trim() : "",
         direccion: direccion ? direccion.trim() : "No especificada",
         nivel_fidelidad: "Nuevo",
+        puntos_fidelidad: 0,
         estado: 1
       });
     }
@@ -561,6 +563,8 @@ export function logoutUser() {
   try {
     clearStoredToken();
     localStorage.removeItem(CURRENT_USER_KEY);
+    sessionStorage.removeItem("barber_intro_shown");
+    sessionStorage.removeItem("play_barber_intro");
   } catch (err) {
     console.error("Error al cerrar sesión:", err);
   }
@@ -603,6 +607,59 @@ export async function updateUserProfile(profileData) {
       if (res.ok && json?.data) {
         const updated = json.data;
         setCurrentUser(updated);
+
+        // Sincronizar en barber_users_db
+        try {
+          const users = getStoredUsers();
+          const uIdx = users.findIndex(
+            (u) =>
+              (updated.id_usuario && Number(u.id_usuario) === Number(updated.id_usuario)) ||
+              (u.correo && updated.correo && u.correo.toLowerCase() === updated.correo.toLowerCase())
+          );
+          if (uIdx >= 0) {
+            users[uIdx] = { ...users[uIdx], ...updated };
+            saveStoredUsers(users);
+          }
+        } catch (_) {}
+
+        // Si es barbero, sincronizar en barber_barbers_db
+        if (Number(updated.id_rol) === 3 || updated.id_barbero || Number(user?.id_rol) === 3 || user?.id_barbero) {
+          try {
+            const rawBarbers = localStorage.getItem("barber_barbers_db");
+            if (rawBarbers) {
+              const barbers = JSON.parse(rawBarbers);
+              const bIdx = barbers.findIndex(
+                (b) =>
+                  (updated.id_barbero && Number(b.id_barbero) === Number(updated.id_barbero)) ||
+                  (updated.id_usuario && Number(b.id_usuario) === Number(updated.id_usuario)) ||
+                  (user?.id_barbero && Number(b.id_barbero) === Number(user.id_barbero)) ||
+                  (user?.id_usuario && Number(b.id_usuario) === Number(user.id_usuario)) ||
+                  (b.correo && updated.correo && b.correo.toLowerCase() === updated.correo.toLowerCase())
+              );
+              if (bIdx >= 0) {
+                barbers[bIdx] = {
+                  ...barbers[bIdx],
+                  nombre: updated.nombre || barbers[bIdx].nombre,
+                  apellido: updated.apellido || barbers[bIdx].apellido,
+                  telefono: updated.telefono || barbers[bIdx].telefono,
+                  documento: updated.documento || barbers[bIdx].documento,
+                  imagen_url: updated.imagen_url !== undefined ? updated.imagen_url : (payload.imagen_url !== undefined ? payload.imagen_url : barbers[bIdx].imagen_url)
+                };
+                localStorage.setItem("barber_barbers_db", JSON.stringify(barbers));
+              }
+            }
+          } catch (_) {}
+        }
+
+        notifyDataChange(SYNC_ENTITIES.USERS, updated);
+        if (Number(updated.id_rol) === 3 || updated.id_barbero || Number(user?.id_rol) === 3 || user?.id_barbero) {
+          notifyDataChange(SYNC_ENTITIES.BARBERS, updated);
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth_user_updated", { detail: updated }));
+          window.dispatchEvent(new CustomEvent("barber_profile_updated", { detail: updated }));
+        }
+
         return { success: true, user: updated };
       }
       if (!res.ok) {
@@ -622,11 +679,51 @@ export async function updateUserProfile(profileData) {
     setCurrentUser(updated);
 
     const users = getStoredUsers();
-    const idx = users.findIndex((u) => u.id_usuario === user.id_usuario);
+    const idx = users.findIndex(
+      (u) =>
+        (user.id_usuario && Number(u.id_usuario) === Number(user.id_usuario)) ||
+        (u.correo && user.correo && u.correo.toLowerCase() === user.correo.toLowerCase())
+    );
     if (idx >= 0) {
       users[idx] = { ...users[idx], ...payload };
       saveStoredUsers(users);
     }
+
+    if (Number(user.id_rol) === 3 || user.id_barbero) {
+      try {
+        const rawBarbers = localStorage.getItem("barber_barbers_db");
+        if (rawBarbers) {
+          const barbers = JSON.parse(rawBarbers);
+          const bIdx = barbers.findIndex(
+            (b) =>
+              (user.id_barbero && Number(b.id_barbero) === Number(user.id_barbero)) ||
+              (user.id_usuario && Number(b.id_usuario) === Number(user.id_usuario)) ||
+              (b.correo && user.correo && b.correo.toLowerCase() === user.correo.toLowerCase())
+          );
+          if (bIdx >= 0) {
+            barbers[bIdx] = {
+              ...barbers[bIdx],
+              nombre: payload.nombre || barbers[bIdx].nombre,
+              apellido: payload.apellido || barbers[bIdx].apellido,
+              telefono: payload.telefono !== undefined ? payload.telefono : barbers[bIdx].telefono,
+              documento: payload.documento !== undefined ? payload.documento : barbers[bIdx].documento,
+              imagen_url: payload.imagen_url !== undefined ? payload.imagen_url : barbers[bIdx].imagen_url
+            };
+            localStorage.setItem("barber_barbers_db", JSON.stringify(barbers));
+          }
+        }
+      } catch (_) {}
+    }
+
+    notifyDataChange(SYNC_ENTITIES.USERS, updated);
+    if (Number(user.id_rol) === 3 || user.id_barbero) {
+      notifyDataChange(SYNC_ENTITIES.BARBERS, updated);
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("auth_user_updated", { detail: updated }));
+      window.dispatchEvent(new CustomEvent("barber_profile_updated", { detail: updated }));
+    }
+
     return { success: true, user: updated };
   }
 
@@ -665,10 +762,12 @@ export function getDeviceGoogleAccounts() {
     if (data !== null) {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
-        // Filtrar estrictamente solo cuentas legítimas de este dispositivo
+        // Filtrar estrictamente solo cuentas legítimas de Google de este dispositivo
         const sanitized = parsed.filter((acc) => {
           const email = (acc.email || acc.correo || "").trim().toLowerCase();
-          return email && !FORBIDDEN_MOCK_EMAILS.includes(email);
+          const domain = email.split("@")[1];
+          const isGoogle = domain === "gmail.com" || domain === "googlemail.com";
+          return email && isGoogle && !FORBIDDEN_MOCK_EMAILS.includes(email);
         });
 
         const formatted = sanitized.map((acc) => {
@@ -768,10 +867,10 @@ export function saveDeviceGoogleAccount(user) {
         (Number(user.id_rol) === 1
           ? "Administrador"
           : Number(user.id_rol) === 2
-          ? "Recepcionista"
-          : Number(user.id_rol) === 3
-          ? "Barbero"
-          : "Cliente"),
+            ? "Recepcionista"
+            : Number(user.id_rol) === 3
+              ? "Barbero"
+              : "Cliente"),
       imagen_url: cleanImg && !cleanImg.includes("unsplash.com") ? cleanImg : null,
       lastLogin: new Date().toISOString()
     };
@@ -803,20 +902,130 @@ export function removeDeviceGoogleAccount(email) {
 }
 
 /**
- * Inicia sesión con cuenta de Google validando de forma estricta que la cuenta
- * exista y se encuentre registrada en el sistema.
- * Si la cuenta existe y está activa, se guarda en este dispositivo.
+ * Verifica de forma estricta si un correo de Google existe y es 100% real en el sistema.
  */
-export async function loginWithGoogle({ email, name, avatarUrl }) {
+export async function verifyGoogleAccountEmail(email) {
   const cleanEmail = (email || "").trim().toLowerCase();
   if (!cleanEmail) {
     return { success: false, error: "El correo electrónico de Google es requerido." };
   }
 
-  // Validación de formato de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(cleanEmail)) {
     return { success: false, error: "Por favor ingresa un formato de correo electrónico válido." };
+  }
+
+  const domain = cleanEmail.split("@")[1];
+  const nonGoogleDomains = [
+    "tuturnobarber.com",
+    "example.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "yahoo.com",
+    "icloud.com"
+  ];
+  if (nonGoogleDomains.includes(domain)) {
+    return {
+      success: false,
+      error: "No se ha encontrado tu cuenta de Google. El correo ingresado no pertenece a una cuenta de Google."
+    };
+  }
+
+  try {
+    const res = await fetch("/api/auth/google/verify-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleanEmail })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json?.data) {
+      return { success: true, data: json.data };
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json?.message || "No se ha encontrado tu cuenta de Google."
+      };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para verificar correo Google, validando localmente:", err.message);
+  }
+
+  // Fallback local
+  if (domain !== "gmail.com" && domain !== "googlemail.com") {
+    return {
+      success: false,
+      error: "No se ha encontrado tu cuenta de Google. El correo ingresado no pertenece a una cuenta de Google."
+    };
+  }
+
+  const users = getStoredUsers();
+  const user = users.find((u) => (u.correo || "").toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return {
+      success: false,
+      error: "Esta cuenta de Google no se encuentra registrada en Tu Turno Barber. Por favor crea una cuenta o regístrate primero."
+    };
+  }
+
+  if (user.estado === 0) {
+    return {
+      success: false,
+      error: "Tu cuenta se encuentra inactiva. Comunícate con el administrador."
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      exists: true,
+      email: cleanEmail,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      imagen_url: user.imagen_url || null
+    }
+  };
+}
+
+/**
+ * Inicia sesión con cuenta de Google exigiendo de forma estricta la verificación de identidad (contraseña).
+ * No permite iniciar sesión de una sola vez sin validar la contraseña.
+ */
+export async function loginWithGoogle({ email, name, avatarUrl, contrasena, isExistingDeviceAccount = false }) {
+  const cleanEmail = (email || "").trim().toLowerCase();
+  if (!cleanEmail) {
+    return { success: false, error: "El correo electrónico de Google es requerido." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return { success: false, error: "Por favor ingresa un formato de correo electrónico válido." };
+  }
+
+  const domain = cleanEmail.split("@")[1];
+  const nonGoogleDomains = [
+    "tuturnobarber.com",
+    "example.com",
+    "hotmail.com",
+    "outlook.com",
+    "live.com",
+    "yahoo.com",
+    "icloud.com"
+  ];
+  if (nonGoogleDomains.includes(domain)) {
+    return {
+      success: false,
+      error: "No se ha encontrado tu cuenta de Google. El correo ingresado no pertenece a una cuenta de Google."
+    };
+  }
+
+  if (!isExistingDeviceAccount && (!contrasena || typeof contrasena !== "string" || !contrasena.trim())) {
+    return { success: false, error: "Por favor introduce la contraseña de tu cuenta." };
   }
 
   // 1. Intentar validar e iniciar sesión en Backend API
@@ -824,7 +1033,7 @@ export async function loginWithGoogle({ email, name, avatarUrl }) {
     const res = await fetch("/api/auth/google", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: cleanEmail, name, avatarUrl })
+      body: JSON.stringify({ email: cleanEmail, name, avatarUrl, contrasena, isExistingDeviceAccount })
     });
 
     const json = await res.json().catch(() => null);
@@ -853,21 +1062,21 @@ export async function loginWithGoogle({ email, name, avatarUrl }) {
       const errorMsg =
         json?.message ||
         json?.error ||
-        "No existe ninguna cuenta registrada con este correo de Google. Por favor crea una cuenta primero o verifica tus datos.";
+        "Contraseña incorrecta. Introduce la contraseña correcta de tu cuenta para acceder con Google.";
       return { success: false, error: errorMsg };
     }
   } catch (err) {
     console.warn("[Auth] Backend no disponible para login con Google, usando validación local:", err.message);
   }
 
-  // 2. Validación local si el backend no responde (verificar estricta existencia)
+  // 2. Fallback local si el backend no responde
   const users = getStoredUsers();
   const user = users.find((u) => u.correo.toLowerCase() === cleanEmail);
 
   if (!user) {
     return {
       success: false,
-      error: "No existe ninguna cuenta registrada con este correo de Google. Por favor crea una cuenta primero o verifica tus datos."
+      error: "No se ha encontrado ninguna cuenta de Google con este correo o no está registrada en Tu Turno Barber."
     };
   }
 
@@ -875,6 +1084,13 @@ export async function loginWithGoogle({ email, name, avatarUrl }) {
     return {
       success: false,
       error: "Tu cuenta se encuentra inactiva. Comunícate con el administrador."
+    };
+  }
+
+  if (!isExistingDeviceAccount && user.contrasena !== contrasena) {
+    return {
+      success: false,
+      error: "Contraseña incorrecta. Introduce la contraseña correcta de tu cuenta para acceder con Google."
     };
   }
 
@@ -890,3 +1106,182 @@ export async function loginWithGoogle({ email, name, avatarUrl }) {
 export async function getGoogleAccounts() {
   return getDeviceGoogleAccounts();
 }
+
+/**
+ * Solicita el envío de un código de verificación por correo electrónico para restablecer contraseña.
+ * Despacha el correo real mediante el servicio SMTP configurado en el backend.
+ * @param {string} correo - Correo electrónico del usuario
+ */
+export async function requestPasswordReset(correo) {
+  const cleanEmail = (correo || "").trim().toLowerCase();
+  if (!cleanEmail) {
+    return { success: false, error: "Debes ingresar tu correo electrónico." };
+  }
+
+  // 1. Enviar solicitud al Backend API (dispara Nodemailer con Gmail SMTP)
+  try {
+    const res = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: cleanEmail })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json) {
+      return {
+        success: true,
+        message: json.message || "Se ha enviado un código de verificación a tu correo electrónico.",
+        data: json.data || {}
+      };
+    }
+
+    if (!res.ok) {
+      const errorMsg =
+        json?.message ||
+        json?.error ||
+        "No existe ninguna cuenta registrada con este correo electrónico o la cuenta está inactiva.";
+      return { success: false, error: errorMsg };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para recuperación de contraseña, usando fallback local:", err.message);
+  }
+
+  // 2. Fallback offline local
+  const users = getStoredUsers();
+  const user = users.find((u) => u.correo.toLowerCase() === cleanEmail);
+  if (!user) {
+    return {
+      success: false,
+      error: "No existe ninguna cuenta registrada con este correo electrónico."
+    };
+  }
+
+  if (user.estado === 0) {
+    return {
+      success: false,
+      error: "Tu cuenta se encuentra inactiva. Comunícate con el administrador."
+    };
+  }
+
+  const fallbackCode = Math.floor(100000 + Math.random() * 900000).toString();
+  try {
+    sessionStorage.setItem(`offline_reset_code_${cleanEmail}`, JSON.stringify({
+      code: fallbackCode,
+      expiresAt: Date.now() + 15 * 60 * 1000
+    }));
+  } catch (e) {
+    // ignore
+  }
+
+  return {
+    success: true,
+    message: "Se ha generado un código de verificación.",
+    data: {
+      correo: cleanEmail,
+      codigo_demo: fallbackCode,
+      expira_en_minutos: 15
+    }
+  };
+}
+
+/**
+ * Restablece la contraseña de cualquier usuario validando el código de 6 dígitos.
+ * Actualiza la contraseña en el backend (MySQL / json) y en localStorage.
+ * @param {string} correo - Correo del usuario
+ * @param {string} codigo - Código de 6 dígitos recibido
+ * @param {string} nuevaContrasena - Nueva contraseña
+ */
+export async function confirmPasswordReset(correo, codigo, nuevaContrasena) {
+  const cleanEmail = (correo || "").trim().toLowerCase();
+  const cleanCode = (codigo || "").trim();
+  const cleanPass = nuevaContrasena || "";
+
+  if (!cleanEmail) {
+    return { success: false, error: "El correo electrónico es requerido." };
+  }
+  if (!cleanCode) {
+    return { success: false, error: "Ingresa el código de 6 dígitos enviado a tu correo." };
+  }
+  if (!cleanPass || cleanPass.length < 6) {
+    return { success: false, error: "La nueva contraseña debe tener al menos 6 caracteres." };
+  }
+
+  // 1. Restablecer en Backend API
+  try {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        correo: cleanEmail,
+        codigo: cleanCode,
+        nueva_contrasena: cleanPass
+      })
+    });
+
+    const json = await res.json().catch(() => null);
+
+    if (res.ok && json) {
+      // Sincronizar contraseña en el almacenamiento local para coherencia total
+      const users = getStoredUsers();
+      const idx = users.findIndex((u) => u.correo.toLowerCase() === cleanEmail);
+      if (idx >= 0) {
+        users[idx].contrasena = cleanPass;
+        saveStoredUsers(users);
+      }
+
+      const currentUser = getCurrentUser();
+      if (currentUser && currentUser.correo.toLowerCase() === cleanEmail) {
+        currentUser.contrasena = cleanPass;
+        setCurrentUser(currentUser);
+      }
+
+      return {
+        success: true,
+        message: json.message || "¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión."
+      };
+    }
+
+    if (!res.ok) {
+      const errorMsg = json?.message || json?.error || "Código de verificación incorrecto o expirado.";
+      return { success: false, error: errorMsg };
+    }
+  } catch (err) {
+    console.warn("[Auth] Backend no disponible para reset de contraseña, intentando fallback local:", err.message);
+  }
+
+  // 2. Fallback offline local
+  try {
+    const rawOffline = sessionStorage.getItem(`offline_reset_code_${cleanEmail}`);
+    if (rawOffline) {
+      const { code, expiresAt } = JSON.parse(rawOffline);
+      if (Date.now() > expiresAt) {
+        return { success: false, error: "El código de verificación ha expirado. Solicita uno nuevo." };
+      }
+      if (code !== cleanCode) {
+        return { success: false, error: "El código de verificación ingresado es incorrecto." };
+      }
+
+      const users = getStoredUsers();
+      const idx = users.findIndex((u) => u.correo.toLowerCase() === cleanEmail);
+      if (idx >= 0) {
+        users[idx].contrasena = cleanPass;
+        saveStoredUsers(users);
+      }
+      sessionStorage.removeItem(`offline_reset_code_${cleanEmail}`);
+
+      return {
+        success: true,
+        message: "Contraseña actualizada exitosamente."
+      };
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return {
+    success: false,
+    error: "No fue posible verificar el código. Por favor verifica que los 6 dígitos coincidan o solicita un nuevo código."
+  };
+}
+

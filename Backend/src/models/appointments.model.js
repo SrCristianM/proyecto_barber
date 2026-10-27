@@ -343,7 +343,23 @@ export class AppointmentsRepository {
 
     const c = mockStore.citas.find((app) => app.id_cita === appointmentId);
     if (c) {
+      const wasAlreadyCompleted = c.estado === "Completada";
       c.estado = newStatus;
+
+      // Acreditar puntos de fidelidad (+50 pts) solo cuando se finaliza y completa la cita
+      if (newStatus === "Completada" && !wasAlreadyCompleted && c.id_cliente) {
+        const client = mockStore.clientes.find((cl) => cl.id_cliente === c.id_cliente);
+        if (client) {
+          const currentPts = Number(client.puntos_fidelidad ?? 0);
+          const newPts = currentPts + 50;
+          client.puntos_fidelidad = newPts;
+          if (newPts >= 750) client.nivel_fidelidad = "Oro";
+          else if (newPts >= 350) client.nivel_fidelidad = "Plata";
+          else if (newPts >= 150) client.nivel_fidelidad = "Bronce";
+          else client.nivel_fidelidad = "Nuevo";
+        }
+      }
+
       mockStore.saveToFile();
       return true;
     }

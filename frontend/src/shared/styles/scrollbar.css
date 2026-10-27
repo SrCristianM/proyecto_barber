@@ -1,33 +1,170 @@
 /* ==========================================================================
-   SCROLLBAR GLOBAL (DASHBOARD & MÓDULOS DEL SISTEMA) - Minimalista y discreto
+   SISTEMA DE SCROLLBAR GLOBAL - TU TURNO BARBER
+   Soporte dinámico para Modo Oscuro y Modo Claro con estética Obsidian & Gold
    ========================================================================== */
 
-/* Firefox general */
+/* --------------------------------------------------------------------------
+   1. COLOR-SCHEME DEL NAVEGADOR
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+}
+
+html.dark,
+:root.dark,
+body.dark,
+.dark {
+  color-scheme: dark;
+}
+
+/* Ocultar flechas y botones nativos del scrollbar en todos los motores Webkit */
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. SCROLLBAR DEL VIEWPORT PRINCIPAL (HTML Y BODY)
+   -------------------------------------------------------------------------- */
+
+/* Firefox viewport */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+html.dark,
+body.dark {
+  scrollbar-color: #262E3B #0B0D10;
+}
+
+/* Webkit: Chrome, Edge, Safari, Opera, Brave */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+/* MODO CLARO - Ventana Principal */
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: #F8FAFC;
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  border: 2px solid #F8FAFC;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+html::-webkit-scrollbar-thumb:active,
+body::-webkit-scrollbar-thumb:active {
+  background: #64748B;
+}
+
+/* MODO OSCURO - Ventana Principal */
+html.dark::-webkit-scrollbar,
+body.dark::-webkit-scrollbar,
+.dark html::-webkit-scrollbar,
+.dark body::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+html.dark::-webkit-scrollbar-track,
+body.dark::-webkit-scrollbar-track,
+.dark html::-webkit-scrollbar-track,
+.dark body::-webkit-scrollbar-track {
+  background: #0B0D10;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+html.dark::-webkit-scrollbar-thumb,
+body.dark::-webkit-scrollbar-thumb,
+.dark html::-webkit-scrollbar-thumb,
+.dark body::-webkit-scrollbar-thumb {
+  background: #232B37;
+  border-radius: 9999px;
+  border: 2px solid #0B0D10;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+html.dark::-webkit-scrollbar-thumb:hover,
+body.dark::-webkit-scrollbar-thumb:hover,
+.dark html::-webkit-scrollbar-thumb:hover,
+.dark body::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+  border-color: #0B0D10;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.45);
+}
+
+html.dark::-webkit-scrollbar-thumb:active,
+body.dark::-webkit-scrollbar-thumb:active,
+.dark html::-webkit-scrollbar-thumb:active,
+.dark body::-webkit-scrollbar-thumb:active {
+  background: #E6C76A;
+}
+
+/* --------------------------------------------------------------------------
+   3. SCROLLBAR DE CONTENEDORES INTERNOS (Tablas, Modales, Paneles, Menús)
+   -------------------------------------------------------------------------- */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.25) transparent;
+  scrollbar-color: rgba(100, 116, 139, 0.3) transparent;
 }
 
-/* Chrome, Edge, Safari (Webkit) para toda la app y modales */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+html.dark *,
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-::-webkit-scrollbar-track {
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.25);
-  border-radius: 2px;
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.45);
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
 }
 
-/* Radix UI Scroll Area (Modales, Tablas, Paneles del Dashboard) */
+/* Contenedores en modo oscuro */
+html.dark *::-webkit-scrollbar-thumb,
+.dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+html.dark *::-webkit-scrollbar-thumb:hover,
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.75);
+  box-shadow: 0 0 6px rgba(212, 175, 55, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   4. RADIX UI SCROLL AREA (Modales y Componentes del Sistema)
+   -------------------------------------------------------------------------- */
 [data-slot="scroll-area-scrollbar"] {
   background: transparent !important;
   padding: 0 !important;
@@ -40,20 +177,80 @@
 }
 
 [data-slot="scroll-area-thumb"] {
-  background-color: rgba(107, 114, 128, 0.25) !important;
-  border-radius: 2px !important;
-  width: 4px !important;
+  background-color: rgba(100, 116, 139, 0.28) !important;
+  border-radius: 9999px !important;
+  width: 5px !important;
   min-height: 24px !important;
+  transition: background-color 0.2s ease !important;
 }
 
 [data-slot="scroll-area-thumb"]:hover {
-  background-color: rgba(107, 114, 128, 0.45) !important;
+  background-color: rgba(100, 116, 139, 0.55) !important;
 }
 
-/* ==========================================================================
-   SCROLLBAR EXCLUSIVO PARA LA LANDING PAGE (INICIO) - Dorado Luxury
-   ========================================================================== */
+html.dark [data-slot="scroll-area-thumb"],
+.dark [data-slot="scroll-area-thumb"] {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
 
+html.dark [data-slot="scroll-area-thumb"]:hover,
+.dark [data-slot="scroll-area-thumb"]:hover {
+  background-color: rgba(212, 175, 55, 0.75) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. UTILIDADES (custom-scrollbar, no-scrollbar, scrollbar-none)
+   -------------------------------------------------------------------------- */
+.custom-scrollbar {
+  scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.28);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.75);
+}
+
+/* Ocultar barra completamente (ej. navegación horizontal o carruseles) */
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE y Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. SCROLLBAR EXCLUSIVO PARA LA LANDING PAGE (INICIO) - Dorado Luxury
+   -------------------------------------------------------------------------- */
 html.landing-active,
 body.landing-active {
   scrollbar-width: thin;

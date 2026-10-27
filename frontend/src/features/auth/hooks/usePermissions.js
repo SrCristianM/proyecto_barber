@@ -209,6 +209,10 @@ export function usePermissions() {
       abastecimientos: "abastecimiento",
       supplies: "abastecimiento",
       suministros: "abastecimiento",
+      estaciones: "abastecimiento",
+      bodega: "abastecimiento",
+      estacion: "estacion",
+      insumos: "estacion",
       reportes: "ventas",
       reports: "ventas",
       users: "usuarios",
@@ -236,8 +240,8 @@ export function usePermissions() {
       return true;
     }
 
-    // Perfil personal siempre accesible para ver/actualizar sus datos
-    if (mod === "perfil") {
+    // Perfil personal y estación propia siempre accesible para ver/actualizar sus datos
+    if (mod === "perfil" || mod === "estacion") {
       return true;
     }
 
@@ -282,9 +286,13 @@ export function usePermissions() {
       return true;
     }
 
+    const permissions = getRolePermissions();
     if (permissions.includes("*")) {
       return true;
     }
+
+    const mod = normalizeModule(moduleName);
+    const act = (action || "").toLowerCase().trim();
 
     const targetKey = `${mod}_${act}`;
     if (permissions.includes(targetKey)) {
@@ -326,7 +334,7 @@ export function usePermissions() {
     }
 
     return false;
-  }, [getRolePermissions]);
+  }, [isAdmin, getRolePermissions]);
 
   return {
     user,

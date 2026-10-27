@@ -17,11 +17,13 @@ export function exportToCsv(filename, rows, columns) {
     exportToStyledExcel({
       title: filename.replace(/[_-]/g, " ").toUpperCase(),
       subtitle: `Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
-      filename: `${filename}_${getLocalDateString()}.xls`,
+      filename: filename,
       columns: columns.map(c => ({
-        header: c.label || c.key,
+        header: c.label || c.header || c.key,
         key: c.key,
-        width: 22
+        type: c.type,
+        align: c.align,
+        width: c.width
       })),
       data: rows.map(row => {
         const item = {};

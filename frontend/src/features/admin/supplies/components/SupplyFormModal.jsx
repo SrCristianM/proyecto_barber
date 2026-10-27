@@ -15,24 +15,32 @@ export default function SupplyFormModal({
   onSubmit,
   onClose
 }) {
-  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id_producto || "");
+  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id_insumo || products[0]?.id_producto || "");
   const [addQty, setAddQty] = useState(1);
   const [errors, setErrors] = useState({});
 
-  const availableProducts = (products || []).filter((p) => p.estado === 1);
-  const activeProductId = selectedProductId && availableProducts.some((p) => Number(p.id_producto) === Number(selectedProductId))
+  // Filtrar estrictamente solo insumos de bodega general (excluye cualquier producto comercial)
+  const availableProducts = (products || []).filter((p) => {
+    const isWarehouseItem = Boolean(p.id_insumo !== undefined || p.stock_actual !== undefined);
+    const isCommercialSale = Boolean(p.precio_venta !== undefined || (p.precio > 0 && p.id_insumo === undefined));
+    return isWarehouseItem && !isCommercialSale && (p.estado === 1 || p.estado === undefined);
+  });
+  const activeProductId = selectedProductId && availableProducts.some((p) => Number(p.id_insumo || p.id_producto) === Number(selectedProductId))
     ? selectedProductId
-    : (availableProducts[0]?.id_producto || "");
-  const selectedProduct = availableProducts.find((p) => Number(p.id_producto) === Number(activeProductId));
-  const currentStock = selectedProduct ? Number(selectedProduct.stock || 0) : 0;
+    : (availableProducts[0]?.id_insumo || availableProducts[0]?.id_producto || "");
+  const selectedProduct = availableProducts.find((p) => Number(p.id_insumo || p.id_producto) === Number(activeProductId));
+  const currentStock = selectedProduct ? Number(selectedProduct.stock_actual ?? selectedProduct.stock ?? 0) : 0;
 
   const productOptions = availableProducts.map((p) => {
-    const stock = Number(p.stock ?? 0);
-    const price = Number(p.precio ?? 0);
+    const id = p.id_insumo || p.id_producto;
+    const stock = Number(p.stock_actual ?? p.stock ?? 0);
+    const unit = p.unidad_medida || "un.";
+    const cat = p.categoria ? ` • ${p.categoria}` : "";
+    const price = Number(p.costo_unitario ?? p.precio ?? 0);
     return {
-      value: p.id_producto,
-      label: `${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ""}`,
-      subtitle: `Stock actual: ${stock} un. • Costo ref: $${price.toLocaleString("es-CO")}`
+      value: id,
+      label: `${p.nombre}`,
+      subtitle: `Stock en bodega: ${stock} ${unit}${cat} • Costo: $${price.toLocaleString("es-CO")}`
     };
   });
 
@@ -154,11 +162,11 @@ export default function SupplyFormModal({
 
             {selectedProduct && (
               <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                currentStock <= 3
+                currentStock <= (selectedProduct.stock_minimo || 3)
                   ? "bg-rose-500/10 text-rose-500 border border-rose-500/20"
                   : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
               }`}>
-                Stock en bodega: {currentStock} un.
+                Stock en bodega: {currentStock} {selectedProduct.unidad_medida || "un."}
               </span>
             )}
           </div>
@@ -166,7 +174,7 @@ export default function SupplyFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-7">
               <SearchableSelect
-                label="Insumo o Producto"
+                label="Insumo de Bodega"
                 options={productOptions}
                 value={activeProductId}
                 onChange={(val) => {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Boxes, BarChart3, History, RotateCcw, Download, Sparkles, User } from "lucide-react";
+import { Plus, Boxes, BarChart3, History, RotateCcw, Download, Sparkles, User, FileSpreadsheet } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { usePermissions } from "../../../auth/hooks/usePermissions";
@@ -15,8 +15,9 @@ import FilterSelect from "../../shared/components/FilterSelect";
 import DateRangeFilter from "../../shared/components/DateRangeFilter";
 import ConfirmModal from "../../shared/components/ConfirmModal";
 import { toast } from "sonner";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
 
-export default function SuppliesPage() {
+export default function SuppliesPage({ embedded = false }) {
   const [activeTab, setActiveTab] = useState("history"); // 'history' | 'analytics'
   const {
     filteredSupplies,
@@ -76,7 +77,7 @@ export default function SuppliesPage() {
         origin: { y: 0.7 },
         colors: ["#C9A24A", "#E5C875", "#FFFFFF"]
       });
-    } catch {}
+    } catch { }
   };
 
   const onSubmitCreate = async () => {
@@ -99,115 +100,167 @@ export default function SuppliesPage() {
       toast.error(err.message || "Error al anular abastecimiento");
     }
   };
+  // Exportar a Excel con formato y diseño profesional
+  const handleExportExcel = () => {
+    if (!filteredSupplies || filteredSupplies.length === 0) {
+      toast.error("No hay registros de despachos para exportar.");
+      return;
+    }
 
-  // Exportar a CSV
-  const handleExportCSV = () => {
-    if (!filteredSupplies || filteredSupplies.length === 0) return;
-    const headers = ["Folio", "Barbero", "Fecha", "Insumos_Totales", "Costo_Estimado", "Estado", "Observaciones"];
-    const rows = filteredSupplies.map((s) => [
-      `AB-${String(s.id_abastecimiento).padStart(5, "0")}`,
-      `"${s.barbero_nombre || ""}"`,
-      s.fecha,
-      (s.detalles || []).reduce((acc, d) => acc + Number(d.cantidad || 0), 0),
-      s.total_estimado,
-      s.estado,
-      `"${(s.observaciones || "").replace(/"/g, '""')}"`
-    ]);
+    exportToStyledExcel({
+      title: "REGISTRO DE VALES DE DESPACHO Y ABASTECIMIENTO",
+      subtitle: `Consumibles de Cabina y Puestos de Barbería | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      sheetName: "Abastecimientos",
+      filename: "abastecimientos_insumos",
+      columns: [
+        { header: "Folio", key: "folio", type: "code", width: 95, align: "center" },
+        { header: "Barbero Responsable", key: "barbero_nombre", width: 180 },
+        { header: "Fecha Despacho", key: "fecha", type: "date", width: 120, align: "center" },
+        { header: "Insumos (Unidades)", key: "insumos_totales", type: "number", width: 130, align: "right" },
+        { header: "Costo Estimado", key: "total_estimado", type: "currency", width: 135, align: "right" },
+        { header: "Estado", key: "estado", type: "status", width: 110, align: "center" },
+        { header: "Observaciones", key: "observaciones", width: 240 }
+      ],
+      data: filteredSupplies.map((s) => ({
+        folio: `AB-${String(s.id_abastecimiento).padStart(5, "0")}`,
+        barbero_nombre: s.barbero_nombre || "Barbero General",
+        fecha: s.fecha || "—",
+        insumos_totales: (s.detalles || []).reduce((acc, d) => acc + Number(d.cantidad || 0), 0),
+        total_estimado: Number(s.total_estimado || 0),
+        estado: s.estado || "Completado",
+        observaciones: s.observaciones || "Sin observaciones"
+      }))
+    });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Abastecimientos_Barberia_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    toast.success("Historial de abastecimientos exportado a Excel");
   };
 
   return (
     <div className="space-y-6">
-      {/* Header del Módulo */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-              Módulo de Abastecimiento
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              <Boxes className="w-3.5 h-3.5" />
-              Consumibles de Cabina
-            </span>
+      {/* Header del Módulo (solo cuando no está embebido en otra pestaña) */}
+      {!embedded ? (
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+                Módulo de Abastecimiento
+              </h1>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                <Boxes className="w-3.5 h-3.5" />
+                Consumibles de Cabina
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Gestión de insumos y productos suministrados a barberos durante los servicios (descuento de stock sin impacto en caja)
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Gestión de insumos y productos suministrados a barberos durante los servicios (descuento de stock sin impacto en caja)
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-border bg-card hover:bg-secondary text-foreground text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-xs"
-          >
-            <Download className="w-4 h-4 text-muted-foreground" />
-            <span className="hidden sm:inline">Exportar CSV</span>
-          </button>
-
-          {canCreate && (
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => {
-                resetForm();
-                setShowCreateModal(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-extrabold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+              onClick={handleExportExcel}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-border/40 bg-card hover:bg-secondary text-foreground text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-xs"
             >
-              <Plus className="w-4 h-4" />
-              Nuevo Despacho
+              <FileSpreadsheet className="w-4 h-4 text-[#DFB755]" />
+              <span className="hidden sm:inline">Exportar Excel</span>
             </button>
-          )}
+
+            {canCreate && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setShowCreateModal(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-white text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Nuevo Despacho
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Barra de Acciones de Vales cuando está embebido en la pestaña */
+        <div className="flex items-center justify-between flex-wrap gap-3 p-4 rounded-2xl bg-card/60 border border-border/40 shadow-sm backdrop-blur-md">
+          <div>
+            <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+              Vales de Despacho y Consumo
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#DFB755]/15 text-[#DFB755] font-black border border-[#DFB755]/30">
+                Historial de Salidas
+              </span>
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Registro histórico de insumos entregados a cada barbero con restitución de stock al anular.
+            </p>
+          </div>
 
-      {/* Pestañas de Navegación del Módulo (Historial vs Análisis por Barbero) */}
-      <div className="flex items-center gap-2 border-b border-border pb-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "history"
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border/40 bg-card hover:bg-muted text-foreground text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#DFB755]" />
+              <span>Exportar Excel</span>
+            </button>
+
+            {canCreate && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setShowCreateModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-black text-xs shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo Despacho</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Pestañas de Navegación del Módulo (Historial vs Análisis por Barbero) - Solo si no está embebido */}
+      {!embedded && (
+        <div className="flex items-center gap-2 border-b border-border/40 pb-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("history")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "history"
               ? "bg-primary/15 text-primary border border-primary/30"
               : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-          }`}
-        >
-          <History className="w-4 h-4" />
-          Historial de Despachos
-        </button>
+              }`}
+          >
+            <History className="w-4 h-4" />
+            Historial de Despachos
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("analytics");
-            fetchMetrics(metricsPeriod, metricsBarber);
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-            activeTab === "analytics"
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("analytics");
+              fetchMetrics(metricsPeriod, metricsBarber);
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "analytics"
               ? "bg-primary/15 text-primary border border-primary/30"
               : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          Control y Consumo por Barbero
-        </button>
-      </div>
+              }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Control y Consumo por Barbero
+          </button>
+        </div>
+      )}
 
-      {activeTab === "history" && (
+      {(activeTab === "history" || embedded) && (
         <div className="space-y-6">
           {/* Tarjetas de Estadísticas Rápidas */}
           <SuppliesStats stats={quickStats} />
 
           {/* Barra de Filtros y Búsqueda Estandarizada */}
-          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="bg-card/60 border border-border/40 rounded-2xl p-4 sm:p-5 shadow-sm backdrop-blur-md">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3 flex-1">
                 {/* Buscador */}
