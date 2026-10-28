@@ -18,6 +18,7 @@ import {
   useDataSync,
   SYNC_ENTITIES
 } from "../../../../shared/services/dataSyncService";
+import { createNotification } from "../../../../shared/services/notificationService";
 
 const initialCatalogItems = [
   { id_item: "s_1", tipo_item: "Servicio", id_servicio: 1, id_producto: null, nombre: "Corte Clásico", precio_unitario: 15000 },
@@ -453,6 +454,69 @@ export function useSales() {
         }))
       };
       setSales((prev) => [newSale, ...prev]);
+      try {
+        const local = JSON.parse(localStorage.getItem("barber_sales_db") || "[]");
+        localStorage.setItem("barber_sales_db", JSON.stringify([newSale, ...local]));
+      } catch {}
+
+      // Descontar inventario de productos y alertar sobre stock crítico
+      try {
+        const rawProducts = localStorage.getItem("barber_products_db");
+        if (rawProducts) {
+          const prods = JSON.parse(rawProducts);
+          formData.detalles.forEach((d) => {
+            if (d.tipo_item === "Producto" && d.id_producto) {
+              const pIdx = prods.findIndex((p) => Number(p.id_producto) === Number(d.id_producto));
+              if (pIdx >= 0) {
+                const curStock = Number(prods[pIdx].stock || 0);
+                const newStock = Math.max(0, curStock - Number(d.cantidad || 1));
+                prods[pIdx].stock = newStock;
+
+                if (newStock <= 5) {
+                  createNotification({
+                    type: "stock",
+                    title: "Alerta de Stock Crítico",
+                    description: `El producto "${prods[pIdx].nombre}" cuenta con solo ${newStock} unidad(es) disponible(s).`,
+                    route: "/dashboard/products",
+                    targetRole: [1, 2]
+                  });
+                }
+              }
+            }
+          });
+          localStorage.setItem("barber_products_db", JSON.stringify(prods));
+        }
+      } catch (errStock) {
+        console.warn("[useSales] Error actualizando stock:", errStock);
+      }
+
+      // Notificaciones de venta para Administración/Recepción y Cliente
+      try {
+        const clientName = getClientName(formData.id_cliente, newSale);
+        const clientObj = clientsList.find((c) => Number(c.id_cliente) === Number(formData.id_cliente));
+
+        createNotification({
+          type: "sale",
+          title: "Venta registrada",
+          description: `Venta #${nextVentaId} por $${Number(formData.total).toLocaleString("es-CO")} registrada para ${clientName}.`,
+          route: "/dashboard/sales",
+          targetRole: [1, 2]
+        });
+
+        if (clientObj?.id_usuario) {
+          createNotification({
+            type: "sale",
+            title: "¡Compra registrada con éxito!",
+            description: `Tu comprobante de compra #${nextVentaId} por $${Number(formData.total).toLocaleString("es-CO")} está disponible.`,
+            route: "/portal/mis-compras",
+            targetRole: 4,
+            targetUserId: clientObj.id_usuario
+          });
+        }
+      } catch (errNotif) {
+        console.warn("[useSales] Error despachando notificaciones de venta:", errNotif);
+      }
+
       setShowCreateModal(false);
       resetForm();
       notifyDataChange(SYNC_ENTITIES.SALES, newSale);

@@ -441,7 +441,10 @@ export default function StyleQuizModal({ onClose }) {
         apellido: "Rodríguez",
         especialidad: "Corte Clásico & Fade",
         badge: "Master Fade",
-        rating: 4.9
+        rating: 0,
+        calificacion: 0,
+        reviewsCount: 0,
+        total_calificaciones: 0
       };
     }
 

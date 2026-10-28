@@ -73,6 +73,7 @@ export default function ClientDashboard() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [latestUnreviewedCompleted, setLatestUnreviewedCompleted] = useState(null);
   const [showStyleQuizModal, setShowStyleQuizModal] = useState(false);
   const [showRewardsModal, setShowRewardsModal] = useState(false);
   const [showRibbonIntro, setShowRibbonIntro] = useState(() => {
@@ -151,6 +152,7 @@ export default function ClientDashboard() {
 
     const completed = appointments.filter((a) => a.estado === "Completada");
     setCompletedCount(completed.length);
+    setLatestUnreviewedCompleted(completed.find((a) => !a.calificado) || completed[0] || null);
 
     // Identificar barbero más frecuente
     if (completed.length > 0) {
@@ -239,7 +241,7 @@ export default function ClientDashboard() {
   return (
     <div className="space-y-8">
       {/* BANNER DE BIENVENIDA CON ATMÓSFERA CELESTIAL DINÁMICA (SOL / ATARDECER / LUNA / ESTRELLAS) */}
-      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} border border-[#DFB755]/35 p-6 sm:p-10 shadow-2xl shadow-indigo-950/25 transition-all duration-700`}>
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} ${celestial.borderClass || "border border-[#DFB755]/35 shadow-indigo-950/25"} p-6 sm:p-10 shadow-2xl transition-all duration-700`}>
         {/* Lienzo Celestial con Sol / Atardecer / Luna 3D y Estrellas Interactivas */}
         <CelestialAtmosphereCanvas isNight={celestial.isNight} phase={celestial.phase} />
 
@@ -253,13 +255,13 @@ export default function ClientDashboard() {
 
         <div className="relative z-10 max-w-3xl space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#DFB755]/20 text-[#FFE082] border border-[#DFB755]/50 backdrop-blur-md shadow-xs">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${celestial.phase === "sunset" ? "bg-orange-500/20 text-orange-200 border-orange-400/40" : "bg-[#DFB755]/20 text-[#FFE082] border-[#DFB755]/50"} backdrop-blur-md shadow-xs border`}>
               <Award className="w-3.5 h-3.5" /> Cliente {loyaltyTier}
             </div>
 
             {/* Pastilla de Horario Dinámico con Fase del Día */}
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black/40 border border-white/15 text-slate-200 backdrop-blur-md shadow-xs">
-              <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
+              <Clock className={`w-3.5 h-3.5 ${celestial.phase === "sunset" ? "text-orange-400" : "text-[#DFB755]"}`} />
               <span>{celestial.periodName} • {celestial.timeFormatted}</span>
             </div>
 
@@ -275,7 +277,7 @@ export default function ClientDashboard() {
 
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-2 flex-wrap">
             <span>{celestial.saludo},</span>
-            <span className="bg-gradient-to-r from-[#FFE082] via-[#DFB755] to-[#DDAE41] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]">{displayName}!</span>
+            <span className={`bg-gradient-to-r ${celestial.nameGradient || "from-[#FFE082] via-[#DFB755] to-[#DDAE41]"} bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]`}>{displayName}!</span>
             <span className="text-2xl sm:text-3xl animate-bounce-subtle">{celestial.emoji}</span>
           </h1>
 
@@ -844,7 +846,7 @@ export default function ClientDashboard() {
       {/* MODAL CALIFICACIÓN POST-CITA CON CONFETTI */}
       {showReviewModal && (
         <ReviewModal
-          appointment={upcomingAppointment || { barberoNombre: favoriteBarber }}
+          appointment={latestUnreviewedCompleted || upcomingAppointment || { barberoNombre: favoriteBarber }}
           onClose={() => setShowReviewModal(false)}
           onReviewSaved={() => {
             loadDashboardData();

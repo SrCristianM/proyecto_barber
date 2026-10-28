@@ -49,8 +49,11 @@ export class BarbersRepository {
           nombre: u ? u.nombre : "Sin Nombre",
           apellido: u ? u.apellido : "",
           documento: u ? (u.documento || null) : null,
-          correo: u ? u.correo : "",
-          telefono: u ? u.telefono : ""
+          telefono: u ? u.telefono : "",
+          calificacion: Number(b.calificacion ?? b.rating ?? 0),
+          rating: Number(b.rating ?? b.calificacion ?? 0),
+          total_calificaciones: Number(b.total_calificaciones ?? b.reviewsCount ?? 0),
+          reviewsCount: Number(b.reviewsCount ?? b.total_calificaciones ?? 0)
         };
       })
       .filter((b) => {
@@ -107,7 +110,11 @@ export class BarbersRepository {
       apellido: u ? u.apellido : "",
       documento: u ? (u.documento || null) : null,
       correo: u ? u.correo : "",
-      telefono: u ? u.telefono : ""
+      telefono: u ? u.telefono : "",
+      calificacion: Number(b.calificacion ?? b.rating ?? 0),
+      rating: Number(b.rating ?? b.calificacion ?? 0),
+      total_calificaciones: Number(b.total_calificaciones ?? b.reviewsCount ?? 0),
+      reviewsCount: Number(b.reviewsCount ?? b.total_calificaciones ?? 0)
     };
   }
 

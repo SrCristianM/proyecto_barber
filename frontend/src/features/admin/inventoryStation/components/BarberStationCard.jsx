@@ -4,6 +4,7 @@ import {
   User,
   Clock,
   Package,
+  Boxes,
   Layers,
   AlertTriangle,
   Flame,
@@ -25,7 +26,7 @@ import { fireGoldenConfetti } from "../../../../shared/utils/confettiHelper";
 function parseRequestedQty(notas) {
   if (!notas) return 1;
   const match = notas.match(/(?:solicitud de reposición:\s*|cantidad:\s*)(\d+)/i) ||
-                notas.match(/(\d+)\s*unidad/i);
+    notas.match(/(\d+)\s*unidad/i);
   return match && match[1] ? Math.max(1, parseInt(match[1], 10)) : 1;
 }
 
@@ -52,11 +53,36 @@ export default function BarberStationCard({
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+  const [itemFilter, setItemFilter] = useState("TODOS"); // "TODOS" | "ALERTAS" | "OPTIMOS"
 
   const items = barber.items || [];
   const countRojo = items.filter((i) => i.estado_semaforo === "ROJO").length;
   const countAmarillo = items.filter((i) => i.estado_semaforo === "AMARILLO").length;
   const countVerde = items.filter((i) => i.estado_semaforo === "VERDE").length;
+
+  const filteredItems = items.filter((item) => {
+    if (itemFilter === "ALERTAS") return item.estado_semaforo === "ROJO" || item.estado_semaforo === "AMARILLO";
+    if (itemFilter === "OPTIMOS") return item.estado_semaforo === "VERDE";
+    return true;
+  });
+
+  // Cantidades físicas de cada insumo que tiene el barbero en su estación
+  const unitsVerde = items
+    .filter((i) => i.estado_semaforo === "VERDE")
+    .reduce((acc, i) => acc + Number(i.cantidad_asignada !== undefined ? i.cantidad_asignada : (i.cantidad_actual !== undefined ? i.cantidad_actual : 1)), 0);
+
+  const unitsAmarillo = items
+    .filter((i) => i.estado_semaforo === "AMARILLO")
+    .reduce((acc, i) => acc + Number(i.cantidad_asignada !== undefined ? i.cantidad_asignada : (i.cantidad_actual !== undefined ? i.cantidad_actual : 1)), 0);
+
+  const unitsRojo = items
+    .filter((i) => i.estado_semaforo === "ROJO")
+    .reduce((acc, i) => acc + Number(i.cantidad_asignada !== undefined ? i.cantidad_asignada : (i.cantidad_actual !== undefined ? i.cantidad_actual : 0)), 0);
+
+  const totalStationUnits = items.reduce(
+    (acc, i) => acc + Number(i.cantidad_asignada !== undefined ? i.cantidad_asignada : (i.cantidad_actual !== undefined ? i.cantidad_actual : 1)),
+    0
+  );
 
   // Semáforo global de la estación de este barbero
   const globalStatus = countRojo > 0 ? "ROJO" : countAmarillo > 0 ? "AMARILLO" : items.length > 0 ? "VERDE" : "VACIO";
@@ -189,7 +215,9 @@ export default function BarberStationCard({
               <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10B981]" />
               <span>{countVerde} Llenos</span>
             </div>
-            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">En nivel óptimo</span>
+            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              {unitsVerde} {unitsVerde === 1 ? "ud física" : "uds físicas"} en puesto
+            </span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/25">
@@ -197,7 +225,9 @@ export default function BarberStationCard({
               <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#F59E0B]" />
               <span>{countAmarillo} Por agotarse</span>
             </div>
-            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">Aviso preventivo</span>
+            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              {unitsAmarillo} {unitsAmarillo === 1 ? "ud física" : "uds físicas"} por reponer
+            </span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/25">
@@ -205,7 +235,9 @@ export default function BarberStationCard({
               <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#F43F5E]" />
               <span>{countRojo} Agotados</span>
             </div>
-            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">En reposición</span>
+            <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+              {unitsRojo} {unitsRojo === 1 ? "ud" : "uds"} restantes
+            </span>
           </div>
         </div>
 
@@ -261,27 +293,68 @@ export default function BarberStationCard({
         )}
 
         {/* ========================================================
-            LISTADO RESPONSIVE DE INSUMOS ASIGNADOS (SIN SCROLL HORIZONTAL)
+            LISTADO INTELIGENTE COMPACTO: INSUMOS ASIGNADOS
             ======================================================== */}
-        <div className="space-y-3 pt-1">
-          <div className="flex items-center justify-between">
+        <div className="space-y-2.5 pt-1">
+          {/* Cabecera del Listado con Filtros Rápidos */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 text-xs font-black text-foreground hover:text-[#B38E36] dark:hover:text-[#E8C466] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-black text-foreground hover:text-[#B38E36] dark:hover:text-[#E8C466] transition-colors cursor-pointer"
             >
-              <Package className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
-              <span>Insumos Asignados a este Puesto ({items.length})</span>
+              <Package className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" />
+              <span>Insumos Asignados ({items.length})</span>
               {isExpanded ? (
-                <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                <ChevronUp className="w-3 h-3 text-muted-foreground" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
               )}
             </button>
 
-            <span className="text-[10px] text-muted-foreground font-medium">
-              {items.length === 0 ? "Sin insumos" : `${items.length} consumibles activos`}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+              <span className="text-[10px] text-muted-foreground font-medium">
+                {items.length === 0 ? "Sin insumos" : `${items.length} activos • ${totalStationUnits} uds en puesto`}
+              </span>
+
+              {/* Filtros Rápidos Segmentados Micro */}
+              {items.length > 0 && isExpanded && (
+                <div className="inline-flex items-center p-0.5 rounded-md bg-muted/40 dark:bg-neutral-800/40 border border-border/50 text-[9px] font-semibold tracking-tight">
+                  <button
+                    type="button"
+                    onClick={() => setItemFilter("TODOS")}
+                    className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${itemFilter === "TODOS"
+                      ? "bg-card text-foreground shadow-2xs font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    Todos ({items.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setItemFilter("ALERTAS")}
+                    className={`px-1 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${itemFilter === "ALERTAS"
+                      ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 shadow-2xs font-bold"
+                      : "text-muted-foreground hover:text-rose-500"
+                      }`}
+                  >
+                    <span className={`w-1 h-1 rounded-full ${urgentItems.length > 0 ? "bg-rose-500 animate-pulse" : "bg-muted-foreground"}`} />
+                    Alertas ({urgentItems.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setItemFilter("OPTIMOS")}
+                    className={`px-1.5 py-0.5 rounded transition-all cursor-pointer flex items-center gap-1 ${itemFilter === "OPTIMOS"
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shadow-2xs font-bold"
+                      : "text-muted-foreground hover:text-emerald-500"
+                      }`}
+                  >
+                    <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                    Óptimos ({countVerde})
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <AnimatePresence>
@@ -293,118 +366,155 @@ export default function BarberStationCard({
                 className="overflow-hidden"
               >
                 {items.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {items.map((item) => {
-                      const id = item.id_estacion_insumo || item.id_estacion_item;
-                      const bodegaStock = Number(item.stock_actual || 0);
-                      const hasStock = bodegaStock > 0;
-                      const days = item.dias_en_estacion !== undefined ? item.dias_en_estacion : (item.dias_en_uso || 0);
+                  <div className="rounded-2xl border border-border/75 bg-card/75 dark:bg-neutral-900/50 backdrop-blur-md overflow-hidden shadow-2xs">
+                    {/* Contenedor Scrollable Compacto (Límite visual de altura preventiva) */}
+                    <div className="max-h-[350px] overflow-y-auto divide-y divide-border/40 scrollbar-thin">
+                      {filteredItems.length > 0 ? (
+                        filteredItems.map((item) => {
+                          const id = item.id_estacion_insumo || item.id_estacion_item;
+                          const bodegaStock = Number(item.stock_actual || 0);
+                          const hasStock = bodegaStock > 0;
+                          const days = item.dias_en_estacion !== undefined ? item.dias_en_estacion : (item.dias_en_uso || 0);
+                          const qtyInStation = Number(item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 1));
+                          const customNote = parseBarberCustomNote(item.notas);
 
-                      const badgeStyle = {
-                        VERDE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-                        AMARILLO: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40",
-                        ROJO: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40"
-                      }[item.estado_semaforo] || "bg-muted text-muted-foreground";
+                          const badgeStyle = {
+                            VERDE: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+                            AMARILLO: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40",
+                            ROJO: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40"
+                          }[item.estado_semaforo] || "bg-muted text-muted-foreground";
 
-                      const dotClass = {
-                        ROJO: "bg-rose-500 glow-pulse-red",
-                        AMARILLO: "bg-amber-400 glow-pulse-amber",
-                        VERDE: "bg-emerald-500 glow-pulse-green"
-                      }[item.estado_semaforo] || "bg-gray-400";
+                          const dotClass = {
+                            ROJO: "bg-rose-500 glow-pulse-red",
+                            AMARILLO: "bg-amber-400 glow-pulse-amber",
+                            VERDE: "bg-emerald-500 glow-pulse-green"
+                          }[item.estado_semaforo] || "bg-gray-400";
 
-                      return (
-                        <div
-                          key={id}
-                          className="p-3 sm:p-3.5 rounded-2xl bg-card/90 dark:bg-neutral-900/60 border border-border/80 hover:border-[#DFB755]/50 transition-all shadow-2xs space-y-2.5"
-                        >
-                          {/* Fila 1: Título del Insumo + Categoría + Semáforo */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
-                                <h4 className="text-xs font-bold text-foreground leading-snug">
-                                  {item.insumo_nombre}
-                                </h4>
-                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold">
-                                  {item.insumo_categoria || "Consumible"}
-                                </span>
+                          return (
+                            <div
+                              key={id}
+                              className="p-2.5 sm:px-3 sm:py-2.5 hover:bg-muted/30 transition-colors space-y-1.5"
+                            >
+                              {/* Fila 1: Estado + Título del Insumo + Categoría + Semáforo + Acciones */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
+                                  <h4 className="text-xs font-bold text-foreground truncate max-w-[190px] sm:max-w-[280px]" title={item.insumo_nombre}>
+                                    {item.insumo_nombre}
+                                  </h4>
+                                  <span className="hidden sm:inline-block text-[9.5px] px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-semibold shrink-0">
+                                    {item.insumo_categoria || "Consumible"}
+                                  </span>
+                                </div>
+
+                                {/* Acciones y Semáforo */}
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-black border ${badgeStyle}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+                                    <span>{item.estado_semaforo}</span>
+                                  </span>
+
+                                  {(item.estado_semaforo === "ROJO" || item.estado_semaforo === "AMARILLO") ? (
+                                    <button
+                                      type="button"
+                                      disabled={isSubmitting || !hasStock}
+                                      onClick={() => onApproveRestock(item)}
+                                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-black text-[11px] shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-40"
+                                      title="Aprobar reposición de este insumo"
+                                    >
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      <span>Reponer</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={isSubmitting || !hasStock}
+                                      onClick={() => onApproveRestock(item)}
+                                      title="Despachar entrega preventiva adicional"
+                                      className="px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-bold text-[10.5px] border border-border/60 transition-all cursor-pointer"
+                                    >
+                                      Despachar
+                                    </button>
+                                  )}
+
+                                  {onRemoveItem && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onRemoveItem(id)}
+                                      title="Retirar insumo de este puesto"
+                                      className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                                <span>{item.unidad_medida || "Unidad"}</span>
-                                <span>•</span>
-                                <span>
-                                  En puesto: <strong className="text-foreground font-medium">{days === 0 ? "Hoy" : `${days} días`}</strong>
-                                </span>
+
+                              {/* Fila 2: Cantidad Física en Puesto + Días en uso + Nivel de Bodega (Compacto horizontal) */}
+                              <div className="flex items-center justify-between gap-2 text-[11px] flex-wrap pt-0.5">
+                                {/* Cantidad física y días */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border transition-colors ${qtyInStation === 0 || item.estado_semaforo === "ROJO"
+                                    ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-300"
+                                    : item.estado_semaforo === "AMARILLO"
+                                      ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-300"
+                                      : "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-300"
+                                    }`}>
+                                    <Boxes className="w-3 h-3" />
+                                    <span className="text-[10px] font-medium text-muted-foreground">En puesto:</span>
+                                    <span className="font-mono font-black text-foreground text-xs">{qtyInStation}</span>
+                                    <span className="text-[10px] font-semibold opacity-90">{item.unidad_medida || "uds"}</span>
+                                  </div>
+
+                                  <span className="text-[10.5px] text-muted-foreground flex items-center gap-1">
+                                    <span>•</span>
+                                    <span>En uso hace <strong className="text-foreground font-medium">{days === 0 ? "Hoy" : `${days} días`}</strong></span>
+                                  </span>
+                                </div>
+
+                                {/* Stock de almacén con cápsula líquida */}
+                                <div className="flex items-center gap-2 ml-auto min-w-[130px] max-w-[200px]">
+                                  <span className="text-[10px] text-muted-foreground font-medium shrink-0">Almacén:</span>
+                                  <span className={`font-mono font-bold text-[10.5px] shrink-0 ${hasStock ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                    {bodegaStock} uds
+                                  </span>
+                                  <div className="flex-1 min-w-[50px]">
+                                    <LiquidLevelIndicator
+                                      current={bodegaStock}
+                                      max={Math.max(bodegaStock, 50)}
+                                      min={10}
+                                      size="sm"
+                                      showBadge={false}
+                                      unit="uds"
+                                    />
+                                  </div>
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Badge Semáforo */}
-                            <span className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black border ${badgeStyle}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
-                              <span>{item.estado_semaforo}</span>
-                            </span>
-                          </div>
-
-                          {/* Fila 2: Indicador Cápsula de Nivel de Bodega (animada constantemente) + Acciones */}
-                          <div className="pt-2 border-t border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            {/* Medidor de nivel en almacén */}
-                            <div className="flex-1 min-w-[130px] max-w-full sm:max-w-[210px]">
-                              <div className="flex items-center justify-between text-[10px] mb-1 font-medium">
-                                <span className="text-muted-foreground">Stock en almacén:</span>
-                                <span className={`font-mono font-bold ${hasStock ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                  {bodegaStock} uds
-                                </span>
-                              </div>
-                              <LiquidLevelIndicator
-                                current={bodegaStock}
-                                max={Math.max(bodegaStock, 50)}
-                                min={10}
-                                size="sm"
-                                showBadge={false}
-                                unit="uds"
-                              />
-                            </div>
-
-                            {/* Botones de Acción */}
-                            <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
-                              {(item.estado_semaforo === "ROJO" || item.estado_semaforo === "AMARILLO") ? (
-                                <button
-                                  type="button"
-                                  disabled={isSubmitting || !hasStock}
-                                  onClick={() => onApproveRestock(item)}
-                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#E8C466] to-[#DDAE41] hover:from-[#F0CF78] hover:to-[#E8C466] text-black font-black text-[11px] shadow-2xs transition-all cursor-pointer active:scale-95 disabled:opacity-40"
-                                  title="Aprobar reposición de este insumo"
-                                >
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  <span>Reponer</span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled={isSubmitting || !hasStock}
-                                  onClick={() => onApproveRestock(item)}
-                                  title="Despachar entrega preventiva adicional"
-                                  className="px-2.5 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-[11px] border border-border/60 transition-all cursor-pointer"
-                                >
-                                  Despachar
-                                </button>
+                              {/* Fila 3: Reporte barbero (si existe) */}
+                              {customNote && (
+                                <div className="p-1 px-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10.5px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5 leading-snug">
+                                  <span className="font-bold shrink-0 text-[10px]">💬 Reporte barbero:</span>
+                                  <span className="italic truncate" title={customNote}>{customNote}</span>
+                                </div>
                               )}
-
-                              {onRemoveItem && (
-                                <button
-                                  type="button"
-                                  onClick={() => onRemoveItem(id)}
-                                  title="Retirar insumo de este puesto"
-                                  className="p-1.5 rounded-xl text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
                             </div>
-                          </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-5 text-center text-xs text-muted-foreground">
+                          No hay insumos bajo el filtro "{itemFilter.toLowerCase()}".
                         </div>
-                      );
-                    })}
+                      )}
+                    </div>
+
+                    {/* Pie de listado para indicar scroll si hay más de 3 insumos */}
+                    {filteredItems.length > 3 && (
+                      <div className="px-3 py-1.5 bg-muted/30 border-t border-border/40 text-[10px] text-muted-foreground flex items-center justify-between font-medium">
+                        <span>Mostrando {filteredItems.length} insumos (desliza para ver más)</span>
+                        <span className="text-[9.5px] text-[#B38E36] dark:text-[#E8C466] font-bold">Panel optimizado</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-6 text-center rounded-2xl border border-dashed border-border bg-card/40">

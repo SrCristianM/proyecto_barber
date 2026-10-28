@@ -60,6 +60,7 @@ import { SchedulesRepository } from "../models/schedules.model.js";
 import { ProductsRepository } from "../models/products.model.js";
 import { BarbersRepository } from "../models/barbers.model.js";
 import { ClientsRepository } from "../models/clients.model.js";
+import { InventoryStationRepository } from "../models/inventoryStation.model.js";
 import { ROLES } from "../config/constants.js";
 
 // Almacén operativo en memoria para estados de lectura y descarte por usuario
@@ -93,16 +94,14 @@ export class NotificationsService {
           const timeStr = normalizeTimeTo24(apt.hora);
           const aptTimestamp = apt.fecha_registro || (apt.fecha ? `${String(apt.fecha).substring(0, 10)}T${timeStr}` : new Date().toISOString());
           const displayTime = formatNotificationTime(apt.hora);
-          const displayDate = formatNotificationDate(apt.fecha);
-
-          if (apt.estado === "Cancelada") {
+          const displayDate = formatNotificationDate(apt.fecha);            if (apt.estado === "Cancelada") {
             notifications.push({
               id: `apt-canc-${apt.id_cita}`,
               type: "appointment",
               title: "Cita cancelada",
               description: `La cita de ${apt.cliente_nombre || "Cliente"} (${displayDate} a las ${displayTime}) fue cancelada.`,
               timestamp: aptTimestamp,
-              route: "/admin/citas"
+              route: "/dashboard/appointments"
             });
           } else if (apt.estado === "Reprogramada") {
             notifications.push({
@@ -111,7 +110,7 @@ export class NotificationsService {
               title: "Cita reprogramada",
               description: `La cita de ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${displayDate} a las ${displayTime}.`,
               timestamp: aptTimestamp,
-              route: "/admin/citas"
+              route: "/dashboard/appointments"
             });
           } else {
             notifications.push({
@@ -120,7 +119,7 @@ export class NotificationsService {
               title: "Cita en agenda",
               description: `Cita programada con ${apt.barbero_nombre || "Barbero"} para ${apt.cliente_nombre || "Cliente"} el ${displayDate} a las ${displayTime}.`,
               timestamp: aptTimestamp,
-              route: "/admin/citas"
+              route: "/dashboard/appointments"
             });
           }
         }
@@ -137,7 +136,7 @@ export class NotificationsService {
             title: "Nueva novedad de horario solicitada",
             description: `El barbero ${nov.barbero_nombre || "Barbero"} solicitó ${nov.tipo} para el ${formatNotificationDate(nov.fecha)}.`,
             timestamp: novTimestamp,
-            route: "/admin/horarios"
+            route: "/dashboard/schedules"
           });
         }
 
@@ -150,8 +149,38 @@ export class NotificationsService {
             title: "Alerta de Stock Crítico",
             description: `El producto "${prod.nombre}" cuenta con solo ${prod.stock} unidad(es) disponible(s).`,
             timestamp: new Date().toISOString(),
-            route: "/admin/productos"
+            route: "/dashboard/products"
           });
+        }
+
+        // D. Insumos en puestos de barberos con alerta (ROJO o AMARILLO)
+        try {
+          const stationItems = await InventoryStationRepository.getAllStations();
+          for (const item of stationItems || []) {
+            const qty = item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 0);
+            const unit = item.unidad_medida || "uds";
+            if (item.estado_semaforo === "ROJO") {
+              notifications.push({
+                id: `station-rojo-${item.id_estacion_insumo}`,
+                type: "supplies",
+                title: "⚠️ Insumo Agotado en Estación",
+                description: `El barbero ${item.barbero_nombre || "Barbero"} reportó agotado "${item.insumo_nombre}" (Cantidad en puesto: ${qty} ${unit}).`,
+                timestamp: item.fecha_cambio_estado ? new Date(item.fecha_cambio_estado).toISOString() : new Date().toISOString(),
+                route: "/dashboard/abastecimiento"
+              });
+            } else if (item.estado_semaforo === "AMARILLO") {
+              notifications.push({
+                id: `station-amarillo-${item.id_estacion_insumo}`,
+                type: "supplies",
+                title: "⚡ Insumo Por Agotarse en Estación",
+                description: `Aviso preventivo: "${item.insumo_nombre}" en puesto de ${item.barbero_nombre || "Barbero"} está por agotarse (${qty} ${unit} en puesto).`,
+                timestamp: item.fecha_cambio_estado ? new Date(item.fecha_cambio_estado).toISOString() : new Date().toISOString(),
+                route: "/dashboard/abastecimiento"
+              });
+            }
+          }
+        } catch (stErr) {
+          console.warn("[NotificationsService] Error al obtener alertas de insumos en estaciones:", stErr.message);
         }
       }
 
@@ -217,6 +246,34 @@ export class NotificationsService {
               });
             }
           }
+
+          // Insumos de la estación propia que requieran atención (ROJO o AMARILLO)
+          try {
+            const barberStationItems = await InventoryStationRepository.getBarberStation(barberId);
+            for (const item of barberStationItems || []) {
+              const qty = item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 0);
+              const unit = item.unidad_medida || "uds";
+              if (item.estado_semaforo === "ROJO") {
+                notifications.push({
+                  id: `barber-station-rojo-${item.id_estacion_insumo}`,
+                  type: "supplies",
+                  title: "⚠️ Insumo Agotado en tu Estación",
+                  description: `Tienes marcado como agotado "${item.insumo_nombre}" (${qty} ${unit} en puesto). Solicita reposición al administrador.`,
+                  timestamp: item.fecha_cambio_estado ? new Date(item.fecha_cambio_estado).toISOString() : new Date().toISOString(),
+                  route: "/barbero/estacion"
+                });
+              } else if (item.estado_semaforo === "AMARILLO") {
+                notifications.push({
+                  id: `barber-station-amarillo-${item.id_estacion_insumo}`,
+                  type: "supplies",
+                  title: "⚡ Insumo Por Agotarse",
+                  description: `Aviso en tu puesto: "${item.insumo_nombre}" queda poco (${qty} ${unit} restante).`,
+                  timestamp: item.fecha_cambio_estado ? new Date(item.fecha_cambio_estado).toISOString() : new Date().toISOString(),
+                  route: "/barbero/estacion"
+                });
+              }
+            }
+          } catch (_) {}
         }
       }
 

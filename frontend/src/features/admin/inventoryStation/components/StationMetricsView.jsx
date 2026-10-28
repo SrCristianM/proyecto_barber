@@ -18,9 +18,14 @@ import {
   RefreshCw,
   Sparkles,
   BarChart3,
-  Layers
+  Layers,
+  FileSpreadsheet,
+  Download
 } from "lucide-react";
+import { toast } from "sonner";
 import RollingNumber from "../../../../shared/components/RollingNumber";
+import { exportToStyledExcel } from "../../../../shared/utils/excelExporter";
+import { fireGoldenConfetti } from "../../../../shared/utils/confettiHelper";
 
 export default function StationMetricsView({
   metrics,
@@ -316,6 +321,143 @@ export default function StationMetricsView({
     });
   };
 
+  const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // 1. Exportación Detallada: Rendimiento por Insumo y Barbero
+  const handleExportFullDetail = () => {
+    if (!filteredBarbers || filteredBarbers.length === 0) {
+      toast.error("No hay datos de rendimiento para exportar.");
+      return;
+    }
+
+    const rows = [];
+    filteredBarbers.forEach((barber) => {
+      if (barber.insumos && barber.insumos.length > 0) {
+        barber.insumos.forEach((item) => {
+          const diffText =
+            item.promedioDiasDuracion > 0
+              ? item.diffFromAvg === 0
+                ? "Exacto al promedio"
+                : item.diffFromAvg > 0
+                ? `+${item.diffFromAvg} días sobre promedio`
+                : `${item.diffFromAvg} días bajo promedio`
+              : "Sin historial previo";
+
+          let diagnostico = "En ciclo óptimo";
+          if (item.estado_semaforo === "ROJO") diagnostico = "Agotado - Requiere reposición";
+          else if (item.estado_semaforo === "AMARILLO") diagnostico = "Aviso preventivo - Por agotarse";
+          else if (item.promedioDiasDuracion === 0) diagnostico = "Primer ciclo de uso";
+
+          rows.push({
+            barbero_nombre: barber.barbero_nombre || "Barbero",
+            barbero_especialidad: barber.barbero_especialidad || "General",
+            insumo_nombre: item.insumo_nombre || "Insumo",
+            insumo_categoria: item.insumo_categoria || "Consumible",
+            cantidad_en_puesto: Number(item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 1)),
+            unidad_medida: item.unidad_medida || "uds",
+            estado_semaforo: item.estado_semaforo || "VERDE",
+            dias_actual_uso: Number(item.diasActualEnUso || 0),
+            duracion_promedio: Number(item.promedioDiasDuracion || 0),
+            desviacion_promedio: diffText,
+            reposiciones_completadas: Number(item.totalReposiciones || 0),
+            stock_bodega: Number(item.stock_actual || 0),
+            diagnostico
+          });
+        });
+      } else {
+        rows.push({
+          barbero_nombre: barber.barbero_nombre || "Barbero",
+          barbero_especialidad: barber.barbero_especialidad || "General",
+          insumo_nombre: "(Sin insumos asignados)",
+          insumo_categoria: "—",
+          cantidad_en_puesto: 0,
+          unidad_medida: "—",
+          estado_semaforo: "VACIO",
+          dias_actual_uso: 0,
+          duracion_promedio: 0,
+          desviacion_promedio: "—",
+          reposiciones_completadas: Number(barber.totalReposicionesCompletadas || 0),
+          stock_bodega: 0,
+          diagnostico: "Puesto sin consumibles activos"
+        });
+      }
+    });
+
+    exportToStyledExcel({
+      title: "REPORTE DETALLADO DE RENDIMIENTO Y CONSUMO DE INSUMOS",
+      subtitle: `Auditoría de ciclos y rendimiento por estación | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      sheetName: "Rendimiento por Insumo",
+      filename: "rendimiento_insumos_barberos",
+      columns: [
+        { header: "Barbero", key: "barbero_nombre", width: 180 },
+        { header: "Especialidad", key: "barbero_especialidad", width: 160 },
+        { header: "Insumo / Producto", key: "insumo_nombre", width: 220 },
+        { header: "Categoría", key: "insumo_categoria", width: 140 },
+        { header: "Cant. en Puesto", key: "cantidad_en_puesto", type: "number", width: 120, align: "center" },
+        { header: "Unidad", key: "unidad_medida", width: 100, align: "center" },
+        { header: "Semáforo", key: "estado_semaforo", type: "status", width: 110, align: "center" },
+        { header: "Días Ciclo Actual", key: "dias_actual_uso", type: "number", width: 125, align: "center" },
+        { header: "Promedio Histórico (días)", key: "duracion_promedio", type: "number", width: 155, align: "center" },
+        { header: "Desviación vs Promedio", key: "desviacion_promedio", width: 170, align: "center" },
+        { header: "Ciclos Medidos", key: "reposiciones_completadas", type: "number", width: 110, align: "center" },
+        { header: "Stock en Bodega", key: "stock_bodega", type: "number", width: 120, align: "right" },
+        { header: "Diagnóstico", key: "diagnostico", width: 210 }
+      ],
+      data: rows
+    });
+
+    fireGoldenConfetti();
+    toast.success("Detalle completo de rendimiento exportado a Excel exitosamente");
+    setShowExportMenu(false);
+  };
+
+  // 2. Exportación Ejecutiva: Consolidado por Barbero
+  const handleExportSummary = () => {
+    if (!filteredBarbers || filteredBarbers.length === 0) {
+      toast.error("No hay datos de barberos para exportar.");
+      return;
+    }
+
+    const rows = filteredBarbers.map((b) => ({
+      barbero_nombre: b.barbero_nombre || "Barbero",
+      barbero_especialidad: b.barbero_especialidad || "General",
+      barbero_correo: b.barbero_correo || "—",
+      duracion_promedio_global: Number(b.promedioDiasGlobal || 0),
+      dias_actual_promedio: Number(b.diasActualPromedio || 0),
+      total_insumos: Number(b.totalInsumosAsignados || 0),
+      reposiciones_totales: Number(b.totalReposicionesCompletadas || 0),
+      insumos_llenos: Number(b.conteoVerde || 0),
+      insumos_aviso: Number(b.conteoAmarillo || 0),
+      insumos_agotados: Number(b.conteoRojo || 0),
+      estado_global: b.estadoGlobal || "VERDE"
+    }));
+
+    exportToStyledExcel({
+      title: "CONSOLIDADO EJECUTIVO DE RENDIMIENTO POR BARBERO",
+      subtitle: `Resumen de ciclos, insumos activos y semáforos por estación | Exportado el ${new Date().toLocaleDateString("es-CO")} - Tu Turno Barber ERP`,
+      sheetName: "Resumen Barberos",
+      filename: "resumen_ejecutivo_rendimiento_barberos",
+      columns: [
+        { header: "Barbero", key: "barbero_nombre", width: 180 },
+        { header: "Especialidad", key: "barbero_especialidad", width: 160 },
+        { header: "Correo", key: "barbero_correo", width: 190 },
+        { header: "Duración Promedio (días)", key: "duracion_promedio_global", type: "number", width: 155, align: "center" },
+        { header: "Ciclo Actual Promedio (días)", key: "dias_actual_promedio", type: "number", width: 165, align: "center" },
+        { header: "Insumos Asignados", key: "total_insumos", type: "number", width: 130, align: "center" },
+        { header: "Reposiciones Totales", key: "reposiciones_totales", type: "number", width: 140, align: "center" },
+        { header: "Llenos (Verde)", key: "insumos_llenos", type: "number", width: 110, align: "center" },
+        { header: "Por Agotarse (Amarillo)", key: "insumos_aviso", type: "number", width: 145, align: "center" },
+        { header: "Agotados (Rojo)", key: "insumos_agotados", type: "number", width: 120, align: "center" },
+        { header: "Estado Estación", key: "estado_global", type: "status", width: 130, align: "center" }
+      ],
+      data: rows
+    });
+
+    fireGoldenConfetti();
+    toast.success("Resumen consolidado de barberos exportado a Excel");
+    setShowExportMenu(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* =========================================================================
@@ -469,6 +611,80 @@ export default function StationMetricsView({
                 <option value="alert">⚠️ Con Alertas Activas</option>
                 <option value="optimal">🟢 100% Óptimos</option>
               </select>
+            </div>
+
+            {/* Menú de Exportación a Excel */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                title="Opciones de exportación a Excel"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card hover:bg-muted text-foreground border border-border/60 hover:border-[#DFB755]/50 text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-[#DFB755]" />
+                <span>Exportar</span>
+                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${showExportMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {showExportMenu && (
+                  <>
+                    {/* Backdrop transparente para cerrar al hacer clic afuera */}
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowExportMenu(false)}
+                    />
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-border/80 bg-card/95 backdrop-blur-xl shadow-2xl p-2 z-50 space-y-1"
+                    >
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/40">
+                        Opciones de Exportación
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleExportFullDetail}
+                        className="w-full flex items-start gap-2.5 p-2 rounded-xl hover:bg-muted/80 text-left transition-colors cursor-pointer group"
+                      >
+                        <div className="p-1.5 rounded-lg bg-[#DFB755]/15 text-[#B38E36] dark:text-[#E8C466] shrink-0 mt-0.5">
+                          <Download className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-foreground group-hover:text-[#B38E36] dark:group-hover:text-[#E8C466] transition-colors">
+                            Detalle por Insumo (Completo)
+                          </div>
+                          <div className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                            Cada producto con días de uso, duración promedio y bodega.
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleExportSummary}
+                        className="w-full flex items-start gap-2.5 p-2 rounded-xl hover:bg-muted/80 text-left transition-colors cursor-pointer group"
+                      >
+                        <div className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            Resumen por Barbero (Consolidado)
+                          </div>
+                          <div className="text-[10.5px] text-muted-foreground leading-tight mt-0.5">
+                            Promedios generales, total de insumos y estado de semáforos.
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
             {onRefresh && (

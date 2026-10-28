@@ -88,7 +88,12 @@ const INITIAL_BARBERS = [
     telefono: "+57 302 345 6789",
     especialidad: "Corte Clásico & Fade",
     imagen_url: null,
-    estado: 1
+    estado: 1,
+    calificacion: 0,
+    rating: 0,
+    total_calificaciones: 0,
+    reviewsCount: 0,
+    calificaciones_sum: 0
   },
   {
     id_barbero: 2,
@@ -99,7 +104,12 @@ const INITIAL_BARBERS = [
     telefono: "+57 312 456 5697",
     especialidad: "Corte Clásico, Diseño y Color",
     imagen_url: null,
-    estado: 1
+    estado: 1,
+    calificacion: 0,
+    rating: 0,
+    total_calificaciones: 0,
+    reviewsCount: 0,
+    calificaciones_sum: 0
   }
 ];
 
@@ -465,10 +475,8 @@ export function getClientBarbers() {
     save(STORAGE_KEYS.BARBERS, barbers);
   }
 
-  const barberMetadata = {
-    1: { rating: 4.9, reviewsCount: 148, badge: "Master Fade", nextSlot: "Hoy 16:00" },
-    2: { rating: 4.8, reviewsCount: 112, badge: "Color & Tendencias", nextSlot: "Hoy 17:30" }
-  };
+  // Obtener todas las calificaciones registradas
+  const allReviews = getClientReviews();
 
   const cleanPhoto = (url) => {
     if (!url || typeof url !== "string") return null;
@@ -490,24 +498,46 @@ export function getClientBarbers() {
     if (cleanedImg !== b.imagen_url) {
       changed = true;
     }
-    const meta = barberMetadata[b.id_barbero] || {
-      rating: 4.9,
-      reviewsCount: 24,
-      badge: b.especialidad ? b.especialidad.split(",")[0].trim() : "Barbero Profesional",
-      nextSlot: "Disponible"
-    };
+
+    // Calcular promedio y conteo real de calificaciones acumuladas para este barbero
+    const barberReviews = allReviews.filter(
+      (r) => Number(r.id_barbero) === Number(b.id_barbero) ||
+             (r.barberoNombre && (r.barberoNombre.toLowerCase().includes((b.nombre || "").toLowerCase()) ||
+              (b.apellido && r.barberoNombre.toLowerCase().includes((b.apellido || "").toLowerCase()))))
+    );
+    const count = barberReviews.length;
+    const sum = barberReviews.reduce((acc, r) => acc + Number(r.calificacion || 0), 0);
+    const calculatedRating = count > 0 ? Number((sum / count).toFixed(1)) : 0;
+
+    // Si no tiene calificaciones reales, la calificación y total son estrictamente 0
+    const rating = count > 0 ? calculatedRating : 0;
+    const reviewsCount = count;
+
+    if (
+      b.rating !== rating ||
+      b.reviewsCount !== reviewsCount ||
+      b.calificacion !== rating ||
+      b.total_calificaciones !== reviewsCount
+    ) {
+      changed = true;
+    }
+
     return {
       ...b,
       nombre: b.nombre || "Barbero",
       apellido: b.apellido || "",
       especialidad: b.especialidad || "Cortes & Barba Profesional",
       imagen_url: cleanedImg,
-      rating: b.rating || meta.rating,
-      reviewsCount: b.reviewsCount || meta.reviewsCount,
-      badge: b.badge || meta.badge,
-      nextSlot: meta.nextSlot
+      rating,
+      calificacion: rating,
+      reviewsCount,
+      total_calificaciones: reviewsCount,
+      calificaciones_sum: sum,
+      badge: b.especialidad ? b.especialidad.split(",")[0].trim() : "Barbero Profesional",
+      nextSlot: "Disponible"
     };
   });
+
   if (changed) {
     save(STORAGE_KEYS.BARBERS, healed);
   }
@@ -1056,13 +1086,16 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
 
   // Despachar notificaciones en tiempo real para todos los roles involucrados
   try {
+    const barbers = getClientBarbers();
+    const assignedBarber = barbers.find((b) => Number(b.id_barbero) === Number(id_barbero));
+
     // 1. A Administración y Recepción
     createNotification({
       type: "appointment",
       title: "Nueva cita agendada",
       description: `El cliente ${clientFullName} agendó cita para el ${fecha} a las ${hora.substring(0, 5)} con ${newAppointment.nombre_item}.`,
       targetRole: [1, 2],
-      route: "/admin/citas"
+      route: "/dashboard/appointments"
     });
     // 2. Al Barbero
     createNotification({
@@ -1070,6 +1103,8 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
       title: "Nueva cita asignada",
       description: `Tienes una nueva cita agendada con ${clientFullName} para el ${fecha} a las ${hora.substring(0, 5)}.`,
       targetRole: 3,
+      targetUserId: assignedBarber?.id_usuario || null,
+      targetBarberId: Number(id_barbero),
       route: "/barbero/agenda"
     });
     // 3. Al Cliente
@@ -1102,7 +1137,7 @@ export function bookAppointment({ id_barbero, id_servicio = null, id_paquete = n
   });
 
   notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
-  return { success: true, appointment: newAppointment };
+  return { success: true, id_cita: newAppointment.id_cita, appointment: newAppointment };
 }
 
 /**
@@ -1147,13 +1182,15 @@ export function rescheduleAppointment(id_cita, { nuevaFecha, nuevaHora }) {
       title: "Cita reprogramada",
       description: `La cita de ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${nuevaFecha} a las ${nuevaHora.substring(0, 5)}.`,
       targetRole: [1, 2],
-      route: "/admin/citas"
+      route: "/dashboard/appointments"
     });
     createNotification({
       type: "appointment",
       title: "Cita reprogramada",
       description: `Tu cita con ${apt.cliente_nombre || "Cliente"} fue reprogramada para el ${nuevaFecha} a las ${nuevaHora.substring(0, 5)}.`,
       targetRole: 3,
+      targetUserId: apt.barbero_id_usuario || null,
+      targetBarberId: Number(apt.id_barbero),
       route: "/barbero/agenda"
     });
     if (apt.id_usuario) {
@@ -1199,13 +1236,15 @@ export function cancelAppointment(id_cita, motivo = "Cancelada por el cliente") 
       title: "Cita cancelada",
       description: `La cita de ${apt.cliente_nombre || "Cliente"} para el ${apt.fecha} ha sido cancelada.`,
       targetRole: [1, 2],
-      route: "/admin/citas"
+      route: "/dashboard/appointments"
     });
     createNotification({
       type: "appointment",
       title: "Cita cancelada",
       description: `Tu cita con ${apt.cliente_nombre || "Cliente"} para el ${apt.fecha} fue cancelada.`,
       targetRole: 3,
+      targetUserId: apt.barbero_id_usuario || null,
+      targetBarberId: Number(apt.id_barbero),
       route: "/barbero/agenda"
     });
     if (apt.id_usuario) {
@@ -1347,6 +1386,62 @@ export function createClientPurchase({
   allSales.unshift(newSale);
   save(STORAGE_KEYS.SALES, allSales);
 
+  // Descontar inventario localmente y verificar alertas de stock
+  try {
+    const rawProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (rawProducts) {
+      const products = JSON.parse(rawProducts);
+      items.forEach((boughtItem) => {
+        if (boughtItem.id_producto) {
+          const prodIdx = products.findIndex((p) => Number(p.id_producto) === Number(boughtItem.id_producto));
+          if (prodIdx >= 0) {
+            const currentStock = Number(products[prodIdx].stock || 0);
+            const newStock = Math.max(0, currentStock - Number(boughtItem.cantidad || 1));
+            products[prodIdx].stock = newStock;
+
+            // Alerta de stock crítico (<= 5 unidades)
+            if (newStock <= 5) {
+              createNotification({
+                type: "stock",
+                title: "Alerta de Stock Crítico",
+                description: `El producto "${products[prodIdx].nombre}" cuenta con solo ${newStock} unidad(es) disponible(s) tras una compra.`,
+                route: "/dashboard/products",
+                targetRole: [1, 2]
+              });
+            }
+          }
+        }
+      });
+      save(STORAGE_KEYS.PRODUCTS, products);
+    }
+  } catch (err) {
+    console.warn("[ClientStorage] Error actualizando stock tras compra:", err);
+  }
+
+  // Notificar al Cliente
+  if (client.id_usuario) {
+    try {
+      createNotification({
+        type: "sale",
+        title: "¡Compra registrada con éxito!",
+        description: `Tu compra #${newSaleId} por $${Number(totalCalculado).toLocaleString("es-CO")} ha sido procesada correctamente.`,
+        route: "/portal/mis-compras",
+        targetUserId: client.id_usuario
+      });
+    } catch {}
+  }
+
+  // Notificar a Administración y Recepción
+  try {
+    createNotification({
+      type: "sale",
+      title: "Nueva compra online registrada",
+      description: `El cliente ${clientFullName} realizó la compra #${newSaleId} por $${Number(totalCalculado).toLocaleString("es-CO")}.`,
+      route: "/dashboard/sales",
+      targetRole: [1, 2]
+    });
+  } catch {}
+
   apiCreateSale({
     id_cliente: client.id_cliente,
     id_barbero: 1,
@@ -1365,7 +1460,7 @@ export function createClientPurchase({
     console.warn("[ClientStorage] Venta sincronizada localmente (API fallback):", err.message);
   });
 
-  notifyDataChange(SYNC_ENTITIES.SALES);
+  notifyDataChange(SYNC_ENTITIES.SALES, newSale);
   notifyDataChange(SYNC_ENTITIES.PRODUCTS);
   return { success: true, sale: newSale };
 }
@@ -1469,35 +1564,158 @@ export function saveClientStyleLog(data) {
 // ==========================================
 
 export function getClientReviews() {
-  return getOrInit("tu_turno_client_reviews", [
-    {
-      id: "rev-1",
-      id_cita: 98,
-      barberoNombre: "Carlos Rodríguez",
-      calificacion: 5,
-      comentario: "Excelente corte, muy puntual y la atención con café estuvo impecable.",
-      fecha: "2026-08-20"
-    }
-  ]);
+  const reviews = getOrInit("tu_turno_client_reviews", []);
+  // Filtrar posible reseña ficticia de pruebas iniciales ("rev-1") para garantizar que todo comience en 0
+  const cleanReviews = reviews.filter((r) => r.id !== "rev-1");
+  if (cleanReviews.length !== reviews.length) {
+    save("tu_turno_client_reviews", cleanReviews);
+  }
+  return cleanReviews;
 }
 
 export function saveClientReview(reviewData) {
+  // 1. Validaciones estrictas de calificación
+  const rating = Number(reviewData.calificacion || reviewData.rating);
+  if (!Number.isFinite(rating) || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return {
+      success: false,
+      error: "La calificación es obligatoria y debe ser un valor entero entre 1 y 5 estrellas."
+    };
+  }
+
   const client = getCurrentClientProfile();
   const reviews = getClientReviews();
   const clientFullName = client ? `${client.nombre || ""} ${client.apellido || ""}`.trim() : "Cliente";
 
+  // 2. Identificar el barbero destinatario
+  const storedBarbers = getOrInit(STORAGE_KEYS.BARBERS, INITIAL_BARBERS);
+  let targetBarber = null;
+
+  if (reviewData.id_barbero) {
+    targetBarber = storedBarbers.find((b) => Number(b.id_barbero) === Number(reviewData.id_barbero));
+  } else if (reviewData.barberoId) {
+    targetBarber = storedBarbers.find((b) => Number(b.id_barbero) === Number(reviewData.barberoId));
+  } else if (reviewData.barberoNombre) {
+    const searchName = reviewData.barberoNombre.toLowerCase().trim();
+    targetBarber = storedBarbers.find((b) => {
+      const full = `${b.nombre} ${b.apellido || ""}`.toLowerCase().trim();
+      return full.includes(searchName) || searchName.includes((b.nombre || "").toLowerCase().trim());
+    });
+  }
+
+  if (!targetBarber && storedBarbers.length > 0) {
+    targetBarber = storedBarbers[0];
+  }
+
+  if (!targetBarber) {
+    return {
+      success: false,
+      error: "No se encontró el barbero a calificar en el sistema."
+    };
+  }
+
+  // 3. Validar duplicados si se proporciona id_cita
+  if (reviewData.id_cita) {
+    const existing = reviews.find(
+      (r) => Number(r.id_cita) === Number(reviewData.id_cita)
+    );
+    if (existing) {
+      return {
+        success: false,
+        error: "Ya has calificado esta cita previamente."
+      };
+    }
+  }
+
+  // 4. Crear nueva reseña
   const newReview = {
-    id: `rev-${Date.now()}`,
+    id: `rev-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     fecha: getLocalDateString(),
+    id_cita: reviewData.id_cita || null,
+    id_barbero: targetBarber.id_barbero,
+    id_usuario_barbero: targetBarber.id_usuario,
+    barberoNombre: `${targetBarber.nombre} ${targetBarber.apellido || ""}`.trim(),
     id_cliente: client?.id_cliente || null,
     id_usuario: client?.id_usuario || null,
     cliente_nombre: clientFullName,
     cliente_correo: client?.correo || "",
-    ...reviewData
+    calificacion: rating,
+    comentario: String(reviewData.comentario || "").trim().slice(0, 500)
   };
+
   reviews.unshift(newReview);
   save("tu_turno_client_reviews", reviews);
-  return { success: true, review: newReview };
+
+  // 5. Recalcular automáticamente el promedio de estrellas y total de calificaciones del barbero
+  const barberReviews = reviews.filter((r) => Number(r.id_barbero) === Number(targetBarber.id_barbero));
+  const newTotalReviews = barberReviews.length;
+  const newSumRatings = barberReviews.reduce((acc, r) => acc + Number(r.calificacion || 0), 0);
+  const newAvgRating = newTotalReviews > 0 ? Number((newSumRatings / newTotalReviews).toFixed(1)) : 0;
+
+  // 6. Actualizar el barbero en la base de datos de barberos
+  const updatedBarbers = storedBarbers.map((b) => {
+    if (Number(b.id_barbero) === Number(targetBarber.id_barbero)) {
+      return {
+        ...b,
+        calificacion: newAvgRating,
+        rating: newAvgRating,
+        total_calificaciones: newTotalReviews,
+        reviewsCount: newTotalReviews,
+        calificaciones_sum: newSumRatings
+      };
+    }
+    return b;
+  });
+  save(STORAGE_KEYS.BARBERS, updatedBarbers);
+
+  // 7. Si hay una cita asociada, marcarla como calificada
+  if (reviewData.id_cita) {
+    const apts = getOrInit(STORAGE_KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS);
+    const updatedApts = apts.map((a) => {
+      if (Number(a.id_cita) === Number(reviewData.id_cita)) {
+        return { ...a, calificado: true, calificacion_estrellas: rating };
+      }
+      return a;
+    });
+    save(STORAGE_KEYS.APPOINTMENTS, updatedApts);
+    notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
+  }
+
+  // 8. Sincronizar reactivamente entidades en tiempo real
+  notifyDataChange(SYNC_ENTITIES.BARBERS, {
+    id_barbero: targetBarber.id_barbero,
+    calificacion: newAvgRating,
+    rating: newAvgRating,
+    total_calificaciones: newTotalReviews,
+    reviewsCount: newTotalReviews
+  });
+
+  // 9. Emitir notificación al Barbero
+  createNotification({
+    targetRole: 3,
+    targetBarberId: targetBarber.id_barbero,
+    targetUserId: targetBarber.id_usuario,
+    tipo: "calificacion",
+    titulo: "⭐ Nueva Calificación Recibida",
+    mensaje: `Un cliente te ha otorgado ${rating} estrellas. Tu promedio actual es ${newAvgRating} ★ (${newTotalReviews} ${newTotalReviews === 1 ? "opinión" : "opiniones"}).`,
+    route: "/barbero/perfil"
+  });
+
+  // 10. Emitir notificación al Administrador y Recepcionista
+  createNotification({
+    targetRole: 1,
+    tipo: "calificacion",
+    titulo: "⭐ Calificación de Barbero Registrada",
+    mensaje: `${clientFullName} calificó a ${targetBarber.nombre} con ${rating} estrellas. Promedio acumulado: ${newAvgRating} ★.`,
+    route: "/dashboard/barbers"
+  });
+
+  return {
+    success: true,
+    review: newReview,
+    newRating: newAvgRating,
+    totalReviews: newTotalReviews
+  };
 }
 
 // ==========================================

@@ -72,7 +72,12 @@ try {
         telefono: "+57 302 345 6789",
         especialidad: "Corte Clásico & Fade",
         imagen_url: null,
-        estado: 1
+        estado: 1,
+        calificacion: 0,
+        rating: 0,
+        total_calificaciones: 0,
+        reviewsCount: 0,
+        calificaciones_sum: 0
       }
     ];
     localStorage.setItem("barber_barbers_db", JSON.stringify(onlyCarlosBarber));

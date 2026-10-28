@@ -718,10 +718,14 @@ export default function ClientBookingPage() {
                           <p className="text-[11px] text-muted-foreground truncate">{b.especialidad}</p>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="inline-flex items-center gap-1 text-[11px] font-black text-amber-500">
-                              <Star className="w-3 h-3 fill-amber-500" />
-                              {b.rating || 4.9}
+                              <Star className={`w-3 h-3 ${Number(b.reviewsCount || b.total_calificaciones || 0) > 0 ? "fill-amber-500" : "text-amber-500/50"}`} />
+                              {Number(b.rating ?? b.calificacion ?? 0).toFixed(1)}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">({b.reviewsCount || 120}+ citas)</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {Number(b.reviewsCount || b.total_calificaciones || 0) === 0
+                                ? "(0 opiniones)"
+                                : `(${Number(b.reviewsCount || b.total_calificaciones || 0)}+ citas)`}
+                            </span>
                           </div>
                         </div>
                       </div>

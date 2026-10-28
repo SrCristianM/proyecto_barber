@@ -38,6 +38,7 @@ if (syncChannel && typeof window !== "undefined") {
   syncChannel.onmessage = (event) => {
     if (event?.data?.entity) {
       window.dispatchEvent(new CustomEvent(SYNC_EVENT_NAME, { detail: event.data }));
+      window.dispatchEvent(new CustomEvent("barber_notification_update", { detail: event.data }));
     }
   };
 }
@@ -58,6 +59,7 @@ export function notifyDataChange(entity, payload = null) {
         timestamp: Date.now()
       };
       window.dispatchEvent(new CustomEvent(SYNC_EVENT_NAME, { detail }));
+      window.dispatchEvent(new CustomEvent("barber_notification_update", { detail }));
       if (syncChannel) {
         syncChannel.postMessage(detail);
       }

@@ -1,6 +1,6 @@
 import {
   validateNumber
-} from "../../../../shared/validations/commonValidators";
+} from "../../../../shared/validations/commonValidators.js";
 
 /**
  * Valida formulario de ventas (venta y venta_detalle).

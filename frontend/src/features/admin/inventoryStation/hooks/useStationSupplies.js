@@ -20,6 +20,7 @@ import {
 } from "../services/stationService.js";
 
 import { useDataSync, SYNC_ENTITIES } from "../../../../shared/services/dataSyncService";
+import { createNotification } from "../../../../shared/services/notificationService";
 
 import { getBarbers } from "../../barbers/services/barbersService.js";
 
@@ -99,6 +100,31 @@ export function useStationSupplies(initialBarberId = "all") {
     loadAllData();
   });
 
+  // Sincronización reactiva automática inmediatamente al recibir cualquier notificación del barbero
+  useEffect(() => {
+    const handleNotificationReceived = () => {
+      loadAllData();
+    };
+
+    const handleStorageChange = (e) => {
+      if (
+        e.key === "barber_notifications_db" ||
+        e.key === "barber_station_items_db" ||
+        e.key?.startsWith("station_supplies_cache_")
+      ) {
+        loadAllData();
+      }
+    };
+
+    window.addEventListener("barber_notification_update", handleNotificationReceived);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("barber_notification_update", handleNotificationReceived);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, [loadAllData]);
+
   // ==========================================
   // ACCIONES SEMÁFORO Y REPOSICIÓN
   // ==========================================
@@ -125,6 +151,25 @@ export function useStationSupplies(initialBarberId = "all") {
         cantidad,
         observaciones
       );
+
+      // Despachar notificación al Barbero
+      try {
+        const barberId = stationItem.id_barbero || stationItem.barbero_id;
+        const bObj = barbers.find((b) => Number(b.id_barbero) === Number(barberId));
+
+        createNotification({
+          type: "stock",
+          title: "Insumo entregado a tu puesto",
+          description: `Tu solicitud para "${stationItem.insumo_nombre || "Insumo"}" fue despachada por bodega (${cantidad} unidades). Semáforo reiniciado a VERDE.`,
+          route: "/barbero/estacion",
+          targetRole: 3,
+          targetUserId: bObj?.id_usuario || null,
+          targetBarberId: Number(barberId)
+        });
+      } catch (eNotif) {
+        console.warn("[useStationSupplies] Error notificando al barbero:", eNotif);
+      }
+
       toast.success(
         `¡Reposición Aprobada! Stock descontado de bodega y semáforo reiniciado a VERDE para ${stationItem.barbero_nombre || "el barbero"}.`
       );

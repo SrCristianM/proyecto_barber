@@ -681,11 +681,16 @@ export class InventoryStationRepository {
       sql += ` ORDER BY FIELD(eb.estado_semaforo, 'ROJO', 'AMARILLO', 'VERDE'), eb.fecha_cambio_estado DESC`;
       const rows = await executeQuery(sql, params);
 
-      return rows.map((r) => ({
-        ...r,
-        dias_en_estacion: calculateDaysDifference(r.fecha_ultima_reposicion, now),
-        bodega_disponible: Number(r.stock_actual) > 0
-      }));
+      return rows.map((r) => {
+        const qty = Number(r.cantidad_asignada !== undefined && r.cantidad_asignada !== null ? r.cantidad_asignada : 1);
+        return {
+          ...r,
+          cantidad_asignada: qty,
+          cantidad_actual: qty,
+          dias_en_estacion: calculateDaysDifference(r.fecha_ultima_reposicion, now),
+          bodega_disponible: Number(r.stock_actual) > 0
+        };
+      });
     }
 
     return (mockStore.estaciones_barberos || [])
@@ -699,6 +704,7 @@ export class InventoryStationRepository {
         const ins = (mockStore.insumos_bodega || []).find((i) => Number(i.id_insumo) === insumoId);
 
         const days = calculateDaysDifference(item.fecha_ultima_reposicion, now);
+        const qty = Number(item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 1));
         return {
           ...item,
           id_estacion_insumo: idEstacion,
@@ -707,6 +713,8 @@ export class InventoryStationRepository {
           barbero_id: barberId,
           id_insumo: insumoId,
           insumo_id: insumoId,
+          cantidad_asignada: qty,
+          cantidad_actual: qty,
           barbero_nombre: u ? `${u.nombre} ${u.apellido || ""}`.trim() : "Barbero",
           barbero_correo: u ? u.correo : "",
           barbero_especialidad: b ? b.especialidad : "Barbero Profesional",
@@ -736,7 +744,29 @@ export class InventoryStationRepository {
   }
 
   static async getBarberStation(barberId) {
-    return await this.getAllStations({ barberId: Number(barberId) });
+    const bId = Number(barberId);
+    let items = await this.getAllStations({ barberId: bId });
+    if ((!items || items.length === 0) && bId > 0) {
+      const defaultInsumos = [
+        { id_insumo: 1, cantidad: 1, notas: "En uso activo" },
+        { id_insumo: 2, cantidad: 1, notas: "En uso activo" },
+        { id_insumo: 3, cantidad: 1, notas: "En uso activo" },
+        { id_insumo: 4, cantidad: 1, notas: "En uso activo" },
+        { id_insumo: 5, cantidad: 1, notas: "En uso activo" }
+      ];
+      for (const def of defaultInsumos) {
+        try {
+          await this.assignItemToStation({
+            id_barbero: bId,
+            id_insumo: def.id_insumo,
+            cantidad_asignada: def.cantidad,
+            notas: def.notas
+          });
+        } catch (_) {}
+      }
+      items = await this.getAllStations({ barberId: bId });
+    }
+    return items;
   }
 
   static async assignItemToStation({ id_barbero, id_insumo, cantidad_asignada = 1, notas = "" }) {

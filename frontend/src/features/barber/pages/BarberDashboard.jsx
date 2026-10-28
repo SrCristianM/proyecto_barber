@@ -16,7 +16,8 @@ import {
   FileText,
   Phone,
   Mail,
-  ArrowRight
+  ArrowRight,
+  Star
 } from "lucide-react";
 import Modal from "../../admin/shared/components/Modal";
 import SalonAmbienceWidget from "../../client/components/SalonAmbienceWidget";
@@ -161,7 +162,7 @@ export default function BarberDashboard() {
   return (
     <div className="space-y-6">
       {/* 1. BANNER DE BIENVENIDA PROFESIONAL CON ATMÓSFERA CELESTIAL DINÁMICA */}
-      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} border border-[#DFB755]/35 p-6 sm:p-8 shadow-2xl shadow-indigo-950/25 transition-all duration-700`}>
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${celestial.bgClass} ${celestial.borderClass || "border border-[#DFB755]/35 shadow-indigo-950/25"} p-6 sm:p-8 shadow-2xl transition-all duration-700`}>
         {/* Lienzo Celestial con Sol / Atardecer / Luna 3D y Estrellas Interactivas */}
         <CelestialAtmosphereCanvas isNight={celestial.isNight} phase={celestial.phase} />
 
@@ -172,7 +173,7 @@ export default function BarberDashboard() {
             background: celestial.radialGradient
           }}
         />
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[#DFB755]/10 blur-3xl pointer-events-none" />
+        <div className={`absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full ${celestial.phase === "sunset" ? "bg-orange-500/25" : "bg-[#DFB755]/10"} blur-3xl pointer-events-none`} />
         
         <div className="relative z-10 max-w-xl lg:max-w-2xl space-y-4">
           <div className="space-y-2">
@@ -181,17 +182,30 @@ export default function BarberDashboard() {
               
               {/* Pastilla de Horario Dinámico con Fase del Día */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-black/40 border border-white/15 text-slate-200 backdrop-blur-md shadow-xs">
-                <Clock className="w-3.5 h-3.5 text-[#DFB755]" />
+                <Clock className={`w-3.5 h-3.5 ${celestial.phase === "sunset" ? "text-orange-400" : "text-[#DFB755]"}`} />
                 <span>{celestial.periodName} • {celestial.timeFormatted}</span>
               </div>
+
+              {/* Badge de Calificación en Vivo */}
+              <Link
+                to="/barbero/perfil"
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${celestial.phase === "sunset" ? "bg-orange-500/20 border-orange-400/40 text-orange-200 hover:bg-orange-500/30" : "bg-[#DFB755]/20 border-[#DFB755]/40 text-[#FFE082] hover:bg-[#DFB755]/30"} border backdrop-blur-md shadow-xs transition-colors`}
+                title="Ver opiniones en tu perfil"
+              >
+                <Star className={`w-3.5 h-3.5 ${Number(barber?.reviewsCount || barber?.total_calificaciones || 0) > 0 ? "fill-[#DFB755] text-[#DFB755]" : "text-[#FFE082]/50"}`} />
+                <span>{Number(barber?.rating ?? barber?.calificacion ?? 0).toFixed(1)}</span>
+                <span className="text-[10px] text-slate-300 font-normal">
+                  ({Number(barber?.reviewsCount || barber?.total_calificaciones || 0)} op.)
+                </span>
+              </Link>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
               <span>{celestial.saludo},</span>
-              <span className="bg-gradient-to-r from-[#FFE082] via-[#DFB755] to-[#DDAE41] bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]">{barber?.nombre || "Carlos"}!</span>
+              <span className={`bg-gradient-to-r ${celestial.nameGradient || "from-[#FFE082] via-[#DFB755] to-[#DDAE41]"} bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(223,183,85,0.4)]`}>{barber?.nombre || "Carlos"}!</span>
               <span className="text-2xl sm:text-3xl animate-bounce-subtle">{celestial.emoji}</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-lg leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-200/90 font-medium max-w-lg leading-relaxed">
               {celestial.barberMessage}
             </p>
           </div>

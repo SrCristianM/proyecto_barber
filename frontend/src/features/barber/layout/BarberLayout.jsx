@@ -27,7 +27,6 @@ import ClientRouteProgressBar from "../../client/components/ClientRouteProgressB
 import ClientSnipEffect from "../../client/components/ClientSnipEffect";
 import SalonLiveRadar from "../../client/components/SalonLiveRadar";
 import BarberMobileDock from "../components/BarberMobileDock";
-import AmbientCelestialBackground from "../../../shared/components/animations/AmbientCelestialBackground";
 import { useSalonAudio } from "../../client/context/SalonAudioContext";
 import { logoutUser, getCurrentUser } from "../../auth/services/authService";
 import {
@@ -104,15 +103,35 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
     } catch {}
   };
 
-  const refreshProfile = () => {
+  const refreshBarberDashboardData = () => {
     setBarberProfile(getCurrentBarberProfile());
+    const appointments = getBarberAppointments();
+    const todayApts = appointments.filter(
+      (a) => a.fecha === todayStr && (a.estado === "Programada" || a.estado === "Reprogramada")
+    );
+    setTodayAppointmentsCount(todayApts.length);
+
+    const novelties = getBarberNovelties();
+    const pendingNovs = novelties.filter((n) => n.estado === "Pendiente");
+    setPendingNoveltiesCount(pendingNovs.length);
+
+    loadNotificationsData();
   };
 
-  useDataSync([SYNC_ENTITIES.BARBERS, SYNC_ENTITIES.USERS], refreshProfile);
+  useDataSync(
+    [
+      SYNC_ENTITIES.BARBERS,
+      SYNC_ENTITIES.USERS,
+      SYNC_ENTITIES.APPOINTMENTS,
+      SYNC_ENTITIES.SCHEDULES,
+      SYNC_ENTITIES.STATION_SUPPLIES
+    ],
+    refreshBarberDashboardData
+  );
 
   useEffect(() => {
     const handleProfileUpdate = () => {
-      refreshProfile();
+      refreshBarberDashboardData();
     };
     window.addEventListener("barber_profile_updated", handleProfileUpdate);
     window.addEventListener("auth_user_updated", handleProfileUpdate);
@@ -125,19 +144,8 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
   }, []);
 
   useEffect(() => {
-    refreshProfile();
+    refreshBarberDashboardData();
 
-    const appointments = getBarberAppointments();
-    const todayApts = appointments.filter(
-      (a) => a.fecha === todayStr && (a.estado === "Programada" || a.estado === "Reprogramada")
-    );
-    setTodayAppointmentsCount(todayApts.length);
-
-    const novelties = getBarberNovelties();
-    const pendingNovs = novelties.filter((n) => n.estado === "Pendiente");
-    setPendingNoveltiesCount(pendingNovs.length);
-
-    loadNotificationsData();
     const unsubscribe = subscribeNotifications(() => {
       loadNotificationsData();
     });
@@ -192,8 +200,16 @@ function BarberLayoutContent({ isDark, setIsDark, onLogout }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground relative">
-      {/* FONDO CELESTIAL AMBIENTAL DE LA PÁGINA (MAÑANA, TARDE, ATARDECER, NOCHE CON NUBES/NIEBLA) */}
-      <AmbientCelestialBackground isDark={isDark} />
+      {/* FONDO PROFESIONAL ESTÁTICO DE ALTA GAMA PARA EL PANEL DE BARBERO */}
+      <div 
+        aria-hidden="true" 
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      >
+        {/* Iluminación superior sutil dorada/ámbar */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-15%,rgba(217,174,65,0.07),transparent)]" />
+        {/* Trama sutil de micro-puntos ejecutiva */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] bg-[radial-gradient(#000000_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
+      </div>
 
       {/* BARRA DE PROGRESO DE RUTA DORADA */}
       <ClientRouteProgressBar />

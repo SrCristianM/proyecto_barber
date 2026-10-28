@@ -85,13 +85,25 @@ function ClientLayoutContent({ isDark, setIsDark, onLogout }) {
     return () => unsubscribe();
   }, [location.pathname]);
 
-  // Sincronización en tiempo real de puntos, nivel y citas cuando el barbero atiende
-  useDataSync([SYNC_ENTITIES.CLIENTS, SYNC_ENTITIES.APPOINTMENTS], () => {
+  // Sincronización en tiempo real de puntos, nivel, citas y notificaciones
+  const refreshClientDashboardData = () => {
     setClientProfile(getCurrentClientProfile());
     const appointments = getClientAppointments();
     const upcoming = appointments.filter((a) => a.estado === "Programada" || a.estado === "Reprogramada");
     setUpcomingCount(upcoming.length);
-  });
+    loadNotificationsData();
+  };
+
+  useDataSync(
+    [
+      SYNC_ENTITIES.CLIENTS,
+      SYNC_ENTITIES.APPOINTMENTS,
+      SYNC_ENTITIES.SCHEDULES,
+      SYNC_ENTITIES.SALES,
+      SYNC_ENTITIES.PRODUCTS
+    ],
+    refreshClientDashboardData
+  );
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {

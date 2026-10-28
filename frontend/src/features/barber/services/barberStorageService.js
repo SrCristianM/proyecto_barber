@@ -42,7 +42,12 @@ const INITIAL_BARBERS = [
     telefono: "+57 302 345 6789",
     especialidad: "Corte Clásico & Fade",
     imagen_url: null,
-    estado: 1
+    estado: 1,
+    calificacion: 0,
+    rating: 0,
+    total_calificaciones: 0,
+    reviewsCount: 0,
+    calificaciones_sum: 0
   }
 ];
 
@@ -159,6 +164,10 @@ export function getCurrentBarberProfile() {
     especialidad: barber?.especialidad || "Corte Clásico & Fade",
     imagen_url: cleanPhoto,
     avatar_url: cleanPhoto,
+    calificacion: Number(barber?.calificacion ?? barber?.rating ?? 0),
+    rating: Number(barber?.rating ?? barber?.calificacion ?? 0),
+    total_calificaciones: Number(barber?.total_calificaciones ?? barber?.reviewsCount ?? 0),
+    reviewsCount: Number(barber?.reviewsCount ?? barber?.total_calificaciones ?? 0),
     rol: "Barbero Profesional"
   };
 }

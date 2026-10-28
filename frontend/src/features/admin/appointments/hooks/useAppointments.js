@@ -18,6 +18,7 @@ import {
   useDataSync,
   SYNC_ENTITIES
 } from "../../../../shared/services/dataSyncService";
+import { createNotification } from "../../../../shared/services/notificationService";
 import {
   getLocalDateString,
   addDays,
@@ -388,6 +389,50 @@ export function useAppointments() {
       } catch {}
       setShowFormModal(false);
       resetForm();
+
+      // Notificaciones para Barbero, Cliente y Administración
+      try {
+        const clientName = getClientName(payload.id_cliente, payload);
+        const barberName = getBarberName(payload.id_barbero);
+        const barberObj = barbersList.find((b) => Number(b.id_barbero) === Number(payload.id_barbero));
+        const clientObj = clientsList.find((c) => Number(c.id_cliente) === Number(payload.id_cliente));
+        const horaDisplay = payload.hora ? payload.hora.substring(0, 5) : "";
+
+        // 1. Notificación al Barbero
+        createNotification({
+          type: "appointment",
+          title: "Nueva cita asignada",
+          description: `Tienes una nueva cita agendada con ${clientName} para el ${payload.fecha} a las ${horaDisplay}.`,
+          targetRole: 3,
+          targetUserId: barberObj?.id_usuario || null,
+          targetBarberId: Number(payload.id_barbero),
+          route: "/barbero/agenda"
+        });
+
+        // 2. Notificación al Cliente
+        if (clientObj?.id_usuario) {
+          createNotification({
+            type: "appointment",
+            title: "¡Cita agendada por administración!",
+            description: `Tu cita con ${barberName} para el ${payload.fecha} a las ${horaDisplay} ha sido confirmada.`,
+            targetRole: 4,
+            targetUserId: clientObj.id_usuario,
+            route: "/portal/mis-citas"
+          });
+        }
+
+        // 3. Notificación a Administración y Recepción
+        createNotification({
+          type: "appointment",
+          title: "Cita agendada",
+          description: `Cita programada: ${clientName} con ${barberName} para el ${payload.fecha} a las ${horaDisplay}.`,
+          targetRole: [1, 2],
+          route: "/dashboard/appointments"
+        });
+      } catch (errNotif) {
+        console.warn("[useAppointments] Error despachando notificaciones:", errNotif);
+      }
+
       notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, newAppointment);
       toast.success("Cita agendada exitosamente.");
     } catch (err) {
@@ -448,6 +493,85 @@ export function useAppointments() {
       setShowFormModal(false);
       setSelectedAppointment(null);
       resetForm();
+
+      // Notificaciones ante cambios de estado o reprogramación
+      try {
+        const clientName = getClientName(payload.id_cliente, payload);
+        const barberName = getBarberName(payload.id_barbero);
+        const barberObj = barbersList.find((b) => Number(b.id_barbero) === Number(payload.id_barbero));
+        const clientObj = clientsList.find((c) => Number(c.id_cliente) === Number(payload.id_cliente));
+        const horaDisplay = payload.hora ? payload.hora.substring(0, 5) : "";
+
+        if (payload.estado === "Cancelada") {
+          createNotification({
+            type: "appointment",
+            title: "Cita cancelada",
+            description: `La cita de ${clientName} para el ${payload.fecha} fue cancelada.`,
+            targetRole: [1, 2],
+            route: "/dashboard/appointments"
+          });
+          createNotification({
+            type: "appointment",
+            title: "Cita cancelada",
+            description: `Tu cita con ${clientName} para el ${payload.fecha} ha sido cancelada.`,
+            targetRole: 3,
+            targetUserId: barberObj?.id_usuario || null,
+            targetBarberId: Number(payload.id_barbero),
+            route: "/barbero/agenda"
+          });
+          if (clientObj?.id_usuario) {
+            createNotification({
+              type: "appointment",
+              title: "Cita cancelada",
+              description: `Tu turno para el ${payload.fecha} fue cancelado por la barbería.`,
+              targetRole: 4,
+              targetUserId: clientObj.id_usuario,
+              route: "/portal/mis-citas"
+            });
+          }
+        } else if (payload.estado === "Reprogramada" || payload.fecha !== selectedAppointment.fecha || payload.hora !== selectedAppointment.hora) {
+          createNotification({
+            type: "appointment",
+            title: "Cita reprogramada",
+            description: `La cita de ${clientName} con ${barberName} fue reprogramada para el ${payload.fecha} a las ${horaDisplay}.`,
+            targetRole: [1, 2],
+            route: "/dashboard/appointments"
+          });
+          createNotification({
+            type: "appointment",
+            title: "Cita reprogramada",
+            description: `Tu cita con ${clientName} fue reprogramada para el ${payload.fecha} a las ${horaDisplay}.`,
+            targetRole: 3,
+            targetUserId: barberObj?.id_usuario || null,
+            targetBarberId: Number(payload.id_barbero),
+            route: "/barbero/agenda"
+          });
+          if (clientObj?.id_usuario) {
+            createNotification({
+              type: "appointment",
+              title: "Cita reprogramada",
+              description: `Tu cita con ${barberName} ha sido reprogramada para el ${payload.fecha} a las ${horaDisplay}.`,
+              targetRole: 4,
+              targetUserId: clientObj.id_usuario,
+              route: "/portal/mis-citas"
+            });
+          }
+        } else if (payload.estado === "Completada") {
+          if (clientObj?.id_usuario) {
+            createNotification({
+              type: "appointment",
+              title: "¡Servicio completado!",
+              description: `Tu visita en Tu Turno Barber ha finalizado. ¡Gracias por tu preferencia!`,
+              targetRole: 4,
+              targetUserId: clientObj.id_usuario,
+              route: "/portal/mis-citas"
+            });
+          }
+        }
+      } catch (errNotif) {
+        console.warn("[useAppointments] Error despachando notificaciones de edición:", errNotif);
+      }
+
       notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, { id_cita: selectedAppointment.id_cita, ...payload });
       toast.success("Cita actualizada correctamente.");
     } catch (err) {
@@ -488,12 +612,41 @@ export function useAppointments() {
 
   const handleDelete = async (id) => {
     try {
+      const aptToDelete = appointments.find((a) => a.id_cita === id);
       await deleteAppointment(id);
       const updated = appointments.filter((apt) => apt.id_cita !== id);
       setAppointments(updated);
       try {
         localStorage.setItem("barber_appointments_db", JSON.stringify(updated));
       } catch {}
+
+      if (aptToDelete) {
+        try {
+          const barberObj = barbersList.find((b) => Number(b.id_barbero) === Number(aptToDelete.id_barbero));
+          const clientObj = clientsList.find((c) => Number(c.id_cliente) === Number(aptToDelete.id_cliente));
+
+          createNotification({
+            type: "appointment",
+            title: "Cita eliminada",
+            description: `La cita del ${aptToDelete.fecha} fue eliminada del sistema.`,
+            targetRole: 3,
+            targetUserId: barberObj?.id_usuario || null,
+            targetBarberId: Number(aptToDelete.id_barbero),
+            route: "/barbero/agenda"
+          });
+          if (clientObj?.id_usuario) {
+            createNotification({
+              type: "appointment",
+              title: "Cita cancelada",
+              description: `Tu cita programada para el ${aptToDelete.fecha} fue cancelada.`,
+              targetRole: 4,
+              targetUserId: clientObj.id_usuario,
+              route: "/portal/mis-citas"
+            });
+          }
+        } catch {}
+      }
+
       notifyDataChange(SYNC_ENTITIES.APPOINTMENTS, { id_cita: id, deleted: true });
       toast.success("Cita eliminada correctamente.");
     } catch (err) {

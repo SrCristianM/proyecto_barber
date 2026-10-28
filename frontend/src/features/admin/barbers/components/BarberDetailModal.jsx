@@ -9,10 +9,11 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
   const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone.startsWith("57") ? cleanPhone : `57${cleanPhone}`}` : null;
   const phoneUrl = barber.telefono ? `tel:${barber.telefono}` : null;
 
-  // Métricas estimadas de desempeño
-  const estimatedAppointments = (barber.id_barbero * 14 + 20);
+  // Métricas reales y acumuladas de desempeño
+  const reviewsCount = Number(barber.total_calificaciones ?? barber.reviewsCount ?? 0);
+  const rating = Number(barber.calificacion ?? barber.rating ?? 0).toFixed(1);
+  const estimatedAppointments = reviewsCount;
   const estimatedEarnings = estimatedAppointments * 35000;
-  const rating = (4.8 + (barber.id_barbero % 3) * 0.1).toFixed(1);
 
   return (
     <Modal title="Detalle del Barbero" onClose={onClose} maxWidthClass="max-w-2xl">
@@ -72,9 +73,10 @@ export default function BarberDetailModal({ barber, onEdit, onClose }) {
           <div className="p-3.5 bg-card border border-border rounded-xl text-center shadow-2xs">
             <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs mb-1">
               <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-              <span>Calificación</span>
+              <span>Calificación Promedio</span>
             </div>
             <span className="text-lg font-bold text-amber-500 font-mono">{rating} / 5.0</span>
+            <span className="text-[10px] text-muted-foreground block mt-0.5">({reviewsCount} {reviewsCount === 1 ? "opinión" : "opiniones"})</span>
           </div>
         </div>
 

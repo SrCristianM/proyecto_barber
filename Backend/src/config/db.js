@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
 import { env } from "./env.js";
 import { logger } from "../utils/logger.js";
+import { ensureDatabaseSync } from "./syncDatabase.js";
 
 let pool = null;
 let isConnected = false;
@@ -27,6 +28,10 @@ export async function getDatabaseConnection() {
     connection.release();
     isConnected = true;
     logger.info(`✅ Conectado exitosamente a MySQL [${env.DB.HOST}:${env.DB.PORT}/${env.DB.NAME}]`);
+
+    // Sincronización automática de esquema y datos maestros
+    await ensureDatabaseSync(pool);
+
     return pool;
   } catch (error) {
     isConnected = false;

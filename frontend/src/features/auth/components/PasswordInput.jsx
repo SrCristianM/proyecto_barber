@@ -29,11 +29,10 @@ export default function PasswordInput({
           type={visible ? "text" : "password"}
           value={value}
           onChange={onChange}
-          className={`w-full py-3 pl-10 pr-11 bg-[#181818] border rounded-xl focus:outline-none text-white text-xs sm:text-sm placeholder:text-[#555555] transition-all duration-200 ${
-            error
+          className={`w-full py-3 pl-10 pr-11 bg-[#181818] border rounded-xl focus:outline-none text-white text-xs sm:text-sm placeholder:text-[#555555] transition-all duration-200 ${error
               ? "border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/30"
               : "border-white/10 hover:border-white/20 focus:border-[#C9A24A] focus:ring-2 focus:ring-[#C9A24A]/30"
-          }`}
+            }`}
           placeholder={placeholder}
         />
         <button

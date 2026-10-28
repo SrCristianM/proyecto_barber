@@ -157,7 +157,7 @@ export class MockDataStore {
 
     // Barbero único por defecto (Carlos Rodríguez)
     this.barberos = [
-      { id_barbero: 1, id_usuario: 4, especialidad: "Corte Clásico & Fade", imagen_url: null, estado: 1 }
+      { id_barbero: 1, id_usuario: 4, especialidad: "Corte Clásico & Fade", imagen_url: null, estado: 1, calificacion: 0, rating: 0, total_calificaciones: 0, reviewsCount: 0 }
     ];
 
     // Clientes por defecto (Inician en nivel Nuevo con 0 puntos)

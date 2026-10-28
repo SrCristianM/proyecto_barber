@@ -2,12 +2,12 @@ import { motion } from "motion/react";
 import {
   User,
   Package,
+  Boxes,
   Clock,
   CheckCircle2,
   AlertTriangle,
   Flame,
   Trash2,
-  Boxes
 } from "lucide-react";
 
 // Helpers para parsear cantidades y notas
@@ -56,6 +56,7 @@ export default function StationSuppliesTableView({
             <tr className="border-b border-border/40 bg-muted/40 text-muted-foreground uppercase text-[10px] tracking-wider font-extrabold">
               <th className="py-3.5 px-4">Barbero & Estación</th>
               <th className="py-3.5 px-4">Insumo / Producto</th>
+              <th className="py-3.5 px-4">En Puesto</th>
               <th className="py-3.5 px-4">Semáforo</th>
               <th className="py-3.5 px-4">Duración en Puesto</th>
               <th className="py-3.5 px-4">Stock en Bodega</th>
@@ -75,6 +76,7 @@ export default function StationSuppliesTableView({
               const requestedQty = parseRequestedQty(item.notas);
               const customNote = parseBarberCustomNote(item.notas);
               const hasWarehouseStock = bodegaStock >= requestedQty;
+              const qtyInStation = Number(item.cantidad_asignada !== undefined ? item.cantidad_asignada : (item.cantidad_actual !== undefined ? item.cantidad_actual : 1));
 
               const semaforoConfig = {
                 VERDE: {
@@ -133,6 +135,21 @@ export default function StationSuppliesTableView({
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       {item.insumo_categoria || "Consumible"} • {item.unidad_medida || "Unidad"}
+                    </div>
+                  </td>
+
+                  {/* Cantidad Física en Puesto */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+                      qtyInStation === 0 || item.estado_semaforo === "ROJO"
+                        ? "bg-rose-500/15 border-rose-500/35 text-rose-600 dark:text-rose-300"
+                        : item.estado_semaforo === "AMARILLO"
+                        ? "bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-300"
+                        : "bg-emerald-500/15 border-emerald-500/35 text-emerald-600 dark:text-emerald-300"
+                    }`}>
+                      <Boxes className="w-3.5 h-3.5" />
+                      <span className="font-mono font-black text-foreground">{qtyInStation}</span>
+                      <span className="text-[10px] text-muted-foreground">{item.unidad_medida || "uds"}</span>
                     </div>
                   </td>
 

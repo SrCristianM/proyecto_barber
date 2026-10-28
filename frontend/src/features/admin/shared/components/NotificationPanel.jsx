@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router";
 import { Check, CheckCheck, X, Calendar, Users, Clock, DollarSign, Package } from "lucide-react";
 import { motion } from "motion/react";
 import { timeAgo, formatExactDateTime, NOTIFICATION_TYPE_CONFIG } from "../hooks/useNotifications";
@@ -19,6 +20,7 @@ export default function NotificationPanel({
   onViewAll,
   onClose
 }) {
+  const navigate = useNavigate();
   const panelRef = useRef(null);
 
   // Cerrar al hacer click fuera
@@ -90,7 +92,13 @@ export default function NotificationPanel({
                 className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 transition-colors cursor-pointer ${
                   notif.read ? "bg-card hover:bg-accent/40" : "bg-primary/5 hover:bg-primary/10"
                 }`}
-                onClick={() => !notif.read && onMarkAsRead(notif.id)}
+                onClick={() => {
+                  if (!notif.read) onMarkAsRead(notif.id);
+                  if (notif.route) {
+                    onClose?.();
+                    navigate(notif.route);
+                  }
+                }}
               >
                 {/* Icono de tipo */}
                 <div className={`w-8 h-8 ${cfg.bg} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>

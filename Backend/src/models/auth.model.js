@@ -6,17 +6,20 @@ export class AuthRepository {
     const cleanEmail = email.trim().toLowerCase();
 
     if (isDatabaseConnected()) {
-      const sql = "SELECT u.*, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE LOWER(u.correo) = ? LIMIT 1";
-      const rows = await executeQuery(sql, [cleanEmail]);
-      if (rows && rows.length > 0) {
-        const row = rows[0];
-        const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") ? row.imagen_url : null;
-        return { ...row, imagen_url: img, avatar_url: img };
+      try {
+        const sql = "SELECT u.*, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE LOWER(u.correo) = ? LIMIT 1";
+        const rows = await executeQuery(sql, [cleanEmail]);
+        if (rows && rows.length > 0) {
+          const row = rows[0];
+          const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") ? row.imagen_url : null;
+          return { ...row, imagen_url: img, avatar_url: img };
+        }
+      } catch (err) {
+        // En caso de error SQL temporal, continuar al fallback en memoria
       }
-      return null;
     }
 
-    // Fallback store
+    // Fallback store resiliente
     const user = mockStore.usuarios.find((u) => u.correo.toLowerCase() === cleanEmail);
     if (!user) return null;
     const role = mockStore.roles.find((r) => r.id_rol === user.id_rol);
@@ -47,14 +50,17 @@ export class AuthRepository {
     const id = Number(id_usuario);
 
     if (isDatabaseConnected()) {
-      const sql = "SELECT u.id_usuario, u.nombre, u.apellido, u.documento, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, u.imagen_url, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.id_usuario = ? LIMIT 1";
-      const rows = await executeQuery(sql, [id]);
-      if (rows && rows.length > 0) {
-        const row = rows[0];
-        const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") && row.imagen_url.trim() ? row.imagen_url.trim() : null;
-        return { ...row, imagen_url: img, avatar_url: img };
+      try {
+        const sql = "SELECT u.id_usuario, u.nombre, u.apellido, u.documento, u.correo, u.telefono, u.id_rol, u.estado, u.fecha_registro, u.imagen_url, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.id_usuario = ? LIMIT 1";
+        const rows = await executeQuery(sql, [id]);
+        if (rows && rows.length > 0) {
+          const row = rows[0];
+          const img = row.imagen_url && !row.imagen_url.includes("unsplash.com") && row.imagen_url.trim() ? row.imagen_url.trim() : null;
+          return { ...row, imagen_url: img, avatar_url: img };
+        }
+      } catch (err) {
+        // En caso de error SQL temporal, continuar al fallback
       }
-      return null;
     }
 
     const user = mockStore.usuarios.find((u) => u.id_usuario === id);
@@ -89,9 +95,13 @@ export class AuthRepository {
     const cleanDoc = String(documento).trim();
 
     if (isDatabaseConnected()) {
-      const sql = "SELECT u.*, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.documento = ? LIMIT 1";
-      const rows = await executeQuery(sql, [cleanDoc]);
-      return rows && rows.length > 0 ? rows[0] : null;
+      try {
+        const sql = "SELECT u.*, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.documento = ? LIMIT 1";
+        const rows = await executeQuery(sql, [cleanDoc]);
+        if (rows && rows.length > 0) return rows[0];
+      } catch (err) {
+        // Fallback
+      }
     }
 
     const user = mockStore.usuarios.find(
@@ -104,16 +114,22 @@ export class AuthRepository {
 
   static async getAllActiveUsers() {
     if (isDatabaseConnected()) {
-      const sql = "SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.id_rol, u.imagen_url, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.estado = 1 ORDER BY u.id_rol ASC, u.id_usuario ASC";
-      const rows = await executeQuery(sql);
-      return (rows || []).map((u) => ({
-        id_usuario: u.id_usuario,
-        nombre: (u.nombre + " " + (u.apellido || "")).trim(),
-        email: u.correo,
-        id_rol: u.id_rol,
-        rol_nombre: u.rol,
-        imagen_url: u.imagen_url && !u.imagen_url.includes("unsplash.com") ? u.imagen_url : null
-      }));
+      try {
+        const sql = "SELECT u.id_usuario, u.nombre, u.apellido, u.correo, u.id_rol, u.imagen_url, r.nombre_rol as rol FROM usuario u JOIN rol r ON u.id_rol = r.id_rol WHERE u.estado = 1 ORDER BY u.id_rol ASC, u.id_usuario ASC";
+        const rows = await executeQuery(sql);
+        if (rows && rows.length > 0) {
+          return rows.map((u) => ({
+            id_usuario: u.id_usuario,
+            nombre: (u.nombre + " " + (u.apellido || "")).trim(),
+            email: u.correo,
+            id_rol: u.id_rol,
+            rol_nombre: u.rol,
+            imagen_url: u.imagen_url && !u.imagen_url.includes("unsplash.com") ? u.imagen_url : null
+          }));
+        }
+      } catch (err) {
+        // Fallback
+      }
     }
 
     return mockStore.usuarios

@@ -36,7 +36,8 @@ import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncSer
 import { getLocalDateString, addDays, parseLocalDate, formatDateDisplay } from "../../../shared/utils/dateUtils";
 import { motion, AnimatePresence } from "motion/react";
 import ClientBookingDatePicker from "../components/ClientBookingDatePicker";
-import { Sparkles, QrCode, ArrowUpRight } from "lucide-react";
+import { Sparkles, QrCode, ArrowUpRight, Star } from "lucide-react";
+import ReviewModal from "../components/ReviewModal";
 
 export default function ClientMyAppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -48,6 +49,7 @@ export default function ClientMyAppointmentsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   // Estados de reagendar y cancelar
   const [cancelReason, setCancelReason] = useState("Cambio de planes personales");
@@ -522,16 +524,38 @@ export default function ClientMyAppointmentsPage() {
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedApt(apt);
-                              setShowDetailModal(true);
-                            }}
-                            className="px-3 py-1.5 rounded-lg border border-border hover:bg-accent text-foreground text-xs font-semibold cursor-pointer"
-                          >
-                            Ver Detalle
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {apt.estado === "Completada" && (
+                              apt.calificado ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/30 text-[11px] font-bold">
+                                  <Star className="w-3 h-3 fill-amber-500" />
+                                  <span>Calificada ({apt.calificacion_estrellas || 5}★)</span>
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedApt(apt);
+                                    setShowReviewModal(true);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#DFB755]/15 hover:bg-[#DFB755]/25 text-[#DFB755] border border-[#DFB755]/40 text-[11px] font-bold transition-all cursor-pointer"
+                                >
+                                  <Star className="w-3 h-3 fill-[#DFB755]" />
+                                  <span>Calificar</span>
+                                </button>
+                              )
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedApt(apt);
+                                setShowDetailModal(true);
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-border hover:bg-accent text-foreground text-xs font-semibold cursor-pointer"
+                            >
+                              Ver Detalle
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -866,6 +890,20 @@ export default function ClientMyAppointmentsPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* MODAL CALIFICACIÓN POST-CITA */}
+      {showReviewModal && (
+        <ReviewModal
+          appointment={selectedApt}
+          onClose={() => {
+            setShowReviewModal(false);
+            setSelectedApt(null);
+          }}
+          onReviewSaved={() => {
+            loadAppointments();
+          }}
+        />
       )}
     </div>
   );

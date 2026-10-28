@@ -141,7 +141,12 @@ export function useBarbers() {
       const newBarber = {
         ...payload,
         id_barbero: created?.id_barbero || Math.max(...barbers.map((b) => b.id_barbero), 0) + 1,
-        id_usuario: created?.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1
+        id_usuario: created?.id_usuario || Math.max(...barbers.map((b) => b.id_usuario), 10) + 1,
+        calificacion: 0,
+        rating: 0,
+        total_calificaciones: 0,
+        reviewsCount: 0,
+        calificaciones_sum: 0
       };
       setBarbers((prev) => {
         const next = [newBarber, ...prev];

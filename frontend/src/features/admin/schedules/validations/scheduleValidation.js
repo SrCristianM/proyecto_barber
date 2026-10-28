@@ -1,8 +1,9 @@
 import {
   isRequired,
   validateTimeRange,
-  validateStringLength
-} from "../../../../shared/validations/commonValidators";
+  validateStringLength,
+  validateFutureOrTodayDate
+} from "../../../../shared/validations/commonValidators.js";
 
 /**
  * Valida formulario de horarios semanales de barberos.
@@ -65,6 +66,9 @@ export function validateNoveltyForm(formData) {
 
   if (!formData.fecha || formData.fecha.trim() === "") {
     errors.fecha = "La fecha de la novedad es obligatoria.";
+  } else {
+    const dateErr = validateFutureOrTodayDate(formData.fecha, "La fecha de la novedad");
+    if (dateErr) errors.fecha = dateErr;
   }
 
   const descReq = isRequired(formData.descripcion, "La descripción del motivo");

@@ -627,11 +627,10 @@ export default function Login({ onLogin }) {
                             }}
                             placeholder="Introduce tu contraseña"
                             autoFocus
-                            className={`w-full px-3.5 py-3 pr-10 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${
-                              googleError
+                            className={`w-full px-3.5 py-3 pr-10 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${googleError
                                 ? "border-[#f28b82] focus:border-[#f28b82] focus:ring-1 focus:ring-[#f28b82]"
                                 : "border-[#5f6368] focus:border-[#8ab4f8] focus:ring-1 focus:ring-[#8ab4f8]"
-                            }`}
+                              }`}
                             required
                           />
                           <button
@@ -867,11 +866,10 @@ export default function Login({ onLogin }) {
                           }}
                           placeholder="ejemplo@gmail.com"
                           autoFocus
-                          className={`w-full px-3.5 py-3 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${
-                            googleError
+                          className={`w-full px-3.5 py-3 text-sm rounded-lg bg-transparent border text-[#e8eaed] placeholder-[#9aa0a6]/50 focus:outline-none transition-all ${googleError
                               ? "border-[#f28b82] focus:border-[#f28b82] focus:ring-1 focus:ring-[#f28b82]"
                               : "border-[#5f6368] focus:border-[#8ab4f8] focus:ring-1 focus:ring-[#8ab4f8]"
-                          }`}
+                            }`}
                           required
                         />
 

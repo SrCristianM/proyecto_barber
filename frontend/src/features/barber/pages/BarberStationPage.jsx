@@ -32,8 +32,8 @@ import {
   requestRestockBatch,
   getRestockHistory
 } from "../../admin/inventoryStation/services/stationService";
-import { useDataSync, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
-import { createNotification } from "../../../shared/services/notificationService";
+import { useDataSync, notifyDataChange, SYNC_ENTITIES } from "../../../shared/services/dataSyncService";
+import { createNotification, dispatchNotificationUpdate } from "../../../shared/services/notificationService";
 import { getCurrentUser } from "../../auth/services/authService";
 import { exportToStyledExcel } from "../../../shared/utils/excelExporter";
 
@@ -249,11 +249,16 @@ export default function BarberStationPage() {
   const handleUpdateStatus = async (idEstacionInsumo, nuevoEstado, notas = "") => {
     try {
       setIsSubmitting(true);
-      await updateStationItemStatus(idEstacionInsumo, nuevoEstado, notas);
-
       const targetItem = items.find(
         (i) => (i.id_estacion_insumo || i.id_estacion_item) === idEstacionInsumo
       );
+      const currentQty = stationQuantities[idEstacionInsumo] !== undefined
+        ? stationQuantities[idEstacionInsumo]
+        : (targetItem?.cantidad_asignada !== undefined ? targetItem.cantidad_asignada : (nuevoEstado === "ROJO" ? 0 : 1));
+
+      await updateStationItemStatus(idEstacionInsumo, nuevoEstado, notas, currentQty);
+      notifyDataChange(SYNC_ENTITIES.STATION_SUPPLIES, { id: idEstacionInsumo, status: nuevoEstado, cantidad: currentQty });
+
       const insumoNombre = targetItem?.insumo_nombre || "Insumo de estación";
       const user = getCurrentUser();
       const barberoNombre = user?.nombre
@@ -261,31 +266,32 @@ export default function BarberStationPage() {
         : targetItem?.barbero_nombre || "Barbero";
 
       if (nuevoEstado === "AMARILLO") {
-        toast.warning("Alerta enviada: Notificaste que te queda poco insumo.", {
-          description: "La administración ya puede ver tu alerta preventiva."
+        toast.warning(`Alerta enviada: Notificaste que te queda poco ${insumoNombre}.`, {
+          description: `La administración ya puede ver que tienes ${currentQty} ${targetItem?.unidad_medida || "uds"} en puesto.`
         });
 
         createNotification({
           type: "stock",
           title: `🟡 Alerta Preventiva: ${insumoNombre}`,
-          description: `${barberoNombre} reporta que le queda poco ${insumoNombre} en su estación.`,
+          description: `${barberoNombre} reporta que le queda poco ${insumoNombre} (${currentQty} ${targetItem?.unidad_medida || "uds"} en puesto).`,
           route: "/dashboard/abastecimiento",
           targetRole: [1, 2]
         });
       } else if (nuevoEstado === "ROJO") {
         toast.error("¡Reposición solicitada a bodega!", {
-          description: "Se generó una solicitud prioritaria de insumo agotado para tu puesto."
+          description: `Se generó una solicitud prioritaria de insumo agotado (0 en puesto).`
         });
 
         createNotification({
           type: "stock_alert",
           title: `🔴 Solicitud de Reposición: ${insumoNombre}`,
-          description: `${barberoNombre} solicita reposición urgente de ${insumoNombre} (Agotado en puesto).`,
+          description: `${barberoNombre} solicita reposición urgente de ${insumoNombre} (Agotado en puesto: ${currentQty} ${targetItem?.unidad_medida || "uds"}).`,
           route: "/dashboard/abastecimiento",
           targetRole: [1, 2]
         });
       }
 
+      dispatchNotificationUpdate();
       await loadStationData();
     } catch (err) {
       toast.error(err.message || "Error al actualizar el estado de tu estación.");
@@ -319,6 +325,7 @@ export default function BarberStationPage() {
     try {
       setUpdatingItemId(id);
       await updateStationItemStatus(id, newStatus, note, newQty);
+      notifyDataChange(SYNC_ENTITIES.STATION_SUPPLIES, { id, status: newStatus, cantidad: newQty });
 
       const user = getCurrentUser();
       const barberoNombre = user?.nombre
@@ -345,16 +352,18 @@ export default function BarberStationPage() {
         targetRole: [1, 2]
       });
 
+      dispatchNotificationUpdate();
+
       if (newStatus === "VERDE") {
         toast.success(`Insumo actualizado: Lleno (${newQty} ${item.unidad_medida || "un."})`, {
-          description: "La administración recibió tu reporte de insumo completo."
+          description: "La administración recibió tu reporte con la cantidad en puesto."
         });
       } else if (newStatus === "AMARILLO") {
         toast.warning(`Aviso enviado: Por acabarse (${newQty} ${item.unidad_medida || "un."})`, {
-          description: "Se notificó preventivamente al administrador."
+          description: "Se notificó preventivamente al administrador con tu cantidad física restante."
         });
       } else {
-        toast.error(`Aviso urgente enviado: Agotado (0 en puesto)`, {
+        toast.error(`Aviso urgente enviado: Agotado (${newQty} en puesto)`, {
           description: "Se generó una alerta prioritaria de insumo agotado para bodega."
         });
       }

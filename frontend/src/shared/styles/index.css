@@ -1041,5 +1041,136 @@
   }
 }
 
+/* =========================================================================
+   2.I: ANIMACIONES EXCLUSIVAS DEL TURNO TARDE Y HORA DORADA
+   ========================================================================= */
+
+/* Ondas térmicas y filamentos de estilo en el Turno Tarde */
+@keyframes celAfternoonHeatWave {
+  0% {
+    stroke-dashoffset: 0;
+    transform: translate3d(0, 0, 0) scaleY(0.96);
+  }
+  50% {
+    transform: translate3d(-18px, -4px, 0) scaleY(1.05);
+  }
+  100% {
+    stroke-dashoffset: -120;
+    transform: translate3d(0, 0, 0) scaleY(0.96);
+  }
+}
+
+/* Pulsación de abanico de rayos cenitales de la tarde */
+@keyframes celZenithRaysPulse {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(0.98) rotate(0deg);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.03) rotate(2deg);
+  }
+}
+
+/* Destello prismático ultra-brillante de navajas y tijeras en acción (Turno Tarde) */
+@keyframes celPrismaticGleam {
+  0%, 100% {
+    transform: scale(0.2) rotate(0deg);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.35) rotate(45deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 6px #FDE047) drop-shadow(0 0 12px #F59E0B);
+  }
+  60% {
+    transform: scale(1.05) rotate(90deg);
+    opacity: 0.85;
+  }
+}
+
+/* Anillo de onda térmica solar en expansión continua (Turno Tarde) */
+@keyframes celSolarHeatRing {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.85;
+  }
+  60% {
+    transform: scale(1.3);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+/* Brasas flotantes de Hora Dorada (Atardecer) */
+@keyframes celSunsetEmberRise {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+    transform: translate3d(-10px, -35px, 0);
+  }
+  75% {
+    opacity: 0.75;
+    transform: translate3d(12px, -95px, 0);
+  }
+  100% {
+    transform: translate3d(-4px, -155px, 0);
+    opacity: 0;
+  }
+}
+
+/* Flotación y respiración suave del Sol Poniente Crepuscular */
+@keyframes celSunsetSunFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -4px, 0) scale(1.02);
+  }
+}
+
+/* Pulsación del halo horizontal de Hora Dorada */
+@keyframes celSunsetHaloBreathe {
+  0%, 100% {
+    opacity: 0.72;
+    transform: scale(0.96) scaleY(0.92);
+  }
+  50% {
+    opacity: 0.98;
+    transform: scale(1.05) scaleY(1.06);
+  }
+}
+
+/* Pulsación de los rayos crepusculares en abanico superior */
+@keyframes celSunsetRaysPulse {
+  0%, 100% {
+    opacity: 0.72;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.98;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes celSunsetRaysPulseHover {
+  0%, 100% {
+    opacity: 0.88;
+    transform: scale(1.01);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+}
+
+
+
 
 

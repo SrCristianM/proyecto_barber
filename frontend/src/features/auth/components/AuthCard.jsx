@@ -159,9 +159,8 @@ export default function AuthCard({ children, wide = false }) {
           rotateY: { type: "spring", stiffness: 220, damping: 22 },
         }}
         style={{ transformStyle: "preserve-3d" }}
-        className={`w-full ${
-          wide ? "max-w-5xl" : "max-w-4xl"
-        } rounded-3xl overflow-hidden bg-[#121212]/92 backdrop-blur-2xl border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.95)] grid grid-cols-1 lg:grid-cols-12 relative z-10 group`}
+        className={`w-full ${wide ? "max-w-5xl" : "max-w-4xl"
+          } rounded-3xl overflow-hidden bg-[#121212]/92 backdrop-blur-2xl border border-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.95)] grid grid-cols-1 lg:grid-cols-12 relative z-10 group`}
       >
         {/* ============================================================== */}
         {/* 2. SPOTLIGHT SOBRE LA SUPERFICIE DE LA TARJETA (AL CURSOR)     */}
@@ -212,7 +211,7 @@ export default function AuthCard({ children, wide = false }) {
             </Link>
 
             <div className="flex items-center gap-3 mt-8">
-              <motion.div 
+              <motion.div
                 animate={{ rotate: [0, 4, -4, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                 className="relative overflow-hidden rounded-xl border border-[#C9A24A]/35 bg-black/70 p-0.5 shadow-md shadow-[#C9A24A]/10 shrink-0"
@@ -236,7 +235,7 @@ export default function AuthCard({ children, wide = false }) {
 
           {/* Frase central */}
           <div className="relative z-10 my-auto py-6">
-            <motion.p 
+            <motion.p
               animate={{ opacity: [0.92, 1, 0.92] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               className="text-white text-lg font-bold leading-snug tracking-wide"
@@ -250,7 +249,7 @@ export default function AuthCard({ children, wide = false }) {
 
           {/* Badge inferior flotante con micro-levitación y estado de conexión */}
           <div className="relative z-10 space-y-2">
-            <motion.div 
+            <motion.div
               animate={{ y: [0, -3, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               className="p-3.5 rounded-xl bg-black/75 backdrop-blur-xl border border-white/10 flex items-center gap-3 shadow-lg"

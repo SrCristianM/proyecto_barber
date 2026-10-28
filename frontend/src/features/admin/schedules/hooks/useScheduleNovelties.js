@@ -225,19 +225,61 @@ export function useScheduleNovelties() {
     }
     notifyDataChange(SYNC_ENTITIES.SCHEDULES);
 
-    // Despachar notificación al Barbero
+    // Despachar notificación al Barbero y clientes potencialmente afectados
     if (targetNov) {
       try {
+        let barberUser = barbersList.find((b) => Number(b.id_barbero) === Number(targetNov.id_barbero));
+        if (!barberUser?.id_usuario) {
+          try {
+            const rawBarbers = localStorage.getItem("barber_barbers_db");
+            const storedBarbers = rawBarbers ? JSON.parse(rawBarbers) : [];
+            const foundB = storedBarbers.find((b) => Number(b.id_barbero) === Number(targetNov.id_barbero));
+            if (foundB) barberUser = foundB;
+          } catch {}
+        }
+
         createNotification({
           type: "schedule",
           title: `Novedad de horario ${newStatus}`,
           description: `Tu solicitud de ${targetNov.tipo} para el ${targetNov.fecha} ha sido ${newStatus} por la administración.`,
           targetRole: 3,
-          targetUserId: 4,
+          targetUserId: barberUser?.id_usuario || null,
+          targetBarberId: Number(targetNov.id_barbero),
           route: "/barbero/novedades"
         });
+
+        // Si la novedad fue aprobada, alertar a los clientes con citas ese día para que reprogramen
+        if (newStatus === "Aprobado" || newStatus === "Aprobada") {
+          try {
+            const rawApts = localStorage.getItem("barber_appointments_db");
+            const allApts = rawApts ? JSON.parse(rawApts) : [];
+            const affectedApts = allApts.filter(
+              (a) =>
+                Number(a.id_barbero) === Number(targetNov.id_barbero) &&
+                a.fecha === targetNov.fecha &&
+                a.estado !== "Cancelada" &&
+                a.estado !== "Completada"
+            );
+
+            affectedApts.forEach((apt) => {
+              if (apt.id_usuario) {
+                createNotification({
+                  type: "schedule",
+                  title: "Alerta de Disponibilidad",
+                  description: `Tu barbero reportó una ausencia por ${targetNov.tipo} para el ${targetNov.fecha}. Te sugerimos reprogramar tu turno.`,
+                  targetRole: 4,
+                  targetUserId: apt.id_usuario,
+                  route: "/portal/mis-citas"
+                });
+              }
+            });
+            if (affectedApts.length > 0) {
+              notifyDataChange(SYNC_ENTITIES.APPOINTMENTS);
+            }
+          } catch {}
+        }
       } catch (err) {
-        console.warn("Error al notificar al barbero:", err);
+        console.warn("Error al notificar al barbero y clientes:", err);
       }
     }
   };

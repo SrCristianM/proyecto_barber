@@ -322,10 +322,12 @@ export default function BarberProfilePage() {
           </div>
           <div>
             <div className="text-2xl font-black text-foreground flex items-center gap-1">
-              <span>5.0</span>
-              <span className="text-sm text-[#DFB755]">★</span>
+              <span>{Number(profile?.rating ?? profile?.calificacion ?? 0).toFixed(1)}</span>
+              <span className={`text-sm ${Number(profile?.reviewsCount ?? profile?.total_calificaciones ?? 0) > 0 ? "text-[#DFB755]" : "text-muted-foreground/40"}`}>★</span>
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Calificación Promedio</div>
+            <div className="text-xs text-muted-foreground font-medium">
+              Calificación Promedio ({Number(profile?.reviewsCount ?? profile?.total_calificaciones ?? 0)} opiniones)
+            </div>
           </div>
         </div>
 

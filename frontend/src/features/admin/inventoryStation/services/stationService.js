@@ -16,8 +16,41 @@ export async function getAllStations(filters = {}) {
 }
 
 export async function getMyStation(barberId = null) {
-  const qs = barberId ? `?barbero_id=${barberId}` : "";
-  return await apiRequest(`${BASE_URL}/my-station${qs}`);
+  let id = barberId;
+  if (!id && typeof window !== "undefined") {
+    try {
+      const rawUser = localStorage.getItem("barber_current_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        id = u.id_barbero || (Number(u.id_rol) === 3 ? (Number(u.id_usuario) === 4 ? 1 : (Number(u.id_usuario) === 12 ? 2 : (Number(u.id_usuario) === 13 ? 3 : null))) : null);
+      }
+    } catch {}
+  }
+  const qs = id ? `?barbero_id=${id}` : "";
+  try {
+    const res = await apiRequest(`${BASE_URL}/my-station${qs}`);
+    const list = Array.isArray(res) ? res : res?.data;
+    if (Array.isArray(list) && list.length > 0 && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`station_supplies_cache_${id || "default"}`, JSON.stringify(list));
+      } catch {}
+    }
+    return res;
+  } catch (err) {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(`station_supplies_cache_${id || "default"}`) || localStorage.getItem("station_supplies_cache_default");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            console.warn("[StationService] Servidor inaccesible temporalmente, usando caché local:", err.message);
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    throw err;
+  }
 }
 
 export async function assignStationItem(data) {

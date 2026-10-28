@@ -20,7 +20,7 @@ export default function AuthHeader({ subtitle }) {
       <h1 className="text-2xl font-black tracking-tight text-white mb-1">
         Tu Turno <span className="text-gold-gradient">Barbería</span>
       </h1>
-      
+
       <p className="text-xs sm:text-sm text-[#8E8E93] font-normal">
         {subtitle}
       </p>

@@ -1,4 +1,4 @@
-import { User, Eye, Power, Edit, Trash2 } from "lucide-react";
+import { User, Eye, Power, Edit, Trash2, Star } from "lucide-react";
 import SortHeader from "../../shared/components/SortHeader";
 
 export default function BarbersTable({
@@ -73,7 +73,16 @@ export default function BarbersTable({
                       </div>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium">{barber.especialidad || "—"}</td>
+                  <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-foreground text-xs sm:text-sm font-medium">
+                    <div>{barber.especialidad || "—"}</div>
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-amber-500 mt-0.5">
+                      <Star className={`w-3 h-3 ${Number(barber.total_calificaciones || barber.reviewsCount || 0) > 0 ? "fill-amber-500" : "text-amber-500/40"}`} />
+                      <span>{Number(barber.calificacion ?? barber.rating ?? 0).toFixed(1)}</span>
+                      <span className="text-muted-foreground font-normal text-[10px]">
+                        ({Number(barber.total_calificaciones ?? barber.reviewsCount ?? 0)} op.)
+                      </span>
+                    </div>
+                  </td>
                   <td className="hidden xl:table-cell py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5 text-muted-foreground text-xs">{barber.correo}</td>
                   <td className="py-2.5 px-2 md:px-3 lg:px-4 sm:py-3.5">
                     <div className="space-y-1 min-w-[90px] sm:min-w-[125px]">
